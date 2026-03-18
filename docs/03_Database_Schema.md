@@ -110,6 +110,7 @@ The following diagram illustrates the primary connections and dependencies betwe
 [View Interactive Graph in FigJam](https://www.figma.com/online-whiteboard/create-diagram/98992f5d-ee75-499b-afcd-e972921c4123?utm_source=other&utm_content=edit_in_figjam&oai_id=&request_id=ab59fac5-0611-46c9-9a48-9cf8046d734b)
 
 ### Mermaid Syntax
+
 ```mermaid
 graph LR
     User["User"]
