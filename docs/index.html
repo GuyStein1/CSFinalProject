@@ -24,9 +24,27 @@
       loadSidebar: true, // Enables the sidebar
       subMaxLevel: 2,    // Automatically generates sidebar links from your markdown headers (H2)
       auto2top: true,    // Scrolls to top when changing pages
+      markdown: {
+        renderer: {
+          code: function(code, lang) {
+            if (lang === 'mermaid') {
+              return '<div class="mermaid">' + code + '</div>';
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      }
     }
   </script>
   <!-- Docsify v4 core -->
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- Mermaid diagram support -->
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false });
+    window.$docsify.plugins = (window.$docsify.plugins || []).concat(function(hook) {
+      hook.doneEach(function() { mermaid.run(); });
+    });
+  </script>
 </body>
 </html>
