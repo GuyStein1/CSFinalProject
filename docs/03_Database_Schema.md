@@ -104,3 +104,39 @@ Professional credentials uploaded by Fixers.
 * `document_url` (String)
 * `status` (Enum: CertStatus)
 * `created_at` (Timestamp)
+
+## 3. Entity Relationships Mapping
+
+The following diagram illustrates the primary connections and dependencies between the system entities.
+
+### Visual Diagram
+[View Interactive Graph in FigJam](https://www.figma.com/online-whiteboard/create-diagram/98992f5d-ee75-499b-afcd-e972921c4123?utm_source=other&utm_content=edit_in_figjam&oai_id=&request_id=ab59fac5-0611-46c9-9a48-9cf8046d734b)
+
+### Mermaid Syntax
+
+```mermaid
+graph LR
+    User["User"]
+    Task["Task"]
+    Bid["Bid"]
+    Review["Review"]
+    Message["Message"]
+    Notification["Notification"]
+    PortfolioItem["PortfolioItem"]
+    Certification["Certification"]
+
+    User --"RequestedTasks (1:N)"--> Task
+    User --"AssignedTasks (1:N)"--> Task
+    User --"SubmittedBids (1:N)"--> Bid
+    User --"ReviewsWritten (1:N)"--> Review
+    User --"ReviewsReceived (1:N)"--> Review
+    User --"MessagesSent (1:N)"--> Message
+    User --"MessagesReceived (1:N)"--> Message
+    User --"1:N"--> Notification
+    User --"1:N"--> PortfolioItem
+    User --"1:N"--> Certification
+
+    Task --"1:N"--> Bid
+    Task --"1:N"--> Review
+    Task --"1:N"--> Message
+```
