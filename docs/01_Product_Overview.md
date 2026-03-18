@@ -36,7 +36,7 @@ The user providing the service to earn money.
 * **Bilingual Support:** English (LTR) and Hebrew (RTL) toggle.
 * **Unified Account System:** Single account to seamlessly toggle between "Requester Mode" and "Fixer Mode".
 * **Two-Way Review System:** Mutual rating ecosystem holding both parties accountable.
-* **Trust & Safety:** "Phone Number Verified" and "Email Verified" badges.
+* **Trust & Safety:** "Email Verified" badge displayed on profiles. Phone number is collected for contact purposes but not verified in the MVP.
 * **Real-Time Chat:** In-app messaging for logistics coordination.
 * **Notifications:** Push notifications and web alerts for bids, messages, and updates.
 

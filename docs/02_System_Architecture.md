@@ -17,6 +17,12 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 * **Spatial Extension:** PostGIS. Handles geographical math directly at the database level for lightning-fast "find jobs within 5km" queries.
 * **ORM:** Prisma. Provides strict type safety bridging PostgreSQL to the Node.js backend.
 
+### Authentication
+* **Provider:** Firebase Authentication (free tier — 50,000 MAU). Handles registration, login, session management, email verification, and token lifecycle.
+* **Client-Side:** Firebase JS SDK (`firebase/auth`) handles sign-up, sign-in, and ID token retrieval. The SDK automatically refreshes expired tokens.
+* **Server-Side:** `firebase-admin` SDK verifies Firebase ID Tokens on every protected request. No password hashing, refresh token tables, or custom JWT logic needed on the backend.
+* **Middleware:** All protected routes pass through an `authMiddleware` that calls `admin.auth().verifyIdToken(token)` using the token from the `Authorization: Bearer <token>` header. Extracts `uid` and attaches it to `req.user`.
+
 ### External APIs & Services
 * **Location Services:** Google Maps API (map rendering, geocoding, distance calculations).
 * **Real-time/Notifications:** Firebase Cloud Messaging (FCM) for push notifications, WebSockets (Socket.io) for real-time chat.
@@ -33,6 +39,7 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 
 ## 3. MVP Boundaries & Workarounds (Academic Scope)
 * **Payments:** No complex credit card processing. Fixers link personal Bit or Paybox URLs. The app generates a "Pay Fixer" deep-link button upon completion, with a manual "Mark as Paid" toggle.
-* **Trust & Liability:** Relies on the Two-Way Rating system. Certifications are user-uploaded for display (unverified by platform). Terms of Service waives platform liability.
+* **Trust & Liability:** Relies on the Two-Way Rating system. Certifications are user-uploaded for display only (not verified by the platform in MVP). Terms of Service waives platform liability.
+* **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified in MVP.
 * **Deployment:** Mobile app demonstrated via Expo Go (bypassing App Store/Google Play). Web app hosted locally or via Vercel.
 * **Cold Start Demo:** Database seeded with mock tasks/users in a specific area (e.g., Haifa/Be'er Sheva) to demonstrate filtering and maps.

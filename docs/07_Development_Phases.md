@@ -9,7 +9,9 @@ To ensure a smooth delivery of the MVP, the project should be broken down into s
 * **Basic CI/CD:** Set up linting, formatting (Prettier), and basic GitHub Actions.
 
 ## Phase 2: Backend Core & Authentication
-* **Auth Endpoints:** Implement user registration, login, and JWT generation.
+* **Firebase Project Setup:** Create a Firebase project. Enable Email/Password sign-in in the Firebase Console. Download the service account key for the backend (`firebase-admin`).
+* **Auth Middleware:** Create `authMiddleware` using `firebase-admin` SDK to call `admin.auth().verifyIdToken(token)` on every protected route. Look up the local User by `firebase_uid` and attach to `req.user`.
+* **Sync Endpoint:** Implement `POST /api/auth/sync` — called once after client-side Firebase registration to create the local User record in PostgreSQL (receives `full_name`, `phone_number`; extracts `uid` and `email` from the verified Firebase token).
 * **User Profiles:** CRUD operations for User entities, including portfolio and certifications.
 * **Cloud Storage Integration:** Set up AWS S3 or Firebase Storage for image uploads.
 
@@ -20,11 +22,12 @@ To ensure a smooth delivery of the MVP, the project should be broken down into s
 * **State Machine:** Ensure proper status transitions (OPEN -> IN_PROGRESS -> COMPLETED).
 
 ## Phase 4: Frontend Core (Mobile & Web)
-* **Navigation:** Implement React Navigation (Expo) with the Mode Toggle (Requester/Fixer).
+* **Firebase Client SDK:** Initialize `firebase/auth` in the Expo app. Implement Registration, Login, Logout, and Email Verification screens using the Firebase JS SDK. Set up an auth state listener (`onAuthStateChanged`) to manage session persistence and route guarding.
+* **Navigation:** Implement React Navigation (Expo) with the Mode Toggle (Requester/Fixer). Auth screens shown when no session, main app shown when authenticated.
 * **UI Components:** Build reusable components (Buttons, Inputs, Cards, Avatars).
 * **Screens - Requester:** Build Task Creation flow and Dashboard.
 * **Screens - Fixer:** Build Map/List Discovery feed and Bid Submission modal.
-* **API Integration:** Connect frontend to backend using Axios or React Query.
+* **API Integration:** Connect frontend to backend using Axios or React Query. Attach Firebase ID Token to every request via an Axios interceptor (`getIdToken()`).
 
 ## Phase 5: Real-Time Features & Trust
 * **WebSockets:** Integrate Socket.io for the in-app chat feature.

@@ -13,11 +13,12 @@ The system uses PostgreSQL with PostGIS for spatial queries, managed via Prisma 
 ## 2. Entities
 
 ### User
-Represents the unified account for both Requesters and Fixers.
+Represents the unified account for both Requesters and Fixers. Created in the database when a user first registers through Firebase Auth.
 * `id` (UUID, PK)
+* `firebase_uid` (String, Unique) - The UID from Firebase Auth, used to link the Firebase account to the local DB record
 * `full_name` (String)
-* `phone_number` (String, Unique)
 * `email` (String, Unique)
+* `phone_number` (String, Unique, Nullable)
 * `avatar_url` (String, Nullable)
 * `bio` (Text, Nullable)
 * `payment_link` (String, Nullable) - Bit/Paybox URL
@@ -25,6 +26,8 @@ Represents the unified account for both Requesters and Fixers.
 * `average_rating_as_requester` (Float, Default 0)
 * `created_at` (Timestamp)
 * `updated_at` (Timestamp)
+
+> **Note:** Password hashing, email verification status, and session/token management are all handled by Firebase Auth — not stored in this database. The backend queries Firebase when it needs `emailVerified` status.
 
 ### Task
 The job created by a Requester.

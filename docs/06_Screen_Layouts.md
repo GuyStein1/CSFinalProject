@@ -1,10 +1,36 @@
 # Screen Layouts & UI Plan
 
-## 1. Global UI Elements
+## 1. Authentication Screens
+
+### 1.1 Welcome / Landing Screen
+* **Logo:** Fixlt branding and tagline.
+* **Language Toggle:** EN / HE switch at the top.
+* **Actions:** Two prominent buttons — "Log In" and "Create Account".
+
+### 1.2 Registration Screen
+* **Inputs:** Full Name, Email, Password, Confirm Password.
+* **Optional Input:** Phone Number (labeled as optional, for contact purposes).
+* **Validation:** Inline error messages beneath each field (e.g., "Passwords do not match", "Email already in use").
+* **Action:** "Create Account" button. On success, navigates to the Dashboard.
+* **Footer Link:** "Already have an account? Log In".
+
+### 1.3 Login Screen
+* **Inputs:** Email, Password.
+* **Validation:** Inline error for invalid credentials.
+* **Action:** "Log In" button. On success, navigates to the Dashboard.
+* **Footer Link:** "Don't have an account? Sign Up".
+
+### 1.4 Email Verification Banner (Inline on Dashboard)
+* Not a separate screen. A dismissible banner at the top of the dashboard: "Please verify your email. Check your inbox or [Resend Link]."
+* Client checks `firebase.auth().currentUser.emailVerified`. Banner disappears once true (after the user clicks the link and the token refreshes).
+
+---
+
+## 2. Global UI Elements
 * **Top Navigation Bar:** Contains the "Mode Toggle" (Requester <-> Fixer), Language Toggle (EN/HE), and Notification Bell.
 * **Bottom Tab Navigation (Mobile):** Changes based on the active mode.
 
-## 2. Requester Mode Screens
+## 3. Requester Mode Screens
 
 ### 2.1 Requester Home / Dashboard
 * **Header:** "Welcome back, [Name]"
@@ -23,7 +49,7 @@
 * **Bottom Sheet / List:** "Received Bids".
 * **Bid Card:** Fixer Avatar, Name, Rating (⭐ 4.8), Offered Price, Snippet of pitch. "Accept" and "Decline" buttons.
 
-## 3. Fixer Mode Screens
+## 4. Fixer Mode Screens
 
 ### 3.1 Fixer Discovery (Map / List)
 * **Toggle:** Switch between Map View and List View.
@@ -45,7 +71,7 @@
 * **Portfolio Section:** Grid of uploaded images.
 * **Certifications Section:** List of uploaded documents with status badges (Pending/Verified).
 
-## 4. Shared Screens
+## 5. Shared Screens
 
 ### 4.1 Chat Interface
 * Standard messaging UI.
