@@ -41,6 +41,69 @@ To ensure a smooth delivery of the MVP, the project should be broken down into s
 * **Testing:** End-to-end testing of the core user flows.
 
 ## Phase 7: Deployment & Presentation Prep
-* **Backend:** Deploy Node.js server to a platform like Render, Heroku, or AWS.
-* **Database:** Host PostgreSQL on a managed service (e.g., Supabase, RDS).
-* **Frontend:** Prepare Expo Go demo environments and deploy the web version to Vercel/Netlify.
+This is the critical stage where all components come together. The following steps ensure a smooth deployment and a successful presentation.
+
+### A. General Preparations
+*   **Environment Variable Management:** Configure all secrets (DB connection strings, API keys) in the hosting provider's secrets management UI. Do not commit `.env` files or key files to version control.
+*   **CORS Configuration:** In the Node.js Express server, install and configure the `cors` package to explicitly allow requests from the deployed frontend's domain.
+*   **Database Seeding:** Ensure the seed script is runnable against the production database. Create an `npm run seed:prod` script in `package.json` to populate the live database with high-quality demo data for the presentation.
+
+### B. Backend Deployment
+*   **Platform:** Deploy the Node.js server to a platform like **Render** (recommended for its simplicity and free tier) or Heroku.
+*   **`package.json` Scripts:** Verify the `build` script (e.g., `tsc`) and `start` script (e.g., `node dist/server.js`) are correctly configured for the hosting platform.
+*   **Health Check:** (Optional but recommended) Add a `GET /api/health` endpoint that returns a `200 OK` status to allow the hosting platform to monitor server status.
+
+### C. Database Hosting
+*   **Platform:** Host the PostgreSQL database on a managed service like **Supabase** (recommended for its PostGIS support and free tier) or AWS RDS.
+*   **Connection Pooling:** To prevent exhausting connection limits, add the `?pgbouncer=true` parameter to the database connection string when using Supabase.
+*   **Security:** Configure the database's firewall rules to allow connections only from the backend server's IP address.
+
+### D. Frontend Deployment
+*   **Mobile (Expo Go):** Prepare a QR code for the presentation. Ensure all stakeholders have the Expo Go app installed on their devices for the live demo.
+*   **Web (Vercel/Netlify):** Deploy the web version to **Vercel** (recommended for React apps). Connect the Git repository for automatic deployments. Configure environment variables (e.g., `VITE_API_URL`) in the Vercel project settings.
+
+### E. Pre-Presentation Checklist
+*   [ ] **Backend Deployed:** The server is live on Render and responsive.
+*   [ ] **Frontend Deployed:** The web app is live on Vercel and successfully communicating with the backend.
+*   [ ] **Database Seeded:** The production database is populated with demo data.
+*   [ ] **Mobile Ready:** The app loads correctly via Expo Go.
+*   [ ] **E2E Flow Tested:** A full user flow (e.g., register, create task, bid, accept, chat) has been tested on the live environment.
+*   [ ] **Demo Credentials Prepared:** Have dedicated demo user accounts (e.g., "requester@demo.com", "fixer@demo.com") ready for the presentation.
+
+### F. Deployment Flow Diagram
+
+```mermaid
+graph TD
+    subgraph "Code Repository"
+        A[Developer commits to GitHub]
+    end
+
+    subgraph "Automated Deployment (CI/CD)"
+        B(Vercel)
+        C(Render)
+    end
+
+    subgraph "Live Services"
+        D[React Web App]
+        E[Node.js API Server]
+        F[Supabase DB]
+        H[Expo Go Demo]
+    end
+    
+    subgraph "Manual Process"
+        G[Developer runs 'expo publish']
+    end
+
+    A --> B;
+    A --> C;
+
+    B --Deploys--> D;
+    C --Deploys--> E;
+
+    D --Interacts with--> E;
+    E --Connects to--> F;
+
+    G --> H;
+    H --Interacts with--> E;
+```
+
