@@ -4,7 +4,7 @@
 
 ### 1.1 Welcome / Landing Screen
 * **Logo:** Fixlt branding and tagline centered on screen.
-* **Language Toggle:** EN / HE switch at the top-right corner.
+* **Language Toggle:** EN / HE switch at the top-right corner. *(Added when Hebrew support is implemented — not present in Phase 1.)*
 * **Actions:** Two prominent buttons stacked vertically — "Log In" and "Create Account".
 * **Background:** Subtle illustration or gradient conveying handyman/services theme.
 
@@ -41,7 +41,7 @@
 ### 2.1 Top Navigation Bar
 * **Left:** App logo / name ("Fixlt").
 * **Center:** Mode Toggle — segmented control switching between "Requester" and "Fixer". The active mode is visually highlighted.
-* **Right:** Notification Bell (with unread count badge) and Language Toggle (EN/HE).
+* **Right:** Notification Bell (with unread count badge) and Language Toggle (EN/HE). *(Language toggle added when Hebrew support is implemented.)*
 
 ### 2.2 Bottom Tab Navigation (Mobile)
 Tabs change based on the active mode:
@@ -121,7 +121,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 * **Photo Carousel:** Horizontal swipeable gallery of task photos.
 * **Details Section:** Description, budget, general location on a small map.
 * **Bids Section (Bottom Sheet or Tab):**
-  * Header: "Received Bids ([count])"
+  * Header: "Received Bids ([count] / 15)"
   * List of Bid Cards, each showing:
     * Fixer avatar, full name, rating (e.g., "4.8 ★ (23 reviews)").
     * Offered price (prominently displayed).
@@ -129,6 +129,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
     * Two buttons: "Accept" (green) and "Decline" (red outline).
   * Tapping a bid card expands it or navigates to the Fixer's Public Profile.
 * **Empty State (no bids yet):** "No bids yet. Sit tight — Fixers in your area will see your task!"
+* **Full State (15 bids reached):** A banner at the top of the bids section: "This task is no longer accepting new bids." Existing bids can still be managed.
 * **Actions:** "Cancel Task" option in a menu (top-right "..." icon).
 
 ### 3.4 Task Details — Status: IN_PROGRESS
@@ -145,8 +146,9 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 * **Header:** Task title, status badge ("Completed" — gray/green check).
 * **Summary:** Final price, Fixer name, completion date.
 * **Payment Section:**
-  * If not yet paid: "Pay Fixer" button (deep-links to Bit/Paybox) + "Confirm Payment" button.
-  * If paid: "Payment Confirmed ✓" label.
+  * If `is_payment_confirmed = false` and Fixer **has** a `payment_link`: "Pay Fixer" button (deep-links to Bit/Paybox) + "Confirm Payment" button below it.
+  * If `is_payment_confirmed = false` and Fixer **has no** `payment_link`: A message — "This Fixer hasn't set up a payment link. Contact them directly." + Fixer's phone number as a tappable link (if available).
+  * If `is_payment_confirmed = true`: "Payment Confirmed ✓" label.
 * **Review Section:**
   * If not yet reviewed: "Leave a Review" prompt with star selector inline.
   * If reviewed: Shows the submitted review (stars + comment, read-only).
@@ -185,7 +187,11 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
   * Budget: displayed as "₪[amount]" or "Quote Required".
   * General location shown on a small map (exact address hidden).
   * Requester info: avatar, name, rating. Tappable to view Public Profile.
-* **Sticky Bottom Bar:** "Submit Bid" button (primary, green). Disabled if the Fixer has already bid on this task (shows "Bid Submitted ✓" instead).
+* **Bid Count:** Shown below the location map — "X bids submitted".
+* **Sticky Bottom Bar:**
+  * Default: "Submit Bid" button (primary, green).
+  * If Fixer already bid: "Bid Submitted ✓" (disabled).
+  * If task has reached 15 bids: "No longer accepting bids" (disabled, gray).
 
 ### 4.3 Bid Submission Modal
 * **Overlay modal** sliding up from the bottom.
@@ -208,16 +214,21 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 ### 4.5 Fixer Profile Management
 * **Header:** Large avatar (tappable to change), full name, overall Fixer rating (e.g., "4.8 ★ (23 reviews)").
 * **Edit Profile Button:** Opens an editable form for name, bio, phone number.
+* **Specializations Section:**
+  * Label: "What do you work on?"
+  * Multi-select chips for each Category: Electricity / Plumbing / Carpentry / Painting / Moving / General.
+  * Selected chips are highlighted. At least one should be selected.
 * **Payment Section:**
   * Label: "Payment Link (Bit / Paybox)"
   * Input field with current URL or placeholder.
   * Helper text: "Requesters will use this link to pay you."
+  * If no payment link is set: a soft warning banner shown on the profile — "You haven't added a payment link — Requesters may not be able to pay you easily." No hard block on bidding.
 * **Portfolio Section:**
   * Grid of uploaded images (3-column).
   * "+" card to add a new photo with an optional caption.
   * Long-press or "X" overlay to delete.
-* **Certifications Section:**
-  * List of uploaded documents. Each item shows: title, upload date, status badge (Pending / Verified).
+* **Certifications Section:** *(Stretch Goal)*
+  * List of uploaded documents. Each item shows: title and upload date. No status badge.
   * "Add Certification" button to upload a new document with a title.
 * **Reviews Section:** "View My Reviews" link navigating to a list of received reviews.
 
@@ -238,7 +249,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 
 ### 5.2 Chat Interface
 * **Header:** Other user's avatar and name (tappable to view profile) + Task title (tappable to view task).
-* **Body:** Chat bubbles — sent messages right-aligned (colored), received messages left-aligned (gray). Each bubble shows message text, timestamp, and read status (single ✓ sent, double ✓✓ read).
+* **Body:** Chat bubbles — sent messages right-aligned (colored), received messages left-aligned (gray). Each bubble shows message text and timestamp. Read receipts (✓ sent, ✓✓ read) are a *Planned* addition — not in Phase 1.
 * **Scroll:** Auto-scrolls to the latest message on open. Older messages loaded on scroll-up (paginated).
 * **Footer:** Text input field with placeholder "Type a message...", Send button (icon) on the right.
 * **Read-Only Mode (COMPLETED tasks):** Footer is replaced with a label: "This task is completed. Chat is read-only."
@@ -260,21 +271,21 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 ### 5.4 Public Profile View
 * Shown when tapping another user's name or avatar anywhere in the app.
 * **Header:** Avatar, full name, "Email Verified" badge (if verified).
-* **Rating Display:**
-  * If viewing a Fixer: "Fixer Rating: 4.8 ★ (23 reviews)"
-  * If viewing a Requester: "Requester Rating: 4.6 ★ (12 reviews)"
+* **Rating Display:** "★ 4.8 (23 reviews)" — shown only if the user has completed jobs as a Fixer. Hidden if they have no reviews yet.
 * **Bio Section:** User's bio text.
 * **Portfolio Section (Fixers only):** Scrollable image gallery of past work.
-* **Certifications Section (Fixers only):** List of certificates with titles and status badges.
+* **Certifications Section (Fixers only):** *(Stretch Goal)* List of uploaded certificates with titles and upload dates. No verification status badge.
 * **Reviews Tab:** Chronological list of reviews from other users. Each review shows: reviewer name, star rating, comment, and date.
 
 ### 5.5 Review Screen
-* **Header:** "Rate your experience with [Name]" + their avatar.
+Shown to the **Requester only**, accessible from the completed Task Details screen. The prompt is visible for 14 days after task completion; after that it is hidden.
+* **Header:** "Rate your experience with [Fixer Name]" + their avatar.
 * **Star Selector:** 5 large tappable stars. Selected stars are filled/colored.
 * **Label:** Dynamic text based on selection (1="Poor", 2="Fair", 3="Good", 4="Very Good", 5="Excellent").
 * **Comment Input:** Optional multi-line text area. Placeholder: "Share details about your experience..."
 * **Action:** "Submit Review" button (primary). Disabled until at least 1 star is selected.
 * **Confirmation:** After submission, a success message: "Thank you for your review!" and navigation back to the task.
+* **Expired State:** If the 14-day window has passed and no review was submitted, the section shows "Review period has ended" with no action available.
 
 ### 5.6 Settings Screen
 * Accessible from the Profile tab (gear icon or "Settings" link).
@@ -283,7 +294,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
   * Phone number (editable).
   * "Change Password" link (triggers Firebase password reset email).
 * **Preferences Section:**
-  * Language: EN / HE toggle (with RTL layout switch).
+  * Language: EN / HE toggle (with RTL layout switch). *(Visible only when Hebrew support is implemented.)*
   * Push Notifications: on/off toggle.
 * **Actions:**
   * "Log Out" button (red text, triggers Firebase signOut).

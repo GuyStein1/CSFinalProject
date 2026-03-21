@@ -6,9 +6,7 @@ The system uses PostgreSQL with PostGIS for spatial queries, managed via Prisma 
 * `Category`: ELECTRICITY, PLUMBING, CARPENTRY, PAINTING, MOVING, GENERAL
 * `TaskStatus`: OPEN, IN_PROGRESS, COMPLETED, CANCELED
 * `BidStatus`: PENDING, ACCEPTED, REJECTED, WITHDRAWN
-* `RoleEvaluated`: FIXER, REQUESTER
-* `NotificationType`: NEW_BID, BID_ACCEPTED, NEW_MESSAGE, TASK_COMPLETED
-* `CertStatus`: PENDING, VERIFIED, REJECTED
+* `NotificationType`: NEW_BID, BID_ACCEPTED, BID_REJECTED, NEW_MESSAGE, TASK_COMPLETED, TASK_CANCELED
 
 ## 2. Entities
 
@@ -22,8 +20,9 @@ Represents the unified account for both Requesters and Fixers. Created in the da
 * `avatar_url` (String, Nullable)
 * `bio` (Text, Nullable)
 * `payment_link` (String, Nullable) - Bit/Paybox URL
-* `average_rating_as_fixer` (Float, Default 0)
-* `average_rating_as_requester` (Float, Default 0)
+* `specializations` (Enum: Category[]) - Categories the Fixer works in (e.g., [ELECTRICITY, PLUMBING]). Multi-select, optional. Used for profile display and future smart recommendations.
+* `fcm_token` (String, Nullable) - Device push notification token, registered on app launch. Updated whenever the token rotates.
+* `average_rating_as_fixer` (Float, Default 0) - Recalculated on each new review submission.
 * `created_at` (Timestamp)
 * `updated_at` (Timestamp)
 
@@ -35,14 +34,15 @@ The job created by a Requester.
 * `requester_id` (UUID, FK -> User.id)
 * `title` (String)
 * `description` (Text)
-* `media_urls` (String[]) - S3/Firebase URLs
+* `media_urls` (String[]) - Firebase Storage URLs. Maximum 5 items enforced at the application layer.
 * `category` (Enum: Category)
 * `suggested_price` (Float, Nullable) - Null means "Quote Required"
 * `status` (Enum: TaskStatus)
 * `general_location_name` (String) - Public
 * `exact_address` (String) - Hidden until bid accepted
-* `coordinates` (Geometry Point) - PostGIS for map/distance queries
+* `coordinates` (Geometry Point) - PostGIS for map/distance queries. **Must have a GIST spatial index** for `ST_DWithin` radius queries to be performant.
 * `assigned_fixer_id` (UUID, FK -> User.id, Nullable)
+* `is_payment_confirmed` (Boolean, Default false) - Set to true when Requester taps "Confirm Payment" after paying via Bit/Paybox. Separate from `COMPLETED` status, which marks work as done.
 * `created_at` (Timestamp)
 * `updated_at` (Timestamp)
 
@@ -55,17 +55,19 @@ The offer submitted by a Fixer.
 * `description` (Text) - Fixer's pitch
 * `status` (Enum: BidStatus)
 * `created_at` (Timestamp)
+* `updated_at` (Timestamp) - Tracks when status last changed (e.g., when bid was accepted/rejected).
 
 ### Review
-Supports the two-way rating system.
+The Requester rates the Fixer after task completion.
 * `id` (UUID, PK)
 * `task_id` (UUID, FK -> Task.id)
-* `reviewer_id` (UUID, FK -> User.id)
-* `reviewee_id` (UUID, FK -> User.id)
-* `role_evaluated` (Enum: RoleEvaluated)
+* `reviewer_id` (UUID, FK -> User.id) - Always the Requester.
+* `reviewee_id` (UUID, FK -> User.id) - Always the Fixer (`assigned_fixer_id`).
 * `rating` (Integer, 1-5)
 * `comment` (Text, Nullable)
 * `created_at` (Timestamp)
+
+> **Review window:** Reviews can only be submitted within **14 days** of the task reaching `COMPLETED` status. After this window, the review prompt is hidden and the endpoint rejects submissions. One review per task, enforced by a unique constraint on `task_id + reviewer_id`.
 
 ### Message
 Powers real-time in-app chat.
@@ -84,7 +86,12 @@ Alerts for bids, status updates, and messages.
 * `title` (String)
 * `body` (Text)
 * `type` (Enum: NotificationType)
-* `related_entity_id` (UUID) - ID of Task, Bid, or Message
+* `related_entity_id` (UUID) - ID of the linked entity. The entity type is determined by the notification type (see mapping below).
+* `related_entity_type` (String) - The entity type for deep-linking: `TASK`, `BID`, or `MESSAGE`. Mapping by notification type:
+  * `NEW_BID` → `TASK` (navigate to Task Details, Bids tab)
+  * `BID_ACCEPTED` / `BID_REJECTED` → `BID` (navigate to My Bids)
+  * `NEW_MESSAGE` → `MESSAGE` (navigate to Chat)
+  * `TASK_COMPLETED` / `TASK_CANCELED` → `TASK` (navigate to Task Details)
 * `is_read` (Boolean, Default false)
 * `created_at` (Timestamp)
 
@@ -97,12 +104,11 @@ Visual gallery of past completed jobs for Fixers.
 * `created_at` (Timestamp)
 
 ### Certification
-Professional credentials uploaded by Fixers.
+Professional credentials uploaded by Fixers. Displayed as-is with no platform verification — no status tracking.
 * `id` (UUID, PK)
 * `fixer_id` (UUID, FK -> User.id)
 * `title` (String)
 * `document_url` (String)
-* `status` (Enum: CertStatus)
 * `created_at` (Timestamp)
 
 ## 3. Entity Relationships Mapping
@@ -130,6 +136,7 @@ graph LR
     User --"SubmittedBids (1:N)"--> Bid
     User --"ReviewsWritten (1:N)"--> Review
     User --"ReviewsReceived (1:N)"--> Review
+
     User --"MessagesSent (1:N)"--> Message
     User --"MessagesReceived (1:N)"--> Message
     User --"1:N"--> Notification

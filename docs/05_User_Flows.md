@@ -5,8 +5,7 @@
 ### 1.1 Registration
 
 1. User downloads app / opens web platform.
-2. Selects language (English/Hebrew).
-3. Taps "Create Account".
+2. Taps "Create Account".
 4. Enters Full Name, Email, Password (with confirmation), and optionally a Phone Number.
 5. Client calls Firebase `createUserWithEmailAndPassword()`. On success, Firebase returns a signed-in user with an ID Token.
 6. Client immediately calls `POST /api/auth/sync` (with the Firebase ID Token) to create the local User record in PostgreSQL with the provided `full_name` and `phone_number`.
@@ -90,6 +89,7 @@ stateDiagram-v2
     OPEN --> CANCELED : Requester cancels before acceptance
     IN_PROGRESS --> COMPLETED : Requester marks as completed
     IN_PROGRESS --> CANCELED : Requester cancels after acceptance
+    CANCELED --> OPEN : Requester reopens (Planned)
     COMPLETED --> [*]
     CANCELED --> [*]
 ```
@@ -99,10 +99,11 @@ stateDiagram-v2
 | From | To | Triggered By | Side Effects |
 |---|---|---|---|
 | — | OPEN | Requester creates task | Task visible on discovery feed |
-| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, chat channel activated |
+| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, chat channel activated, Fixer notified |
 | OPEN | CANCELED | Requester cancels | All PENDING bids auto-rejected, task removed from feed |
-| IN_PROGRESS | COMPLETED | Requester marks completed | Payment prompt shown, review prompts sent to both parties |
-| IN_PROGRESS | CANCELED | Requester cancels | Fixer notified, review prompt still sent to Fixer (to flag bad Requesters) |
+| IN_PROGRESS | COMPLETED | Requester taps "Mark as Completed" | Status set to COMPLETED immediately; payment prompt shown; review prompt shown to Requester (available for 14 days) |
+| IN_PROGRESS | CANCELED | Requester cancels | Fixer notified |
+| CANCELED | OPEN | Requester reopens task *(Planned)* | `assigned_fixer_id` cleared, task reappears on discovery feed; previously rejected bids stay rejected |
 
 ---
 
@@ -152,17 +153,20 @@ stateDiagram-v2
 ### 3.5 Completion & Payment
 
 1. Once the Fixer finishes the work, the Requester taps "Mark as Completed".
-2. A "Pay Fixer" button appears, which deep-links to the Fixer's Bit/Paybox app with the agreed amount.
-3. After paying externally, the Requester taps "Confirm Payment".
-4. Task status → `COMPLETED`.
-5. Both parties receive a prompt to leave a review.
+2. Task status → `COMPLETED` immediately. The Requester receives a prompt to leave a review (available for 14 days).
+3. A "Pay Fixer" button appears on the completed task screen.
+   * If the Fixer has set a `payment_link`: the button deep-links to their Bit/Paybox app with the agreed amount.
+   * If the Fixer has **not** set a `payment_link`: the button is replaced with a message — "This Fixer hasn't set up a payment link. Contact them directly to arrange payment." Their phone number (if provided) is shown as a fallback.
+4. After paying externally, the Requester taps "Confirm Payment". This calls `PUT /api/tasks/:id/confirm-payment`, setting `Task.is_payment_confirmed = true`.
+5. The "Pay Fixer" button is replaced with "Payment Confirmed ✓".
 
 ### 3.6 Rating the Fixer
 
-1. After task completion, a review prompt appears (also accessible from Past Tasks).
-2. Requester selects 1–5 stars and optionally writes a comment.
-3. Submits the review. The Fixer's `average_rating_as_fixer` is recalculated.
-4. Reviews can only be submitted once per task and cannot be edited.
+1. After task completion, a review prompt appears on the Task Details screen (also accessible from Past Tasks).
+2. The prompt is available for **14 days** after the task reaches `COMPLETED` status. After that, the prompt disappears and no review can be submitted.
+3. Requester selects 1–5 stars and optionally writes a comment.
+4. Submits the review. The Fixer's `average_rating_as_fixer` is recalculated immediately.
+5. Reviews can only be submitted once per task and cannot be edited.
 
 ### 3.7 Canceling a Task
 
@@ -178,7 +182,8 @@ stateDiagram-v2
 3. On confirmation:
    * Task status → `CANCELED`.
    * Fixer receives a notification: "The task was canceled by the Requester."
-   * The Fixer is still prompted to leave a review for the Requester (to flag unreliable Requesters).
+
+> **MVP Limitation:** There is no dispute or compensation mechanism for a Fixer who has already traveled to or completed work before a mid-task cancellation. A dispute resolution flow is deferred to the Admin Dashboard (post-MVP roadmap).
 
 ### Requester Flow Diagram
 
@@ -198,10 +203,10 @@ flowchart TD
     J --> K{Cancel?}
     K -- Yes --> L[Task CANCELED -- Fixer notified]
     K -- No --> M[Fixer does the work]
-    M --> N[Mark as Completed]
+    M --> N[Mark as Completed -- Task COMPLETED]
     N --> O[Pay via Bit or Paybox deep-link]
-    O --> P[Task COMPLETED]
-    P --> Q[Leave Review for Fixer]
+    O --> P[Confirm Payment -- optional]
+    N --> Q[Leave Review for Fixer -- 14 day window]
 ```
 
 ---
@@ -213,9 +218,10 @@ flowchart TD
 1. Switches to Fixer mode via the top navigation toggle.
 2. Opens Profile → "Edit Profile".
 3. Adds a Bio describing their skills and experience.
-4. Uploads Portfolio photos of past work (gallery of images with optional captions).
-5. Uploads Certifications (professional credentials displayed on profile).
-6. Adds their personal Bit/Paybox payment link (required to receive payments).
+4. Selects Specializations — the categories they work in (e.g., Electricity, Plumbing).
+5. Uploads Portfolio photos of past work (gallery of images with optional captions).
+6. Optionally uploads Certifications (professional credentials displayed on profile).
+7. Optionally adds their personal Bit/Paybox payment link. A soft warning is shown if missing: "You haven't added a payment link — Requesters may not be able to pay you easily."
 
 ### 4.2 Task Discovery
 
@@ -261,11 +267,10 @@ flowchart TD
 4. Uses in-app chat to coordinate with the Requester ("On my way", "I'm 5 mins away").
 5. Arrives and completes the physical work.
 
-### 4.7 Post-Job: Payment & Review
+### 4.7 Post-Job: Payment
 
 1. Receives payment externally via Bit/Paybox.
-2. Receives a prompt to rate the Requester (1–5 stars + optional comment).
-3. Review is submitted. The Requester's `average_rating_as_requester` is recalculated.
+2. No further action required from the Fixer — the Requester is responsible for marking the task as completed and submitting a review.
 
 ### 4.8 Withdrawing a Bid
 
@@ -294,7 +299,6 @@ flowchart TD
     L --> M[Navigate to location]
     M --> N[Complete the work]
     N --> O[Receive payment via Bit/Paybox]
-    O --> P[Review the Requester]
 ```
 
 ---
@@ -397,9 +401,26 @@ sequenceDiagram
 
 ### 5.6 Review System Rules
 
-* Reviews can only be submitted **after a task reaches `COMPLETED` status**.
-* Exception: If a task is canceled while `IN_PROGRESS`, the Fixer can still review the Requester.
-* Each party submits **one review per task** (enforced by unique constraint on `task_id + reviewer_id`).
-* Reviews are **permanent** — they cannot be edited or deleted.
-* Both reviews are independent — neither party can see the other's review until both have submitted (or 7 days have passed, whichever comes first).
-* The reviewee's average rating is recalculated on each new review submission.
+* Only the **Requester** submits a review — rating the Fixer's service quality.
+* Reviews can only be submitted after a task reaches `COMPLETED` status.
+* The review window is **14 days** from task completion. After this, the prompt disappears and no review can be submitted.
+* One review per task (unique constraint on `task_id + reviewer_id`).
+* Reviews are visible immediately upon submission.
+* Reviews are permanent — they cannot be edited or deleted by users. Admin moderation is not in scope for this project.
+* The Fixer's `average_rating_as_fixer` is recalculated on each new review submission.
+
+### 5.7 Task Expiry
+
+OPEN tasks do not auto-expire. A task remains on the discovery feed until the Requester manually cancels it or a bid is accepted. An auto-expiry mechanism is listed as a future idea.
+
+### 5.8 Account Deletion
+
+1. User opens Settings → taps "Delete Account".
+2. A confirmation dialog is shown: "This action is permanent and cannot be undone. Your account, tasks, and active bids will be deleted."
+3. On confirmation:
+   * All `OPEN` tasks → `CANCELED`. Bidding Fixers are notified.
+   * Any `IN_PROGRESS` task → `CANCELED`. The other party is notified with a message indicating the user deleted their account.
+   * Past reviews are preserved but attributed to "Deleted User" (anonymized).
+   * The local User record is deleted from PostgreSQL.
+   * The Firebase Auth account is deleted server-side via the Admin SDK.
+4. User is returned to the Welcome screen.

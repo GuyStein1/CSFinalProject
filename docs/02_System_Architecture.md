@@ -26,7 +26,8 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 ### External APIs & Services
 * **Location Services:** Google Maps API (map rendering, geocoding, distance calculations).
 * **Real-time/Notifications:** Firebase Cloud Messaging (FCM) for push notifications, WebSockets (Socket.io) for real-time chat.
-* **Cloud Storage:** AWS S3 or Firebase Storage for images (task photos, portfolios, certifications).
+* **Cloud Storage:** Firebase Storage for images (task photos, portfolios, certifications). Upload strategy: the client uploads the file **directly to Firebase Storage** (using the Firebase Client SDK) and receives a public download URL. The client then sends only the URL to the backend to store in PostgreSQL. This keeps large binary data off the Node.js server.
+
 
 ---
 
@@ -37,9 +38,9 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 
 ---
 
-## 3. MVP Boundaries & Workarounds (Academic Scope)
-* **Payments:** No complex credit card processing. Fixers link personal Bit or Paybox URLs. The app generates a "Pay Fixer" deep-link button upon completion, with a manual "Mark as Paid" toggle.
-* **Trust & Liability:** Relies on the Two-Way Rating system. Certifications are user-uploaded for display only (not verified by the platform in MVP). Terms of Service waives platform liability.
-* **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified in MVP.
+## 3. Project Scope & Constraints
+* **Payments:** No in-app payment processing. Fixers link personal Bit or Paybox URLs. The app generates a "Pay Fixer" deep-link button upon task completion. The Requester can optionally confirm payment was sent via a "Confirm Payment" tap, tracked by `Task.is_payment_confirmed`.
+* **Trust & Liability:** Relies on the one-way rating system (Requesters rate Fixers). Certifications are user-uploaded for display only — no platform verification. Terms of Service waives platform liability.
+* **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified.
 * **Deployment:** Mobile app demonstrated via Expo Go (bypassing App Store/Google Play). Web app hosted locally or via Vercel.
 * **Cold Start Demo:** Database seeded with mock tasks/users in a specific area (e.g., Haifa/Be'er Sheva) to demonstrate filtering and maps.

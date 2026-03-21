@@ -7,5 +7,5 @@
   * [4. API Design](04_API_Design.md)
   * [5. User Flows](05_User_Flows.md)
   * [6. Screen Layouts](06_Screen_Layouts.md)
-  * [7. Development Phases](07_Development_Phases.md)
+  * [7. Development Plan](07_Development_Plan.md)
   * [8. Firebase Integration Guide](08_Firebase_Integration_Guide.md)
