@@ -100,7 +100,7 @@ The primary screen in Fixer mode. Fixers see all open tasks near them and decide
 The core transaction mechanic of the platform. A Fixer submits a bid containing two things: a **price offer** (₪) and a **pitch message** (why they're the right person for the job). The Requester then reviews all bids and picks one.
 
 Key rules:
-- A Fixer can submit **only one bid per task**. They cannot edit a submitted bid — only withdraw it (while still pending) and rebid is not possible.
+- A Fixer can submit **only one bid per task**. They cannot re-bid after withdrawing. `Stretch Goal` — A Fixer may edit the price or pitch of their own bid while it is still `PENDING` (before the Requester acts on it). This avoids the need to withdraw and resubmit while keeping the one-bid-per-task constraint intact.
 - The Requester can accept or reject individual bids. **Accepting one bid auto-rejects all other pending bids**, and those Fixers are notified.
 - When a bid is accepted: the task moves to `IN_PROGRESS`, the exact address is revealed to the winning Fixer, and the in-app chat between the two parties is activated.
 - A Fixer can **withdraw** their own bid at any time while it's still pending (before the Requester acts on it).
@@ -182,7 +182,7 @@ When the physical work is done, the Requester taps "Mark as Completed" on the ta
 After a task is completed, the Requester can rate the Fixer on a 1–5 star scale with an optional written comment. This rating contributes to the Fixer's overall average displayed on their profile and on bid cards.
 
 Key rules:
-- Only the **Requester** submits a review. Fixers are not rated — they are the service providers, and the rating system exists to help future Requesters make informed decisions.
+- Reviews are **one-way**: only the Requester rates the Fixer. Fixers do not rate Requesters. This keeps the system focused on helping future Requesters make informed hiring decisions.
 - The review window is **14 days** from task completion. After this, the prompt disappears and no review can be submitted.
 - One review per task. Reviews are permanent and cannot be edited.
 - Reviews are visible immediately upon submission.
@@ -201,6 +201,9 @@ When Hebrew is active:
 - Currency displayed in ₪ (Israeli Shekel) in both languages.
 
 The language toggle is available on the Welcome screen (before login) and in Settings (after login).
+
+- **Phase 1 (local storage):** The selected language is saved in device-local storage (AsyncStorage on mobile, localStorage on web). Simple to implement, no backend required.
+- **`Planned` (DB persistence):** When Hebrew is added in Phase 5, the preference will be stored as a `language` field (`'en' | 'he'`) on the `User` record. This ensures the language choice syncs across devices. Requires adding the field to the Prisma schema and updating it via `PUT /api/users/me`.
 
 ---
 
