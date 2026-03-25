@@ -44,3 +44,29 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 * **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified.
 * **Deployment:** Mobile app demonstrated via Expo Go (bypassing App Store/Google Play). Web app hosted locally or via Vercel.
 * **Cold Start Demo:** Database seeded with mock tasks/users in a specific area (e.g., Haifa/Be'er Sheva) to demonstrate filtering and maps.
+
+---
+## 4. Architectural Patterns & Guidelines
+
+### 4.1. Design Pattern: Modular Monolith
+To balance development speed with future scalability, the backend will be structured as a **Modular Monolith**. The application will be deployed as a single unit, but internal code will be strictly divided
+into feature-based modules (e.g., Users, Tasks, Bidding). This avoids the operational overhead of microservices while keeping the codebase clean and ready for extraction if heavy scaling is required later.
+
+### 4.2. 3-Layer Architecture
+The backend code enforces strict separation of concerns using a 3-layer architecture:
+*   **Controller Layer:** Manages HTTP requests, responses, and status codes. Does not contain business logic.
+*   **Service (Domain) Layer:** Contains the core business rules and logic. Completely decoupled from HTTP and database specifics.
+*   **Repository Layer:** Manages data persistence. Prisma Client serves as the primary data access layer, abstracted where necessary to ensure the Service layer remains highly testable.
+
+### 4.3. Dependency Injection
+To ensure high testability and decoupling, **Dependency Injection (DI)** principles will be applied. Services and Repositories will receive their dependencies via constructors. This allows for easy mocking
+    of database connections and external services during unit testing.
+
+### 4.4. Request Validation
+All incoming HTTP requests (Body, Query, Params) will be validated at the route level using **Zod** middleware. This ensures strict type-safety and guarantees that malformed or malicious data is rejected
+    before it reaches the Controller layer.
+
+### 4.5. Testing Strategy
+*   **Target Coverage:** The project aims for an overall **80%** test coverage metric.
+*   **Unit Tests:** Focus heavily on the Service Layer (aiming for near 100% coverage) to validate core business logic (e.g., Jest/Vitest).
+*   **Integration Tests:** Focus on Controllers and Database interactions, verifying that the system components communicate correctly.
