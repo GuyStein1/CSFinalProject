@@ -70,3 +70,21 @@ All incoming HTTP requests (Body, Query, Params) will be validated at the route 
 *   **Target Coverage:** The project aims for an overall **80%** test coverage metric.
 *   **Unit Tests:** Focus heavily on the Service Layer (aiming for near 100% coverage) to validate core business logic (e.g., Jest/Vitest).
 *   **Integration Tests:** Focus on Controllers and Database interactions, verifying that the system components communicate correctly.
+
+### 4.6. Error Handling
+
+A custom error class hierarchy is used throughout the backend to provide semantic, type-safe error propagation.
+
+**Class hierarchy:**
+- `AppError` (base) — holds `code: string`, `message: string`, `httpStatus: number`, and optional `details: object`
+- `NotFoundError` — extends `AppError`, maps to `404 NOT_FOUND`
+- `ForbiddenError` — extends `AppError`, maps to `403 FORBIDDEN`
+- `ConflictError` — extends `AppError`, maps to `409 CONFLICT`
+- `ValidationError` — extends `AppError`, maps to `400 VALIDATION_ERROR`
+- `InternalError` — extends `AppError`, maps to `500 INTERNAL_ERROR`
+
+**Express error middleware** catches any thrown `AppError` instance and serializes it into the standard error response format (see API Design § 10). Unexpected errors (non-`AppError`) are caught and wrapped as `InternalError`.
+
+Services throw the appropriate subclass; Controllers do not catch errors — they propagate automatically to the middleware.
+
+> **Why not the Result pattern?** The Result pattern (`{ ok: true, data } | { ok: false, error }`) was considered. It was rejected because it adds significant verbosity across all three layers, is less familiar to the team, and is not idiomatic in the Node/Express ecosystem. The custom error class approach achieves the same semantic clarity with far less boilerplate.

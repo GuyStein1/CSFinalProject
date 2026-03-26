@@ -58,7 +58,7 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 * `PUT /api/bids/:id/withdraw` - Fixer withdraws their own bid. Only valid while bid status is `PENDING`. Sets status to `WITHDRAWN` and notifies the Requester.
 
 ## 5. Reviews & Reputation
-* `POST /api/tasks/:id/reviews` - Requester submits a rating (1–5) and optional comment for the Fixer. Rejected with `FORBIDDEN` if the requesting user is not the task's Requester, if the task status is not `COMPLETED`, if a review already exists for this task, or if more than 14 days have passed since the task was completed.
+* `POST /api/tasks/:id/reviews` - Requester submits a rating (1–5) and optional comment for the Fixer. Rejected with `CONFLICT` (code: `REVIEW_ALREADY_SUBMITTED`) if a review already exists for this task. Rejected with `FORBIDDEN` if the requesting user is not the task's Requester, if the task status is not `COMPLETED`, or if more than 14 days have passed since the task was completed.
 * `GET /api/users/:id/reviews` - Get all reviews received by a Fixer (as reviewee). Sorted by `created_at` descending.
 
 ## 6. Portfolios & Certifications
