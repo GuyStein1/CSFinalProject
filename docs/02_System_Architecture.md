@@ -25,7 +25,7 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 
 ### External APIs & Services
 * **Location Services:** Google Maps API (map rendering, geocoding, distance calculations).
-* **Real-time/Notifications:** Firebase Cloud Messaging (FCM) for push notifications, WebSockets (Socket.io) for real-time chat.
+* **Real-time/Notifications:** Expo Push Service for the initial mobile MVP push flow, and WebSockets (Socket.io) for real-time chat.
 * **Cloud Storage:** Firebase Storage for images (task photos, portfolios, certifications). Upload strategy: the client uploads the file **directly to Firebase Storage** (using the Firebase Client SDK) and receives a public download URL. The client then sends only the URL to the backend to store in PostgreSQL. This keeps large binary data off the Node.js server.
 
 
@@ -42,7 +42,7 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 * **Payments:** No in-app payment processing. Fixers link personal Bit or Paybox URLs. The app generates a "Pay Fixer" deep-link button upon task completion. The Requester can optionally confirm payment was sent via a "Confirm Payment" tap, tracked by `Task.is_payment_confirmed`.
 * **Trust & Liability:** Relies on the one-way rating system (Requesters rate Fixers). Certifications are user-uploaded for display only — no platform verification. Terms of Service waives platform liability.
 * **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified.
-* **Deployment:** Mobile app demonstrated via Expo Go (bypassing App Store/Google Play). Web app hosted locally or via Vercel.
+* **Deployment:** Mobile app can be demonstrated through Expo during development, but camera/location/push flows should be validated on a physical device. Web app hosted locally or via Vercel.
 * **Cold Start Demo:** Database seeded with mock tasks/users in a specific area (e.g., Haifa/Be'er Sheva) to demonstrate filtering and maps.
 
 ---

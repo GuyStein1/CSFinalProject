@@ -45,9 +45,9 @@ Goal: All three members have a working local development environment, the databa
 
 A monorepo keeps backend and frontend in one GitHub repository so the whole team works in one place with shared tooling. The team works directly from short-lived feature branches off `main`, and `main` stays stable through reviewed PRs.
 
-- Create the GitHub repository.
+- Use the existing Git repository as the monorepo root.
 - Scaffold a monorepo structure with two top-level directories: `/backend` and `/frontend`.
-- Root-level `package.json` with npm workspaces pointing to both directories.
+- Root-level `package.json` with npm workspaces pointing to both directories, plus a single root `package-lock.json` shared by the whole repo.
 - Root-level `.gitignore`:
   ```
   node_modules/
@@ -65,10 +65,9 @@ Sets up the Node.js/Express/TypeScript project skeleton — installs all depende
 
 - Initialize the Node.js/TypeScript project in `/backend`:
   ```bash
-  cd backend
-  npm init -y
-  npm install express cors helmet morgan dotenv
-  npm install -D typescript ts-node nodemon @types/express @types/node @types/cors @types/morgan eslint prettier
+  npm init -y -w backend
+  npm install -w backend express cors helmet morgan dotenv
+  npm install -D -w backend typescript ts-node nodemon @types/express @types/node @types/cors @types/morgan eslint prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin
   ```
 - `backend/tsconfig.json`:
   ```json
@@ -98,9 +97,13 @@ Sets up the Node.js/Express/TypeScript project skeleton — installs all depende
     "dev": "nodemon",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
   }
   ```
+- `backend/eslint.config.js` (or equivalent ESLint config) and root `.prettierrc` / `.prettierignore`:
+  - Keep the initial rules minimal so CI is reliable from day one.
+  - Ignore `dist`, `node_modules`, and generated files.
 - Folder structure under `backend/src/`:
   ```
   backend/src/
@@ -160,10 +163,11 @@ Translates the database design in `03_Database_Schema.md` into code. Prisma read
   - Datasource: `postgresql` with `postgis` preview feature
   - **Enums:** `Category`, `TaskStatus`, `BidStatus`, `NotificationType`
   - **User model** with all fields; unique on `firebase_uid`, `email`, `phone_number`
-  - **Task model** with `coordinates Unsupported("geometry(Point, 4326)")` and `@@index([coordinates], type: Gist)`
+  - **Task model** with `coordinates Unsupported("geometry(Point, 4326)")`, `completed_at`, and `@@index([coordinates], type: Gist)`
   - **Bid model** with `@@unique([task_id, fixer_id])`
   - **Review model** with `@@unique([task_id, reviewer_id])`
-  - **Message, Notification, PortfolioItem, Certification** models
+  - **Message, Notification, PortfolioItem** models
+  - Certifications can be added later in a follow-up migration if that stretch-goal profile scope is picked up
 - Run migration:
   ```bash
   npx prisma migrate dev --name init
@@ -179,7 +183,7 @@ Translates the database design in `03_Database_Schema.md` into code. Prisma read
 
 #### B1.1 — Firebase Project Setup
 
-Creates the Firebase project that powers authentication, file storage, and push notifications for the entire app. This task produces the credentials files (API keys, service account) that both the backend and frontend need to connect to Firebase — so it unblocks the rest of the team.
+Creates the Firebase project that powers authentication and file storage for the app. This task produces the credentials files (API keys, service account) that both the backend and frontend need to connect to Firebase — so it unblocks the rest of the team.
 
 - Go to [Firebase Console](https://console.firebase.google.com) → Create project: `fixlt-dev`.
 - **Authentication:** Enable Email/Password sign-in provider.
@@ -195,10 +199,10 @@ Creates the Firebase project that powers authentication, file storage, and push 
     }
   }
   ```
-- **Cloud Messaging:** Confirm FCM is active (it is by default).
 - **Service Account Key:** Project Settings → Service Accounts → Generate new private key → download JSON. Save locally as `backend/firebase-service-account.json`. **Never commit this file.**
 - **Web App Config:** Project Settings → General → Add Web App → copy the `firebaseConfig` object. This will be used in `frontend/.env`.
 - Share all key values with the team via a secure channel (e.g., a shared password manager). Fill in `backend/.env.example` and `frontend/.env.example` (keys without values — structure only).
+- **Push notification note:** For the initial mobile MVP, push delivery will use Expo push tokens via `expo-notifications`, not direct Firebase Cloud Messaging device tokens.
 
 > **Dependency note:** B1.1 must be complete before Stein can test the `authMiddleware` (Phase 2) and before Shick can finalize the `.env.example` file (C1.2).
 
@@ -209,13 +213,12 @@ Scaffolds the React Native / Expo project with all packages installed and the fo
 - Scaffold the Expo project:
   ```bash
   npx create-expo-app frontend --template blank-typescript
-  cd frontend
   ```
 - Install all dependencies:
   ```bash
-  npm install firebase @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs axios
+  npm install -w frontend firebase @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs axios socket.io-client
   npx expo install expo-notifications expo-device react-native-maps expo-image-picker expo-location react-native-safe-area-context react-native-screens
-  npm install -D eslint prettier @typescript-eslint/eslint-plugin @typescript-eslint/parser
+  npm install -D -w frontend eslint prettier @typescript-eslint/eslint-plugin @typescript-eslint/parser
   ```
 - Folder structure under `frontend/src/`:
   ```
@@ -241,10 +244,11 @@ Scaffolds the React Native / Expo project with all packages installed and the fo
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
   }
   ```
-- ESLint + Prettier config mirroring the backend config for consistency.
+- `frontend/eslint.config.js` (or equivalent ESLint config) mirroring the backend setup for consistency.
 
 #### B1.3 — Firebase Client SDK Initialization & Axios Interceptor
 
@@ -310,21 +314,18 @@ Configures automated checks that GitHub runs every time code is pushed or a PR i
   jobs:
     lint-and-typecheck:
       runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: backend
       steps:
         - uses: actions/checkout@v4
         - uses: actions/setup-node@v4
           with:
             node-version: 20
             cache: npm
-            cache-dependency-path: backend/package-lock.json
+            cache-dependency-path: package-lock.json
         - run: npm ci
-        - run: npm run lint
-        - run: npx tsc --noEmit
+        - run: npm run lint --workspace backend
+        - run: npm run typecheck --workspace backend
   ```
-- `.github/workflows/frontend-ci.yml` — identical structure with `working-directory: frontend`.
+- `.github/workflows/frontend-ci.yml` — identical structure, but run `npm run lint --workspace frontend` and `npm run typecheck --workspace frontend`.
 - Document branch protection rules in `README.md` (configured manually on GitHub by team lead):
   - Require PR review before merge to `main`
   - Require status checks (both CI workflows) to pass
@@ -413,20 +414,20 @@ Setup documentation so any team member (or evaluator) can clone the repo and get
 
   ## Setup
   1. Clone the repo
-  2. `cd backend && npm install`
-  3. Copy `.env.example` to `.env` and fill in values
+  2. `npm install` (from repo root)
+  3. Copy `backend/.env.example` to `backend/.env` and fill in values
   4. `docker compose up -d` (starts PostgreSQL + PostGIS)
-  5. `npx prisma migrate dev` (creates tables)
-  6. `npx prisma generate` (generates Prisma client)
-  7. `npm run dev` (starts the server on port 3000)
+  5. `cd backend && npx prisma migrate dev` (creates tables)
+  6. `cd backend && npx prisma generate` (generates Prisma client)
+  7. `npm run dev --workspace backend` (starts the server on port 3000)
 
   ## NPM Scripts
   | Command | Description |
   |---|---|
-  | `npm run dev` | Start with hot reload (nodemon) |
-  | `npm run build` | Compile TypeScript to dist/ |
-  | `npm start` | Run compiled build |
-  | `npm run lint` | ESLint check |
+  | `npm run dev --workspace backend` | Start with hot reload (nodemon) |
+  | `npm run build --workspace backend` | Compile TypeScript to dist/ |
+  | `npm start --workspace backend` | Run compiled build |
+  | `npm run lint --workspace backend` | ESLint check |
 
   ## Prisma Commands
   | Command | Description |
@@ -440,21 +441,21 @@ Setup documentation so any team member (or evaluator) can clone the repo and get
   ```markdown
   ## Prerequisites
   - Node.js 20+
-  - Expo CLI (`npm install -g expo-cli`)
-  - Expo Go app on your phone (for testing)
+  - Expo SDK via `npx expo` (no global install required)
+  - Physical device for validating camera, location, and push notifications
 
   ## Setup
-  1. `cd frontend && npm install`
-  2. Copy `.env.example` to `.env` and fill in values
-  3. `npm start` — opens Expo DevTools
+  1. `npm install` (from repo root)
+  2. Copy `frontend/.env.example` to `frontend/.env` and fill in values
+  3. `npm run start --workspace frontend`
 
   ## Run Targets
   | Command | Description |
   |---|---|
-  | `npm run ios` | Run on iOS simulator |
-  | `npm run android` | Run on Android emulator |
-  | `npm run web` | Run in browser |
-  | `npm run lint` | ESLint check |
+  | `npm run ios --workspace frontend` | Run on iOS simulator |
+  | `npm run android --workspace frontend` | Run on Android emulator |
+  | `npm run web --workspace frontend` | Run in browser |
+  | `npm run lint --workspace frontend` | ESLint check |
   ```
 
 ---
@@ -480,7 +481,8 @@ Implements the authentication layer and all task/bid endpoints. The auth middlew
 - **Bid endpoints:**
   - `POST /api/tasks/:id/bids` (enforce 1-bid-per-Fixer unique constraint; enforce 15-bid max)
   - `GET /api/tasks/:id/bids`
-  - `PUT /api/bids/:id/accept` — **Prisma transaction:** set task `IN_PROGRESS`, set `assigned_fixer_id`, auto-reject all other `PENDING` bids, trigger FCM notification to Fixer (call Zilber's `notificationService`)
+  - `GET /api/users/me/bids` (for the Fixer-side "My Bids" screen, with `status`, `page`, and `limit`)
+  - `PUT /api/bids/:id/accept` — **Prisma transaction:** set task `IN_PROGRESS`, set `assigned_fixer_id`, auto-reject all other `PENDING` bids, trigger a push notification to the Fixer (call Zilber's `notificationService`)
   - `PUT /api/bids/:id/reject`
   - `PUT /api/bids/:id/withdraw`
 
@@ -488,17 +490,18 @@ Implements the authentication layer and all task/bid endpoints. The auth middlew
 
 Implements user profile management endpoints and the push notification service. The notification service is a shared utility — once it exists, any endpoint can trigger a push notification to a user's device by calling a single function. Also builds the image upload utility used by task creation and profile editing.
 
+- Install backend dependency for mobile push delivery: `npm install -w backend expo-server-sdk`
 - `frontend/src/utils/uploadImage.ts` — Takes a local image URI, uploads to Firebase Storage using the client SDK, returns the public download URL. Used by task creation, profile avatar, and portfolio upload flows.
 - **User endpoints:**
   - `GET /api/users/me`
   - `PUT /api/users/me` (all editable fields including `specializations`)
   - `GET /api/users/:id` (public profile: portfolio, specializations, recent reviews)
-  - `POST /api/users/me/fcm-token`
+  - `POST /api/users/me/push-token`
 - **Portfolio endpoints:**
   - `POST /api/users/me/portfolio`
   - `DELETE /api/users/me/portfolio/:id`
 - **Scope note:** Certifications and account deletion remain optional stretch work and should only be added if the core flow is stable.
-- `backend/src/services/notificationService.ts` — Core function: accepts `userId`, `title`, `body`, `type`, `related_entity_id`, `related_entity_type`; looks up `fcm_token` from DB; writes a `Notification` record; calls `admin.messaging().send()`. Returns gracefully if FCM token is null.
+- `backend/src/services/notificationService.ts` — Core function: accepts `userId`, `title`, `body`, `type`, `related_entity_id`, `related_entity_type`; looks up `push_token` from DB; writes a `Notification` record; and sends the push via the chosen provider. For the initial mobile MVP, use Expo push tokens and the Expo server SDK. Return gracefully if `push_token` is null.
 - Wire notification triggers for: new bid submitted (`NEW_BID` → Requester), bid accepted (`BID_ACCEPTED` → Fixer), bid rejected (`BID_REJECTED` → Fixer), task canceled (`TASK_CANCELED` → assigned Fixer / all bidders).
 
 > **Dependency note:** `notificationService` must be ready before Stein can wire bid-acceptance notifications. Communicate via PR when it's merged.
@@ -515,6 +518,7 @@ Implements the shared infrastructure that all routes depend on: input validation
 - **Notification endpoints:**
   - `GET /api/notifications` — Returns notifications for the authenticated user, sorted by `created_at` descending. Supports `page` and `limit`.
   - `PUT /api/notifications/:id/read`
+  - `PUT /api/notifications/read-all`
 - Complete `backend/prisma/seed.ts` with real data: create 6 Firebase test accounts manually in the Firebase Console, copy their UIDs into the seed file, fill in realistic Haifa-area coordinates (use actual lat/lng for Hadar, Carmel Center, etc.), task photos (use placeholder URLs from Firebase Storage).
 
 ---
@@ -539,7 +543,7 @@ Builds the Fixer-side of the app: the map-based task discovery feed (the most vi
   - Bid Submission Modal: price input, pitch textarea, "Send Offer" → `POST /api/tasks/:id/bids`
 - **My Bids screen:**
   - Tab filter bar: All / Pending / Accepted / Rejected / Withdrawn
-  - Bid cards with status badges; swipe-left on Pending → Withdraw action → `PUT /api/bids/:id/withdraw`
+  - Bid cards with status badges; source data from `GET /api/users/me/bids`; swipe-left on Pending → Withdraw action → `PUT /api/bids/:id/withdraw`
 - **Mode Toggle logic:**
   - Top navigation segmented control "Requester / Fixer"
   - On switch: reconfigure bottom tab navigator (different tabs per mode)
@@ -618,13 +622,16 @@ Goal: In-app chat works end-to-end. Push notifications are delivered to backgrou
 
 Sets up the Socket.io server that powers real-time chat. Socket.io keeps a persistent connection open between the client and server, so messages appear instantly without polling. Each task gets its own isolated chat room. If the recipient is offline, a push notification is sent instead.
 
-- Install Socket.io on backend: `npm install socket.io`
+- Install Socket.io on backend: `npm install -w backend socket.io`
 - `backend/src/socket/index.ts` — initialize Socket.io server on the Express HTTP server
 - WebSocket auth: on connection handshake, extract `token` from `socket.handshake.auth`, call `admin.auth().verifyIdToken(token)`, look up User; reject connection if invalid
 - Room management:
   - `join_chat` event: validate the user is the task's Requester or assigned Fixer; call `socket.join("task_chat_{taskId}")`
   - `send_message` event: validate, persist to `Message` table, emit `receive_message` to room
   - Offline detection: before emitting, check if recipient socket is in the room; if not, call `notificationService` with type `NEW_MESSAGE`
+- REST support for chat:
+  - `GET /api/tasks/:id/messages` — paginated chat history for an allowed task participant
+  - `GET /api/conversations` — conversation summary endpoint used by the Messages tab
 - Token refresh: document that client must reconnect with a fresh token if the connection drops after token expiry
 
 > **Dependency note:** Zilber's Chat UI depends on this Socket.io server being ready and the room events being defined.
@@ -642,13 +649,13 @@ Builds the chat UI that connects to Stein's Socket.io server, the conversation l
   - Connect Socket.io: `io(baseUrl, { auth: { token } })`, join room on mount, listen for `receive_message`
 - **Conversation List screen:**
   - `FlatList` of threads sorted by most recent message; each row shows avatar, name, task title, last message preview, unread badge
-  - Connect to `GET /api/tasks/:id/messages` per task (or a dedicated messages summary endpoint if added)
+  - Connect to `GET /api/conversations`
 - **Push notification registration:**
-  - On app launch (after auth): call `expo-notifications` to request permissions, get Expo/FCM token, `POST /api/users/me/fcm-token`
+  - On app launch (after auth): call `expo-notifications` to request permissions, get the Expo push token, and `POST /api/users/me/push-token`
 - **Notification Center screen:**
   - Chronological list of notification cards (icon, title, body, timestamp, unread highlight)
   - Tap → mark as read (`PUT /api/notifications/:id/read`) → navigate to relevant screen based on `related_entity_type`
-  - "Mark All as Read" button
+  - "Mark All as Read" button → `PUT /api/notifications/read-all`
   - Notification bell badge in top nav (unread count from `GET /api/notifications`)
 
 ### Shick — Phase 4
@@ -678,13 +685,12 @@ Goal: Hebrew language support, task reopen flow, and read receipts.
 
 ### Stein — Phase 5
 
-Adds the task reopen flow (letting a Requester re-post a canceled task) and hardens the 15-bid cap with a proper server-side check.
+Adds the task reopen flow (letting a Requester re-post a canceled task) and small supporting API polish for canceled-task UX.
 
 - **Task Reopen:**
   - Backend: `PUT /api/tasks/:id/reopen` — valid only when status is `CANCELED`; reset to `OPEN`, clear `assigned_fixer_id`, task reappears on discovery feed
   - Frontend: "Reopen Task" button on Task Details CANCELED screen (Requester view only)
-- **Bid count enforcement:**
-  - `POST /api/tasks/:id/bids`: add check — if existing bid count ≥ 15, return `CONFLICT` error
+- **API polish:**
   - Include `bid_count` field in `GET /api/tasks/:id` response so frontend can render correct bottom bar state without an extra request
 
 ### Zilber — Phase 5
@@ -724,7 +730,7 @@ Goal: The app runs end-to-end with realistic seed data in a deployed environment
 
 ### Zilber — Phase 6
 
-- Deploy frontend to Vercel (`npx vercel --prod`)
+- Deploy the frontend web build to Vercel using Expo Web's export/build flow (for example: export the web app, then deploy the generated output)
 - Review and tighten Firebase Storage security rules (restrict reads to authenticated users if needed)
 - Bug fixes: focus on auth flow edge cases (expired token, offline behavior) and notification delivery
 

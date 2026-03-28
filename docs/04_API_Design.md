@@ -29,9 +29,9 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 * `PUT /api/users/me` - Update profile (`full_name`, `bio`, `avatar_url`, `payment_link`, `phone_number`, `specializations`).
 * `GET /api/users/:id` - Get public profile (including portfolio, specializations, and a summary of recent reviews). `phone_number` is **not** included — it is only visible in Task Details once a bid is accepted. For the full paginated review list, use `GET /api/users/:id/reviews`.
 * `DELETE /api/users/me` - `Stretch Goal` for later planning. Permanently delete account, cancel active tasks as needed, preserve past reviews in anonymized form, and delete the Firebase Auth account server-side via Admin SDK.
-* `POST /api/users/me/fcm-token` - Register or update the device's FCM push token. Called on every app launch after authentication.
+* `POST /api/users/me/push-token` - Register or update the device's push token. Called on app launch after authentication.
   * Body: `{ token: string }`
-  * Stores the token in `User.fcm_token`. Silently overwrites any existing token.
+  * Stores the token in `User.push_token`. For the initial mobile MVP this is the Expo push token. Silently overwrites any existing token.
 
 ## 3. Tasks (Requester & Discovery)
 * `POST /api/tasks` - Create a new task.
@@ -53,7 +53,8 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 ## 4. Bidding System
 * `POST /api/tasks/:id/bids` - Fixer submits a bid. Enforces unique constraint on `task_id + fixer_id` (one bid per Fixer per task). Response includes `has_existing_bid: true` if the Fixer already bid, allowing the frontend to show "Bid Submitted ✓" without an extra roundtrip.
 * `GET /api/tasks/:id/bids` - Requester views all bids for their task.
-* `PUT /api/bids/:id/accept` - Requester accepts a bid. Side effects: Task status → `IN_PROGRESS`, `assigned_fixer_id` set, exact address revealed to Fixer, all other `PENDING` bids auto-rejected, chat channel activated, Fixer notified via FCM.
+* `GET /api/users/me/bids` - Fetch the authenticated Fixer's submitted bids. Supports filters for `status`, `page`, and `limit`. Used by the "My Bids" screen.
+* `PUT /api/bids/:id/accept` - Requester accepts a bid. Side effects: Task status → `IN_PROGRESS`, `assigned_fixer_id` set, exact address revealed to Fixer, all other `PENDING` bids auto-rejected, chat channel activated, Fixer notified via push notification.
 * `PUT /api/bids/:id/reject` - Requester manually rejects a bid.
 * `PUT /api/bids/:id/withdraw` - Fixer withdraws their own bid. Only valid while bid status is `PENDING`. Sets status to `WITHDRAWN` and notifies the Requester.
 
@@ -76,11 +77,13 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
   * `typing_indicator` (Payload: taskId, userId, isTyping) — *Stretch Goal: not in Phase 1.*
 * **REST Fallback:**
   * `GET /api/tasks/:id/messages` - Fetch chat history. Query params: `page` (default: `1`), `limit` (default: `30`, max: `100`). Returns messages sorted oldest-first within each page. Client loads older messages by incrementing `page` on scroll-up.
+  * `GET /api/conversations` - Fetch conversation summaries for the authenticated user. Each item includes `taskId`, `taskTitle`, other party summary, last message preview, last message timestamp, and unread count.
 
 ## 8. Notifications
 * `GET /api/notifications` - Fetch user's notifications.
 * `PUT /api/notifications/:id/read` - Mark notification as read.
-* **Push Notifications:** Handled server-side via Firebase Admin SDK when specific events occur (e.g., Bid Accepted, New Message).
+* `PUT /api/notifications/read-all` - Mark all notifications as read for the authenticated user.
+* **Push Notifications:** Handled server-side via the notification service when specific events occur (e.g., Bid Accepted, New Message). For the initial mobile MVP, push delivery uses Expo push tokens.
 
 ---
 

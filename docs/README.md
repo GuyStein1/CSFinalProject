@@ -11,4 +11,4 @@ Please use the sidebar on the left to navigate through the different sections of
 * **[5. User Flows](05_User_Flows.md)** - Step-by-step journeys for Requesters and Fixers.
 * **[6. Screen Layouts](06_Screen_Layouts.md)** - UI layouts and elements for mobile and web.
 * **[7. Development Plan](07_Development_Plan.md)** - Detailed team task assignments across all phases.
-* **[8. Firebase Integration Guide](08_Firebase_Integration_Guide.md)** - Setup and implementation tasks for Firebase Storage and FCM.
+* **[8. Firebase Integration Guide](08_Firebase_Integration_Guide.md)** - Setup and implementation tasks for Firebase Auth and Storage.

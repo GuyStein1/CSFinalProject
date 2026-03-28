@@ -20,7 +20,7 @@ The `docs/` directory contains the core specifications:
 - **Backend**: Node.js with Express (TypeScript).
 - **Database**: PostgreSQL with PostGIS (for geospatial queries).
 - **ORM**: Prisma.
-- **Real-time**: Socket.io (Chat), Firebase Cloud Messaging (Notifications).
+- **Real-time**: Socket.io (Chat), Expo Push Service for the initial mobile MVP notifications.
 - **Storage**: Firebase Storage (Images/Documents).
 
 ## Usage

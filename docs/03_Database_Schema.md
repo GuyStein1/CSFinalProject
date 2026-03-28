@@ -21,7 +21,7 @@ Represents the unified account for both Requesters and Fixers. Created in the da
 * `bio` (Text, Nullable)
 * `payment_link` (String, Nullable) - Bit/Paybox URL
 * `specializations` (Enum: Category[]) - Categories the Fixer works in (e.g., [ELECTRICITY, PLUMBING]). Multi-select, optional. Used for profile display and future smart recommendations.
-* `fcm_token` (String, Nullable) - Device push notification token, registered on app launch. Updated whenever the token rotates.
+* `push_token` (String, Nullable) - Device push notification token, registered on app launch. For the initial mobile MVP this stores the Expo push token used by the notification service.
 * `average_rating_as_fixer` (Float, Default 0) - Recalculated on each new review submission.
 * `created_at` (Timestamp)
 * `updated_at` (Timestamp)
@@ -43,6 +43,7 @@ The job created by a Requester.
 * `coordinates` (Geometry Point) - PostGIS for map/distance queries. **Must have a GIST spatial index** for `ST_DWithin` radius queries to be performant.
 * `assigned_fixer_id` (UUID, FK -> User.id, Nullable)
 * `is_payment_confirmed` (Boolean, Default false) - Set to true when Requester taps "Confirm Payment" after paying via Bit/Paybox. Separate from `COMPLETED` status, which marks work as done.
+* `completed_at` (Timestamp, Nullable) - Set when the Requester marks the task as `COMPLETED`. Used to enforce the 14-day review window.
 * `created_at` (Timestamp)
 * `updated_at` (Timestamp)
 

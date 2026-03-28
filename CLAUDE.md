@@ -33,7 +33,7 @@ The docs site is powered by Docsify (`docs/index.html`) and can be served locall
 - **ORM**: Prisma
 - **Auth**: Firebase Authentication (client SDK + Firebase Admin SDK on server to verify tokens)
 - **Real-time**: Socket.io for in-app chat
-- **Push Notifications**: Firebase Cloud Messaging (FCM)
+- **Push Notifications**: Expo Push Service for the initial mobile MVP
 - **Storage**: Firebase Storage (client uploads directly; backend receives URLs)
 - **Maps**: Google Maps API (geocoding, distance, display)
 - **i18n**: English (LTR) + Hebrew (RTL) — bilingual support is a core requirement
@@ -50,7 +50,7 @@ Backend (Node.js/Express)
   └─ Auth Middleware → verifies Firebase ID tokens via Firebase Admin SDK
   └─ REST endpoints → Prisma → PostgreSQL + PostGIS
   └─ Socket.io server → per-task chat rooms (namespace: task_chat_{taskId})
-  └─ FCM → push notifications
+ └─ Notification service → mobile push notifications
 ```
 
 **Auth flow**: Firebase handles registration/login on the client. After registration, the client calls `POST /api/auth/sync` to create a local `User` record in PostgreSQL.
@@ -72,7 +72,7 @@ Users have a single unified account with both Requester and Fixer roles.
 1. Foundation & Setup (monorepo, PostgreSQL+PostGIS, Prisma, Firebase project, Expo scaffold, GitHub Actions CI)
 2. Backend Core (auth middleware, all API endpoints, notification service, input validation)
 3. Frontend Core (all screens mobile + web, navigation, API integration)
-4. Real-Time Features (Socket.io chat, FCM push notifications, review UI)
+4. Real-Time Features (Socket.io chat, mobile push notifications, review UI)
 5. Planned Additions (Hebrew/RTL i18n, task reopen, read receipts)
 6. Polish & Demo (seed data, deployment, integration testing)
 
