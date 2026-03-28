@@ -1,5 +1,26 @@
 # Screen Layouts & UI Plan
 
+## 0. Design System
+
+### UI Component Library: React Native Paper
+The project uses **React Native Paper** (Material Design 3) as its UI component library. All screens are built using Paper components (Cards, FABs, SegmentedButtons, Chips, Bottom Sheets, etc.) styled with a global theme. This provides consistent spacing, accessibility, animations, and — critically — built-in RTL layout support for Hebrew.
+
+### Color Theme
+| Role | Color | Usage |
+|---|---|---|
+| Primary | Deep Navy Blue (`#1A237E`) | Buttons, active states, top bar |
+| Secondary | Golden Yellow (`#FFC107`) | Accents, highlights, FAB |
+| Surface | Light Gray (`#F5F5F5`) | Card backgrounds |
+| On Primary | White | Text/icons on navy backgrounds |
+| On Secondary | Dark Gray | Text/icons on yellow backgrounds |
+
+Configure once in a `theme.ts` file using `MD3LightTheme` from React Native Paper. All components inherit from it automatically.
+
+### Figma
+If a visual reference is needed before coding, duplicate a free **Material Design 3 UI Kit** from Figma Community and sketch 2–3 key screens (Dashboard, Task Creation Wizard, Discovery Feed) only. Full Figma mockups are not required — the screen layouts in this document serve as the primary visual spec.
+
+---
+
 ## 1. Authentication Screens
 
 ### 1.1 Welcome / Landing Screen
@@ -62,6 +83,8 @@ Tabs change based on the active mode:
 | Messages | Chat Bubble | Conversation List |
 | Profile | Person | Profile & Settings |
 
+> **Navigation rule:** The Mode Toggle is only visible on **root screens** (Requester Dashboard, Discovery Feed, Conversation List, Profile). It is hidden automatically when the user is inside a focused flow — Task Creation Wizard, Chat Interface, Task Details, or any screen that is not a root tab. This prevents accidental mode switches that would lose in-progress work.
+
 ### 2.3 Web Navigation
 On web, the bottom tabs are replaced by a sidebar or horizontal top menu with the same items. The Mode Toggle remains in the top bar.
 
@@ -105,6 +128,12 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 * **Fixed Price:** Shows a numeric input with currency symbol (₪). Placeholder: "Enter your budget".
 * **Quote Required:** No input — a label explains: "Fixers will propose their own price."
 * **Navigation:** "Back" and "Next" buttons.
+
+**Location Permission (triggered on entering Step 5):**
+Before displaying the map, the app checks whether location permission has been granted.
+- If **not yet asked**: Show a rationale modal — "Fixlt needs your location to drop a pin for your task's general area. Your exact home address is entered separately and stays private." — with "Allow" and "Skip for now" buttons. "Allow" triggers the native iOS/Android permission dialog.
+- If **denied**: The map is replaced with a text input labeled "General Area (e.g., 'Hadar, Haifa')" and a note: "Location access was denied. You can enable it in your device Settings, or type your neighborhood manually."
+- If **granted**: Map loads normally.
 
 **Step 5 — Location:**
 * **Map View:** Interactive Google Map. User drops a pin for the general area (neighborhood level). Below the map: auto-populated general location name (e.g., "Hadar, Haifa").
@@ -161,6 +190,13 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 ### 4.1 Discovery Feed
 
 **Map View (Default):**
+
+**On first load — Location Permission Check:**
+Before rendering the map or fetching tasks, the app checks location permission.
+- If **not yet asked**: Show a rationale modal — "Fixlt needs your location to show you tasks nearby. You can change this anytime in Settings." — "Allow" triggers the native dialog.
+- If **denied**: Full-screen fallback shown — a city/neighborhood search bar ("Enter your city or area") lets the Fixer manually enter a location to use as the discovery center point. A banner reads: "Using manual location. Enable GPS in Settings for automatic detection."
+- If **granted**: Map loads with the Fixer's current GPS position centered.
+
 * **Full-screen Google Map** with custom markers for open tasks. Markers are color-coded or icon-coded by category.
 * **Tapping a marker** shows a Bottom Preview Card:
   * Task title, category, budget (or "Quote Required"), general location name, distance from Fixer.
@@ -199,6 +235,8 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 * **Pitch Input:** Multi-line text area. Placeholder: "Tell the requester why you're the right fit..."
 * **Action:** "Send Offer" button (primary). "Cancel" to dismiss.
 * **Validation:** Price must be > 0. Pitch must not be empty.
+
+> **`Stretch Goal` — Pre-bid Clarification:** Allow a Fixer to submit a bid with price ₪0 (meaning "I need to assess on-site before quoting") or to send a structured "Clarification Request" message to the Requester before committing to a price. This would require a pre-bid chat or Q&A flow and is deferred to a future phase.
 
 ### 4.4 My Bids (Bid Tracker)
 * **Tab Filter Bar:** Horizontal tabs to filter by status: All / Pending / Accepted / Rejected / Withdrawn.
