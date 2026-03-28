@@ -257,7 +257,9 @@ flowchart TD
    * **Accepted** — assigned to this Fixer.
    * **Rejected** — declined by the Requester.
    * **Withdrawn** — canceled by the Fixer.
-3. Taps a bid to view the associated task and current status.
+
+   Each bid card displays: task title, category, the Fixer's offered price, and current bid status. This allows the Fixer to distinguish between bids on different tasks at a glance.
+3. Taps a bid card to open the associated Task Details screen and see the current task status.
 
 ### 4.6 Bid Accepted — Job Execution
 
@@ -396,7 +398,7 @@ sequenceDiagram
    * **Payment Link** — Bit/Paybox URL (primarily for Fixer mode).
 4. Fixer-specific sections (visible when in Fixer mode or always accessible):
    * **Portfolio** — add/remove photos of past work.
-   * **Certifications** — upload/remove professional credentials.
+   * **Certifications** — upload/remove professional credentials. *(Stretch Goal — not in Phase 1. See section 4.1.)*
 5. Profile changes are saved via `PUT /api/users/me`.
 
 ### 5.6 Review System Rules
