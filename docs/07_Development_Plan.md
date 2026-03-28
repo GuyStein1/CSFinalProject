@@ -43,7 +43,7 @@ Goal: All three members have a working local development environment, the databa
 
 #### A1.1 — Repository & Monorepo Setup
 
-A monorepo keeps backend and frontend in one GitHub repository so the whole team works in one place with shared tooling. The `develop` branch is for active work; `main` stays stable and is only updated via reviewed PRs.
+A monorepo keeps backend and frontend in one GitHub repository so the whole team works in one place with shared tooling. The team works directly from short-lived feature branches off `main`, and `main` stays stable through reviewed PRs.
 
 - Create the GitHub repository.
 - Scaffold a monorepo structure with two top-level directories: `/backend` and `/frontend`.
@@ -475,7 +475,6 @@ Implements the authentication layer and all task/bid endpoints. The auth middlew
   - `GET /api/users/me/tasks` (with `status` filter, pagination)
   - `GET /api/tasks` (PostGIS `ST_DWithin` with `lat`, `lng`, `radius`; filter by category, price; "Quote Required" tasks always included)
   - `GET /api/tasks/:id` (conditionally include `exact_address`)
-  - `PUT /api/tasks/:id` (only owner, only while `OPEN`)
   - `PUT /api/tasks/:id/status` (valid transitions only)
   - `PUT /api/tasks/:id/confirm-payment`
 - **Bid endpoints:**
@@ -493,14 +492,12 @@ Implements user profile management endpoints and the push notification service. 
 - **User endpoints:**
   - `GET /api/users/me`
   - `PUT /api/users/me` (all editable fields including `specializations`)
-  - `GET /api/users/:id` (public profile: portfolio, certifications, specializations, recent reviews)
-  - `DELETE /api/users/me` (cascade: cancel OPEN tasks, cancel IN_PROGRESS tasks, anonymize reviews, delete Firebase auth account)
+  - `GET /api/users/:id` (public profile: portfolio, specializations, recent reviews)
   - `POST /api/users/me/fcm-token`
-- **Portfolio & Certification endpoints:**
+- **Portfolio endpoints:**
   - `POST /api/users/me/portfolio`
   - `DELETE /api/users/me/portfolio/:id`
-  - `POST /api/users/me/certifications`
-  - `DELETE /api/users/me/certifications/:id`
+- **Scope note:** Certifications and account deletion remain optional stretch work and should only be added if the core flow is stable.
 - `backend/src/services/notificationService.ts` — Core function: accepts `userId`, `title`, `body`, `type`, `related_entity_id`, `related_entity_type`; looks up `fcm_token` from DB; writes a `Notification` record; calls `admin.messaging().send()`. Returns gracefully if FCM token is null.
 - Wire notification triggers for: new bid submitted (`NEW_BID` → Requester), bid accepted (`BID_ACCEPTED` → Fixer), bid rejected (`BID_REJECTED` → Fixer), task canceled (`TASK_CANCELED` → assigned Fixer / all bidders).
 
@@ -513,7 +510,7 @@ Implements the shared infrastructure that all routes depend on: input validation
 - `backend/src/middleware/validate.ts` — Validation middleware using `zod`. Each route defines a schema; the middleware calls `schema.parse(req.body)` and returns a `VALIDATION_ERROR` response on failure. Used on all mutation endpoints.
 - `backend/src/middleware/errorHandler.ts` — Express error handler: catches thrown errors, returns standard `{ error: { code, message, details } }` format.
 - **Review endpoints:**
-  - `POST /api/tasks/:id/reviews` — Enforce: requesting user must be `requester_id`, task must be `COMPLETED`, no existing review for this task, `created_at` of task ≤ 14 days ago.
+  - `POST /api/tasks/:id/reviews` — Enforce: requesting user must be `requester_id`, task must be `COMPLETED`, no existing review for this task, `completed_at` of task ≤ 14 days ago.
   - `GET /api/users/:id/reviews`
 - **Notification endpoints:**
   - `GET /api/notifications` — Returns notifications for the authenticated user, sorted by `created_at` descending. Supports `page` and `limit`.
@@ -677,7 +674,7 @@ Builds the review submission screen and wires it into the completed task flow, d
 
 ## Phase 5 — Planned Additions
 
-Goal: Hebrew language support, task reopen flow, read receipts, and account deletion.
+Goal: Hebrew language support, task reopen flow, and read receipts.
 
 ### Stein — Phase 5
 
@@ -706,11 +703,8 @@ Adds Hebrew language support. This involves extracting every text string from ev
 
 ### Shick — Phase 5
 
-Implements account deletion (a multi-step cascade that cleans up all the user's data across the DB and Firebase) and read receipts for chat (marking messages as seen and notifying the sender in real time).
+Focuses on read receipts for chat (marking messages as seen and notifying the sender in real time). Account deletion remains a stretch goal and should only be picked up later if the core app is already stable.
 
-- **Account Deletion:**
-  - Backend: complete `DELETE /api/users/me` — Prisma transaction: cancel all OPEN tasks (notify bidders), cancel all IN_PROGRESS tasks (notify other party), set `reviewer_id` to null on reviews (anonymize as "Deleted User"), delete User record, call `admin.auth().deleteUser(firebase_uid)`
-  - Frontend: confirmation dialog in Settings: "This action is permanent and cannot be undone." → call `DELETE /api/users/me` → navigate to Welcome screen
 - **Read receipts:**
   - When a user opens a chat, mark all unread messages from the other party as read (`Message.is_read = true`) via a batch DB update
   - Emit a `messages_read` event over Socket.io so the sender's chat UI can update their sent message indicators

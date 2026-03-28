@@ -186,7 +186,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
   * Title, description, category badge.
   * Budget: displayed as "₪[amount]" or "Quote Required".
   * General location shown on a small map (exact address hidden).
-  * Requester info: avatar, name, rating. Tappable to view Public Profile.
+  * Requester info: avatar and name. Tappable to view Public Profile.
 * **Bid Count:** Shown below the location map — "X bids submitted".
 * **Sticky Bottom Bar:**
   * Default: "Submit Bid" button (primary, green).
@@ -298,4 +298,4 @@ Shown to the **Requester only**, accessible from the completed Task Details scre
   * Push Notifications: on/off toggle.
 * **Actions:**
   * "Log Out" button (red text, triggers Firebase signOut).
-  * "Delete Account" link (with confirmation dialog: "This action is permanent and cannot be undone.").
+  * "Delete Account" link (shown only if the stretch-goal account deletion flow is implemented later).

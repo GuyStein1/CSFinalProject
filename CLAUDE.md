@@ -73,7 +73,7 @@ Users have a single unified account with both Requester and Fixer roles.
 2. Backend Core (auth middleware, all API endpoints, notification service, input validation)
 3. Frontend Core (all screens mobile + web, navigation, API integration)
 4. Real-Time Features (Socket.io chat, FCM push notifications, review UI)
-5. Planned Additions (Hebrew/RTL i18n, task reopen, read receipts, account deletion)
+5. Planned Additions (Hebrew/RTL i18n, task reopen, read receipts)
 6. Polish & Demo (seed data, deployment, integration testing)
 
 Team: Stein, Zilber, Shick. See `07_Development_Plan.md` for full task breakdown per member.

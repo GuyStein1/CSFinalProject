@@ -27,8 +27,8 @@ Authentication is handled client-side by the Firebase JS SDK. The backend does *
 All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <firebaseIdToken>`).
 * `GET /api/users/me` - Get current user profile.
 * `PUT /api/users/me` - Update profile (`full_name`, `bio`, `avatar_url`, `payment_link`, `phone_number`, `specializations`).
-* `GET /api/users/:id` - Get public profile (including portfolio, certifications, specializations, and a summary of recent reviews). `phone_number` is **not** included — it is only visible in Task Details once a bid is accepted. For the full paginated review list, use `GET /api/users/:id/reviews`.
-* `DELETE /api/users/me` - Permanently delete account. Side effects: all OPEN tasks are auto-canceled (bidders notified), IN_PROGRESS tasks are canceled with a warning to the other party, past reviews are preserved (anonymized as "Deleted User"), Firebase Auth account is deleted server-side via Admin SDK.
+* `GET /api/users/:id` - Get public profile (including portfolio, specializations, and a summary of recent reviews). `phone_number` is **not** included — it is only visible in Task Details once a bid is accepted. For the full paginated review list, use `GET /api/users/:id/reviews`.
+* `DELETE /api/users/me` - `Stretch Goal` for later planning. Permanently delete account, cancel active tasks as needed, preserve past reviews in anonymized form, and delete the Firebase Auth account server-side via Admin SDK.
 * `POST /api/users/me/fcm-token` - Register or update the device's FCM push token. Called on every app launch after authentication.
   * Body: `{ token: string }`
   * Stores the token in `User.fcm_token`. Silently overwrites any existing token.
@@ -46,7 +46,7 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 * `GET /api/tasks/:id` - Get task details. Access rules:
   * `exact_address` is included **only** if the requesting user is the task's `requester_id` or the `assigned_fixer_id`.
   * All other fields are public.
-* `PUT /api/tasks/:id` - Update task content. Allowed only by the task's `requester_id` and only while status is `OPEN`. Editable fields: `title`, `description`, `media_urls`, `category`, `suggested_price`, `general_location_name`, `exact_address`, `coordinates`.
+* `PUT /api/tasks/:id` - `Stretch Goal` for later planning. Update task content while status is `OPEN`. Editable fields: `title`, `description`, `media_urls`, `category`, `suggested_price`, `general_location_name`, `exact_address`, `coordinates`.
 * `PUT /api/tasks/:id/status` - Update task status. Valid transitions: `OPEN→CANCELED` (Requester), `IN_PROGRESS→COMPLETED` (Requester), `IN_PROGRESS→CANCELED` (Requester). Setting to `COMPLETED` does **not** set `is_payment_confirmed` — that is a separate action.
 * `PUT /api/tasks/:id/confirm-payment` - Requester confirms payment was sent via Bit/Paybox. Sets `Task.is_payment_confirmed = true`. Only valid when task status is `COMPLETED`.
 
@@ -61,11 +61,11 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 * `POST /api/tasks/:id/reviews` - Requester submits a rating (1–5) and optional comment for the Fixer. Rejected with `FORBIDDEN` if the requesting user is not the task's Requester, if the task status is not `COMPLETED`, if a review already exists for this task, or if more than 14 days have passed since the task was completed.
 * `GET /api/users/:id/reviews` - Get all reviews received by a Fixer (as reviewee). Sorted by `created_at` descending.
 
-## 6. Portfolios & Certifications
+## 6. Portfolios
 * `POST /api/users/me/portfolio` - Add a portfolio item.
 * `DELETE /api/users/me/portfolio/:id` - Remove a portfolio item.
-* `POST /api/users/me/certifications` - Upload a certification.
-* `DELETE /api/users/me/certifications/:id` - Remove a certification.
+
+> Certification endpoints can be added later if the stretch-goal profile scope is implemented.
 
 ## 7. Real-Time Chat (Socket.io)
 * **Namespace/Room:** Each task has a dedicated Socket room `task_chat_{taskId}`.

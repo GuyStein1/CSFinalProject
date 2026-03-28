@@ -13,7 +13,7 @@ The `docs/` directory contains the core specifications:
 - **`04_API_Design.md`**: RESTful endpoint definitions and WebSocket (Socket.io) event structures.
 - **`05_User_Flows.md`**: Logic for task creation, bidding, and completion.
 - **`06_Screen_Layouts.md`**: UI/UX structure for both mobile and web interfaces.
-- **`07_Development_Phases.md`**: Seven-phase roadmap from setup to deployment.
+- **`07_Development_Plan.md`**: Six-phase roadmap from setup to deployment.
 
 ## Technical Stack (Planned)
 - **Frontend**: React Native (Expo) for Mobile, React.js for Web (TypeScript).
@@ -21,7 +21,7 @@ The `docs/` directory contains the core specifications:
 - **Database**: PostgreSQL with PostGIS (for geospatial queries).
 - **ORM**: Prisma.
 - **Real-time**: Socket.io (Chat), Firebase Cloud Messaging (Notifications).
-- **Storage**: AWS S3 or Firebase Storage (Images/Documents).
+- **Storage**: Firebase Storage (Images/Documents).
 
 ## Usage
 Use these documents as the primary reference when initiating the implementation phase. Any future code should strictly adhere to the schemas and API designs defined here.

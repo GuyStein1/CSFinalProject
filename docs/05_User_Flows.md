@@ -129,7 +129,7 @@ stateDiagram-v2
 1. Receives a push notification when a new bid arrives.
 2. Opens the Task Details screen → "Bids" tab.
 3. Sees a list of bid cards, each showing: Fixer avatar, name, rating, offered price, and a snippet of their pitch.
-4. Taps a bid card to view the Fixer's full profile: bio, portfolio gallery, certifications, past reviews.
+4. Taps a bid card to view the Fixer's full profile: bio, portfolio gallery, and past reviews.
 5. Can accept one bid or reject individual bids.
 
 ### 3.3 Accepting a Bid
@@ -220,7 +220,7 @@ flowchart TD
 3. Adds a Bio describing their skills and experience.
 4. Selects Specializations — the categories they work in (e.g., Electricity, Plumbing).
 5. Uploads Portfolio photos of past work (gallery of images with optional captions).
-6. Optionally uploads Certifications (professional credentials displayed on profile).
+6. Certifications can be added later if that stretch-goal profile scope is implemented.
 7. Optionally adds their personal Bit/Paybox payment link. A soft warning is shown if missing: "You haven't added a payment link — Requesters may not be able to pay you easily."
 
 ### 4.2 Task Discovery
@@ -235,7 +235,7 @@ flowchart TD
 
 ### 4.3 Viewing Task Details
 
-1. Sees: title, description, photos, category, budget (or "Quote Required"), general location on map, and the Requester's rating.
+1. Sees: title, description, photos, category, budget (or "Quote Required"), and the general location on map.
 2. Exact address is **not visible** at this stage.
 3. Can tap the Requester's name to view their public profile and reviews.
 
