@@ -2,11 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working Style
+
+- **Be direct and honest.** No corporate fluff, no sugarcoating. If something is a bad idea, say so and explain why. If a suggested approach has a better alternative, propose it — don't just execute instructions blindly.
+- **Challenge assumptions.** Second-guess both what the user proposes and what you yourself suggest. If something feels off, flag it before writing code.
+- **Always consult the docs before implementing.** Before writing any new feature or making any non-trivial change, read the relevant files in `docs/` — especially `03_Database_Schema.md`, `04_API_Design.md`, `05_User_Flows.md`, and `07_Development_Plan.md`. The docs are the source of truth, but they are not infallible — if the docs specify something that seems wrong or suboptimal, raise it rather than implementing it as-is.
+
 ## Project Status
 
-This repository is in the **Planning/Design Phase** — no source code exists yet. It serves as the "Source of Truth" for architecture, database schema, and development roadmap for **Fixlt**, a location-based task marketplace connecting Requesters (users needing small tasks) with Fixers (handy individuals/professionals).
-
-All future code must strictly adhere to the schemas and API designs defined in `docs/`.
+This repository is in active development. The source of truth for architecture, database schema, API design, and roadmap is the `docs/` directory. All code must align with what is defined there unless a better approach is explicitly agreed upon.
 
 ## Documentation Index
 

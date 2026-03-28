@@ -27,7 +27,13 @@ The `docs/` directory contains the core specifications:
 Use these documents as the primary reference when initiating the implementation phase. Any future code should strictly adhere to the schemas and API designs defined here.
 
 ### Quick Reference for AI Agents:
-- **Project Type**: Documentation / Design Specs for a Full-Stack TypeScript Application.
+- **Project Type**: Full-Stack TypeScript Application (active development).
 - **Primary Entities**: `User`, `Task`, `Bid`, `Review`.
 - **Core Logic**: Location-based task discovery and a custom bidding system.
 - **Multi-language**: Support for English (LTR) and Hebrew (RTL) is a core requirement.
+
+## Working Style
+
+- **Be direct and honest.** No corporate fluff, no sugarcoating. If something is a bad idea, say so and explain why.
+- **Challenge assumptions.** Second-guess both what the user proposes and what you yourself suggest. If something feels off, flag it before writing code.
+- **Always consult the docs before implementing.** Before writing any new feature or making any non-trivial change, read the relevant files in `docs/` — especially `03_Database_Schema.md`, `04_API_Design.md`, `05_User_Flows.md`, and `07_Development_Plan.md`. The docs are the source of truth, but they are not infallible — if the docs specify something that seems wrong or suboptimal, raise it rather than implementing it as-is.
