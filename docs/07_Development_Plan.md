@@ -216,7 +216,7 @@ Scaffolds the React Native / Expo project with all packages installed and the fo
   ```
 - Install all dependencies:
   ```bash
-  npm install -w frontend firebase @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs axios socket.io-client
+  npm install -w frontend firebase @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs axios socket.io-client react-native-paper react-native-vector-icons
   npx expo install expo-notifications expo-device react-native-maps expo-image-picker expo-location react-native-safe-area-context react-native-screens
   npm install -D -w frontend eslint prettier @typescript-eslint/eslint-plugin @typescript-eslint/parser
   ```
@@ -512,6 +512,7 @@ Implements the shared infrastructure that all routes depend on: input validation
 
 - `backend/src/middleware/validate.ts` — Validation middleware using `zod`. Each route defines a schema; the middleware calls `schema.parse(req.body)` and returns a `VALIDATION_ERROR` response on failure. Used on all mutation endpoints.
 - `backend/src/middleware/errorHandler.ts` — Express error handler: catches thrown errors, returns standard `{ error: { code, message, details } }` format.
+- `backend/src/utils/errors.ts` — Define the `AppError` base class and subclasses: `NotFoundError` (404), `ForbiddenError` (403), `ConflictError` (409), `ValidationError` (400), `InternalError` (500). Each holds `code: string`, `message: string`, `httpStatus: number`, and optional `details`. The `errorHandler.ts` middleware catches any thrown `AppError` and serializes it to the standard error response format. Non-`AppError` throws are caught and wrapped as `InternalError`. See Architecture §4.6.
 - **Review endpoints:**
   - `POST /api/tasks/:id/reviews` — Enforce: requesting user must be `requester_id`, task must be `COMPLETED`, no existing review for this task, `completed_at` of task ≤ 14 days ago.
   - `GET /api/users/:id/reviews`
@@ -537,6 +538,7 @@ Builds the Fixer-side of the app: the map-based task discovery feed (the most vi
   - Filter bar: horizontal scrollable chips for distance (5/10/25/50 km), category (multi-select), price range
   - Map ↔ List toggle button in top-right
   - Connect to `GET /api/tasks` with current GPS coords from `expo-location`
+  - **Location permission:** Before loading the map, check `expo-location` permission status. If not granted, show a rationale modal explaining why location is needed, then request native permission. If denied, show a city/neighborhood text input as the fallback discovery center. See Screen Layouts §4.1.
 - **Task Details — Fixer View:**
   - Photo carousel, description, category badge, budget, requester info (tappable), bid count
   - Sticky bottom bar with three states: "Submit Bid", "Bid Submitted ✓", "No longer accepting bids"
@@ -548,6 +550,7 @@ Builds the Fixer-side of the app: the map-based task discovery feed (the most vi
   - Top navigation segmented control "Requester / Fixer"
   - On switch: reconfigure bottom tab navigator (different tabs per mode)
   - Preserve state across mode switches (no data loss)
+  - **Navigation rule:** The Mode Toggle is hidden when the user navigates into a focused screen (Task Creation Wizard, Task Details, Chat, any screen that is not a root tab). In React Navigation, this is implemented by conditionally rendering the top bar only on the root tab screens. See Screen Layouts §2.1.
 
 ### Zilber — Phase 3
 
@@ -577,16 +580,14 @@ Builds the authentication screens and the navigation structure that controls wha
 
 > **⚠ Priority:** Complete the reusable UI component library **first** in Phase 3, before Stein and Zilber begin building screens. Stein's maps and Zilber's auth screens depend on shared components.
 
-- **Reusable UI Component Library** (`frontend/src/components/`):
-  - `Button` — variants: primary, secondary, danger, ghost; loading state
-  - `Input` — text input with label, error message, placeholder
-  - `Card` — container with shadow/border
-  - `Avatar` — circular image with fallback initials
-  - `Badge` — colored label (for categories, status)
-  - `StatusBadge` — color-coded task/bid status chips
+- **Design System Setup** (`frontend/src/theme.ts`):
+  - Configure `MD3LightTheme` from React Native Paper with the Fixlt color palette: Primary = Deep Navy Blue (`#1A237E`), Secondary = Golden Yellow (`#FFC107`), Surface = Light Gray (`#F5F5F5`).
+  - Wrap the app root in `<PaperProvider theme={theme}>`.
+  - All screens use Paper primitives directly: `Button`, `TextInput`, `Card`, `Avatar`, `Chip`, `Badge`, `FAB`, `Portal`/`Modal` for bottom sheets.
+- **Thin wrapper components** (`frontend/src/components/`) — only where Paper doesn't cover the use case:
+  - `StatusBadge` — color-coded task/bid status chip with label (maps `TaskStatus`/`BidStatus` enums to colors)
   - `EmptyState` — illustration + message + optional CTA button
-  - `LoadingSpinner`
-  - `BottomSheet` — modal sliding up from bottom (used by bid submission)
+  - `TaskCard` — reusable card layout used across Requester dashboard and Fixer list view
 - **Requester Dashboard screen:**
   - Email Verification Banner (if unverified)
   - Active tasks horizontal scroll (OPEN + IN_PROGRESS cards with bid count / assigned fixer name)
@@ -599,6 +600,7 @@ Builds the authentication screens and the navigation structure that controls wha
   - Step 3: Category single-select grid with icons
   - Step 4: Budget toggle (Fixed Price / Quote Required)
   - Step 5: Map pin (general area) + exact address text input
+  - **Location permission (Step 5):** On entering Step 5, check `expo-location` permission. If not granted, show a rationale modal before triggering the native dialog. If denied, replace the map with a manual text input for the general area. See Screen Layouts §3.2.
   - Review modal before publish
   - Connect to `POST /api/tasks`
 - **Task Details screens (Requester view):**
@@ -698,6 +700,7 @@ Adds the task reopen flow (letting a Requester re-post a canceled task) and smal
 Adds Hebrew language support. This involves extracting every text string from every screen into translation files, then switching the app's layout direction to right-to-left when Hebrew is active (Hebrew is RTL, which affects flex layouts, text alignment, and icon placement).
 
 - Install i18n library: `npm install i18next react-i18next`
+- **Prisma migration:** Add `language String @default("en")` to the `User` model in `schema.prisma` and run `npx prisma migrate dev --name add-user-language`. Update `PUT /api/users/me` to accept `language` as an editable field. See Database Schema §User and Product Overview §3.10.
 - Extract ALL string literals from every screen into translation files:
   - `frontend/src/i18n/en.json`
   - `frontend/src/i18n/he.json`
