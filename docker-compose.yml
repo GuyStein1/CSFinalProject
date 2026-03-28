@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: fixlt
+      POSTGRES_PASSWORD: fixlt
+      POSTGRES_DB: fixlt_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
