@@ -1,0 +1,176 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum Category {
+  ELECTRICITY
+  PLUMBING
+  CARPENTRY
+  PAINTING
+  MOVING
+  GENERAL
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum NotificationType {
+  NEW_BID
+  BID_ACCEPTED
+  BID_REJECTED
+  NEW_MESSAGE
+  TASK_COMPLETED
+  TASK_CANCELED
+}
+
+model User {
+  id                      String    @id @default(uuid())
+  firebase_uid            String    @unique
+  full_name               String
+  email                   String    @unique
+  phone_number            String?   @unique
+  avatar_url              String?
+  bio                     String?
+  payment_link            String?
+  specializations         Category[]
+  push_token              String?
+  average_rating_as_fixer Float     @default(0)
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  requested_tasks  Task[]          @relation("RequesterTasks")
+  assigned_tasks   Task[]          @relation("FixerTasks")
+  bids             Bid[]
+  reviews_written  Review[]        @relation("ReviewsWritten")
+  reviews_received Review[]        @relation("ReviewsReceived")
+  messages_sent    Message[]       @relation("MessagesSent")
+  messages_received Message[]      @relation("MessagesReceived")
+  notifications    Notification[]
+  portfolio_items  PortfolioItem[]
+  certifications   Certification[]
+}
+
+model Task {
+  id                    String     @id @default(uuid())
+  requester_id          String
+  title                 String
+  description           String
+  media_urls            String[]
+  category              Category
+  suggested_price       Float?
+  status                TaskStatus @default(OPEN)
+  general_location_name String
+  exact_address         String
+  coordinates           Unsupported("geometry(Point, 4326)")
+  assigned_fixer_id     String?
+  is_payment_confirmed  Boolean    @default(false)
+  completed_at          DateTime?
+  created_at            DateTime   @default(now())
+  updated_at            DateTime   @updatedAt
+
+  requester User      @relation("RequesterTasks", fields: [requester_id], references: [id])
+  fixer     User?     @relation("FixerTasks", fields: [assigned_fixer_id], references: [id])
+  bids      Bid[]
+  reviews   Review[]
+  messages  Message[]
+
+  @@index([coordinates], type: Gist)
+}
+
+model Bid {
+  id            String    @id @default(uuid())
+  task_id       String
+  fixer_id      String
+  offered_price Float
+  description   String
+  status        BidStatus @default(PENDING)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  task  Task @relation(fields: [task_id], references: [id])
+  fixer User @relation(fields: [fixer_id], references: [id])
+
+  @@unique([task_id, fixer_id])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  task_id     String
+  reviewer_id String
+  reviewee_id String
+  rating      Int
+  comment     String?
+  created_at  DateTime @default(now())
+
+  task     Task @relation(fields: [task_id], references: [id])
+  reviewer User @relation("ReviewsWritten", fields: [reviewer_id], references: [id])
+  reviewee User @relation("ReviewsReceived", fields: [reviewee_id], references: [id])
+
+  @@unique([task_id, reviewer_id])
+}
+
+model Message {
+  id           String   @id @default(uuid())
+  task_id      String
+  sender_id    String
+  recipient_id String
+  content      String
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  task      Task @relation(fields: [task_id], references: [id])
+  sender    User @relation("MessagesSent", fields: [sender_id], references: [id])
+  recipient User @relation("MessagesReceived", fields: [recipient_id], references: [id])
+}
+
+model Notification {
+  id                  String           @id @default(uuid())
+  user_id             String
+  title               String
+  body                String
+  type                NotificationType
+  related_entity_id   String
+  related_entity_type String
+  is_read             Boolean          @default(false)
+  created_at          DateTime         @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model PortfolioItem {
+  id          String   @id @default(uuid())
+  fixer_id    String
+  image_url   String
+  description String?
+  created_at  DateTime @default(now())
+
+  fixer User @relation(fields: [fixer_id], references: [id])
+}
+
+model Certification {
+  id           String   @id @default(uuid())
+  fixer_id     String
+  title        String
+  document_url String
+  created_at   DateTime @default(now())
+
+  fixer User @relation(fields: [fixer_id], references: [id])
+}
