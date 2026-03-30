@@ -5,3 +5,5 @@ dist/
 .expo/
 firebase-service-account.json
 *.js.map
+frontend/.env.example
+backend/.env.example
