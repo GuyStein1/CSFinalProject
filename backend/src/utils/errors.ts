@@ -1,41 +1,47 @@
-export abstract class AppError extends Error {
-  abstract readonly httpStatus: number;
-  abstract readonly code: string;
-  readonly details?: unknown;
-
-  constructor(message: string, details?: unknown) {
+export class AppError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly code: string,
+    message: string,
+    public readonly details?: unknown,
+  ) {
     super(message);
-    this.name = this.constructor.name;
-    this.details = details;
+    this.name = 'AppError';
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message = 'Resource not found') {
+    super(404, 'NOT_FOUND', message);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden') {
+    super(403, 'FORBIDDEN', message);
   }
 }
 
 export class UnauthorizedError extends AppError {
-  readonly httpStatus = 401;
-  readonly code = 'UNAUTHORIZED';
-}
-
-export class ForbiddenError extends AppError {
-  readonly httpStatus = 403;
-  readonly code = 'FORBIDDEN';
-}
-
-export class NotFoundError extends AppError {
-  readonly httpStatus = 404;
-  readonly code = 'NOT_FOUND';
+  constructor(message = 'Unauthorized') {
+    super(401, 'UNAUTHORIZED', message);
+  }
 }
 
 export class ConflictError extends AppError {
-  readonly httpStatus = 409;
-  readonly code = 'CONFLICT';
+  constructor(message = 'Conflict') {
+    super(409, 'CONFLICT', message);
+  }
 }
 
 export class ValidationError extends AppError {
-  readonly httpStatus = 400;
-  readonly code = 'VALIDATION_ERROR';
+  constructor(message = 'Validation error', details?: unknown) {
+    super(422, 'VALIDATION_ERROR', message, details);
+  }
 }
 
 export class InternalError extends AppError {
-  readonly httpStatus = 500;
-  readonly code = 'INTERNAL_ERROR';
+  constructor(message = 'Internal server error') {
+    super(500, 'INTERNAL_ERROR', message);
+  }
 }
