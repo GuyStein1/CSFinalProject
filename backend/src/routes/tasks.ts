@@ -7,6 +7,7 @@ import {
   NotFoundError,
   ForbiddenError,
   ValidationError,
+  ConflictError,
 } from '../utils/errors';
 
 const router = Router();
@@ -317,6 +318,78 @@ router.put('/:id/confirm-payment', async (req: Request, res: Response, next: Nex
     });
 
     res.json({ task: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tasks/:id/bids — fixer submits a bid
+router.post('/:id/bids', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (task.status !== 'OPEN') throw new ValidationError('Bids can only be submitted on open tasks');
+    if (req.user.id === task.requester_id) throw new ForbiddenError('Requesters cannot bid on their own tasks');
+
+    // Per API spec: return existing bid with has_existing_bid flag instead of 409
+    const existing = await prisma.bid.findUnique({
+      where: { task_id_fixer_id: { task_id: task.id, fixer_id: req.user.id } },
+    });
+    if (existing) {
+      return res.status(200).json({ bid: existing, has_existing_bid: true });
+    }
+
+    // Enforce 15-bid cap (pending + accepted bids)
+    const bidCount = await prisma.bid.count({
+      where: { task_id: task.id, status: { in: ['PENDING', 'ACCEPTED'] } },
+    });
+    if (bidCount >= 15) throw new ConflictError('This task has reached the maximum number of bids');
+
+    const { offered_price, description } = req.body as {
+      offered_price: number;
+      description: string;
+    };
+
+    const bid = await prisma.bid.create({
+      data: {
+        task_id: task.id,
+        fixer_id: req.user.id,
+        offered_price,
+        description,
+      },
+    });
+
+    await sendNotification(
+      task.requester_id,
+      'New Bid',
+      'Someone submitted a bid on your task.',
+      'NEW_BID',
+      bid.id,
+      'Bid',
+    );
+
+    res.status(201).json({ bid, has_existing_bid: false });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/tasks/:id/bids — requester views all bids for their task
+router.get('/:id/bids', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can view bids');
+
+    const bids = await prisma.bid.findMany({
+      where: { task_id: task.id },
+      include: { fixer: true },
+      orderBy: { created_at: 'asc' },
+    });
+
+    res.json({ bids });
   } catch (err) {
     next(err);
   }
