@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Sql } from '@prisma/client/runtime/library';
+import { sql, empty } from '@prisma/client/runtime/library';
 import { TaskStatus, Category, Prisma } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 import { prisma } from '../config/prisma';
@@ -140,7 +140,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ${radiusMeters}
           )
           AND (suggested_price IS NULL OR (suggested_price >= ${minPriceNum} AND suggested_price <= ${maxPriceNum}))
-          ${category ? Sql`AND category = ${category}::"Category"` : Sql``}
+          ${category ? sql`AND category = ${category}::"Category"` : empty}
         ORDER BY created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
@@ -153,7 +153,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ${radiusMeters}
           )
           AND (suggested_price IS NULL OR (suggested_price >= ${minPriceNum} AND suggested_price <= ${maxPriceNum}))
-          ${category ? Sql`AND category = ${category}::"Category"` : Sql``}
+          ${category ? sql`AND category = ${category}::"Category"` : empty}
       `;
     } else {
       tasks = await prisma.$queryRaw<TaskRow[]>`
@@ -167,7 +167,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography,
             ${radiusMeters}
           )
-          ${category ? Sql`AND category = ${category}::"Category"` : Sql``}
+          ${category ? sql`AND category = ${category}::"Category"` : empty}
         ORDER BY created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
@@ -179,7 +179,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography,
             ${radiusMeters}
           )
-          ${category ? Sql`AND category = ${category}::"Category"` : Sql``}
+          ${category ? sql`AND category = ${category}::"Category"` : empty}
       `;
     }
 
