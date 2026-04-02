@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import admin from '../config/firebaseAdmin';
 import { prisma } from '../config/prisma';
 import { UnauthorizedError, ConflictError } from '../utils/errors';
@@ -35,7 +35,7 @@ router.post('/sync', async (req: Request, res: Response, next: NextFunction) => 
     res.status(201).json({ user });
   } catch (err) {
     if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err instanceof PrismaClientKnownRequestError &&
       err.code === 'P2002'
     ) {
       return next(new ConflictError('User already exists'));
