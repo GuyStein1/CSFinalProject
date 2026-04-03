@@ -35,6 +35,21 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// PUT /api/notifications/read-all — mark all notifications as read
+// Must be defined BEFORE /:id/read so Express doesn't match "read-all" as :id
+router.put('/read-all', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await prisma.notification.updateMany({
+      where: { user_id: req.user.id, is_read: false },
+      data: { is_read: true },
+    });
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PUT /api/notifications/:id/read — mark single notification as read
 router.put('/:id/read', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -53,20 +68,6 @@ router.put('/:id/read', async (req: Request, res: Response, next: NextFunction) 
     });
 
     res.json({ notification: updated });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PUT /api/notifications/read-all — mark all notifications as read
-router.put('/read-all', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await prisma.notification.updateMany({
-      where: { user_id: req.user.id, is_read: false },
-      data: { is_read: true },
-    });
-
-    res.json({ message: 'All notifications marked as read' });
   } catch (err) {
     next(err);
   }
