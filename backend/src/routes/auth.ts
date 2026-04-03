@@ -2,13 +2,15 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import admin from '../config/firebaseAdmin';
 import { prisma } from '../config/prisma';
+import { validate } from '../middleware/validate';
 import { UnauthorizedError, ConflictError } from '../utils/errors';
+import { authSyncSchema } from '../schemas';
 
 const router = Router();
 
 // POST /api/auth/sync — create local User record after Firebase registration.
 // Not protected by authMiddleware — the user doesn't exist in DB yet.
-router.post('/sync', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/sync', validate(authSyncSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {

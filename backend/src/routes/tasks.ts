@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { TaskStatus, Category, Prisma } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
 import {
@@ -9,6 +10,12 @@ import {
   ValidationError,
   ConflictError,
 } from '../utils/errors';
+import {
+  createTaskSchema,
+  updateTaskStatusSchema,
+  createBidSchema,
+  createReviewSchema,
+} from '../schemas';
 
 const router = Router();
 
@@ -16,7 +23,7 @@ const router = Router();
 router.use(authMiddleware);
 
 // POST /api/tasks — create a new task
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', validate(createTaskSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       title,
@@ -216,7 +223,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/tasks/:id/status — update task status
-router.put('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status: newStatus } = req.body as { status: TaskStatus };
     const task = await prisma.task.findUnique({ where: { id: req.params.id } });
@@ -324,7 +331,7 @@ router.put('/:id/confirm-payment', async (req: Request, res: Response, next: Nex
 });
 
 // POST /api/tasks/:id/bids — fixer submits a bid
-router.post('/:id/bids', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/bids', validate(createBidSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } });
 
@@ -390,6 +397,73 @@ router.get('/:id/bids', async (req: Request, res: Response, next: NextFunction) 
     });
 
     res.json({ bids });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tasks/:id/reviews — requester submits a review for the fixer
+router.post('/:id/reviews', validate(createReviewSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) {
+      throw new ForbiddenError('Only the task requester can submit a review');
+    }
+    if (task.status !== 'COMPLETED') {
+      throw new ValidationError('Task must be completed before it can be reviewed');
+    }
+    if (!task.assigned_fixer_id) {
+      throw new ValidationError('Task has no assigned fixer');
+    }
+
+    // Enforce 14-day review window
+    if (task.completed_at) {
+      const daysSinceCompleted = (Date.now() - task.completed_at.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceCompleted > 14) {
+        throw new ForbiddenError('Review window has expired (14 days after completion)');
+      }
+    }
+
+    // Check for duplicate review
+    const existing = await prisma.review.findUnique({
+      where: {
+        task_id_reviewer_id: {
+          task_id: task.id,
+          reviewer_id: req.user.id,
+        },
+      },
+    });
+    if (existing) {
+      throw new ConflictError('A review already exists for this task');
+    }
+
+    const { rating, comment } = req.body as { rating: number; comment?: string };
+
+    const review = await prisma.review.create({
+      data: {
+        task_id: task.id,
+        reviewer_id: req.user.id,
+        reviewee_id: task.assigned_fixer_id,
+        rating,
+        comment: comment ?? null,
+      },
+    });
+
+    // Update fixer's average rating
+    const { _avg } = await prisma.review.aggregate({
+      where: { reviewee_id: task.assigned_fixer_id },
+      _avg: { rating: true },
+    });
+    await prisma.user.update({
+      where: { id: task.assigned_fixer_id },
+      data: { average_rating_as_fixer: _avg.rating ?? 0 },
+    });
+
+    res.status(201).json({ review });
   } catch (err) {
     next(err);
   }
