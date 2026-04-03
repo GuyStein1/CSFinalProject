@@ -1,7 +1,3 @@
-import { Router } from 'express';
-
-const router = Router();
-
-// Implemented in Phase 2
-
-export default router;
+// Review routes are co-located with their parent resources:
+// - POST /api/tasks/:id/reviews → tasks.ts
+// - GET /api/users/:id/reviews → users.ts

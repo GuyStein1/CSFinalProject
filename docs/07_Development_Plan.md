@@ -510,17 +510,47 @@ Implements user profile management endpoints and the push notification service. 
 
 Implements the shared infrastructure that all routes depend on: input validation (rejects bad requests before they hit the database) and a global error handler (ensures every error returns a consistent JSON format). Also owns reviews, notifications, and completing the seed script with real data once Firebase test accounts exist.
 
-- `backend/src/middleware/validate.ts` — Validation middleware using `zod`. Each route defines a schema; the middleware calls `schema.parse(req.body)` and returns a `VALIDATION_ERROR` response on failure. Used on all mutation endpoints.
-- `backend/src/middleware/errorHandler.ts` — Express error handler: catches thrown errors, returns standard `{ error: { code, message, details } }` format.
-- `backend/src/utils/errors.ts` — Define the `AppError` base class and subclasses: `NotFoundError` (404), `ForbiddenError` (403), `ConflictError` (409), `ValidationError` (400), `InternalError` (500). Each holds `code: string`, `message: string`, `httpStatus: number`, and optional `details`. The `errorHandler.ts` middleware catches any thrown `AppError` and serializes it to the standard error response format. Non-`AppError` throws are caught and wrapped as `InternalError`. See Architecture §4.6.
-- **Review endpoints:**
-  - `POST /api/tasks/:id/reviews` — Enforce: requesting user must be `requester_id`, task must be `COMPLETED`, no existing review for this task, `completed_at` of task ≤ 14 days ago.
-  - `GET /api/users/:id/reviews`
-- **Notification endpoints:**
-  - `GET /api/notifications` — Returns notifications for the authenticated user, sorted by `created_at` descending. Supports `page` and `limit`.
-  - `PUT /api/notifications/:id/read`
-  - `PUT /api/notifications/read-all`
-- Complete `backend/prisma/seed.ts` with real data: create 6 Firebase test accounts manually in the Firebase Console, copy their UIDs into the seed file, fill in realistic Haifa-area coordinates (use actual lat/lng for Hadar, Carmel Center, etc.), task photos (use placeholder URLs from Firebase Storage).
+#### C2.1 — Input Validation Middleware & Zod Schemas
+
+- `backend/src/middleware/validate.ts` — Validation middleware using `zod`. Accepts a Zod schema and calls `schema.parse(req.body)` — returns a `VALIDATION_ERROR` response with detailed error issues on failure.
+- `backend/src/schemas.ts` — Centralized Zod schemas for all mutation endpoints:
+  - `authSyncSchema` → `POST /api/auth/sync` (full_name required, phone_number optional)
+  - `createTaskSchema` → `POST /api/tasks` (title, description, category, coordinates, addresses, optional price/media)
+  - `updateTaskStatusSchema` → `PUT /api/tasks/:id/status` (status must be valid enum)
+  - `createBidSchema` → `POST /api/tasks/:id/bids` (positive price, description required)
+  - `createReviewSchema` → `POST /api/tasks/:id/reviews` (rating 1–5 integer, optional comment)
+- Wired `validate()` into all mutation routes: `auth.ts` (sync), `tasks.ts` (create task, update status, create bid, create review).
+
+#### C2.2 — Global Error Handler & AppError Classes
+
+Adopted from Stein (A2.1) per his cross-team note — avoids merge conflicts on shared files.
+
+- `backend/src/utils/errors.ts` — Abstract `AppError` base class with subclasses: `UnauthorizedError` (401), `ForbiddenError` (403), `NotFoundError` (404), `ConflictError` (409), `ValidationError` (400), `InternalError` (500). Each defines `httpStatus` and `code` as readonly properties.
+- `backend/src/middleware/errorHandler.ts` — Express error handler: catches thrown `AppError` instances and returns `{ error: { code, message, details } }`. Non-`AppError` errors return 500 generic response.
+
+#### C2.3 — Review Endpoints
+
+Routes co-located with their parent resources (no separate `reviews.ts`) to avoid double `authMiddleware` execution.
+
+- `POST /api/tasks/:id/reviews` — Lives in `tasks.ts`. Enforcements: requesting user must be `requester_id`, task must be `COMPLETED`, no existing review for this task (unique constraint on `task_id + reviewer_id`), `completed_at` ≤ 14 days ago, rating must be 1–5 integer. After creation, auto-updates the fixer's `average_rating_as_fixer`. Uses `validate(createReviewSchema)`.
+- `GET /api/users/:id/reviews` — Lives in `users.ts`. Returns all reviews received by a user as fixer (reviewee), sorted by `created_at` descending, with pagination (`page`, `limit`).
+
+#### C2.4 — Notification Endpoints
+
+- `GET /api/notifications` — Returns notifications for the authenticated user, sorted by `created_at` descending. Supports `page` and `limit`.
+- `PUT /api/notifications/:id/read` — Marks a single notification as read. Includes ownership check (user can only mark their own notifications).
+- `PUT /api/notifications/read-all` — Marks all unread notifications as read for the authenticated user.
+
+#### C2.5 — Seed Script Completion
+
+Complete `backend/prisma/seed.ts` with real data: create 6 Firebase test accounts manually in the Firebase Console, copy their UIDs into the seed file. Coordinates and task data already seeded in C1.3 — only UIDs remain to be filled in.
+
+> **Dependency note:** C2.5 requires access to the Firebase Console (`fixlt-dev` project) to create test accounts.
+
+#### C2.6 — Route Structure Cleanup
+
+- `reviews.ts` emptied — review routes moved into `tasks.ts` (POST) and `users.ts` (GET) to align routes with their parent resources and avoid double `authMiddleware` execution.
+- `index.ts` updated to remove the `reviewRoutes` mount.
 
 ---
 

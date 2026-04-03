@@ -8,11 +8,11 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
+    res.status(err.httpStatus).json({
       error: {
         code: err.code,
         message: err.message,
-        ...(err.details !== undefined && { details: err.details }),
+        details: err.details,
       },
     });
     return;

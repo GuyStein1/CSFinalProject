@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { TaskStatus, BidStatus } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 import { prisma } from '../config/prisma';
+import { NotFoundError } from '../utils/errors';
 
 const router = Router();
 
@@ -72,6 +73,40 @@ router.get('/me/bids', async (req: Request, res: Response, next: NextFunction) =
     ]);
 
     res.json({ bids, total, page: pageNum, limit: limitNum });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/users/:id/reviews — get all reviews received by a user (as fixer)
+router.get('/:id/reviews', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!user) throw new NotFoundError('User not found');
+
+    const {
+      page = '1',
+      limit = '20',
+    } = req.query as { page?: string; limit?: string };
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * limitNum;
+
+    const [reviews, total] = await prisma.$transaction([
+      prisma.review.findMany({
+        where: { reviewee_id: req.params.id },
+        include: { reviewer: true, task: true },
+        orderBy: { created_at: 'desc' },
+        skip: offset,
+        take: limitNum,
+      }),
+      prisma.review.count({ where: { reviewee_id: req.params.id } }),
+    ]);
+
+    res.json({ reviews, total, page: pageNum, limit: limitNum });
   } catch (err) {
     next(err);
   }
