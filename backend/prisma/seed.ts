@@ -1,6 +1,10 @@
 import { PrismaClient, Category, BidStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Seed script cannot run in production');
+}
+
 const prisma = new PrismaClient();
 
 // Placeholder users — replace firebase_uid with real UIDs in Phase 2
