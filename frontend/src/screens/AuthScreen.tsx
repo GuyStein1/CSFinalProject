@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, TextInput } from 'react-native-paper';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
@@ -32,166 +32,188 @@ export default function AuthScreen({
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
+  const canSignIn = email.trim().length > 0 && password.length > 0;
+  const canSyncLocalAccount = fullName.trim().length > 0;
+
   useEffect(() => {
     setFullName((current) => current || suggestedFullName);
   }, [suggestedFullName]);
+
+  const submitSignIn = () => {
+    if (!canSignIn) return;
+    void onSignIn(email, password);
+  };
+
+  const submitLocalAccountSync = () => {
+    if (!canSyncLocalAccount) return;
+    void onSyncLocalAccount(fullName, phoneNumber);
+  };
+
+  const renderShell = (content: React.ReactNode) => (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.card}>
+          <Card.Content style={styles.content}>{content}</Card.Content>
+        </Card>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 
   if (status === 'checking') {
     return <LoadingScreen label="Checking your session..." />;
   }
 
   if (status === 'needs_sync') {
-    return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <Card style={styles.card}>
-          <Card.Content style={styles.content}>
-            <AppLogo />
-            <Text variant="headlineSmall" style={styles.title}>
-              Finish your account setup
+    return renderShell(
+      <>
+        <AppLogo compact showTagline />
+        <Text variant="headlineSmall" style={styles.title}>
+          Finish your account setup
+        </Text>
+        <Text variant="bodyMedium" style={styles.body}>
+          You are signed in with Firebase, but this account does not exist in the Fixlt
+          database yet.
+        </Text>
+
+        {userEmail && (
+          <View style={styles.infoRow}>
+            <Text variant="labelLarge" style={styles.infoLabel}>
+              Signed in as
             </Text>
-            <Text variant="bodyMedium" style={styles.body}>
-              You are signed in with Firebase, but this account does not exist in the Fixlt
-              database yet.
+            <Text variant="bodyMedium" style={styles.infoValue}>
+              {userEmail}
             </Text>
+          </View>
+        )}
 
-            {userEmail && (
-              <View style={styles.infoRow}>
-                <Text variant="labelLarge" style={styles.infoLabel}>
-                  Signed in as
-                </Text>
-                <Text variant="bodyMedium" style={styles.infoValue}>
-                  {userEmail}
-                </Text>
-              </View>
-            )}
+        <TextInput
+          mode="outlined"
+          label="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+          style={styles.input}
+          returnKeyType="next"
+        />
+        <TextInput
+          mode="outlined"
+          label="Phone Number (optional)"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
+          style={styles.input}
+          returnKeyType="done"
+          onSubmitEditing={submitLocalAccountSync}
+        />
 
-            <TextInput
-              mode="outlined"
-              label="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Phone Number (optional)"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              style={styles.input}
-            />
+        {error && (
+          <Text variant="bodySmall" style={styles.errorText}>
+            {error}
+          </Text>
+        )}
 
-            {error && (
-              <Text variant="bodySmall" style={styles.errorText}>
-                {error}
-              </Text>
-            )}
-
-            <Button
-              mode="contained"
-              onPress={() => onSyncLocalAccount(fullName, phoneNumber)}
-              disabled={fullName.trim().length === 0}
-              style={styles.primaryButton}
-            >
-              Create Local Account
-            </Button>
-            <Button mode="text" onPress={onLogOut}>
-              Sign Out
-            </Button>
-          </Card.Content>
-        </Card>
-      </KeyboardAvoidingView>
+        <Button
+          mode="contained"
+          onPress={submitLocalAccountSync}
+          disabled={!canSyncLocalAccount}
+          style={styles.primaryButton}
+        >
+          Create Local Account
+        </Button>
+        <Button mode="text" onPress={onLogOut}>
+          Sign Out
+        </Button>
+      </>
     );
   }
 
   if (status === 'error' && userEmail) {
-    return (
-      <View style={styles.container}>
-        <Card style={styles.card}>
-          <Card.Content style={styles.content}>
-            <AppLogo />
-            <Text variant="headlineSmall" style={styles.title}>
-              Session verification failed
-            </Text>
-            <Text variant="bodyMedium" style={styles.body}>
-              {error ?? 'We could not verify your session with the backend.'}
-            </Text>
-            <Button mode="contained" onPress={onRetry} style={styles.primaryButton}>
-              Try Again
-            </Button>
-            <Button mode="text" onPress={onLogOut}>
-              Sign Out
-            </Button>
-          </Card.Content>
-        </Card>
-      </View>
+    return renderShell(
+      <>
+        <AppLogo compact showTagline />
+        <Text variant="headlineSmall" style={styles.title}>
+          Session verification failed
+        </Text>
+        <Text variant="bodyMedium" style={styles.body}>
+          {error ?? 'We could not verify your session with the backend.'}
+        </Text>
+        <Button mode="contained" onPress={() => void onRetry()} style={styles.primaryButton}>
+          Try Again
+        </Button>
+        <Button mode="text" onPress={onLogOut}>
+          Sign Out
+        </Button>
+      </>
     );
   }
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-    >
-      <Card style={styles.card}>
-        <Card.Content style={styles.content}>
-          <AppLogo />
-          <Text variant="headlineSmall" style={styles.title}>
-            Sign in to Fixlt
-          </Text>
-          <Text variant="bodyMedium" style={styles.body}>
-            Use your Firebase test user so the app can send authenticated API requests locally.
-          </Text>
+  return renderShell(
+    <>
+      <AppLogo compact showTagline />
+      <Text variant="headlineSmall" style={styles.title}>
+        Sign in to Fixlt
+      </Text>
+      <Text variant="bodyMedium" style={styles.body}>
+        Use your Firebase test user so the app can send authenticated API requests locally.
+      </Text>
 
-          <TextInput
-            mode="outlined"
-            label="Email"
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-          />
-          <TextInput
-            mode="outlined"
-            label="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
+      <TextInput
+        mode="outlined"
+        label="Email"
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+        returnKeyType="next"
+      />
+      <TextInput
+        mode="outlined"
+        label="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+        returnKeyType="done"
+        onSubmitEditing={submitSignIn}
+      />
 
-          {error && (
-            <Text variant="bodySmall" style={styles.errorText}>
-              {error}
-            </Text>
-          )}
+      {error && (
+        <Text variant="bodySmall" style={styles.errorText}>
+          {error}
+        </Text>
+      )}
 
-          <Button
-            mode="contained"
-            onPress={() => onSignIn(email, password)}
-            disabled={email.trim().length === 0 || password.length === 0}
-            style={styles.primaryButton}
-          >
-            Sign In
-          </Button>
-        </Card.Content>
-      </Card>
-    </KeyboardAvoidingView>
+      <Button
+        mode="contained"
+        onPress={submitSignIn}
+        disabled={!canSignIn}
+        style={styles.primaryButton}
+      >
+        Sign In
+      </Button>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: brandColors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: brandColors.background,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
   },
   card: {
     width: '100%',
