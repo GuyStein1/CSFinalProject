@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { brandColors } from '../theme';
 import {
@@ -16,17 +16,26 @@ export default function DiscoveryMap({
   centerLng,
   mapRegion,
   onSelectTask,
+  onClearSelection,
 }: DiscoveryMapProps) {
+  const handleMarkerPress = useCallback(
+    (taskId: string, e: GestureResponderEvent) => {
+      e.stopPropagation?.();
+      onSelectTask(taskId);
+    },
+    [onSelectTask],
+  );
+
   return (
     <View style={styles.container}>
       <Text variant="titleMedium" style={styles.title}>
         Nearby Jobs Map
       </Text>
       <Text variant="bodySmall" style={styles.subtitle}>
-        Interactive markers are shown here while the native map package is unavailable on web.
+        Tap a marker to preview a task. Tap the background to dismiss.
       </Text>
 
-      <View style={styles.canvas}>
+      <Pressable style={styles.canvas} onPress={onClearSelection}>
         {tasks.map((task) => {
           const leftRatio = getRelativeOffset(task.lng, centerLng, mapRegion.longitudeDelta);
           const topRatio = getRelativeOffset(task.lat, centerLat, mapRegion.latitudeDelta, true);
@@ -34,7 +43,7 @@ export default function DiscoveryMap({
           return (
             <Pressable
               key={task.id}
-              onPress={() => onSelectTask(task.id)}
+              onPress={(e) => handleMarkerPress(task.id, e)}
               style={[
                 styles.marker,
                 {
@@ -46,7 +55,7 @@ export default function DiscoveryMap({
             />
           );
         })}
-      </View>
+      </Pressable>
     </View>
   );
 }
