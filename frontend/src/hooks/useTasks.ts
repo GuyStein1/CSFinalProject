@@ -58,6 +58,22 @@ type ApiTask = {
   bid_count: number;
 };
 
+function getErrorStatus(error: unknown) {
+  const response = (error as { response?: { status?: unknown } } | null)?.response;
+  return typeof response?.status === 'number' ? response.status : null;
+}
+
+function getErrorMessage(error: unknown) {
+  const response = (error as { response?: { data?: { error?: { message?: unknown } } } } | null)?.response;
+  const message = response?.data?.error?.message;
+
+  if (typeof message === 'string' && message.length > 0) {
+    return message;
+  }
+
+  return error instanceof Error ? error.message : null;
+}
+
 export default function useTasks({
   lat,
   lng,
@@ -123,8 +139,19 @@ export default function useTasks({
       }));
 
       setTasks(nextTasks);
-    } catch {
-      setError('Failed to load nearby tasks.');
+    } catch (nextError) {
+      const status = getErrorStatus(nextError);
+      const message = getErrorMessage(nextError);
+
+      if (status === 401) {
+        setError('Sign in is required before nearby jobs can load.');
+      } else if (message === 'Network Error') {
+        setError('Could not reach the backend. Check your local API server.');
+      } else if (message) {
+        setError(message);
+      } else {
+        setError('Failed to load nearby tasks.');
+      }
       setTasks([]);
     } finally {
       setLoading(false);
