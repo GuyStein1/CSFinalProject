@@ -15,7 +15,12 @@ export async function authMiddleware(
     }
 
     const token = authHeader.slice(7);
-    const decoded = await admin.auth().verifyIdToken(token);
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(token);
+    } catch (firebaseErr) {
+      throw new UnauthorizedError('Invalid or expired token');
+    }
 
     const user = await prisma.user.findUnique({
       where: { firebase_uid: decoded.uid },

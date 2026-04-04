@@ -42,6 +42,16 @@ router.post('/sync', validate(authSyncSchema), async (req: Request, res: Respons
     ) {
       return next(new ConflictError('User already exists'));
     }
+    // Firebase token verification errors
+    if (
+      err instanceof Error &&
+      'errorInfo' in err
+    ) {
+      const firebaseErr = err as Error & { errorInfo?: { code?: string } };
+      if (firebaseErr.errorInfo?.code?.startsWith('auth/')) {
+        return next(new UnauthorizedError('Invalid or expired token'));
+      }
+    }
     next(err as Error);
   }
 });
