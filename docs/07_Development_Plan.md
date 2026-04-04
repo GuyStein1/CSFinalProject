@@ -655,6 +655,24 @@ Builds the authentication screens and the navigation structure that controls wha
   - Push notifications toggle
   - Log out button
 
+> **PR:** [#47](https://github.com/GuyStein1/CSFinalProject/pull/47)
+
+#### How to run the frontend
+
+```bash
+# 1. Clone and install
+git clone https://github.com/GuyStein1/CSFinalProject.git
+cd CSFinalProject
+npm install
+
+# 2. Create frontend/.env (copy from .env.example and fill in Firebase keys)
+cp frontend/.env.example frontend/.env
+
+# 3. Start the web app
+cd frontend
+npx expo start --web
+```
+
 ---
 
 ## Phase 4 — Real-Time Features
