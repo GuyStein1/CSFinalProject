@@ -12,8 +12,14 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "backend/src/**/*.ts": ["eslint --fix", "bash -c 'tsc -p backend/tsconfig.json --noEmit'"],
-    "frontend/src/**/*.{ts,tsx}": ["eslint --fix", "bash -c 'tsc -p frontend/tsconfig.json --noEmit'"]
+    "backend/src/**/*.ts": [
+      "eslint --fix",
+      "bash -c 'tsc -p backend/tsconfig.json --noEmit'"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "bash -c 'tsc -p frontend/tsconfig.json --noEmit'"
+    ]
   },
   "devDependencies": {
     "husky": "^9.1.7",
