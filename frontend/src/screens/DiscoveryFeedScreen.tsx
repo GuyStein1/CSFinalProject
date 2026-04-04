@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import * as Location from 'expo-location';
 import {
   ActivityIndicator,
@@ -12,10 +12,12 @@ import {
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import AppLogo from '../components/AppLogo';
+import DiscoveryMap from '../components/DiscoveryMap';
+import type { DiscoveryMapRegion } from '../components/DiscoveryMap.types';
 import DiscoveryPreviewCard from '../components/DiscoveryPreviewCard';
 import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
-import useTasks, { DiscoveryTask } from '../hooks/useTasks';
+import useTasks from '../hooks/useTasks';
 import { brandColors } from '../theme';
 
 type PermissionState = 'checking' | 'rationale' | 'denied' | 'ready' | 'error';
@@ -31,26 +33,8 @@ interface DiscoveryCenter {
   label: string;
 }
 
-interface MapRegion {
-  latitude: number;
-  longitude: number;
-  latitudeDelta: number;
-  longitudeDelta: number;
-}
-
 const DEFAULT_RADIUS_KM = 10;
 const DEFAULT_DELTA = 0.06;
-const WEB_MAP_WIDTH = 320;
-const WEB_MAP_HEIGHT = 420;
-
-const CATEGORY_MARKER_COLORS: Record<DiscoveryTask['category'], string> = {
-  ELECTRICITY: '#D28F1B',
-  PLUMBING: '#496B84',
-  CARPENTRY: '#7B5D3D',
-  PAINTING: '#A85B5B',
-  MOVING: '#517A58',
-  GENERAL: '#1C3C56',
-};
 
 export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [permissionState, setPermissionState] = useState<PermissionState>('checking');
@@ -60,7 +44,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [manualError, setManualError] = useState<string | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [mapRegion, setMapRegion] = useState<MapRegion | null>(null);
+  const [mapRegion, setMapRegion] = useState<DiscoveryMapRegion | null>(null);
 
   const { tasks, loading, error, refetch } = useTasks({
     lat: center?.lat,
@@ -313,59 +297,18 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     );
   }
 
-  const NativeMapView = Platform.OS === 'web' ? null : require('react-native-maps').default;
-  const NativeMarker = Platform.OS === 'web' ? null : require('react-native-maps').Marker;
-
   return (
     <View style={styles.container}>
-      {mapRegion && NativeMapView ? (
-        <NativeMapView
-          style={StyleSheet.absoluteFillObject}
-          initialRegion={mapRegion}
-          region={mapRegion}
-          onPress={() => setSelectedTaskId(null)}
-          onRegionChangeComplete={(region: MapRegion) => setMapRegion(region)}
-        >
-          {tasks.map((task) => (
-            <NativeMarker
-              key={task.id}
-              coordinate={{ latitude: task.lat, longitude: task.lng }}
-              pinColor={CATEGORY_MARKER_COLORS[task.category]}
-              onPress={() => setSelectedTaskId(task.id)}
-            />
-          ))}
-        </NativeMapView>
-      ) : (
-        <View style={styles.webMapFallback}>
-          <Text variant="titleMedium" style={styles.webMapTitle}>
-            Nearby Jobs Map
-          </Text>
-          <Text variant="bodySmall" style={styles.webMapText}>
-            Interactive markers are available here even when native map rendering is unavailable.
-          </Text>
-
-          <View style={styles.webMapCanvas}>
-            {tasks.map((task) => {
-              const leftRatio = getRelativeOffset(task.lng, center?.lng ?? task.lng, DEFAULT_DELTA);
-              const topRatio = getRelativeOffset(task.lat, center?.lat ?? task.lat, DEFAULT_DELTA, true);
-
-              return (
-                <Pressable
-                  key={task.id}
-                  onPress={() => setSelectedTaskId(task.id)}
-                  style={[
-                    styles.webMarker,
-                    {
-                      left: leftRatio * WEB_MAP_WIDTH,
-                      top: topRatio * WEB_MAP_HEIGHT,
-                      backgroundColor: CATEGORY_MARKER_COLORS[task.category],
-                    },
-                  ]}
-                />
-              );
-            })}
-          </View>
-        </View>
+      {mapRegion && center && (
+        <DiscoveryMap
+          tasks={tasks}
+          centerLat={center.lat}
+          centerLng={center.lng}
+          mapRegion={mapRegion}
+          onSelectTask={setSelectedTaskId}
+          onClearSelection={() => setSelectedTaskId(null)}
+          onRegionChangeComplete={setMapRegion}
+        />
       )}
 
       {centerMode === 'manual' && center && (
@@ -433,13 +376,6 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       )}
     </View>
   );
-}
-
-function getRelativeOffset(value: number, center: number, delta: number, invert = false) {
-  const normalized = 0.5 + (value - center) / (delta * 2);
-  const clamped = Math.max(0.08, Math.min(0.92, normalized));
-
-  return invert ? 1 - clamped : clamped;
 }
 
 const styles = StyleSheet.create({
@@ -519,39 +455,6 @@ const styles = StyleSheet.create({
   manualError: {
     color: brandColors.danger,
     marginBottom: 12,
-  },
-  webMapFallback: {
-    flex: 1,
-    padding: 20,
-  },
-  webMapTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  webMapText: {
-    color: brandColors.textMuted,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  webMapCanvas: {
-    width: WEB_MAP_WIDTH,
-    height: WEB_MAP_HEIGHT,
-    alignSelf: 'center',
-    borderRadius: 28,
-    backgroundColor: brandColors.surfaceAlt,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: brandColors.outline,
-  },
-  webMarker: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: brandColors.surface,
-    marginLeft: -9,
-    marginTop: -9,
   },
   manualOverlayCard: {
     position: 'absolute',
