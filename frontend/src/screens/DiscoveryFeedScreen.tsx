@@ -458,6 +458,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
                 />
               )}
               contentContainerStyle={styles.listContent}
+              onRefresh={refetch}
+              refreshing={loading}
             />
           )}
         </View>

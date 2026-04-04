@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { brandColors } from '../theme';
 import {
@@ -18,6 +18,14 @@ export default function DiscoveryMap({
   onSelectTask,
   onClearSelection,
 }: DiscoveryMapProps) {
+  const handleMarkerPress = useCallback(
+    (taskId: string, e: GestureResponderEvent) => {
+      e.stopPropagation?.();
+      onSelectTask(taskId);
+    },
+    [onSelectTask],
+  );
+
   return (
     <View style={styles.container}>
       <Text variant="titleMedium" style={styles.title}>
@@ -35,7 +43,7 @@ export default function DiscoveryMap({
           return (
             <Pressable
               key={task.id}
-              onPress={() => onSelectTask(task.id)}
+              onPress={(e) => handleMarkerPress(task.id, e)}
               style={[
                 styles.marker,
                 {
