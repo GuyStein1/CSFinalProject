@@ -21,11 +21,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### In Progress
 - **Phase 2 (Zilber — B2, issue #20)** — User/portfolio endpoints and real notification service (replaces stub at `backend/src/services/notificationService.ts`)
 
-### Laptop Setup
-- **Work laptop (Mac, Wix)**: Code only. Never run `npm install` — Wix CrowdStrike blocks the public npm registry. Commit code changes freely.
-- **Personal laptop (Windows)**: Runs Docker, npm installs, and the dev server. All `npm install` and `package-lock.json` commits must come from here.
-- **Testing**: Backend runs on personal laptop (`npm run dev:backend`), Postman requests sent from work laptop to `http://<personal-laptop-ip>:3000`
-
 ### Key Files Added in Phase 2
 - `backend/src/middleware/auth.ts` — Firebase token verification + user lookup
 - `backend/src/middleware/validate.ts` — Zod validation middleware (Shick)
