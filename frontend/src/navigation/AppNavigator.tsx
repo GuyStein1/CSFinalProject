@@ -11,6 +11,7 @@ import RequesterTabs from './RequesterTabs';
 import FixerTabs from './FixerTabs';
 import CreateTask from '../screens/CreateTask';
 import TaskDetails from '../screens/TaskDetails';
+import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import AppLogo from '../components/AppLogo';
 import { brandColors } from '../theme';
@@ -84,7 +85,7 @@ function MainNavigator() {
     <ModeTabs.Navigator
       initialRouteName="RequesterMode"
       screenOptions={{
-        header: (props) => <MainHeader {...props} />,
+        header: (props: BottomTabHeaderProps) => <MainHeader {...props} />,
         tabBarStyle: { display: 'none' },
         sceneStyle: { backgroundColor: theme.colors.background },
       }}
@@ -130,6 +131,11 @@ export default function AppNavigator() {
         name="TaskDetails"
         component={TaskDetails}
         options={{ title: 'Task Details' }}
+      />
+      <Stack.Screen
+        name="TaskDetailsFixer"
+        component={TaskDetailsFixer}
+        options={{ title: 'Job Details' }}
       />
       <Stack.Screen
         name="Settings"

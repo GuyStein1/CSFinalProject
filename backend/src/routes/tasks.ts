@@ -129,6 +129,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       is_payment_confirmed: boolean;
       created_at: Date;
       updated_at: Date;
+      lat: number;
+      lng: number;
+      distance_km: number;
+      bid_count: number;
     };
 
     let tasks: TaskRow[];
@@ -136,19 +140,35 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     if (minPriceNum !== null && maxPriceNum !== null) {
       tasks = await prisma.$queryRaw<TaskRow[]>`
-        SELECT id, requester_id, title, description, media_urls, category,
-               suggested_price, status, general_location_name,
-               is_payment_confirmed, created_at, updated_at
-        FROM "Task"
-        WHERE status = 'OPEN'::"TaskStatus"
+        SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
+               t.suggested_price, t.status, t.general_location_name,
+               t.is_payment_confirmed, t.created_at, t.updated_at,
+               ST_Y(t.coordinates::geometry) AS lat,
+               ST_X(t.coordinates::geometry) AS lng,
+               ROUND((
+                 ST_Distance(
+                   t.coordinates::geography,
+                   ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography
+                 ) / 1000
+               )::numeric, 2)::double precision AS distance_km,
+               COALESCE(bid_counts.bid_count, 0)::int AS bid_count
+        FROM "Task" t
+        LEFT JOIN (
+          SELECT task_id, COUNT(*)::int AS bid_count
+          FROM "Bid"
+          WHERE status IN ('PENDING'::"BidStatus", 'ACCEPTED'::"BidStatus")
+          GROUP BY task_id
+        ) AS bid_counts
+          ON bid_counts.task_id = t.id
+        WHERE t.status = 'OPEN'::"TaskStatus"
           AND ST_DWithin(
-            coordinates::geography,
+            t.coordinates::geography,
             ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography,
             ${radiusMeters}
           )
-          AND (suggested_price IS NULL OR (suggested_price >= ${minPriceNum} AND suggested_price <= ${maxPriceNum}))
-          ${category ? Prisma.sql`AND category = ${category}::"Category"` : Prisma.empty}
-        ORDER BY created_at DESC
+          AND (t.suggested_price IS NULL OR (t.suggested_price >= ${minPriceNum} AND t.suggested_price <= ${maxPriceNum}))
+          ${category ? Prisma.sql`AND t.category = ${category}::"Category"` : Prisma.empty}
+        ORDER BY distance_km ASC, t.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
       countResult = await prisma.$queryRaw<{ count: bigint }[]>`
@@ -164,18 +184,34 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       `;
     } else {
       tasks = await prisma.$queryRaw<TaskRow[]>`
-        SELECT id, requester_id, title, description, media_urls, category,
-               suggested_price, status, general_location_name,
-               is_payment_confirmed, created_at, updated_at
-        FROM "Task"
-        WHERE status = 'OPEN'::"TaskStatus"
+        SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
+               t.suggested_price, t.status, t.general_location_name,
+               t.is_payment_confirmed, t.created_at, t.updated_at,
+               ST_Y(t.coordinates::geometry) AS lat,
+               ST_X(t.coordinates::geometry) AS lng,
+               ROUND((
+                 ST_Distance(
+                   t.coordinates::geography,
+                   ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography
+                 ) / 1000
+               )::numeric, 2)::double precision AS distance_km,
+               COALESCE(bid_counts.bid_count, 0)::int AS bid_count
+        FROM "Task" t
+        LEFT JOIN (
+          SELECT task_id, COUNT(*)::int AS bid_count
+          FROM "Bid"
+          WHERE status IN ('PENDING'::"BidStatus", 'ACCEPTED'::"BidStatus")
+          GROUP BY task_id
+        ) AS bid_counts
+          ON bid_counts.task_id = t.id
+        WHERE t.status = 'OPEN'::"TaskStatus"
           AND ST_DWithin(
-            coordinates::geography,
+            t.coordinates::geography,
             ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)::geography,
             ${radiusMeters}
           )
-          ${category ? Prisma.sql`AND category = ${category}::"Category"` : Prisma.empty}
-        ORDER BY created_at DESC
+          ${category ? Prisma.sql`AND t.category = ${category}::"Category"` : Prisma.empty}
+        ORDER BY distance_km ASC, t.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
       countResult = await prisma.$queryRaw<{ count: bigint }[]>`

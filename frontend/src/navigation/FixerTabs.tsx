@@ -3,14 +3,11 @@ import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
+import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { brandColors } from '../theme';
 
 const Tab = createBottomTabNavigator();
-
-function FindJobsScreen() {
-  return <PlaceholderScreen title="Find Jobs" />;
-}
 
 function MyBidsScreen() {
   return <PlaceholderScreen title="My Bids" />;
@@ -40,7 +37,7 @@ export default function FixerTabs() {
     >
       <Tab.Screen
         name="FindJobs"
-        component={FindJobsScreen}
+        component={DiscoveryFeedScreen}
         options={{
           tabBarLabel: 'Find Jobs',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
