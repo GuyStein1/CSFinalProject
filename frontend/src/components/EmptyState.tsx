@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Button, Icon } from 'react-native-paper';
+import { Text, Button, Icon, useTheme } from 'react-native-paper';
+import { brandColors } from '../theme';
 
 interface EmptyStateProps {
   icon: string;
@@ -11,9 +12,13 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+  const theme = useTheme();
+
   return (
     <View style={styles.container}>
-      <Icon source={icon} size={64} color="#9E9E9E" />
+      <View style={styles.iconShell}>
+        <Icon source={icon} size={40} color={theme.colors.primary} />
+      </View>
       <Text variant="titleMedium" style={styles.title}>
         {title}
       </Text>
@@ -23,7 +28,7 @@ export default function EmptyState({ icon, title, message, actionLabel, onAction
         </Text>
       )}
       {actionLabel && onAction && (
-        <Button mode="contained" onPress={onAction} style={styles.button}>
+        <Button mode="contained" onPress={onAction} style={styles.button} buttonColor={theme.colors.primary}>
           {actionLabel}
         </Button>
       )}
@@ -38,17 +43,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 32,
   },
+  iconShell: {
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
   title: {
-    marginTop: 16,
     textAlign: 'center',
-    color: '#424242',
+    color: brandColors.textPrimary,
+    fontWeight: '700',
   },
   message: {
     marginTop: 8,
     textAlign: 'center',
-    color: '#757575',
+    color: brandColors.textMuted,
+    maxWidth: 320,
   },
   button: {
     marginTop: 24,
+    borderRadius: 999,
   },
 });

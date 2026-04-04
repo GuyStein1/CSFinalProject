@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Alert } from 'react-native';
 import { View } from 'react-native';
-import { Text, TextInput, Button, Card, Divider, Switch } from 'react-native-paper';
+import { Text, TextInput, Button, Card, Divider, Switch, useTheme } from 'react-native-paper';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import AppLogo from '../components/AppLogo';
+import { brandColors } from '../theme';
 
 export default function SettingsScreen() {
+  const theme = useTheme();
   const user = auth.currentUser;
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
@@ -36,7 +39,14 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text variant="headlineSmall" style={styles.heading}>Settings</Text>
+      <Card style={styles.heroCard}>
+        <Card.Content style={styles.heroContent}>
+          <AppLogo />
+          <Text variant="bodyMedium" style={styles.heroText}>
+            Account preferences, sign-in settings, and notification controls all live here.
+          </Text>
+        </Card.Content>
+      </Card>
 
       <Card style={styles.card}>
         <Card.Content>
@@ -66,6 +76,7 @@ export default function SettingsScreen() {
             loading={saving}
             disabled={saving || phone.trim().length === 0}
             compact
+            buttonColor={theme.colors.primary}
           >
             Save
           </Button>
@@ -93,7 +104,7 @@ export default function SettingsScreen() {
           <Button
             mode="outlined"
             onPress={handleLogout}
-            textColor="#C62828"
+            textColor={brandColors.danger}
             style={styles.settingsButton}
             icon="logout"
           >
@@ -108,24 +119,36 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    paddingTop: 90,
-    backgroundColor: '#E3F2FD',
+    paddingTop: 24,
+    paddingBottom: 24,
+    backgroundColor: brandColors.background,
     alignItems: 'center',
   },
-  heading: {
-    marginBottom: 16,
+  heroCard: {
     width: '100%',
     maxWidth: 500,
+    marginBottom: 16,
+    borderRadius: 28,
+    backgroundColor: brandColors.surface,
+  },
+  heroContent: {
+    gap: 12,
+  },
+  heroText: {
+    color: brandColors.textMuted,
+    lineHeight: 20,
   },
   card: {
     width: '100%',
     maxWidth: 500,
     marginBottom: 16,
+    borderRadius: 24,
+    backgroundColor: brandColors.surface,
   },
   value: {
     marginTop: 4,
     marginBottom: 8,
-    color: '#616161',
+    color: brandColors.textMuted,
   },
   divider: {
     marginVertical: 12,
@@ -133,6 +156,7 @@ const styles = StyleSheet.create({
   input: {
     marginTop: 4,
     marginBottom: 12,
+    backgroundColor: brandColors.surface,
   },
   pushRow: {
     flexDirection: 'row',
@@ -141,5 +165,6 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     marginBottom: 8,
+    borderRadius: 999,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Chip } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
+import { brandColors } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
@@ -8,14 +9,14 @@ type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 type Status = TaskStatus | BidStatus;
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; text: string }> = {
-  OPEN: { label: 'Open', bg: '#E3F2FD', text: '#1565C0' },
-  IN_PROGRESS: { label: 'In Progress', bg: '#FFF3E0', text: '#E65100' },
-  COMPLETED: { label: 'Completed', bg: '#E8F5E9', text: '#2E7D32' },
-  CANCELED: { label: 'Canceled', bg: '#FCE4EC', text: '#C62828' },
-  PENDING: { label: 'Pending', bg: '#FFF8E1', text: '#F9A825' },
-  ACCEPTED: { label: 'Accepted', bg: '#E8F5E9', text: '#2E7D32' },
-  REJECTED: { label: 'Rejected', bg: '#FCE4EC', text: '#C62828' },
-  WITHDRAWN: { label: 'Withdrawn', bg: '#F5F5F5', text: '#757575' },
+  OPEN: { label: 'Open', bg: brandColors.infoSoft, text: brandColors.primary },
+  IN_PROGRESS: { label: 'In Progress', bg: brandColors.warningSoft, text: brandColors.warning },
+  COMPLETED: { label: 'Completed', bg: brandColors.successSoft, text: brandColors.success },
+  CANCELED: { label: 'Canceled', bg: brandColors.dangerSoft, text: brandColors.danger },
+  PENDING: { label: 'Pending', bg: brandColors.warningSoft, text: brandColors.warning },
+  ACCEPTED: { label: 'Accepted', bg: brandColors.successSoft, text: brandColors.success },
+  REJECTED: { label: 'Rejected', bg: brandColors.dangerSoft, text: brandColors.danger },
+  WITHDRAWN: { label: 'Withdrawn', bg: brandColors.neutralSoft, text: brandColors.textMuted },
 };
 
 interface StatusBadgeProps {
@@ -40,6 +41,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
 const styles = StyleSheet.create({
   chip: {
     alignSelf: 'flex-start',
+    borderRadius: 999,
   },
   text: {
     fontSize: 12,

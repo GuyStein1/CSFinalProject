@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme, SegmentedButtons, Text, IconButton } from 'react-native-paper';
+import { useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RequesterTabs from './RequesterTabs';
 import FixerTabs from './FixerTabs';
 import CreateTask from '../screens/CreateTask';
 import TaskDetails from '../screens/TaskDetails';
 import SettingsScreen from '../screens/SettingsScreen';
+import AppLogo from '../components/AppLogo';
+import { brandColors } from '../theme';
 
 type Mode = 'requester' | 'fixer';
 
@@ -25,21 +26,12 @@ function MainScreen() {
         style={[
           styles.topBar,
           {
-            paddingTop: insets.top + 4,
+            paddingTop: insets.top + 8,
             backgroundColor: theme.colors.primary,
           },
         ]}
       >
-        <View style={styles.logoContainer}>
-          <MaterialCommunityIcons
-            name="hammer-wrench"
-            size={22}
-            color={theme.colors.secondary}
-          />
-          <Text variant="titleMedium" style={[styles.logoText, { color: theme.colors.onPrimary }]}>
-            Fixlt
-          </Text>
-        </View>
+        <AppLogo compact onDark />
         <View style={styles.rightControls}>
           <SegmentedButtons
             value={mode}
@@ -54,18 +46,20 @@ function MainScreen() {
               colors: {
                 secondaryContainer: theme.colors.secondary,
                 onSecondaryContainer: theme.colors.primary,
-                outline: 'rgba(255,255,255,0.5)',
-                onSurface: theme.colors.onPrimary,
+                outline: 'rgba(255, 252, 246, 0.25)',
+                onSurface: 'rgba(255, 252, 246, 0.82)',
               },
             }}
           />
-          <IconButton
-            icon="bell-outline"
-            iconColor={theme.colors.onPrimary}
-            size={22}
-            onPress={() => {}}
-            style={styles.bellButton}
-          />
+          <View style={styles.bellShell}>
+            <IconButton
+              icon="bell-outline"
+              iconColor={theme.colors.onPrimary}
+              size={20}
+              onPress={() => {}}
+              style={styles.bellButton}
+            />
+          </View>
         </View>
       </View>
       <View style={styles.tabContainer}>
@@ -82,7 +76,10 @@ export default function AppNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerTintColor: theme.colors.primary,
-        contentStyle: { backgroundColor: '#E3F2FD' },
+        headerStyle: { backgroundColor: theme.colors.surface },
+        headerShadowVisible: false,
+        headerTitleStyle: { color: brandColors.textPrimary },
+        contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
       <Stack.Screen
@@ -117,27 +114,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingBottom: 6,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  logoText: {
-    fontWeight: 'bold',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: '#132435',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 6,
   },
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   segmentedButtons: {
-    width: 180,
+    width: 168,
+    backgroundColor: 'rgba(255, 252, 246, 0.08)',
+    borderRadius: 999,
   },
   bellButton: {
     margin: 0,
-    marginLeft: 2,
+  },
+  bellShell: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 252, 246, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 252, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabContainer: {
     flex: 1,

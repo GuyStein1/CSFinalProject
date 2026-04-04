@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Card, Icon, Text, useTheme } from 'react-native-paper';
 import StatusBadge from './StatusBadge';
+import { brandColors } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
@@ -39,13 +40,20 @@ export default function TaskCard({
   const theme = useTheme();
 
   return (
-    <Card style={styles.card} onPress={onPress} mode="elevated">
+    <Card
+      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+      onPress={onPress}
+      mode="elevated"
+    >
       <Card.Title
         title={title}
         titleNumberOfLines={2}
         titleVariant="titleSmall"
+        titleStyle={styles.title}
         left={() => (
-          <Icon source={CATEGORY_ICONS[category]} size={28} color={theme.colors.primary} />
+          <View style={styles.iconShell}>
+            <Icon source={CATEGORY_ICONS[category]} size={24} color={theme.colors.primary} />
+          </View>
         )}
       />
       <Card.Content style={styles.content}>
@@ -77,23 +85,33 @@ const styles = StyleSheet.create({
   card: {
     marginVertical: 6,
     marginHorizontal: 4,
+    borderRadius: 22,
+    shadowColor: '#112336',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  categoryIcon: {
-    fontSize: 24,
+  title: {
+    color: brandColors.textPrimary,
+    fontWeight: '700',
   },
   content: {
-    gap: 6,
+    gap: 8,
     paddingBottom: 12,
   },
   location: {
-    color: '#757575',
+    color: brandColors.textMuted,
   },
   meta: {
-    color: '#9E9E9E',
+    color: brandColors.textMuted,
   },
-  icon: {
+  iconShell: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 14,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

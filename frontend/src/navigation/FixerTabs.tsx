@@ -1,9 +1,10 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import { brandColors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,6 +20,10 @@ function MessagesScreen() {
   return <PlaceholderScreen title="Messages" />;
 }
 
+function FixerProfileScreen() {
+  return <PlaceholderScreen title="Fixer Profile" />;
+}
+
 export default function FixerTabs() {
   const theme = useTheme();
 
@@ -26,9 +31,11 @@ export default function FixerTabs() {
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: '#757575',
+        tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
-        sceneStyle: { backgroundColor: '#E3F2FD' },
+        sceneStyle: { backgroundColor: theme.colors.background },
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tab.Screen
@@ -63,7 +70,7 @@ export default function FixerTabs() {
       />
       <Tab.Screen
         name="FixerProfile"
-        component={SettingsScreen}
+        component={FixerProfileScreen}
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }: { color: string; size: number }) => (
@@ -74,3 +81,18 @@ export default function FixerTabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    height: 72,
+    paddingTop: 8,
+    paddingBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: brandColors.outline,
+    backgroundColor: brandColors.surface,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});

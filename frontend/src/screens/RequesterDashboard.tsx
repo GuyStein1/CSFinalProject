@@ -1,10 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { View, FlatList, ScrollView, StyleSheet, RefreshControl } from 'react-native';
-import { Text, FAB, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, FAB, useTheme, Card } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import EmptyState from '../components/EmptyState';
+import AppLogo from '../components/AppLogo';
+import LoadingScreen from '../components/LoadingScreen';
+import { brandColors } from '../theme';
 
 interface Task {
   id: string;
@@ -55,11 +58,7 @@ export default function RequesterDashboard({ navigation }: Props) {
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <LoadingScreen label="Loading your tasks..." />;
   }
 
   if (tasks.length === 0) {
@@ -89,6 +88,27 @@ export default function RequesterDashboard({ navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
+            <Card style={styles.heroCard} mode="elevated">
+              <Card.Content style={styles.heroContent}>
+                <AppLogo />
+                <Text variant="bodyMedium" style={styles.heroText}>
+                  Keep track of open jobs, compare bids, and move each task forward without the UI
+                  fighting you.
+                </Text>
+                <View style={styles.heroStats}>
+                  <View style={styles.statPill}>
+                    <Text variant="labelMedium" style={styles.statText}>
+                      {activeTasks.length} active
+                    </Text>
+                  </View>
+                  <View style={styles.statPill}>
+                    <Text variant="labelMedium" style={styles.statText}>
+                      {pastTasks.length} past
+                    </Text>
+                  </View>
+                </View>
+              </Card.Content>
+            </Card>
             {activeTasks.length > 0 && (
               <View style={styles.section}>
                 <Text variant="titleMedium" style={styles.sectionTitle}>
@@ -143,32 +163,61 @@ export default function RequesterDashboard({ navigation }: Props) {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brandColors.background,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  heroCard: {
+    marginBottom: 18,
+    borderRadius: 28,
+    backgroundColor: brandColors.surface,
+  },
+  heroContent: {
+    gap: 12,
+  },
+  heroText: {
+    color: brandColors.textMuted,
+    lineHeight: 20,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  statPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  statText: {
+    color: brandColors.primary,
+    fontWeight: '700',
+  },
   section: {
     marginBottom: 16,
   },
   sectionTitle: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
     fontWeight: '600',
+    color: brandColors.textPrimary,
   },
   activeCard: {
-    width: 260,
-    marginLeft: 12,
+    width: 272,
+    marginRight: 12,
   },
   list: {
-    padding: 12,
-    paddingBottom: 80,
+    padding: 16,
+    paddingBottom: 92,
   },
   fab: {
     position: 'absolute',
     right: 16,
     bottom: 16,
+    borderRadius: 18,
   },
 });

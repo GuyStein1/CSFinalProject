@@ -9,11 +9,12 @@ import {
   Avatar,
   IconButton,
   TextInput,
-  ActivityIndicator,
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
+import LoadingScreen from '../components/LoadingScreen';
+import { brandColors } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -144,11 +145,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <LoadingScreen label="Loading task details..." />;
   }
 
   if (!task) {
@@ -232,7 +229,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   <View style={styles.bidActions}>
                     <Button
                       mode="contained"
-                      buttonColor="#2E7D32"
+                      buttonColor={brandColors.success}
                       compact
                       onPress={() => acceptBid(bid.id)}
                     >
@@ -240,7 +237,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     </Button>
                     <Button
                       mode="outlined"
-                      textColor="#C62828"
+                      textColor={brandColors.danger}
                       compact
                       onPress={() => declineBid(bid.id)}
                     >
@@ -253,7 +250,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           )}
           <Button
             mode="text"
-            textColor="#C62828"
+            textColor={brandColors.danger}
             onPress={cancelTask}
             style={styles.cancelButton}
           >
@@ -295,7 +292,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </Card>
           <Button
             mode="contained"
-            buttonColor="#2E7D32"
+            buttonColor={brandColors.success}
             onPress={markCompleted}
             style={styles.actionButton}
           >
@@ -303,7 +300,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </Button>
           <Button
             mode="text"
-            textColor="#C62828"
+            textColor={brandColors.danger}
             onPress={cancelTask}
           >
             Cancel Task
@@ -370,7 +367,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                       <IconButton
                         key={star}
                         icon={star <= reviewRating ? 'star' : 'star-outline'}
-                        iconColor={star <= reviewRating ? '#FFC107' : '#9E9E9E'}
+                        iconColor={star <= reviewRating ? brandColors.secondary : brandColors.textMuted}
                         size={32}
                         onPress={() => setReviewRating(star)}
                       />
@@ -411,8 +408,8 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
-    paddingTop: 90,
-    backgroundColor: '#E3F2FD',
+    paddingTop: 20,
+    backgroundColor: brandColors.background,
     alignItems: 'center',
   },
   header: {
@@ -422,15 +419,22 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     marginBottom: 16,
+    padding: 18,
+    borderRadius: 24,
+    backgroundColor: brandColors.surface,
   },
   title: {
     flex: 1,
     marginRight: 12,
+    color: brandColors.textPrimary,
+    fontWeight: '700',
   },
   card: {
     width: '100%',
     maxWidth: 500,
     marginBottom: 12,
+    borderRadius: 24,
+    backgroundColor: brandColors.surface,
   },
   divider: {
     marginVertical: 12,
@@ -438,7 +442,8 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 8,
+    gap: 12,
   },
   section: {
     width: '100%',
@@ -448,9 +453,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
     fontWeight: '600',
+    color: brandColors.textPrimary,
   },
   bidCard: {
     marginBottom: 12,
+    borderRadius: 22,
+    backgroundColor: brandColors.surface,
   },
   bidHeader: {
     flexDirection: 'row',
@@ -462,7 +470,7 @@ const styles = StyleSheet.create({
   },
   bidDesc: {
     marginTop: 8,
-    color: '#616161',
+    color: brandColors.textMuted,
   },
   bidActions: {
     flexDirection: 'row',
@@ -476,12 +484,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   phone: {
-    color: '#1565C0',
+    color: brandColors.primaryMuted,
     textDecorationLine: 'underline',
     marginTop: 4,
   },
   confirmed: {
-    color: '#2E7D32',
+    color: brandColors.success,
     fontWeight: '600',
   },
   stars: {
@@ -492,7 +500,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyText: {
-    color: '#757575',
+    color: brandColors.textMuted,
     fontStyle: 'italic',
   },
 });
