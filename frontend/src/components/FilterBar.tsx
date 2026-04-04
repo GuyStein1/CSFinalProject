@@ -7,7 +7,7 @@ import { brandColors } from '../theme';
 export type PriceRange = 'any' | '0-100' | '100-500' | '500+';
 export type ViewMode = 'map' | 'list';
 
-const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200] as const;
 
 const CATEGORY_OPTIONS: { value: Category; label: string; icon: string }[] = [
   { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
