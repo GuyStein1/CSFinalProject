@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import {
+  BottomTabHeaderProps,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,58 +18,88 @@ import { brandColors } from '../theme';
 type Mode = 'requester' | 'fixer';
 
 const Stack = createNativeStackNavigator();
+const ModeTabs = createBottomTabNavigator();
 
-function MainScreen() {
-  const [mode, setMode] = useState<Mode>('requester');
+function MainHeader({ navigation, route }: BottomTabHeaderProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+
+  const handleModeChange = (value: string) => {
+    const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
+
+    if (route.name !== nextRoute) {
+      navigation.navigate(nextRoute);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <View
-        style={[
-          styles.topBar,
-          {
-            paddingTop: insets.top + 8,
-            backgroundColor: theme.colors.primary,
-          },
-        ]}
-      >
-        <AppLogo compact onDark />
-        <View style={styles.rightControls}>
-          <SegmentedButtons
-            value={mode}
-            onValueChange={(v: string) => setMode(v as Mode)}
-            density="small"
-            buttons={[
-              { value: 'requester', label: 'Requester' },
-              { value: 'fixer', label: 'Fixer' },
-            ]}
-            style={styles.segmentedButtons}
-            theme={{
-              colors: {
-                secondaryContainer: theme.colors.secondary,
-                onSecondaryContainer: theme.colors.primary,
-                outline: 'rgba(255, 252, 246, 0.25)',
-                onSurface: 'rgba(255, 252, 246, 0.82)',
-              },
-            }}
+    <View
+      style={[
+        styles.topBar,
+        {
+          paddingTop: insets.top + 8,
+          backgroundColor: theme.colors.primary,
+        },
+      ]}
+    >
+      <AppLogo compact onDark />
+      <View style={styles.rightControls}>
+        <SegmentedButtons
+          value={mode}
+          onValueChange={handleModeChange}
+          density="small"
+          buttons={[
+            { value: 'requester', label: 'Requester' },
+            { value: 'fixer', label: 'Fixer' },
+          ]}
+          style={styles.segmentedButtons}
+          theme={{
+            colors: {
+              secondaryContainer: theme.colors.secondary,
+              onSecondaryContainer: theme.colors.primary,
+              outline: 'rgba(255, 252, 246, 0.25)',
+              onSurface: 'rgba(255, 252, 246, 0.82)',
+            },
+          }}
+        />
+        <View style={styles.bellShell}>
+          <IconButton
+            icon="bell-outline"
+            iconColor={theme.colors.onPrimary}
+            size={20}
+            onPress={() => {}}
+            style={styles.bellButton}
           />
-          <View style={styles.bellShell}>
-            <IconButton
-              icon="bell-outline"
-              iconColor={theme.colors.onPrimary}
-              size={20}
-              onPress={() => {}}
-              style={styles.bellButton}
-            />
-          </View>
         </View>
       </View>
-      <View style={styles.tabContainer}>
-        {mode === 'requester' ? <RequesterTabs /> : <FixerTabs />}
-      </View>
     </View>
+  );
+}
+
+function MainNavigator() {
+  const theme = useTheme();
+
+  return (
+    <ModeTabs.Navigator
+      initialRouteName="RequesterMode"
+      screenOptions={{
+        header: (props) => <MainHeader {...props} />,
+        tabBarStyle: { display: 'none' },
+        sceneStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      <ModeTabs.Screen
+        name="RequesterMode"
+        component={RequesterTabs}
+        options={{ title: 'Requester' }}
+      />
+      <ModeTabs.Screen
+        name="FixerMode"
+        component={FixerTabs}
+        options={{ title: 'Fixer' }}
+      />
+    </ModeTabs.Navigator>
   );
 }
 
@@ -84,7 +118,7 @@ export default function AppNavigator() {
     >
       <Stack.Screen
         name="Main"
-        component={MainScreen}
+        component={MainNavigator}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -107,9 +141,6 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -146,8 +177,5 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 252, 246, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabContainer: {
-    flex: 1,
   },
 });
