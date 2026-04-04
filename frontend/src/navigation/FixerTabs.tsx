@@ -4,14 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
+import MyBidsScreen from '../screens/MyBidsScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { brandColors } from '../theme';
 
 const Tab = createBottomTabNavigator();
-
-function MyBidsScreen() {
-  return <PlaceholderScreen title="My Bids" />;
-}
 
 function MessagesScreen() {
   return <PlaceholderScreen title="Messages" />;
