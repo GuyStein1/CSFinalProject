@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   segmentedButtons: {
-    width: 168,
+    width: 220,
     backgroundColor: 'rgba(255, 252, 246, 0.08)',
     borderRadius: 999,
   },

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, FlatList, ScrollView, StyleSheet, RefreshControl } from 'react-native';
-import { Text, FAB, useTheme, Card } from 'react-native-paper';
+import { View, FlatList, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { Text, FAB, useTheme, Card, SegmentedButtons, IconButton } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
@@ -54,8 +54,24 @@ export default function RequesterDashboard({ navigation }: Props) {
     fetchTasks();
   };
 
+  const [tab, setTab] = useState<'active' | 'past'>('active');
+
+  const deleteTask = async (taskId: string) => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('Delete this task permanently?')
+      : true;
+    if (!confirmed) return;
+    try {
+      await api.delete(`/api/tasks/${taskId}`);
+      fetchTasks();
+    } catch {
+      // ignore
+    }
+  };
+
   const activeTasks = tasks.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS');
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
+  const displayedTasks = tab === 'active' ? activeTasks : pastTasks;
 
   if (loading) {
     return <LoadingScreen label="Loading your tasks..." />;
@@ -83,7 +99,7 @@ export default function RequesterDashboard({ navigation }: Props) {
   return (
     <View style={styles.flex}>
       <FlatList
-        data={pastTasks}
+        data={displayedTasks}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
@@ -91,64 +107,49 @@ export default function RequesterDashboard({ navigation }: Props) {
             <Card style={styles.heroCard} mode="elevated">
               <Card.Content style={styles.heroContent}>
                 <AppLogo />
-                <Text variant="bodyMedium" style={styles.heroText}>
-                  Keep track of open jobs, compare bids, and move each task forward without the UI
-                  fighting you.
-                </Text>
-                <View style={styles.heroStats}>
-                  <View style={styles.statPill}>
-                    <Text variant="labelMedium" style={styles.statText}>
-                      {activeTasks.length} active
-                    </Text>
-                  </View>
-                  <View style={styles.statPill}>
-                    <Text variant="labelMedium" style={styles.statText}>
-                      {pastTasks.length} past
-                    </Text>
-                  </View>
-                </View>
               </Card.Content>
             </Card>
-            {activeTasks.length > 0 && (
-              <View style={styles.section}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  Active Tasks
-                </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {activeTasks.map((task) => (
-                    <View key={task.id} style={styles.activeCard}>
-                      <TaskCard
-                        title={task.title}
-                        category={task.category}
-                        status={task.status}
-                        suggestedPrice={task.suggested_price}
-                        locationName={task.general_location_name}
-                        bidCount={task.bid_count}
-                        fixerName={task.assigned_fixer_name}
-                        onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-            {pastTasks.length > 0 && (
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Past Tasks
-              </Text>
-            )}
+            <SegmentedButtons
+              value={tab}
+              onValueChange={(v) => setTab(v as 'active' | 'past')}
+              buttons={[
+                { value: 'active', label: `Active (${activeTasks.length})` },
+                { value: 'past', label: `Past (${pastTasks.length})` },
+              ]}
+              style={styles.tabs}
+            />
           </>
         }
         renderItem={({ item }) => (
-          <TaskCard
-            title={item.title}
-            category={item.category}
-            status={item.status}
-            suggestedPrice={item.suggested_price}
-            locationName={item.general_location_name}
-            onPress={() => navigation.navigate('TaskDetails', { taskId: item.id })}
-          />
+          <View style={styles.taskRow}>
+            <View style={styles.taskCardWrap}>
+              <TaskCard
+                title={item.title}
+                category={item.category}
+                status={item.status}
+                suggestedPrice={item.suggested_price}
+                locationName={item.general_location_name}
+                bidCount={item.bid_count}
+                fixerName={item.assigned_fixer_name}
+                onPress={() => navigation.navigate('TaskDetails', { taskId: item.id })}
+              />
+            </View>
+            {tab === 'past' && (
+              <IconButton
+                icon="delete-outline"
+                iconColor={brandColors.danger}
+                size={22}
+                onPress={() => deleteTask(item.id)}
+                style={styles.deleteButton}
+              />
+            )}
+          </View>
         )}
+        ListEmptyComponent={
+          <Text variant="bodyMedium" style={styles.emptyText}>
+            {tab === 'active' ? 'No active tasks.' : 'No past tasks.'}
+          </Text>
+        }
         contentContainerStyle={styles.list}
       />
       <FAB
@@ -171,44 +172,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroCard: {
-    marginBottom: 18,
-    borderRadius: 28,
+    marginBottom: 8,
+    borderRadius: 20,
     backgroundColor: brandColors.surface,
   },
   heroContent: {
-    gap: 12,
+    alignItems: 'center' as const,
+    paddingVertical: 0,
   },
-  heroText: {
-    color: brandColors.textMuted,
-    lineHeight: 20,
+  tabs: {
+    marginBottom: 12,
   },
-  heroStats: {
+  taskRow: {
     flexDirection: 'row',
-    gap: 10,
-    flexWrap: 'wrap',
+    alignItems: 'center',
   },
-  statPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: brandColors.surfaceAlt,
+  taskCardWrap: {
+    flex: 1,
   },
-  statText: {
-    color: brandColors.primary,
-    fontWeight: '700',
+  deleteButton: {
+    margin: 0,
   },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    paddingHorizontal: 4,
-    paddingVertical: 10,
-    fontWeight: '600',
-    color: brandColors.textPrimary,
-  },
-  activeCard: {
-    width: 272,
-    marginRight: 12,
+  emptyText: {
+    color: brandColors.textMuted,
+    fontStyle: 'italic',
+    textAlign: 'center' as const,
+    marginTop: 24,
   },
   list: {
     padding: 16,

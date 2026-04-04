@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { View } from 'react-native';
 import { Text, TextInput, Button, Card, Divider, Switch, useTheme } from 'react-native-paper';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import AppLogo from '../components/AppLogo';
 import { brandColors } from '../theme';
 
 export default function SettingsScreen() {
@@ -25,26 +24,29 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut(auth);
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to log out?')) {
+        await signOut(auth);
+      }
+    } else {
+      Alert.alert('Log Out', 'Are you sure you want to log out?', [
+        { text: 'Cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut(auth);
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Card style={styles.heroCard}>
         <Card.Content style={styles.heroContent}>
-          <AppLogo />
-          <Text variant="bodyMedium" style={styles.heroText}>
-            Account preferences, sign-in settings, and notification controls all live here.
-          </Text>
+          <Text variant="titleMedium" style={styles.heroTitle}>Settings</Text>
         </Card.Content>
       </Card>
 
@@ -132,11 +134,11 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.surface,
   },
   heroContent: {
-    gap: 12,
+    paddingVertical: 4,
   },
-  heroText: {
-    color: brandColors.textMuted,
-    lineHeight: 20,
+  heroTitle: {
+    color: brandColors.textPrimary,
+    fontWeight: '600',
   },
   card: {
     width: '100%',
