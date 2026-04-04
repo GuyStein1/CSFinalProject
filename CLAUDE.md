@@ -10,7 +10,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-This repository is in active development. The source of truth for architecture, database schema, API design, and roadmap is the `docs/` directory. All code must align with what is defined there unless a better approach is explicitly agreed upon.
+**Current phase: Phase 3 (Frontend Core) — in progress.**
+
+### Completed
+- **Phase 1** — Monorepo, PostgreSQL+PostGIS, Prisma schema, Express scaffold, Docker, CI (all team members)
+- **Phase 2 (Stein — A2)** — Firebase Admin, auth middleware, all task/bid/auth endpoints, error handling, notification stub. Fully tested via Postman.
+- **Phase 2 (Shick — C2)** — Zod validation middleware, review/notification endpoints, seed data with real Firebase UIDs
+- **Phase 2 (Zilber — B1)** — Expo frontend scaffold, Firebase Client SDK, Axios interceptor with auto token attachment
+
+### In Progress
+- **Phase 2 (Zilber — B2, issue #20)** — User/portfolio endpoints and real notification service (replaces stub at `backend/src/services/notificationService.ts`)
+
+### Laptop Setup
+- **Work laptop (Mac, Wix)**: Code only. Never run `npm install` — Wix CrowdStrike blocks the public npm registry. Commit code changes freely.
+- **Personal laptop (Windows)**: Runs Docker, npm installs, and the dev server. All `npm install` and `package-lock.json` commits must come from here.
+- **Testing**: Backend runs on personal laptop (`npm run dev:backend`), Postman requests sent from work laptop to `http://<personal-laptop-ip>:3000`
+
+### Key Files Added in Phase 2
+- `backend/src/middleware/auth.ts` — Firebase token verification + user lookup
+- `backend/src/middleware/validate.ts` — Zod validation middleware (Shick)
+- `backend/src/utils/errors.ts` — AppError class hierarchy
+- `backend/src/config/prisma.ts` — Prisma singleton
+- `backend/src/config/firebaseAdmin.ts` — Firebase Admin init (gracefully skips if env vars missing)
+- `backend/src/services/notificationService.ts` — No-op stub, will be replaced by Zilber's B2
+- `backend/src/routes/auth.ts` — POST /api/auth/sync
+- `backend/src/routes/tasks.ts` — All task + bid-on-task endpoints
+- `backend/src/routes/bids.ts` — accept/reject/withdraw
+- `backend/src/routes/users.ts` — GET /api/users/me/tasks, GET /api/users/me/bids
+
+The source of truth for architecture, database schema, API design, and roadmap is the `docs/` directory. All code must align with what is defined there unless a better approach is explicitly agreed upon.
 
 ## Documentation Index
 
