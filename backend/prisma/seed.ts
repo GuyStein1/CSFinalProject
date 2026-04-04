@@ -7,49 +7,49 @@ if (process.env.NODE_ENV === 'production') {
 
 const prisma = new PrismaClient();
 
-// Placeholder users — replace firebase_uid with real UIDs in Phase 2
+// Test users — Firebase accounts created with password: guyguyguy
 const users = [
   // Requesters (indices 0–2)
   {
-    firebase_uid: 'PLACEHOLDER_1',
-    full_name: 'Avi Cohen',
-    email: 'avi@example.com',
+    firebase_uid: 'KHrDwz3JbtYKa8G1xOg0PasvAnM2',
+    full_name: 'Neta Bivas',
+    email: 'neta@example.com',
     phone_number: '0501111111',
     specializations: [] as Category[],
   },
   {
-    firebase_uid: 'PLACEHOLDER_2',
-    full_name: 'Dana Levi',
-    email: 'dana@example.com',
+    firebase_uid: 'kPGmjrkSPeh1AOFm6w1zGjnTtph1',
+    full_name: 'Guy Stein',
+    email: 'stein@example.com',
     phone_number: '0502222222',
     specializations: [] as Category[],
   },
   {
-    firebase_uid: 'PLACEHOLDER_3',
-    full_name: 'Yossi Mizrahi',
-    email: 'yossi@example.com',
+    firebase_uid: '9zZC1yHuOwOHhe1HmkcY87FzcRy2',
+    full_name: 'Guy Zilberstein',
+    email: 'zilber@example.com',
     phone_number: '0503333333',
     specializations: [] as Category[],
   },
   // Fixers (indices 3–5)
   {
-    firebase_uid: 'PLACEHOLDER_4',
-    full_name: 'Noa Peretz',
-    email: 'noa@example.com',
+    firebase_uid: 'IOc5riuFpOYEx0vJXljsPy8SdTP2',
+    full_name: 'Guy Shick',
+    email: 'shick@example.com',
     phone_number: '0504444444',
     specializations: [Category.ELECTRICITY, Category.PLUMBING],
   },
   {
-    firebase_uid: 'PLACEHOLDER_5',
-    full_name: 'Rami Ben-David',
-    email: 'rami@example.com',
+    firebase_uid: 'sUegu2QaPlVsiYlUdvcK0LuJWOf1',
+    full_name: 'Guy Toledo',
+    email: 'guy@example.com',
     phone_number: '0505555555',
     specializations: [Category.CARPENTRY, Category.PAINTING],
   },
   {
-    firebase_uid: 'PLACEHOLDER_6',
-    full_name: 'Shira Katz',
-    email: 'shira@example.com',
+    firebase_uid: 'N2g4806EevaLyi3qkEtExowPgck2',
+    full_name: 'Avi Ron',
+    email: 'avi@example.com',
     phone_number: '0506666666',
     specializations: [Category.MOVING, Category.GENERAL],
   },
