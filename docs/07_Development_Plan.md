@@ -547,6 +547,17 @@ Complete `backend/prisma/seed.ts` with real data: create 6 Firebase test account
 
 > **Dependency note:** C2.5 requires access to the Firebase Console (`fixlt-dev` project) to create test accounts.
 
+**Test accounts** (password for all: `guyguyguy`):
+
+| Email | Name | Role |
+|---|---|---|
+| neta@example.com | Neta Bivas | Requester |
+| stein@example.com | Guy Stein | Requester |
+| zilber@example.com | Guy Zilberstein | Requester |
+| shick@example.com | Guy Shick | Fixer |
+| guy@example.com | Guy Toledo | Fixer |
+| avi@example.com | Avi Ron | Fixer |
+
 #### C2.6 — Route Structure Cleanup
 
 - `reviews.ts` emptied — review routes moved into `tasks.ts` (POST) and `users.ts` (GET) to align routes with their parent resources and avoid double `authMiddleware` execution.
