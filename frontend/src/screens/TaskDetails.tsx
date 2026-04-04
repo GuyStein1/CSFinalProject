@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import {
   Text,
   Button,
@@ -7,14 +7,32 @@ import {
   useTheme,
   Divider,
   Avatar,
+  Icon,
   IconButton,
   TextInput,
+  Portal,
+  Modal,
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors } from '../theme';
+
+function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Icon
+          key={s}
+          source={s <= Math.round(rating) ? 'star' : 'star-outline'}
+          size={size}
+          color={brandColors.secondary}
+        />
+      ))}
+    </View>
+  );
+}
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -55,6 +73,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [fixerReviews, setFixerReviews] = useState<{ rating: number; comment: string | null; reviewer?: { full_name: string } }[]>([]);
+  const [showFixerReviews, setShowFixerReviews] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -96,21 +116,25 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   const cancelTask = async () => {
-    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
-      { text: 'No' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
-            navigation.goBack();
-          } catch {
-            Alert.alert('Error', 'Failed to cancel task.');
-          }
-        },
-      },
-    ]);
+    const doCancel = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
+        navigation.goBack();
+      } catch {
+        Alert.alert('Error', 'Failed to cancel task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to cancel this task?')) {
+        await doCancel();
+      }
+    } else {
+      Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+        { text: 'No' },
+        { text: 'Yes, Cancel', style: 'destructive', onPress: doCancel },
+      ]);
+    }
   };
 
   const markCompleted = async () => {
@@ -128,6 +152,17 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       fetchData();
     } catch {
       Alert.alert('Error', 'Failed to confirm payment.');
+    }
+  };
+
+  const showReviewsForFixer = async (fixerId: string) => {
+    try {
+      const res = await api.get(`/api/users/${fixerId}/reviews`);
+      setFixerReviews(res.data.reviews || []);
+      setShowFixerReviews(true);
+    } catch {
+      setFixerReviews([]);
+      setShowFixerReviews(true);
     }
   };
 
@@ -160,6 +195,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const pendingBids = bids.filter((b) => b.status === 'PENDING');
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -213,10 +249,19 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     <Avatar.Icon size={40} icon="account" />
                     <View style={styles.bidInfo}>
                       <Text variant="titleSmall">{bid.fixer?.full_name || 'Fixer'}</Text>
-                      {bid.fixer?.average_rating_as_fixer && (
-                        <Text variant="bodySmall">
-                          {bid.fixer.average_rating_as_fixer.toFixed(1)} ★
-                        </Text>
+                      {bid.fixer?.average_rating_as_fixer ? (
+                        <View style={styles.ratingRow}>
+                          <StarRating rating={bid.fixer.average_rating_as_fixer} />
+                          <Text
+                            variant="bodySmall"
+                            style={styles.ratingLink}
+                            onPress={() => showReviewsForFixer(bid.fixer_id)}
+                          >
+                            {bid.fixer.average_rating_as_fixer.toFixed(1)} — see reviews
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>No reviews yet</Text>
                       )}
                     </View>
                     <Text variant="titleMedium" style={{ color: theme.colors.primary }}>
@@ -269,10 +314,19 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 <Avatar.Icon size={48} icon="account" />
                 <View style={styles.bidInfo}>
                   <Text variant="titleSmall">{acceptedBid.fixer?.full_name || 'Fixer'}</Text>
-                  {acceptedBid.fixer?.average_rating_as_fixer && (
-                    <Text variant="bodySmall">
-                      {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)} ★
-                    </Text>
+                  {acceptedBid.fixer?.average_rating_as_fixer ? (
+                    <View style={styles.ratingRow}>
+                      <StarRating rating={acceptedBid.fixer.average_rating_as_fixer} />
+                      <Text
+                        variant="bodySmall"
+                        style={styles.ratingLink}
+                        onPress={() => showReviewsForFixer(acceptedBid.fixer_id)}
+                      >
+                        {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)} — see reviews
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>No reviews yet</Text>
                   )}
                   {acceptedBid.fixer?.phone_number && (
                     <Text
@@ -397,6 +451,39 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         </View>
       )}
     </ScrollView>
+
+      <Portal>
+        <Modal visible={showFixerReviews} onDismiss={() => setShowFixerReviews(false)} contentContainerStyle={styles.reviewsModal}>
+          <Text variant="titleLarge" style={styles.reviewsModalTitle}>Fixer Reviews</Text>
+          {fixerReviews.length === 0 ? (
+            <Text variant="bodyMedium" style={{ color: brandColors.textMuted }}>No reviews yet.</Text>
+          ) : (
+            <ScrollView style={{ maxHeight: 400 }}>
+              {fixerReviews.map((r, i) => (
+                <Card key={i} style={styles.reviewItemCard}>
+                  <Card.Content>
+                    <View style={styles.reviewItemHeader}>
+                      <StarRating rating={r.rating} size={14} />
+                      {r.reviewer?.full_name && (
+                        <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>
+                          {r.reviewer.full_name}
+                        </Text>
+                      )}
+                    </View>
+                    {r.comment && (
+                      <Text variant="bodyMedium" style={{ marginTop: 4 }}>{r.comment}</Text>
+                    )}
+                  </Card.Content>
+                </Card>
+              ))}
+            </ScrollView>
+          )}
+          <Button mode="text" onPress={() => setShowFixerReviews(false)} style={{ marginTop: 8 }}>
+            Close
+          </Button>
+        </Modal>
+      </Portal>
+    </>
   );
 }
 
@@ -502,5 +589,35 @@ const styles = StyleSheet.create({
   emptyText: {
     color: brandColors.textMuted,
     fontStyle: 'italic',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ratingLink: {
+    color: brandColors.primaryMuted,
+    textDecorationLine: 'underline',
+  },
+  reviewsModal: {
+    backgroundColor: brandColors.surface,
+    margin: 20,
+    padding: 24,
+    borderRadius: 24,
+    maxHeight: '80%',
+  },
+  reviewsModalTitle: {
+    marginBottom: 16,
+    color: brandColors.textPrimary,
+  },
+  reviewItemCard: {
+    marginBottom: 8,
+    borderRadius: 16,
+    backgroundColor: brandColors.background,
+  },
+  reviewItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

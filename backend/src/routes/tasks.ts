@@ -510,4 +510,28 @@ router.post('/:id/reviews', validate(createReviewSchema), async (req: Request, r
   }
 });
 
+// DELETE /api/tasks/:id — requester deletes a completed or canceled task
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can delete this task');
+    if (task.status !== 'COMPLETED' && task.status !== 'CANCELED') {
+      throw new ValidationError('Only completed or canceled tasks can be deleted');
+    }
+
+    await prisma.$transaction([
+      prisma.review.deleteMany({ where: { task_id: task.id } }),
+      prisma.message.deleteMany({ where: { task_id: task.id } }),
+      prisma.bid.deleteMany({ where: { task_id: task.id } }),
+      prisma.notification.deleteMany({ where: { related_entity_id: task.id } }),
+      prisma.task.delete({ where: { id: task.id } }),
+    ]);
+
+    res.json({ message: 'Task deleted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
