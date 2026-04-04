@@ -4,6 +4,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from 'react-native-paper';
 import { brandColors } from '../theme';
 
+const FULL_LOGO_ASPECT_RATIO = 662 / 534;
+
 interface AppLogoProps {
   compact?: boolean;
   onDark?: boolean;
@@ -66,8 +68,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   fullLogo: {
-    width: 150,
-    height: 150,
+    width: 188,
+    aspectRatio: FULL_LOGO_ASPECT_RATIO,
   },
   markShell: {
     alignItems: 'center',
