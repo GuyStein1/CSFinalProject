@@ -9,6 +9,11 @@ const router = Router();
 // All user routes require authentication
 router.use(authMiddleware);
 
+// GET /api/users/me — current authenticated user profile
+router.get('/me', (req: Request, res: Response) => {
+  res.json({ user: req.user });
+});
+
 // GET /api/users/me/tasks — requester's own tasks
 router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) => {
   try {
