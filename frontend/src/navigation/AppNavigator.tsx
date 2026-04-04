@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme, SegmentedButtons, Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RequesterTabs from './RequesterTabs';
 import FixerTabs from './FixerTabs';
 import CreateTask from '../screens/CreateTask';
@@ -24,38 +25,48 @@ function MainScreen() {
         style={[
           styles.topBar,
           {
-            paddingTop: insets.top + 8,
+            paddingTop: insets.top + 4,
             backgroundColor: theme.colors.primary,
           },
         ]}
       >
-        <Text variant="titleLarge" style={[styles.logo, { color: theme.colors.onPrimary }]}>
-          Fixlt
-        </Text>
-        <SegmentedButtons
-          value={mode}
-          onValueChange={(v: string) => setMode(v as Mode)}
-          density="small"
-          buttons={[
-            { value: 'requester', label: 'Requester' },
-            { value: 'fixer', label: 'Fixer' },
-          ]}
-          style={styles.segmentedButtons}
-          theme={{
-            colors: {
-              secondaryContainer: theme.colors.onPrimary,
-              onSecondaryContainer: theme.colors.primary,
-              outline: theme.colors.onPrimary,
-            },
-          }}
-        />
-        <IconButton
-          icon="bell-outline"
-          iconColor={theme.colors.onPrimary}
-          size={24}
-          onPress={() => {}}
-          style={styles.bellButton}
-        />
+        <View style={styles.logoContainer}>
+          <MaterialCommunityIcons
+            name="hammer-wrench"
+            size={22}
+            color={theme.colors.secondary}
+          />
+          <Text variant="titleMedium" style={[styles.logoText, { color: theme.colors.onPrimary }]}>
+            Fixlt
+          </Text>
+        </View>
+        <View style={styles.rightControls}>
+          <SegmentedButtons
+            value={mode}
+            onValueChange={(v: string) => setMode(v as Mode)}
+            density="small"
+            buttons={[
+              { value: 'requester', label: 'Requester' },
+              { value: 'fixer', label: 'Fixer' },
+            ]}
+            style={styles.segmentedButtons}
+            theme={{
+              colors: {
+                secondaryContainer: theme.colors.secondary,
+                onSecondaryContainer: theme.colors.primary,
+                outline: 'rgba(255,255,255,0.5)',
+                onSurface: theme.colors.onPrimary,
+              },
+            }}
+          />
+          <IconButton
+            icon="bell-outline"
+            iconColor={theme.colors.onPrimary}
+            size={22}
+            onPress={() => {}}
+            style={styles.bellButton}
+          />
+        </View>
       </View>
       <View style={styles.tabContainer}>
         {mode === 'requester' ? <RequesterTabs /> : <FixerTabs />}
@@ -105,19 +116,28 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingBottom: 6,
   },
-  logo: {
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  logoText: {
     fontWeight: 'bold',
-    marginRight: 4,
+  },
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   segmentedButtons: {
-    flex: 1,
-    marginHorizontal: 4,
+    width: 180,
   },
   bellButton: {
     margin: 0,
+    marginLeft: 2,
   },
   tabContainer: {
     flex: 1,
