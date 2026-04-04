@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   FlatList,
   Image,
@@ -10,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import {
-  ActivityIndicator,
   Avatar,
   Button,
   Card,
@@ -20,7 +18,6 @@ import {
   Portal,
   Text,
   TextInput,
-  useTheme,
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
@@ -86,7 +83,6 @@ interface Props {
 }
 
 export default function TaskDetailsFixer({ route, navigation }: Props) {
-  const theme = useTheme();
   const taskId = route.params?.taskId;
 
   const [task, setTask] = useState<Task | null>(null);
