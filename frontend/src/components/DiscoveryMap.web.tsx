@@ -16,6 +16,7 @@ export default function DiscoveryMap({
   centerLng,
   mapRegion,
   onSelectTask,
+  onClearSelection,
 }: DiscoveryMapProps) {
   return (
     <View style={styles.container}>
@@ -23,10 +24,10 @@ export default function DiscoveryMap({
         Nearby Jobs Map
       </Text>
       <Text variant="bodySmall" style={styles.subtitle}>
-        Interactive markers are shown here while the native map package is unavailable on web.
+        Tap a marker to preview a task. Tap the background to dismiss.
       </Text>
 
-      <View style={styles.canvas}>
+      <Pressable style={styles.canvas} onPress={onClearSelection}>
         {tasks.map((task) => {
           const leftRatio = getRelativeOffset(task.lng, centerLng, mapRegion.longitudeDelta);
           const topRatio = getRelativeOffset(task.lat, centerLat, mapRegion.latitudeDelta, true);
@@ -46,7 +47,7 @@ export default function DiscoveryMap({
             />
           );
         })}
-      </View>
+      </Pressable>
     </View>
   );
 }
