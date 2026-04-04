@@ -47,6 +47,7 @@ interface Task {
   created_at: string;
   requester_id: string;
   requester?: TaskRequester;
+  bid_count?: number;
 }
 
 interface ExistingBid {
@@ -128,12 +129,15 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
     }, [fetchData]),
   );
 
+  const bidCount = task?.bid_count ?? 0;
+
   const bottomBarState = useMemo<'submit' | 'submitted' | 'closed'>(() => {
     if (!task) return 'closed';
     if (task.status !== 'OPEN') return 'closed';
+    if (bidCount >= 15) return 'closed';
     if (existingBid && existingBid.status === 'PENDING') return 'submitted';
     return 'submit';
-  }, [task, existingBid]);
+  }, [task, existingBid, bidCount]);
 
   const handleOpenBidModal = () => {
     setBidPrice('');
@@ -298,6 +302,17 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
             </View>
           </View>
 
+          {/* Bid count */}
+          <View style={styles.detailRow}>
+            <Icon source="hand-extended-outline" size={20} color={brandColors.textMuted} />
+            <View style={styles.detailContent}>
+              <Text variant="labelMedium" style={styles.detailLabel}>Bids</Text>
+              <Text variant="bodyMedium" style={styles.detailValue}>
+                {bidCount} {bidCount === 1 ? 'bid' : 'bids'} submitted
+              </Text>
+            </View>
+          </View>
+
           <Divider style={styles.divider} />
 
           {/* Requester */}
@@ -305,7 +320,13 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
             <Card
               style={styles.requesterCard}
               mode="elevated"
-              onPress={() => navigation.navigate('PublicProfile', { userId: task.requester!.id })}
+              onPress={() => {
+                try {
+                  navigation.navigate('PublicProfile', { userId: task.requester!.id });
+                } catch {
+                  // PublicProfile screen not yet implemented
+                }
+              }}
             >
               <Card.Content style={styles.requesterContent}>
                 {task.requester.avatar_url ? (
