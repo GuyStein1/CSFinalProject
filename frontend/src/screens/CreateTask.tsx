@@ -13,6 +13,7 @@ import {
   SegmentedButtons,
 } from 'react-native-paper';
 import api from '../api/axiosInstance';
+import { brandColors } from '../theme';
 
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
@@ -169,7 +170,7 @@ export default function CreateTask({ navigation }: Props) {
                   onPress={() => setCategory(cat.value)}
                   style={[
                     styles.categoryCard,
-                    category === cat.value && { borderColor: theme.colors.primary, borderWidth: 2 },
+                    category === cat.value && styles.categoryCardSelected,
                   ]}
                 >
                   <Text style={styles.categoryIcon}>{cat.icon}</Text>
@@ -311,7 +312,7 @@ export default function CreateTask({ navigation }: Props) {
             loading={submitting}
             disabled={submitting}
             style={styles.publishButton}
-            buttonColor="#2E7D32"
+            buttonColor={theme.colors.primary}
           >
             Publish Task
           </Button>
@@ -327,41 +328,48 @@ export default function CreateTask({ navigation }: Props) {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: brandColors.background,
   },
   progressSection: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: brandColors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: brandColors.outline,
   },
   container: {
     paddingHorizontal: 16,
-    paddingTop: 90,
-    paddingBottom: 16,
+    paddingTop: 24,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   stepIndicator: {
     textAlign: 'center',
     paddingTop: 4,
-    paddingBottom: 8,
-    color: '#757575',
-    backgroundColor: '#E3F2FD',
+    paddingBottom: 12,
+    color: brandColors.textMuted,
+    backgroundColor: brandColors.surface,
   },
   content: {
     width: '100%',
     maxWidth: 500,
+    backgroundColor: brandColors.surface,
+    borderRadius: 28,
+    padding: 20,
   },
   stepTitle: {
     marginBottom: 16,
+    color: brandColors.textPrimary,
   },
   subtitle: {
-    color: '#757575',
+    color: brandColors.textMuted,
     marginBottom: 16,
   },
   input: {
-    marginBottom: 8,
+    marginBottom: 10,
+    backgroundColor: brandColors.surface,
   },
   counter: {
     textAlign: 'right',
-    color: '#9E9E9E',
+    color: brandColors.textMuted,
     marginBottom: 12,
   },
   photoGrid: {
@@ -372,7 +380,7 @@ const styles = StyleSheet.create({
   photoContainer: {
     width: 100,
     height: 100,
-    borderRadius: 8,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   photo: {
@@ -387,16 +395,17 @@ const styles = StyleSheet.create({
   addPhoto: {
     width: 100,
     height: 100,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: brandColors.outline,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: brandColors.surfaceAlt,
   },
   addPhotoIcon: {
     fontSize: 32,
-    color: '#9E9E9E',
+    color: brandColors.primaryMuted,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -407,11 +416,16 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '45%',
     padding: 20,
-    borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+    borderRadius: 18,
+    backgroundColor: brandColors.surface,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: brandColors.outline,
+  },
+  categoryCardSelected: {
+    borderColor: brandColors.primary,
+    borderWidth: 2,
+    backgroundColor: brandColors.warningSoft,
   },
   categoryIcon: {
     fontSize: 32,
@@ -419,9 +433,11 @@ const styles = StyleSheet.create({
   },
   segmented: {
     marginBottom: 16,
+    backgroundColor: brandColors.surfaceAlt,
+    borderRadius: 999,
   },
   quoteNote: {
-    color: '#757575',
+    color: brandColors.textMuted,
     fontStyle: 'italic',
     marginTop: 12,
   },
@@ -437,22 +453,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brandColors.surface,
     margin: 20,
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 24,
   },
   modalTitle: {
     marginBottom: 16,
+    color: brandColors.textPrimary,
   },
   reviewCard: {
     marginBottom: 16,
+    backgroundColor: brandColors.background,
   },
   reviewLabel: {
     marginTop: 12,
   },
   publishButton: {
     marginBottom: 8,
+    borderRadius: 999,
   },
   cancelButton: {
     marginBottom: 0,

@@ -3,18 +3,28 @@ import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
-import RequesterDashboard from '../screens/RequesterDashboard';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
-import SettingsScreen from '../screens/SettingsScreen';
 import { brandColors } from '../theme';
 
 const Tab = createBottomTabNavigator();
+
+function FindJobsScreen() {
+  return <PlaceholderScreen title="Find Jobs" />;
+}
+
+function MyBidsScreen() {
+  return <PlaceholderScreen title="My Bids" />;
+}
 
 function MessagesScreen() {
   return <PlaceholderScreen title="Messages" />;
 }
 
-export default function RequesterTabs() {
+function FixerProfileScreen() {
+  return <PlaceholderScreen title="Fixer Profile" />;
+}
+
+export default function FixerTabs() {
   const theme = useTheme();
 
   return (
@@ -29,12 +39,22 @@ export default function RequesterTabs() {
       }}
     >
       <Tab.Screen
-        name="Dashboard"
-        component={RequesterDashboard}
+        name="FindJobs"
+        component={FindJobsScreen}
         options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" color={color} size={size} />
+          tabBarLabel: 'Find Jobs',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="map-search" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MyBids"
+        component={MyBidsScreen}
+        options={{
+          tabBarLabel: 'My Bids',
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="format-list-bulleted" color={color} size={size} />
           ),
         }}
       />
@@ -43,17 +63,17 @@ export default function RequesterTabs() {
         component={MessagesScreen}
         options={{
           tabBarLabel: 'Messages',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="chat" color={color} size={size} />
           ),
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={SettingsScreen}
+        name="FixerProfile"
+        component={FixerProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="account" color={color} size={size} />
           ),
         }}
