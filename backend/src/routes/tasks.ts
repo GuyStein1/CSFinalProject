@@ -236,10 +236,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/tasks/:id — task details
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const task = await prisma.task.findUnique({
-      where: { id: req.params.id },
-      include: { requester: true, fixer: true },
-    });
+    const [task, bidCount] = await prisma.$transaction([
+      prisma.task.findUnique({
+        where: { id: req.params.id },
+        include: { requester: true, fixer: true },
+      }),
+      prisma.bid.count({
+        where: { task_id: req.params.id, status: { in: ['PENDING', 'ACCEPTED'] } },
+      }),
+    ]);
 
     if (!task) throw new NotFoundError('Task not found');
 
@@ -252,7 +257,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       ? task
       : taskWithoutAddress;
 
-    res.json({ task: response });
+    res.json({ task: { ...response, bid_count: bidCount } });
   } catch (err) {
     next(err);
   }
