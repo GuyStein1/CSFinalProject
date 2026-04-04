@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Alert, Platform } from 'react-native';
 import {
   Text,
   TextInput,
@@ -56,9 +56,23 @@ export default function CreateTask({ navigation }: Props) {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const pickImage = async () => {
     if (photos.length >= 5) return;
-    Alert.alert('Info', 'Photo picker is available on mobile only.');
+    if (Platform.OS === 'web') {
+      fileInputRef.current?.click();
+    } else {
+      Alert.alert('Info', 'Photo picker coming soon.');
+    }
+  };
+
+  const handleWebFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPhotos((prev) => [...prev, url]);
+    e.target.value = '';
   };
 
   const removePhoto = (index: number) => {
@@ -225,6 +239,15 @@ export default function CreateTask({ navigation }: Props) {
 
   return (
     <View style={styles.wrapper}>
+      {Platform.OS === 'web' && (
+        <input
+          ref={fileInputRef as React.RefObject<HTMLInputElement>}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleWebFileSelect}
+        />
+      )}
       <View style={styles.progressSection}>
         <ProgressBar progress={step / totalSteps} color={theme.colors.primary} />
         <Text variant="bodySmall" style={styles.stepIndicator}>Step {step} of {totalSteps}</Text>
