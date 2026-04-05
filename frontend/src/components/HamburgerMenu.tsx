@@ -4,10 +4,12 @@ import {
   Dimensions,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from './AppLogo';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
@@ -32,6 +34,7 @@ export default function HamburgerMenu({
   onModeChange,
   onSettingsPress,
 }: HamburgerMenuProps) {
+  const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
   useEffect(() => {
@@ -50,75 +53,82 @@ export default function HamburgerMenu({
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       {/* drawer */}
-      <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View
+        style={[
+          styles.drawer,
+          { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.lg, transform: [{ translateX: slideAnim }] },
+        ]}
+      >
         {/* close button */}
-        <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
+        <Pressable style={[styles.closeBtn, { top: insets.top + spacing.sm }]} onPress={onClose} hitSlop={8}>
           <MaterialCommunityIcons name="close" size={22} color={brandColors.textMuted} />
         </Pressable>
 
-        {/* logo */}
-        <View style={styles.logoArea}>
-          <AppLogo compact={false} />
-        </View>
-
-        {/* mode section */}
-        <Text style={[typography.eyebrow, styles.sectionLabel]}>Switch mode</Text>
-
-        <Pressable
-          style={[styles.modeCard, currentMode === 'requester' && styles.modeCardActive]}
-          onPress={() => { onModeChange('requester'); onClose(); }}
-        >
-          <View style={[styles.modeIcon, currentMode === 'requester' && styles.modeIconActive]}>
-            <MaterialCommunityIcons
-              name="home-outline"
-              size={22}
-              color={currentMode === 'requester' ? brandColors.textPrimary : brandColors.primaryMuted}
-            />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.drawerContent}>
+          {/* logo */}
+          <View style={styles.logoArea}>
+            <AppLogo compact={false} />
           </View>
-          <View style={styles.modeText}>
-            <Text style={[typography.h3, { color: currentMode === 'requester' ? brandColors.textPrimary : brandColors.textMuted }]}>
-              Requester
-            </Text>
-            <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Post tasks, get help</Text>
-          </View>
-          {currentMode === 'requester' && (
-            <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
-          )}
-        </Pressable>
 
-        <Pressable
-          style={[styles.modeCard, currentMode === 'fixer' && styles.modeCardActive]}
-          onPress={() => { onModeChange('fixer'); onClose(); }}
-        >
-          <View style={[styles.modeIcon, currentMode === 'fixer' && styles.modeIconActive]}>
-            <MaterialCommunityIcons
-              name="wrench-outline"
-              size={22}
-              color={currentMode === 'fixer' ? brandColors.textPrimary : brandColors.primaryMuted}
-            />
-          </View>
-          <View style={styles.modeText}>
-            <Text style={[typography.h3, { color: currentMode === 'fixer' ? brandColors.textPrimary : brandColors.textMuted }]}>
-              Fixer
-            </Text>
-            <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Find jobs, earn money</Text>
-          </View>
-          {currentMode === 'fixer' && (
-            <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
-          )}
-        </Pressable>
+          {/* mode section */}
+          <Text style={[typography.eyebrow, styles.sectionLabel]}>Switch mode</Text>
 
-        {/* divider */}
-        <View style={styles.divider} />
+          <Pressable
+            style={[styles.modeCard, currentMode === 'requester' && styles.modeCardActive]}
+            onPress={() => { onModeChange('requester'); onClose(); }}
+          >
+            <View style={[styles.modeIcon, currentMode === 'requester' && styles.modeIconActive]}>
+              <MaterialCommunityIcons
+                name="home-outline"
+                size={22}
+                color={currentMode === 'requester' ? brandColors.textPrimary : brandColors.primaryMuted}
+              />
+            </View>
+            <View style={styles.modeText}>
+              <Text style={[typography.h3, { color: currentMode === 'requester' ? brandColors.textPrimary : brandColors.textMuted }]}>
+                Requester
+              </Text>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Post tasks, get help</Text>
+            </View>
+            {currentMode === 'requester' && (
+              <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
+            )}
+          </Pressable>
 
-        {/* settings */}
-        <Pressable
-          style={styles.settingsRow}
-          onPress={() => { onSettingsPress(); onClose(); }}
-        >
-          <MaterialCommunityIcons name="cog-outline" size={22} color={brandColors.primaryMuted} />
-          <Text style={[typography.body, { color: brandColors.textPrimary }]}>Settings</Text>
-        </Pressable>
+          <Pressable
+            style={[styles.modeCard, currentMode === 'fixer' && styles.modeCardActive]}
+            onPress={() => { onModeChange('fixer'); onClose(); }}
+          >
+            <View style={[styles.modeIcon, currentMode === 'fixer' && styles.modeIconActive]}>
+              <MaterialCommunityIcons
+                name="wrench-outline"
+                size={22}
+                color={currentMode === 'fixer' ? brandColors.textPrimary : brandColors.primaryMuted}
+              />
+            </View>
+            <View style={styles.modeText}>
+              <Text style={[typography.h3, { color: currentMode === 'fixer' ? brandColors.textPrimary : brandColors.textMuted }]}>
+                Fixer
+              </Text>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Find jobs, earn money</Text>
+            </View>
+            {currentMode === 'fixer' && (
+              <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
+            )}
+          </Pressable>
+
+          {/* divider */}
+          <View style={styles.divider} />
+
+          {/* settings */}
+          <Pressable
+            style={styles.settingsRow}
+            onPress={() => { onSettingsPress(); onClose(); }}
+          >
+            <MaterialCommunityIcons name="cog-outline" size={22} color={brandColors.primaryMuted} />
+            <Text style={[typography.body, { color: brandColors.textPrimary }]}>Settings</Text>
+          </Pressable>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
@@ -136,16 +146,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: DRAWER_WIDTH,
     backgroundColor: brandColors.surface,
-    paddingTop: spacing.huge,
     paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.xxxl,
     ...shadows.lg,
+  },
+  drawerContent: {
+    flexGrow: 1,
   },
   closeBtn: {
     position: 'absolute',
-    top: spacing.xxl,
     right: spacing.lg,
     padding: spacing.xs,
+    zIndex: 1,
   },
   logoArea: {
     marginBottom: spacing.xxxl,
