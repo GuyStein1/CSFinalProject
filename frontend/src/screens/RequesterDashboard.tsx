@@ -69,7 +69,9 @@ export default function RequesterDashboard({ navigation }: Props) {
     }
   };
 
-  const activeTasks = tasks.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS');
+  const activeTasks = tasks
+    .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
+    .sort((a, b) => (b.bid_count || 0) - (a.bid_count || 0));
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
   const displayedTasks = tab === 'active' ? activeTasks : pastTasks;
 

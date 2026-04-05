@@ -57,10 +57,19 @@ export default function useBids({ status = null, enabled = true }: UseBidsOption
   }, [fetchBids]);
 
   const updateBidLocally = useCallback((bidId: string, newStatus: BidStatus) => {
-    setBids((prev) =>
-      prev.map((b) => (b.id === bidId ? { ...b, status: newStatus } : b)),
-    );
+    setBids((prev) => {
+      const updated = prev.map((b) => (b.id === bidId ? { ...b, status: newStatus } : b));
+      // If filtering by status, remove bids that no longer match
+      if (status) {
+        return updated.filter((b) => b.status === status);
+      }
+      return updated;
+    });
+  }, [status]);
+
+  const removeBidLocally = useCallback((bidId: string) => {
+    setBids((prev) => prev.filter((b) => b.id !== bidId));
   }, []);
 
-  return { bids, total, loading, error, refetch: fetchBids, updateBidLocally };
+  return { bids, total, loading, error, refetch: fetchBids, updateBidLocally, removeBidLocally };
 }

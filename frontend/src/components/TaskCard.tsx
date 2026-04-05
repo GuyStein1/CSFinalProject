@@ -66,9 +66,17 @@ export default function TaskCard({
             ₪{suggestedPrice}
           </Text>
         )}
-        {bidCount != null && status === 'OPEN' && (
+        {bidCount != null && bidCount > 0 && status === 'OPEN' && (
+          <View style={styles.bidBadge}>
+            <Icon source="hand-extended" size={14} color={brandColors.primary} />
+            <Text variant="labelSmall" style={styles.bidBadgeText}>
+              {bidCount} {bidCount === 1 ? 'new offer' : 'new offers'} — tap to review
+            </Text>
+          </View>
+        )}
+        {bidCount != null && bidCount === 0 && status === 'OPEN' && (
           <Text variant="bodySmall" style={styles.meta}>
-            {bidCount} bids
+            No bids yet
           </Text>
         )}
         {fixerName && status === 'IN_PROGRESS' && (
@@ -105,6 +113,20 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: brandColors.textMuted,
+  },
+  bidBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: brandColors.warningSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  bidBadgeText: {
+    color: brandColors.warning,
+    fontWeight: '700',
   },
   iconShell: {
     width: 40,
