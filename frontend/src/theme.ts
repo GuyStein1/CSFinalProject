@@ -57,17 +57,3 @@ export const navigationTheme = {
 };
 
 export type AppTheme = typeof theme;
-
-export const glass = {
-  light:  { bg: 'rgba(255,255,255,0.10)', border: 'rgba(255,255,255,0.20)', blur: 30, tint: 'light' as const },
-  medium: { bg: 'rgba(255,255,255,0.14)', border: 'rgba(255,255,255,0.26)', blur: 40, tint: 'light' as const },
-  amber:  { bg: 'rgba(241,181,69,0.18)',  border: 'rgba(241,181,69,0.35)',  blur: 25, tint: 'light' as const },
-  dark:   { bg: 'rgba(15,35,54,0.35)',    border: 'rgba(255,255,255,0.10)', blur: 20, tint: 'dark'  as const },
-};
-
-export const glassText = {
-  primary:   '#FFFCF6',
-  secondary: 'rgba(255,252,246,0.75)',
-  muted:     'rgba(255,252,246,0.50)',
-  amber:     '#F1B545',
-};

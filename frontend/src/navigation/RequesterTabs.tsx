@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { BlurView } from 'expo-blur';
+import { useTheme } from 'react-native-paper';
 import RequesterDashboard from '../screens/RequesterDashboard';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import { glassText } from '../theme';
+import { brandColors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -15,21 +15,17 @@ function MessagesScreen() {
 }
 
 export default function RequesterTabs() {
+  const theme = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={{
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
-        sceneStyle: { backgroundColor: 'transparent' },
-        tabBarStyle: styles.tabBarOuter,
-        tabBarActiveTintColor: glassText.amber,
-        tabBarInactiveTintColor: glassText.muted,
+        sceneStyle: { backgroundColor: theme.colors.background },
+        tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
-        tabBarBackground: () => (
-          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
-            <View style={styles.tabBarBorder} />
-          </BlurView>
-        ),
       }}
     >
       <Tab.Screen
@@ -67,34 +63,16 @@ export default function RequesterTabs() {
 }
 
 const styles = StyleSheet.create({
-  tabBarOuter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  tabBar: {
     height: 72,
-    borderTopWidth: 0,
-    backgroundColor: 'transparent',
-    elevation: 0,
-  },
-  tabBarBorder: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingTop: 8,
+    paddingBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: brandColors.outline,
+    backgroundColor: brandColors.surface,
   },
   tabBarLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabLabel: {
-    height: 0,
   },
 });
