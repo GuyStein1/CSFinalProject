@@ -17,6 +17,15 @@ export const createTaskSchema = z.object({
   lng: z.number().min(-180).max(180),
 });
 
+export const updateTaskSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().min(1).max(2000).optional(),
+  category: z.enum(['ELECTRICITY', 'PLUMBING', 'CARPENTRY', 'PAINTING', 'MOVING', 'GENERAL']).optional(),
+  suggested_price: z.number().positive().nullable().optional(),
+  general_location_name: z.string().trim().min(1).optional(),
+  exact_address: z.string().trim().min(1).optional(),
+});
+
 export const updateTaskStatusSchema = z.object({
   status: z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELED']),
 });

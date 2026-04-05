@@ -69,9 +69,41 @@ export default function RequesterDashboard({ navigation }: Props) {
     }
   };
 
+  const cancelTask = async (taskId: string) => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('Are you sure you want to cancel this task?')
+      : true;
+    if (!confirmed) return;
+    try {
+      await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
+      fetchTasks();
+    } catch {
+      // ignore
+    }
+  };
+
+  const markCompleted = async (taskId: string) => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('Mark this task as completed?')
+      : true;
+    if (!confirmed) return;
+    try {
+      await api.put(`/api/tasks/${taskId}/status`, { status: 'COMPLETED' });
+      fetchTasks();
+    } catch {
+      // ignore
+    }
+  };
+
   const activeTasks = tasks
     .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
-    .sort((a, b) => (b.bid_count || 0) - (a.bid_count || 0));
+    .sort((a, b) => {
+      // IN_PROGRESS first
+      if (a.status === 'IN_PROGRESS' && b.status !== 'IN_PROGRESS') return -1;
+      if (b.status === 'IN_PROGRESS' && a.status !== 'IN_PROGRESS') return 1;
+      // Then by bid count
+      return (b.bid_count || 0) - (a.bid_count || 0);
+    });
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
   const displayedTasks = tab === 'active' ? activeTasks : pastTasks;
 
@@ -134,6 +166,9 @@ export default function RequesterDashboard({ navigation }: Props) {
                 bidCount={item.bid_count}
                 fixerName={item.assigned_fixer_name}
                 onPress={() => navigation.navigate('TaskDetails', { taskId: item.id })}
+                onCancel={tab === 'active' ? () => cancelTask(item.id) : undefined}
+                onMarkCompleted={tab === 'active' && item.status === 'IN_PROGRESS' ? () => markCompleted(item.id) : undefined}
+                onEdit={tab === 'active' && item.status === 'OPEN' ? () => navigation.navigate('TaskDetails', { taskId: item.id }) : undefined}
               />
             </View>
             {tab === 'past' && (

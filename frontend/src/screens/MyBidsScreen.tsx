@@ -153,8 +153,9 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
                     <Button
                       mode="outlined"
                       compact
+                      icon="pencil"
                       onPress={() => onEdit(bid)}
-                      style={styles.editButton}
+                      style={styles.actionBtn}
                     >
                       Edit
                     </Button>
@@ -163,7 +164,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
                       textColor={brandColors.danger}
                       compact
                       onPress={() => onWithdraw(bid.id)}
-                      style={styles.withdrawButton}
+                      style={[styles.actionBtn, { borderColor: brandColors.danger }]}
                     >
                       Withdraw
                     </Button>
@@ -175,7 +176,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
                     textColor={brandColors.danger}
                     compact
                     onPress={() => onCancelAccepted(bid)}
-                    style={styles.withdrawButton}
+                    style={[styles.actionBtn, { borderColor: brandColors.danger }]}
                   >
                     Cancel
                   </Button>
@@ -186,7 +187,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
                     textColor={brandColors.success}
                     compact
                     onPress={() => onReactivate(bid.id)}
-                    style={styles.reactivateButton}
+                    style={[styles.actionBtn, { borderColor: brandColors.success }]}
                   >
                     Reactivate
                   </Button>
@@ -634,19 +635,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  editButton: {
-    borderRadius: 999,
-  },
-  withdrawButton: {
-    borderColor: brandColors.danger,
-    borderRadius: 999,
-  },
-  finishButton: {
-    borderRadius: 999,
-  },
-  reactivateButton: {
-    borderColor: brandColors.success,
-    borderRadius: 999,
+  actionBtn: {
+    borderRadius: 12,
   },
   summaryCard: {
     marginHorizontal: 16,
