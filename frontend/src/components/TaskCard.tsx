@@ -28,6 +28,7 @@ interface TaskCardProps {
   onCancel?: () => void;
   onMarkCompleted?: () => void;
   onEdit?: () => void;
+  onReactivate?: () => void;
 }
 
 export default function TaskCard({
@@ -42,6 +43,7 @@ export default function TaskCard({
   onCancel,
   onMarkCompleted,
   onEdit,
+  onReactivate,
 }: TaskCardProps) {
   const theme = useTheme();
 
@@ -91,8 +93,13 @@ export default function TaskCard({
             Assigned to {fixerName}
           </Text>
         )}
-        {(onCancel || onMarkCompleted || onEdit) && (
+        {(onCancel || onMarkCompleted || onEdit || onReactivate) && (
           <View style={styles.actions}>
+            {onReactivate && (
+              <Button mode="outlined" compact textColor={brandColors.success} onPress={onReactivate} style={[styles.actionBtn, { borderColor: brandColors.success }]}>
+                Reactivate
+              </Button>
+            )}
             {onEdit && (
               <Button mode="outlined" compact onPress={onEdit} icon="pencil" style={styles.actionBtn}>
                 Edit

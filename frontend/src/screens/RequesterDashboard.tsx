@@ -95,6 +95,29 @@ export default function RequesterDashboard({ navigation }: Props) {
     }
   };
 
+  const reactivateTask = async (taskId: string) => {
+    if (Platform.OS === 'web') {
+      const wantsEdit = window.confirm(
+        'Would you like to edit this task before reactivating?\n\nOK — Yes, edit first\nCancel — No, reactivate as-is'
+      );
+      if (wantsEdit) {
+        try {
+          await api.put(`/api/tasks/${taskId}/status`, { status: 'OPEN' });
+          navigation.navigate('TaskDetails', { taskId });
+        } catch {
+          // ignore
+        }
+        return;
+      }
+    }
+    try {
+      await api.put(`/api/tasks/${taskId}/status`, { status: 'OPEN' });
+      fetchTasks();
+    } catch {
+      // ignore
+    }
+  };
+
   const activeTasks = tasks
     .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
     .sort((a, b) => {
@@ -169,6 +192,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 onCancel={tab === 'active' ? () => cancelTask(item.id) : undefined}
                 onMarkCompleted={tab === 'active' && item.status === 'IN_PROGRESS' ? () => markCompleted(item.id) : undefined}
                 onEdit={tab === 'active' && item.status === 'OPEN' ? () => navigation.navigate('TaskDetails', { taskId: item.id }) : undefined}
+                onReactivate={tab === 'past' && item.status === 'CANCELED' ? () => reactivateTask(item.id) : undefined}
               />
             </View>
             {tab === 'past' && (
