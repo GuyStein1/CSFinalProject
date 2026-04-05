@@ -2,11 +2,11 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useTheme } from 'react-native-paper';
+import { BlurView } from 'expo-blur';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
-import { brandColors } from '../theme';
+import { glassText } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,17 +19,20 @@ function FixerProfileScreen() {
 }
 
 export default function FixerTabs() {
-  const theme = useTheme();
-
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
-        sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarStyle: styles.tabBar,
+        sceneStyle: { backgroundColor: 'transparent' },
+        tabBarStyle: styles.tabBarOuter,
+        tabBarActiveTintColor: glassText.amber,
+        tabBarInactiveTintColor: glassText.muted,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarBackground: () => (
+          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
+            <BlurView intensity={0} style={styles.tabBarBorderLine} />
+          </BlurView>
+        ),
       }}
     >
       <Tab.Screen
@@ -77,16 +80,26 @@ export default function FixerTabs() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
+  tabBarOuter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     height: 72,
-    paddingTop: 8,
-    paddingBottom: 10,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.outline,
-    backgroundColor: brandColors.surface,
+    borderTopWidth: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  tabBarBorderLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
   tabBarLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
 });

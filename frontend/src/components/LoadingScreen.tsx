@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Text } from 'react-native-paper';
+import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { BlurView } from 'expo-blur';
 import AppLogo from './AppLogo';
-import { brandColors } from '../theme';
+import { glass, glassText } from '../theme';
 
 interface LoadingScreenProps {
   label?: string;
@@ -11,11 +11,12 @@ interface LoadingScreenProps {
 export default function LoadingScreen({ label = 'Loading your workspace...' }: LoadingScreenProps) {
   return (
     <View style={styles.container}>
-      <AppLogo />
-      <ActivityIndicator size="large" color={brandColors.primary} style={styles.spinner} />
-      <Text variant="bodyMedium" style={styles.label}>
-        {label}
-      </Text>
+      <BlurView intensity={glass.medium.blur} tint={glass.medium.tint} style={styles.card}>
+        <View style={styles.cardBorder} />
+        <AppLogo />
+        <ActivityIndicator size="large" color={glassText.amber} style={styles.spinner} />
+        <Text style={styles.label}>{label}</Text>
+      </BlurView>
     </View>
   );
 }
@@ -25,15 +26,29 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: brandColors.background,
-    padding: 24,
+    padding: 32,
+  },
+  card: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 32,
+    overflow: 'hidden',
+    backgroundColor: glass.medium.bg,
+    gap: 16,
+    minWidth: 260,
+  },
+  cardBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: glass.medium.border,
   },
   spinner: {
-    marginTop: 8,
+    marginTop: 4,
   },
   label: {
-    marginTop: 16,
-    color: brandColors.textMuted,
+    fontSize: 14,
+    color: glassText.secondary,
     textAlign: 'center',
   },
 });

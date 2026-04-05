@@ -6,14 +6,16 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  Text,
 } from 'react-native';
-import { Text, FAB, useTheme } from 'react-native-paper';
+import { FAB } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { BlurView } from 'expo-blur';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import LoadingScreen from '../components/LoadingScreen';
-import { brandColors } from '../theme';
+import { brandColors, glass, glassText } from '../theme';
 
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
@@ -33,22 +35,16 @@ interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
 
-const CATEGORIES: {
-  value: Category;
-  label: string;
-  icon: string;
-  bg: string;
-}[] = [
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', bg: '#FEF3D7' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          bg: '#DDE7EE' },
-  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         bg: '#EDE0D0' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   bg: '#EAE0F0' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          bg: '#D5EBD8' },
-  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         bg: brandColors.surfaceAlt },
+const CATEGORIES: { value: Category; label: string; icon: string }[] = [
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water' },
+  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck' },
+  { value: 'GENERAL',     label: 'General',     icon: 'wrench' },
 ];
 
 export default function RequesterDashboard({ navigation }: Props) {
-  const theme = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,20 +75,20 @@ export default function RequesterDashboard({ navigation }: Props) {
   const activeTasks = tasks.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS');
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
 
-  if (loading) {
-    return <LoadingScreen label="Loading your tasks..." />;
-  }
+  if (loading) return <LoadingScreen label="Loading your tasks..." />;
 
   return (
     <View style={styles.root}>
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={glassText.amber} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Hero ──────────────────────────────────────────────────── */}
-        <View style={styles.hero}>
-          {/* watermark logo — bottom-right */}
+        {/* ── Hero ───────────────────────────────────────────────────── */}
+        <BlurView intensity={glass.dark.blur} tint={glass.dark.tint} style={styles.hero}>
+          <View style={styles.heroBorder} />
+
+          {/* logo watermark */}
           <Image
             source={require('../../assets/fixit-logo.png')}
             style={styles.heroWatermark}
@@ -107,25 +103,27 @@ export default function RequesterDashboard({ navigation }: Props) {
             activeOpacity={0.82}
             onPress={() => navigation.navigate('CreateTask')}
           >
-            <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
+            <MaterialCommunityIcons name="plus" size={18} color={brandColors.textPrimary} />
             <Text style={styles.heroCtaText}>Post a Task</Text>
           </TouchableOpacity>
 
           {tasks.length > 0 && (
             <View style={styles.heroPills}>
-              <View style={styles.heroPill}>
+              <BlurView intensity={20} tint="light" style={styles.heroPill}>
+                <View style={styles.heroPillBorder} />
                 <Text style={styles.heroPillText}>{activeTasks.length} active</Text>
-              </View>
-              <View style={styles.heroPill}>
+              </BlurView>
+              <BlurView intensity={20} tint="light" style={styles.heroPill}>
+                <View style={styles.heroPillBorder} />
                 <Text style={styles.heroPillText}>{pastTasks.length} past</Text>
-              </View>
+              </BlurView>
             </View>
           )}
-        </View>
+        </BlurView>
 
-        {/* ── Category quick-picks ───────────────────────────────────── */}
+        {/* ── Category quick-picks ────────────────────────────────────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Browse by category</Text>
+          <Text style={styles.sectionLabel}>Browse by category</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -134,31 +132,25 @@ export default function RequesterDashboard({ navigation }: Props) {
             {CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat.value}
-                style={[styles.categoryTile, { backgroundColor: cat.bg }]}
                 activeOpacity={0.75}
                 onPress={() => navigation.navigate('CreateTask', { category: cat.value })}
               >
-                <View style={styles.categoryIconShell}>
-                  <MaterialCommunityIcons
-                    name={cat.icon as never}
-                    size={26}
-                    color={brandColors.primary}
-                  />
-                </View>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                <BlurView intensity={glass.medium.blur} tint={glass.medium.tint} style={styles.categoryTile}>
+                  <View style={styles.categoryTileBorder} />
+                  <View style={styles.categoryIconShell}>
+                    <MaterialCommunityIcons name={cat.icon as never} size={24} color={glassText.amber} />
+                  </View>
+                  <Text style={styles.categoryLabel}>{cat.label}</Text>
+                </BlurView>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* ── Empty prompt ───────────────────────────────────────────── */}
+        {/* ── Empty prompt ────────────────────────────────────────────── */}
         {tasks.length === 0 && (
           <View style={styles.emptyPrompt}>
-            <MaterialCommunityIcons
-              name="clipboard-text-outline"
-              size={36}
-              color={brandColors.outline}
-            />
+            <MaterialCommunityIcons name="clipboard-text-outline" size={36} color={glassText.muted} />
             <Text style={styles.emptyTitle}>No tasks yet</Text>
             <Text style={styles.emptyBody}>
               Pick a category above or tap{' '}
@@ -167,21 +159,18 @@ export default function RequesterDashboard({ navigation }: Props) {
           </View>
         )}
 
-        {/* ── Active tasks ───────────────────────────────────────────── */}
+        {/* ── Active tasks ────────────────────────────────────────────── */}
         {activeTasks.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>Active Tasks</Text>
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>{activeTasks.length}</Text>
-              </View>
+              <Text style={styles.sectionLabel}>Active Tasks</Text>
+              <BlurView intensity={20} tint="light" style={styles.countPill}>
+                <View style={styles.countPillBorder} />
+                <Text style={styles.countPillText}>{activeTasks.length}</Text>
+              </BlurView>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.activeRow}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hRow}>
               {activeTasks.map((task) => (
                 <View key={task.id} style={styles.activeCard}>
                   <TaskCard
@@ -200,17 +189,16 @@ export default function RequesterDashboard({ navigation }: Props) {
           </View>
         )}
 
-        {/* ── Past tasks ─────────────────────────────────────────────── */}
+        {/* ── Past tasks ──────────────────────────────────────────────── */}
         {pastTasks.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionAccent, styles.sectionAccentMuted]} />
-              <Text style={[styles.sectionTitle, styles.sectionTitleMuted]}>Past Tasks</Text>
-              <View style={[styles.countBadge, styles.countBadgeMuted]}>
-                <Text style={[styles.countBadgeText, styles.countBadgeTextMuted]}>
-                  {pastTasks.length}
-                </Text>
-              </View>
+              <Text style={[styles.sectionLabel, styles.sectionLabelMuted]}>Past Tasks</Text>
+              <BlurView intensity={15} tint="light" style={styles.countPill}>
+                <View style={styles.countPillBorder} />
+                <Text style={[styles.countPillText, styles.countPillTextMuted]}>{pastTasks.length}</Text>
+              </BlurView>
             </View>
             {pastTasks.map((task) => (
               <TaskCard
@@ -229,7 +217,8 @@ export default function RequesterDashboard({ navigation }: Props) {
 
       <FAB
         icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.secondary }]}
+        style={styles.fab}
+        color={brandColors.textPrimary}
         onPress={() => navigation.navigate('CreateTask')}
       />
     </View>
@@ -239,82 +228,90 @@ export default function RequesterDashboard({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: brandColors.background,
   },
   scroll: {
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
 
   // ── Hero
   hero: {
-    backgroundColor: brandColors.primary,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 4,
+    borderRadius: 28,
     overflow: 'hidden',
-    marginBottom: 8,
+    padding: 24,
+    backgroundColor: glass.dark.bg,
+  },
+  heroBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: glass.dark.border,
   },
   heroWatermark: {
     position: 'absolute',
-    width: 190,
-    height: 190,
-    right: -24,
-    bottom: -20,
-    opacity: 0.09,
+    width: 180,
+    height: 180,
+    right: -20,
+    bottom: -24,
+    opacity: 0.07,
   },
   heroEyebrow: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
-    color: 'rgba(255, 252, 246, 0.65)',
-    letterSpacing: 0.4,
+    color: glassText.muted,
+    letterSpacing: 0.5,
     marginBottom: 6,
   },
   heroHeadline: {
     fontSize: 34,
     fontWeight: '800',
-    color: brandColors.surface,
+    color: glassText.primary,
     lineHeight: 42,
-    marginBottom: 24,
+    marginBottom: 22,
   },
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: brandColors.secondary,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
     borderRadius: 999,
-    gap: 8,
+    gap: 7,
     marginBottom: 20,
   },
   heroCtaText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: brandColors.textPrimary,
   },
   heroPills: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   heroPill: {
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 252, 246, 0.12)',
+    overflow: 'hidden',
+  },
+  heroPillBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 252, 246, 0.18)',
+    borderColor: 'rgba(255,255,255,0.20)',
   },
   heroPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgba(255, 252, 246, 0.9)',
+    color: glassText.secondary,
   },
 
   // ── Sections
   section: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     marginTop: 20,
   },
   sectionHeader: {
@@ -330,34 +327,37 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.secondary,
   },
   sectionAccentMuted: {
-    backgroundColor: brandColors.outline,
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
-  sectionTitle: {
-    fontSize: 16,
+  sectionLabel: {
+    fontSize: 15,
     fontWeight: '700',
-    color: brandColors.textPrimary,
+    color: glassText.primary,
     marginBottom: 12,
   },
-  sectionTitleMuted: {
-    color: brandColors.textMuted,
+  sectionLabelMuted: {
+    color: glassText.muted,
     marginBottom: 0,
   },
-  countBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 2,
+  countPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: brandColors.secondary,
+    overflow: 'hidden',
   },
-  countBadgeMuted: {
-    backgroundColor: brandColors.surfaceAlt,
+  countPillBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
   },
-  countBadgeText: {
+  countPillText: {
     fontSize: 12,
     fontWeight: '700',
-    color: brandColors.textPrimary,
+    color: glassText.amber,
   },
-  countBadgeTextMuted: {
-    color: brandColors.textMuted,
+  countPillTextMuted: {
+    color: glassText.muted,
   },
 
   // ── Category tiles
@@ -366,30 +366,40 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   categoryTile: {
-    width: 80,
+    width: 82,
     paddingVertical: 14,
     paddingHorizontal: 8,
-    borderRadius: 20,
+    borderRadius: 22,
+    overflow: 'hidden',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: glass.medium.bg,
+  },
+  categoryTileBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: glass.medium.border,
   },
   categoryIconShell: {
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(241,181,69,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(241,181,69,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: brandColors.textPrimary,
+    color: glassText.secondary,
     textAlign: 'center',
   },
 
   // ── Active tasks
-  activeRow: {
+  hRow: {
     gap: 12,
     paddingBottom: 4,
   },
@@ -400,7 +410,7 @@ const styles = StyleSheet.create({
   // ── Empty state
   emptyPrompt: {
     alignItems: 'center',
-    paddingTop: 32,
+    paddingTop: 36,
     paddingBottom: 8,
     paddingHorizontal: 40,
     gap: 10,
@@ -408,24 +418,25 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: brandColors.textPrimary,
+    color: glassText.primary,
   },
   emptyBody: {
     fontSize: 14,
-    color: brandColors.textMuted,
+    color: glassText.secondary,
     textAlign: 'center',
     lineHeight: 21,
   },
   emptyBodyBold: {
     fontWeight: '700',
-    color: brandColors.textPrimary,
+    color: glassText.primary,
   },
 
   // ── FAB
   fab: {
     position: 'absolute',
     right: 16,
-    bottom: 16,
+    bottom: 20,
     borderRadius: 18,
+    backgroundColor: brandColors.secondary,
   },
 });
