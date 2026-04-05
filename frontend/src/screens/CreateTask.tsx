@@ -1,30 +1,38 @@
 import React, { useRef, useState } from 'react';
-import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Alert, Platform } from 'react-native';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Image,
+  Pressable,
+  Alert,
+  Platform,
+} from 'react-native';
 import {
   Text,
-  TextInput,
-  Button,
-  ProgressBar,
-  Card,
-  useTheme,
-  IconButton,
+  SegmentedButtons,
   Portal,
   Modal,
-  SegmentedButtons,
+  IconButton,
 } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import api from '../api/axiosInstance';
-import { brandColors } from '../theme';
+import { FButton, FInput } from '../components/ui';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
-const CATEGORIES: { value: Category; label: string; icon: string }[] = [
-  { value: 'ELECTRICITY', label: 'Electricity', icon: '⚡' },
-  { value: 'PLUMBING', label: 'Plumbing', icon: '🔧' },
-  { value: 'CARPENTRY', label: 'Carpentry', icon: '🔨' },
-  { value: 'PAINTING', label: 'Painting', icon: '🎨' },
-  { value: 'MOVING', label: 'Moving', icon: '📦' },
-  { value: 'GENERAL', label: 'General', icon: '🛠' },
+const CATEGORIES: { value: Category; label: string; icon: string; color: string; bg: string }[] = [
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', color: '#F0B429', bg: '#FEF3D7' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          color: '#4A90D9', bg: '#DDE7EE' },
+  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         color: '#A07553', bg: '#EDE0D0' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   color: '#8B6DAF', bg: '#EAE0F0' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          color: '#4CAF7D', bg: '#D5EBD8' },
+  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         color: '#7A8B96', bg: brandColors.surfaceAlt },
 ];
+
+const STEP_ICONS = ['text-box-outline', 'camera-outline', 'shape-outline', 'cash-multiple', 'map-marker-outline'];
+const STEP_LABELS = ['Details', 'Photos', 'Category', 'Budget', 'Location'];
 
 interface Props {
   navigation: { goBack: () => void; navigate: (screen: string) => void };
@@ -32,7 +40,6 @@ interface Props {
 }
 
 export default function CreateTask({ navigation, route }: Props) {
-  const theme = useTheme();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -104,41 +111,83 @@ export default function CreateTask({ navigation, route }: Props) {
     }
   };
 
+  const renderStepIndicator = () => (
+    <View style={styles.stepBar}>
+      {STEP_ICONS.map((icon, i) => {
+        const stepNum = i + 1;
+        const isActive = stepNum === step;
+        const isDone = stepNum < step;
+        return (
+          <View key={icon} style={styles.stepItem}>
+            <View
+              style={[
+                styles.stepDot,
+                isActive && styles.stepDotActive,
+                isDone && styles.stepDotDone,
+              ]}
+            >
+              {isDone ? (
+                <MaterialCommunityIcons name="check" size={14} color={brandColors.white} />
+              ) : (
+                <MaterialCommunityIcons
+                  name={icon as never}
+                  size={14}
+                  color={isActive ? brandColors.white : brandColors.textMuted}
+                />
+              )}
+            </View>
+            <Text
+              style={[
+                typography.caption,
+                {
+                  color: isActive ? brandColors.primary : isDone ? brandColors.success : brandColors.textMuted,
+                  marginTop: 4,
+                },
+              ]}
+            >
+              {STEP_LABELS[i]}
+            </Text>
+            {i < STEP_ICONS.length - 1 && (
+              <View style={[styles.stepLine, isDone && styles.stepLineDone]} />
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <View>
-            <Text variant="headlineSmall" style={styles.stepTitle}>What do you need done?</Text>
-            <TextInput
+          <View style={styles.stepContent}>
+            <Text style={[typography.h2, styles.stepTitle]}>What do you need done?</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Give a clear title and describe the job</Text>
+            <FInput
               label="Title"
               value={title}
               onChangeText={setTitle}
               maxLength={80}
-              mode="outlined"
-              style={styles.input}
             />
-            <Text variant="bodySmall" style={styles.counter}>{title.length}/80</Text>
-            <TextInput
+            <Text style={[typography.caption, styles.counter]}>{title.length}/80</Text>
+            <FInput
               label="Description"
               value={description}
               onChangeText={setDescription}
               maxLength={500}
-              mode="outlined"
               multiline
               numberOfLines={5}
               placeholder="Describe what you need done..."
-              style={styles.input}
             />
-            <Text variant="bodySmall" style={styles.counter}>{description.length}/500</Text>
+            <Text style={[typography.caption, styles.counter]}>{description.length}/500</Text>
           </View>
         );
 
       case 2:
         return (
-          <View>
-            <Text variant="headlineSmall" style={styles.stepTitle}>Add photos</Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>Up to 5 photos (optional)</Text>
+          <View style={styles.stepContent}>
+            <Text style={[typography.h2, styles.stepTitle]}>Add photos</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Up to 5 photos (optional) help fixers understand the job</Text>
             <View style={styles.photoGrid}>
               {photos.map((uri, index) => (
                 <View key={index} style={styles.photoContainer}>
@@ -147,14 +196,19 @@ export default function CreateTask({ navigation, route }: Props) {
                     icon="close-circle"
                     size={20}
                     style={styles.removePhoto}
+                    iconColor={brandColors.danger}
                     onPress={() => removePhoto(index)}
                   />
                 </View>
               ))}
               {photos.length < 5 && (
-                <TouchableOpacity style={styles.addPhoto} onPress={pickImage}>
-                  <Text style={styles.addPhotoIcon}>+</Text>
-                </TouchableOpacity>
+                <Pressable
+                  style={({ pressed }) => [styles.addPhoto, { opacity: pressed ? 0.7 : 1 }]}
+                  onPress={pickImage}
+                >
+                  <MaterialCommunityIcons name="camera-plus-outline" size={28} color={brandColors.primaryMuted} />
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Add</Text>
+                </Pressable>
               )}
             </View>
           </View>
@@ -162,30 +216,43 @@ export default function CreateTask({ navigation, route }: Props) {
 
       case 3:
         return (
-          <View>
-            <Text variant="headlineSmall" style={styles.stepTitle}>Choose a category</Text>
+          <View style={styles.stepContent}>
+            <Text style={[typography.h2, styles.stepTitle]}>Choose a category</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Helps fixers find your task</Text>
             <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.value}
-                  onPress={() => setCategory(cat.value)}
-                  style={[
-                    styles.categoryCard,
-                    category === cat.value && styles.categoryCardSelected,
-                  ]}
-                >
-                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                  <Text variant="labelMedium">{cat.label}</Text>
-                </TouchableOpacity>
-              ))}
+              {CATEGORIES.map((cat) => {
+                const isSelected = category === cat.value;
+                return (
+                  <Pressable
+                    key={cat.value}
+                    onPress={() => setCategory(cat.value)}
+                    style={({ pressed }) => [
+                      styles.categoryCard,
+                      { backgroundColor: cat.bg, opacity: pressed ? 0.8 : 1 },
+                      isSelected && styles.categoryCardSelected,
+                    ]}
+                  >
+                    {isSelected && (
+                      <View style={styles.categoryCheck}>
+                        <MaterialCommunityIcons name="check" size={12} color={brandColors.white} />
+                      </View>
+                    )}
+                    <View style={[styles.categoryIconCircle, { backgroundColor: cat.color }]}>
+                      <MaterialCommunityIcons name={cat.icon as never} size={24} color={brandColors.white} />
+                    </View>
+                    <Text style={[typography.label, { color: brandColors.textPrimary }]}>{cat.label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         );
 
       case 4:
         return (
-          <View>
-            <Text variant="headlineSmall" style={styles.stepTitle}>Set your budget</Text>
+          <View style={styles.stepContent}>
+            <Text style={[typography.h2, styles.stepTitle]}>Set your budget</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Choose a fixed price or let fixers quote</Text>
             <SegmentedButtons
               value={budgetType}
               onValueChange={(v) => setBudgetType(v as 'fixed' | 'quote')}
@@ -196,40 +263,45 @@ export default function CreateTask({ navigation, route }: Props) {
               style={styles.segmented}
             />
             {budgetType === 'fixed' ? (
-              <TextInput
+              <FInput
                 label="Budget (₪)"
                 value={price}
                 onChangeText={setPrice}
                 keyboardType="numeric"
-                mode="outlined"
-                style={styles.input}
                 placeholder="Enter your budget"
+                left={<FInput.Affix text="₪" />}
               />
             ) : (
-              <Text variant="bodyMedium" style={styles.quoteNote}>
-                Fixers will propose their own price.
-              </Text>
+              <View style={styles.quoteNote}>
+                <MaterialCommunityIcons name="information-outline" size={18} color={brandColors.primaryMuted} />
+                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                  Fixers will propose their own price when bidding on your task.
+                </Text>
+              </View>
             )}
           </View>
         );
 
       case 5:
         return (
-          <View>
-            <Text variant="headlineSmall" style={styles.stepTitle}>Location</Text>
-            <TextInput
+          <View style={styles.stepContent}>
+            <Text style={[typography.h2, styles.stepTitle]}>Location</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Tell fixers where the job is</Text>
+            <FInput
               label="General area (e.g., 'Hadar, Haifa')"
               value={generalLocation}
               onChangeText={setGeneralLocation}
-              mode="outlined"
-              style={styles.input}
             />
-            <TextInput
-              label="Exact address (private — shared only with accepted Fixer)"
+            <View style={styles.addressNote}>
+              <MaterialCommunityIcons name="shield-lock-outline" size={16} color={brandColors.primaryMuted} />
+              <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                Exact address is only shared with the accepted fixer
+              </Text>
+            </View>
+            <FInput
+              label="Exact address (private)"
               value={exactAddress}
               onChangeText={setExactAddress}
-              mode="outlined"
-              style={styles.input}
             />
           </View>
         );
@@ -250,138 +322,217 @@ export default function CreateTask({ navigation, route }: Props) {
           onChange={handleWebFileSelect}
         />
       )}
-      <View style={styles.progressSection}>
-        <ProgressBar progress={step / totalSteps} color={theme.colors.primary} />
-        <Text variant="bodySmall" style={styles.stepIndicator}>Step {step} of {totalSteps}</Text>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.content}>
+      {renderStepIndicator()}
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.cardShell}>
           {renderStep()}
         </View>
 
         <View style={styles.buttons}>
           {step > 1 && (
-            <Button mode="outlined" onPress={() => setStep(step - 1)} style={styles.button}>
+            <FButton variant="outline" onPress={() => setStep(step - 1)} style={styles.button}>
               Back
-            </Button>
+            </FButton>
           )}
           {step < totalSteps ? (
-            <Button
-              mode="contained"
+            <FButton
               onPress={() => setStep(step + 1)}
               disabled={!canNext()}
               style={styles.button}
+              iconRight="arrow-right"
             >
               Next
-            </Button>
+            </FButton>
           ) : (
-            <Button
-              mode="contained"
+            <FButton
+              variant="secondary"
               onPress={() => setShowReview(true)}
               disabled={!canNext()}
               style={styles.button}
+              icon="check-circle-outline"
             >
               Review & Publish
-            </Button>
+            </FButton>
           )}
         </View>
       </ScrollView>
 
       <Portal>
-        <Modal visible={showReview} onDismiss={() => setShowReview(false)} contentContainerStyle={styles.modal}>
-          <Text variant="titleLarge" style={styles.modalTitle}>Review your task</Text>
-          <Card style={styles.reviewCard}>
-            <Card.Content>
-              <Text variant="labelLarge">Title</Text>
-              <Text variant="bodyMedium">{title}</Text>
-              <Text variant="labelLarge" style={styles.reviewLabel}>Category</Text>
-              <Text variant="bodyMedium">{CATEGORIES.find((c) => c.value === category)?.label}</Text>
-              <Text variant="labelLarge" style={styles.reviewLabel}>Budget</Text>
-              <Text variant="bodyMedium">
-                {budgetType === 'fixed' ? `₪${price}` : 'Quote Required'}
-              </Text>
-              <Text variant="labelLarge" style={styles.reviewLabel}>Location</Text>
-              <Text variant="bodyMedium">{generalLocation}</Text>
-              <Text variant="labelLarge" style={styles.reviewLabel}>Photos</Text>
-              <Text variant="bodyMedium">{photos.length} photo(s)</Text>
-            </Card.Content>
-          </Card>
-          <Button
-            mode="contained"
+        <Modal
+          visible={showReview}
+          onDismiss={() => setShowReview(false)}
+          contentContainerStyle={styles.modal}
+        >
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+            Review your task
+          </Text>
+
+          <View style={styles.reviewRows}>
+            <ReviewRow icon="text-box-outline" label="Title" value={title} />
+            <ReviewRow icon="shape-outline" label="Category" value={CATEGORIES.find((c) => c.value === category)?.label ?? ''} />
+            <ReviewRow icon="cash-multiple" label="Budget" value={budgetType === 'fixed' ? `₪${price}` : 'Quote Required'} />
+            <ReviewRow icon="map-marker-outline" label="Location" value={generalLocation} />
+            <ReviewRow icon="camera-outline" label="Photos" value={`${photos.length} photo(s)`} />
+          </View>
+
+          <FButton
             onPress={handlePublish}
             loading={submitting}
             disabled={submitting}
-            style={styles.publishButton}
-            buttonColor={theme.colors.primary}
+            fullWidth
+            icon="send"
           >
             Publish Task
-          </Button>
-          <Button mode="text" onPress={() => setShowReview(false)} style={styles.cancelButton}>
+          </FButton>
+          <FButton
+            variant="ghost"
+            onPress={() => setShowReview(false)}
+            fullWidth
+            style={{ marginTop: spacing.sm }}
+          >
             Go Back & Edit
-          </Button>
+          </FButton>
         </Modal>
       </Portal>
     </View>
   );
 }
 
+function ReviewRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <View style={reviewStyles.row}>
+      <View style={reviewStyles.iconShell}>
+        <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
+      </View>
+      <View style={reviewStyles.text}>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
+        <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+const reviewStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+  },
+  iconShell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    flex: 1,
+    gap: 2,
+  },
+});
+
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: brandColors.background,
   },
-  progressSection: {
+
+  stepBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     backgroundColor: brandColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: brandColors.outline,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+    gap: 0,
   },
+  stepItem: {
+    alignItems: 'center',
+    flex: 1,
+    position: 'relative',
+  },
+  stepDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: brandColors.outlineLight,
+  },
+  stepDotActive: {
+    backgroundColor: brandColors.primary,
+    borderColor: brandColors.primary,
+  },
+  stepDotDone: {
+    backgroundColor: brandColors.success,
+    borderColor: brandColors.success,
+  },
+  stepLine: {
+    position: 'absolute',
+    top: 14,
+    left: '60%',
+    right: '-40%',
+    height: 2,
+    backgroundColor: brandColors.outlineLight,
+    zIndex: -1,
+  },
+  stepLineDone: {
+    backgroundColor: brandColors.success,
+  },
+
   container: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
     alignItems: 'center',
   },
-  stepIndicator: {
-    textAlign: 'center',
-    paddingTop: 4,
-    paddingBottom: 12,
-    color: brandColors.textMuted,
-    backgroundColor: brandColors.surface,
-  },
-  content: {
+  cardShell: {
     width: '100%',
     maxWidth: 500,
     backgroundColor: brandColors.surface,
-    borderRadius: 28,
-    padding: 20,
+    borderRadius: radii.xxl,
+    padding: spacing.xxl,
+    ...shadows.sm,
+  },
+  stepContent: {
+    gap: spacing.md,
   },
   stepTitle: {
-    marginBottom: 16,
     color: brandColors.textPrimary,
   },
-  subtitle: {
+  stepSubtitle: {
     color: brandColors.textMuted,
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 10,
-    backgroundColor: brandColors.surface,
+    marginBottom: spacing.sm,
   },
   counter: {
     textAlign: 'right',
     color: brandColors.textMuted,
-    marginBottom: 12,
   },
+
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: spacing.md,
   },
   photoContainer: {
     width: 100,
     height: 100,
-    borderRadius: 16,
+    borderRadius: radii.md,
     overflow: 'hidden',
   },
   photo: {
@@ -396,85 +547,92 @@ const styles = StyleSheet.create({
   addPhoto: {
     width: 100,
     height: 100,
-    borderRadius: 16,
+    borderRadius: radii.md,
     borderWidth: 2,
-    borderColor: brandColors.outline,
+    borderColor: brandColors.outlineLight,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: brandColors.surfaceAlt,
+    gap: spacing.xs,
   },
-  addPhotoIcon: {
-    fontSize: 32,
-    color: brandColors.primaryMuted,
-  },
+
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: spacing.md,
     justifyContent: 'center',
   },
   categoryCard: {
     width: '45%',
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: brandColors.surface,
+    padding: spacing.xl,
+    borderRadius: radii.lg,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: brandColors.outline,
+    gap: spacing.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
   },
   categoryCardSelected: {
     borderColor: brandColors.primary,
-    borderWidth: 2,
-    backgroundColor: brandColors.warningSoft,
   },
-  categoryIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  categoryCheck: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: brandColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  categoryIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   segmented: {
-    marginBottom: 16,
     backgroundColor: brandColors.surfaceAlt,
-    borderRadius: 999,
+    borderRadius: radii.pill,
   },
   quoteNote: {
-    color: brandColors.textMuted,
-    fontStyle: 'italic',
-    marginTop: 12,
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: brandColors.infoSoft,
+    borderRadius: radii.md,
+    alignItems: 'flex-start',
   },
+  addressNote: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+
   buttons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    gap: 12,
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
     width: '100%',
     maxWidth: 500,
   },
   button: {
     flex: 1,
   },
+
   modal: {
     backgroundColor: brandColors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 24,
+    margin: spacing.xl,
+    padding: spacing.xxl,
+    borderRadius: radii.xxxl,
   },
-  modalTitle: {
-    marginBottom: 16,
-    color: brandColors.textPrimary,
-  },
-  reviewCard: {
-    marginBottom: 16,
-    backgroundColor: brandColors.background,
-  },
-  reviewLabel: {
-    marginTop: 12,
-  },
-  publishButton: {
-    marginBottom: 8,
-    borderRadius: 999,
-  },
-  cancelButton: {
-    marginBottom: 0,
+  reviewRows: {
+    marginBottom: spacing.xxl,
   },
 });

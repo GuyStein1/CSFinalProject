@@ -1,38 +1,20 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Pressable } from 'react-native';
 import {
   Text,
-  Button,
-  Card,
-  useTheme,
-  Divider,
   Avatar,
-  Icon,
   IconButton,
-  TextInput,
+  Divider,
   Portal,
   Modal,
 } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
-import { brandColors } from '../theme';
-
-function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
-  return (
-    <View style={{ flexDirection: 'row' }}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Icon
-          key={s}
-          source={s <= Math.round(rating) ? 'star' : 'star-outline'}
-          size={size}
-          color={brandColors.secondary}
-        />
-      ))}
-    </View>
-  );
-}
+import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -63,9 +45,15 @@ interface Task {
   created_at: string;
 }
 
+const STATUS_BANNER: Record<TaskStatus, { bg: string; color: string; icon: string }> = {
+  OPEN: { bg: brandColors.successSoft, color: brandColors.success, icon: 'progress-clock' },
+  IN_PROGRESS: { bg: brandColors.infoSoft, color: brandColors.primaryMuted, icon: 'progress-wrench' },
+  COMPLETED: { bg: brandColors.surfaceAlt, color: brandColors.textMuted, icon: 'check-circle-outline' },
+  CANCELED: { bg: brandColors.dangerSoft, color: brandColors.danger, icon: 'close-circle-outline' },
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TaskDetails({ route, navigation }: { route: any; navigation: any }) {
-  const theme = useTheme();
   const { taskId } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -73,14 +61,6 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
-  const [fixerReviews, setFixerReviews] = useState<{ rating: number; comment: string | null; reviewer?: { full_name: string } }[]>([]);
-  const [showFixerReviews, setShowFixerReviews] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editPrice, setEditPrice] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editAddress, setEditAddress] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -122,25 +102,21 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   const cancelTask = async () => {
-    const doCancel = async () => {
-      try {
-        await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
-        navigation.goBack();
-      } catch {
-        Alert.alert('Error', 'Failed to cancel task.');
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to cancel this task?')) {
-        await doCancel();
-      }
-    } else {
-      Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
-        { text: 'No' },
-        { text: 'Yes, Cancel', style: 'destructive', onPress: doCancel },
-      ]);
-    }
+    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+      { text: 'No' },
+      {
+        text: 'Yes, Cancel',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
+            navigation.goBack();
+          } catch {
+            Alert.alert('Error', 'Failed to cancel task.');
+          }
+        },
+      },
+    ]);
   };
 
   const markCompleted = async () => {
@@ -161,17 +137,6 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
-  const showReviewsForFixer = async (fixerId: string) => {
-    try {
-      const res = await api.get(`/api/users/${fixerId}/reviews`);
-      setFixerReviews(res.data.reviews || []);
-      setShowFixerReviews(true);
-    } catch {
-      setFixerReviews([]);
-      setShowFixerReviews(true);
-    }
-  };
-
   const submitReview = async () => {
     if (reviewRating === 0) return;
     try {
@@ -185,32 +150,6 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
-  const openEditModal = () => {
-    if (!task) return;
-    setEditTitle(task.title);
-    setEditDescription(task.description);
-    setEditPrice(task.suggested_price?.toString() || '');
-    setEditLocation(task.general_location_name);
-    setEditAddress(task.exact_address);
-    setShowEditModal(true);
-  };
-
-  const saveEdit = async () => {
-    try {
-      await api.put(`/api/tasks/${taskId}`, {
-        title: editTitle.trim(),
-        description: editDescription.trim(),
-        suggested_price: editPrice ? parseFloat(editPrice) : null,
-        general_location_name: editLocation.trim(),
-        exact_address: editAddress.trim(),
-      });
-      setShowEditModal(false);
-      fetchData();
-    } catch {
-      Alert.alert('Error', 'Failed to update task.');
-    }
-  };
-
   if (loading) {
     return <LoadingScreen label="Loading task details..." />;
   }
@@ -218,322 +157,269 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   if (!task) {
     return (
       <View style={styles.center}>
-        <Text variant="bodyLarge">Task not found</Text>
+        <Text style={[typography.body]}>Task not found</Text>
       </View>
     );
   }
 
   const acceptedBid = bids.find((b) => b.status === 'ACCEPTED');
   const pendingBids = bids.filter((b) => b.status === 'PENDING');
+  const banner = STATUS_BANNER[task.status];
 
   return (
-    <>
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text variant="headlineSmall" style={styles.title}>{task.title}</Text>
-        <View style={styles.headerRight}>
-          {task.status === 'OPEN' && (
-            <IconButton icon="pencil" size={20} onPress={openEditModal} />
-          )}
-          <StatusBadge status={task.status} />
-        </View>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Status Banner */}
+      <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
+        <MaterialCommunityIcons name={banner.icon as never} size={20} color={banner.color} />
+        <Text style={[typography.label, { color: banner.color }]}>
+          {task.status.replace('_', ' ')}
+        </Text>
       </View>
 
-      {/* Details */}
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="bodyMedium">{task.description}</Text>
-          <Divider style={styles.divider} />
-          <View style={styles.detailRow}>
-            <Text variant="labelLarge">Budget:</Text>
-            <Text variant="bodyMedium">
-              {task.suggested_price ? `₪${task.suggested_price}` : 'Quote Required'}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text variant="labelLarge">Location:</Text>
-            <Text variant="bodyMedium">{task.general_location_name}</Text>
-          </View>
-          {task.status !== 'OPEN' && (
-            <View style={styles.detailRow}>
-              <Text variant="labelLarge">Address:</Text>
-              <Text variant="bodyMedium">{task.exact_address}</Text>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
+      {/* Title & Details Card */}
+      <FCard style={styles.mainCard}>
+        <Text style={[typography.h1, styles.title]}>{task.title}</Text>
+        <Text style={[typography.body, styles.description]}>{task.description}</Text>
 
-      {/* OPEN — Bids Section */}
+        <View style={styles.detailsDivider} />
+
+        <DetailRow icon="cash-multiple" label="Budget" value={task.suggested_price ? `₪${task.suggested_price}` : 'Quote Required'} />
+        <DetailRow icon="map-marker-outline" label="Location" value={task.general_location_name} />
+        {task.status !== 'OPEN' && (
+          <DetailRow icon="home-outline" label="Address" value={task.exact_address} />
+        )}
+        <DetailRow
+          icon="calendar-outline"
+          label="Posted"
+          value={new Date(task.created_at).toLocaleDateString(undefined, {
+            year: 'numeric', month: 'long', day: 'numeric',
+          })}
+        />
+      </FCard>
+
+      {/* OPEN: Bids Section */}
       {task.status === 'OPEN' && (
         <View style={styles.section}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Received Bids ({pendingBids.length})
-          </Text>
-          {pendingBids.length === 0 ? (
-            <Card style={styles.card}>
-              <Card.Content>
-                <Text variant="bodyMedium" style={styles.emptyText}>
-                  No bids yet. Sit tight — Fixers in your area will see your task!
-                </Text>
-              </Card.Content>
-            </Card>
-          ) : (
-            pendingBids.map((bid) => (
-              <Card key={bid.id} style={styles.bidCard}>
-                <Card.Content>
-                  <View style={styles.bidHeader}>
-                    <Avatar.Icon size={40} icon="account" />
-                    <View style={styles.bidInfo}>
-                      <Text variant="titleSmall">{bid.fixer?.full_name || 'Fixer'}</Text>
-                      {bid.fixer?.average_rating_as_fixer ? (
-                        <View style={styles.ratingRow}>
-                          <StarRating rating={bid.fixer.average_rating_as_fixer} />
-                          <Text
-                            variant="bodySmall"
-                            style={styles.ratingLink}
-                            onPress={() => showReviewsForFixer(bid.fixer_id)}
-                          >
-                            {bid.fixer.average_rating_as_fixer.toFixed(1)} — see reviews
-                          </Text>
-                        </View>
-                      ) : (
-                        <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>No reviews yet</Text>
-                      )}
-                    </View>
-                    <Text variant="titleMedium" style={{ color: theme.colors.primary }}>
-                      ₪{bid.offered_price}
-                    </Text>
-                  </View>
-                  <Text variant="bodySmall" style={styles.bidDesc} numberOfLines={2}>
-                    {bid.description}
-                  </Text>
-                  <View style={styles.bidActions}>
-                    <Button
-                      mode="contained"
-                      buttonColor={brandColors.success}
-                      compact
-                      onPress={() => acceptBid(bid.id)}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      textColor={brandColors.danger}
-                      compact
-                      onPress={() => declineBid(bid.id)}
-                    >
-                      Decline
-                    </Button>
-                  </View>
-                </Card.Content>
-              </Card>
-            ))
-          )}
-          <Button
-            mode="text"
-            textColor={brandColors.danger}
-            onPress={cancelTask}
-            style={styles.cancelButton}
-          >
-            Cancel Task
-          </Button>
-        </View>
-      )}
+          <FSectionHeader title="Received Bids" count={pendingBids.length} />
 
-      {/* IN_PROGRESS — Assigned Fixer */}
-      {task.status === 'IN_PROGRESS' && acceptedBid && (
-        <View style={styles.section}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Assigned Fixer</Text>
-          <Card style={styles.card}>
-            <Card.Content>
-              <View style={styles.bidHeader}>
-                <Avatar.Icon size={48} icon="account" />
-                <View style={styles.bidInfo}>
-                  <Text variant="titleSmall">{acceptedBid.fixer?.full_name || 'Fixer'}</Text>
-                  {acceptedBid.fixer?.average_rating_as_fixer ? (
-                    <View style={styles.ratingRow}>
-                      <StarRating rating={acceptedBid.fixer.average_rating_as_fixer} />
-                      <Text
-                        variant="bodySmall"
-                        style={styles.ratingLink}
-                        onPress={() => showReviewsForFixer(acceptedBid.fixer_id)}
-                      >
-                        {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)} — see reviews
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>No reviews yet</Text>
-                  )}
-                  {acceptedBid.fixer?.phone_number && (
-                    <Text
-                      variant="bodySmall"
-                      style={styles.phone}
-                      onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}
-                    >
-                      {acceptedBid.fixer.phone_number}
-                    </Text>
-                  )}
-                </View>
-                <Text variant="titleMedium" style={{ color: theme.colors.primary }}>
-                  ₪{acceptedBid.offered_price}
+          {pendingBids.length === 0 ? (
+            <FCard style={styles.emptyBidsCard}>
+              <View style={styles.emptyBidsContent}>
+                <MaterialCommunityIcons name="clock-outline" size={28} color={brandColors.textMuted} />
+                <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
+                  No bids yet. Fixers in your area will see your task!
                 </Text>
               </View>
-            </Card.Content>
-          </Card>
-          <Button
-            mode="contained"
-            buttonColor={brandColors.success}
-            onPress={markCompleted}
-            style={styles.actionButton}
-          >
-            Mark as Completed
-          </Button>
-          <Button
-            mode="text"
-            textColor={brandColors.danger}
-            onPress={cancelTask}
-          >
-            Cancel Task
-          </Button>
+            </FCard>
+          ) : (
+            pendingBids.map((bid) => (
+              <FCard key={bid.id} style={styles.bidCard}>
+                <View style={styles.bidTop}>
+                  <Avatar.Icon size={44} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
+                  <View style={styles.bidInfo}>
+                    <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                      {bid.fixer?.full_name || 'Fixer'}
+                    </Text>
+                    {bid.fixer?.average_rating_as_fixer != null && (
+                      <View style={styles.ratingRow}>
+                        <MaterialCommunityIcons name="star" size={14} color={brandColors.secondary} />
+                        <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                          {bid.fixer.average_rating_as_fixer.toFixed(1)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.bidPriceTag}>
+                    <Text style={[typography.h2, { color: brandColors.primary }]}>₪{bid.offered_price}</Text>
+                  </View>
+                </View>
+
+                <Text style={[typography.bodySm, styles.bidPitch]} numberOfLines={2}>
+                  {bid.description}
+                </Text>
+
+                <View style={styles.bidActions}>
+                  <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} style={{ flex: 1 }}>
+                    Accept
+                  </FButton>
+                  <FButton variant="outline" size="sm" icon="close" onPress={() => declineBid(bid.id)} style={{ flex: 1 }}>
+                    Decline
+                  </FButton>
+                </View>
+              </FCard>
+            ))
+          )}
+
+          <Pressable onPress={cancelTask} style={styles.cancelRow}>
+            <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
+            <Text style={[typography.label, { color: brandColors.danger }]}>Cancel Task</Text>
+          </Pressable>
         </View>
       )}
 
-      {/* COMPLETED — Payment & Review */}
+      {/* IN_PROGRESS: Assigned Fixer */}
+      {task.status === 'IN_PROGRESS' && acceptedBid && (
+        <View style={styles.section}>
+          <FSectionHeader title="Assigned Fixer" accentColor={brandColors.primaryMuted} />
+
+          <FCard style={styles.fixerCard}>
+            <View style={styles.bidTop}>
+              <Avatar.Icon size={52} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
+              <View style={styles.bidInfo}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                  {acceptedBid.fixer?.full_name || 'Fixer'}
+                </Text>
+                {acceptedBid.fixer?.average_rating_as_fixer != null && (
+                  <View style={styles.ratingRow}>
+                    <MaterialCommunityIcons name="star" size={14} color={brandColors.secondary} />
+                    <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                      {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+                {acceptedBid.fixer?.phone_number && (
+                  <Pressable
+                    onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}
+                    style={styles.phoneRow}
+                  >
+                    <MaterialCommunityIcons name="phone-outline" size={14} color={brandColors.primaryMuted} />
+                    <Text style={[typography.bodySm, { color: brandColors.primaryMuted }]}>
+                      {acceptedBid.fixer.phone_number}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+              <Text style={[typography.h2, { color: brandColors.primary }]}>₪{acceptedBid.offered_price}</Text>
+            </View>
+          </FCard>
+
+          <View style={styles.actionButtons}>
+            <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
+              Mark as Completed
+            </FButton>
+            <Pressable onPress={cancelTask} style={styles.cancelRow}>
+              <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
+              <Text style={[typography.label, { color: brandColors.danger }]}>Cancel Task</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* COMPLETED: Payment & Review */}
       {task.status === 'COMPLETED' && (
         <View style={styles.section}>
           {/* Payment */}
-          <Text variant="titleMedium" style={styles.sectionTitle}>Payment</Text>
-          <Card style={styles.card}>
-            <Card.Content>
-              {task.is_payment_confirmed ? (
-                <Text variant="bodyMedium" style={styles.confirmed}>Payment Confirmed ✓</Text>
-              ) : (
-                <View>
-                  {acceptedBid?.fixer?.payment_link ? (
-                    <>
-                      <Button
-                        mode="contained"
-                        onPress={() => Linking.openURL(acceptedBid.fixer!.payment_link!)}
-                        style={styles.actionButton}
-                      >
-                        Pay Fixer
-                      </Button>
-                      <Button mode="outlined" onPress={confirmPayment}>
-                        Confirm Payment
-                      </Button>
-                    </>
-                  ) : (
-                    <View>
-                      <Text variant="bodyMedium">
-                        This Fixer hasn't set up a payment link. Contact them directly.
-                      </Text>
-                      {acceptedBid?.fixer?.phone_number && (
-                        <Text
-                          variant="bodyMedium"
-                          style={styles.phone}
-                          onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}
-                        >
+          <FSectionHeader title="Payment" accentColor={brandColors.success} />
+          <FCard style={styles.paymentCard}>
+            {task.is_payment_confirmed ? (
+              <View style={styles.confirmedRow}>
+                <View style={styles.confirmedIcon}>
+                  <MaterialCommunityIcons name="check" size={20} color={brandColors.white} />
+                </View>
+                <Text style={[typography.h3, { color: brandColors.success }]}>Payment Confirmed</Text>
+              </View>
+            ) : (
+              <View style={styles.paymentActions}>
+                {acceptedBid?.fixer?.payment_link ? (
+                  <>
+                    <FButton
+                      variant="primary"
+                      icon="open-in-new"
+                      onPress={() => Linking.openURL(acceptedBid.fixer!.payment_link!)}
+                      fullWidth
+                    >
+                      Pay Fixer
+                    </FButton>
+                    <FButton variant="outline" onPress={confirmPayment} fullWidth>
+                      Confirm Payment
+                    </FButton>
+                  </>
+                ) : (
+                  <View style={styles.noPaymentLink}>
+                    <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
+                    <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                      This Fixer hasn't set up a payment link. Contact them directly.
+                    </Text>
+                    {acceptedBid?.fixer?.phone_number && (
+                      <Pressable onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}>
+                        <Text style={[typography.label, { color: brandColors.primaryMuted }]}>
                           {acceptedBid.fixer.phone_number}
                         </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              )}
-            </Card.Content>
-          </Card>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+          </FCard>
 
           {/* Review */}
-          <Text variant="titleMedium" style={styles.sectionTitle}>Review</Text>
-          <Card style={styles.card}>
-            <Card.Content>
-              {reviewSubmitted ? (
-                <Text variant="bodyMedium" style={styles.confirmed}>Review submitted. Thank you!</Text>
-              ) : (
-                <View>
-                  <Text variant="bodyMedium" style={{ marginBottom: 8 }}>Rate the fixer:</Text>
-                  <View style={styles.stars}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <IconButton
-                        key={star}
-                        icon={star <= reviewRating ? 'star' : 'star-outline'}
-                        iconColor={star <= reviewRating ? brandColors.secondary : brandColors.textMuted}
-                        size={32}
-                        onPress={() => setReviewRating(star)}
-                      />
-                    ))}
-                  </View>
-                  <TextInput
-                    label="Comment (optional)"
-                    value={reviewComment}
-                    onChangeText={setReviewComment}
-                    mode="outlined"
-                    multiline
-                    numberOfLines={3}
-                    maxLength={2000}
-                    style={styles.input}
-                  />
-                  <Button
-                    mode="contained"
-                    onPress={submitReview}
-                    disabled={reviewRating === 0}
-                  >
-                    Submit Review
-                  </Button>
+          <FSectionHeader title="Review" accentColor={brandColors.secondary} style={{ marginTop: spacing.xxl }} />
+          <FCard>
+            {reviewSubmitted ? (
+              <View style={styles.confirmedRow}>
+                <View style={[styles.confirmedIcon, { backgroundColor: brandColors.secondary }]}>
+                  <MaterialCommunityIcons name="star" size={20} color={brandColors.white} />
                 </View>
-              )}
-            </Card.Content>
-          </Card>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Review submitted. Thank you!</Text>
+              </View>
+            ) : (
+              <View style={styles.reviewForm}>
+                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>Rate the fixer:</Text>
+                <View style={styles.stars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Pressable
+                      key={star}
+                      onPress={() => setReviewRating(star)}
+                      hitSlop={4}
+                    >
+                      <MaterialCommunityIcons
+                        name={star <= reviewRating ? 'star' : 'star-outline'}
+                        size={36}
+                        color={star <= reviewRating ? brandColors.secondary : brandColors.outline}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+                <FInput
+                  label="Comment (optional)"
+                  value={reviewComment}
+                  onChangeText={setReviewComment}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={2000}
+                />
+                <FButton
+                  onPress={submitReview}
+                  disabled={reviewRating === 0}
+                  fullWidth
+                  icon="send"
+                >
+                  Submit Review
+                </FButton>
+              </View>
+            )}
+          </FCard>
         </View>
       )}
     </ScrollView>
+  );
+}
 
-      <Portal>
-        <Modal visible={showEditModal} onDismiss={() => setShowEditModal(false)} contentContainerStyle={styles.editModal}>
-          <Text variant="titleLarge" style={styles.reviewsModalTitle}>Edit Task</Text>
-          <TextInput label="Title" value={editTitle} onChangeText={setEditTitle} mode="outlined" maxLength={200} style={styles.editInput} />
-          <TextInput label="Description" value={editDescription} onChangeText={setEditDescription} mode="outlined" multiline numberOfLines={4} maxLength={2000} style={styles.editInput} />
-          <TextInput label="Budget (₪)" value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" mode="outlined" style={styles.editInput} />
-          <TextInput label="General location" value={editLocation} onChangeText={setEditLocation} mode="outlined" style={styles.editInput} />
-          <TextInput label="Exact address" value={editAddress} onChangeText={setEditAddress} mode="outlined" style={styles.editInput} />
-          <Button mode="contained" onPress={saveEdit} style={{ marginTop: 8 }}>Save Changes</Button>
-          <Button mode="text" onPress={() => setShowEditModal(false)} style={{ marginTop: 4 }}>Cancel</Button>
-        </Modal>
-      </Portal>
-
-      <Portal>
-        <Modal visible={showFixerReviews} onDismiss={() => setShowFixerReviews(false)} contentContainerStyle={styles.reviewsModal}>
-          <Text variant="titleLarge" style={styles.reviewsModalTitle}>Fixer Reviews</Text>
-          {fixerReviews.length === 0 ? (
-            <Text variant="bodyMedium" style={{ color: brandColors.textMuted }}>No reviews yet.</Text>
-          ) : (
-            <ScrollView style={{ maxHeight: 400 }}>
-              {fixerReviews.map((r, i) => (
-                <Card key={i} style={styles.reviewItemCard}>
-                  <Card.Content>
-                    <View style={styles.reviewItemHeader}>
-                      <StarRating rating={r.rating} size={14} />
-                      {r.reviewer?.full_name && (
-                        <Text variant="bodySmall" style={{ color: brandColors.textMuted }}>
-                          {r.reviewer.full_name}
-                        </Text>
-                      )}
-                    </View>
-                    {r.comment && (
-                      <Text variant="bodyMedium" style={{ marginTop: 4 }}>{r.comment}</Text>
-                    )}
-                  </Card.Content>
-                </Card>
-              ))}
-            </ScrollView>
-          )}
-          <Button mode="text" onPress={() => setShowFixerReviews(false)} style={{ marginTop: 8 }}>
-            Close
-          </Button>
-        </Modal>
-      </Portal>
-    </>
+function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <View style={styles.detailRow}>
+      <View style={styles.detailIconShell}>
+        <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
+      </View>
+      <View style={styles.detailText}>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
+        <Text style={[typography.body, { color: brandColors.textPrimary }]}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -544,146 +430,152 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   container: {
-    padding: 16,
-    paddingTop: 20,
+    padding: spacing.lg,
+    paddingBottom: spacing.huge,
     backgroundColor: brandColors.background,
-    alignItems: 'center',
   },
-  header: {
+
+  statusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    maxWidth: 500,
-    marginBottom: 16,
-    padding: 18,
-    borderRadius: 24,
-    backgroundColor: brandColors.surface,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    marginBottom: spacing.lg,
+    alignSelf: 'flex-start',
+  },
+
+  mainCard: {
+    marginBottom: spacing.lg,
   },
   title: {
-    flex: 1,
-    marginRight: 12,
     color: brandColors.textPrimary,
-    fontWeight: '700',
+    marginBottom: spacing.md,
   },
-  card: {
-    width: '100%',
-    maxWidth: 500,
-    marginBottom: 12,
-    borderRadius: 24,
-    backgroundColor: brandColors.surface,
+  description: {
+    color: brandColors.textSecondary,
   },
-  divider: {
-    marginVertical: 12,
+  detailsDivider: {
+    height: 1,
+    backgroundColor: brandColors.outlineLight,
+    marginVertical: spacing.lg,
   },
   detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    gap: 12,
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
+  detailIconShell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailText: {
+    flex: 1,
+    gap: 2,
+  },
+
   section: {
-    width: '100%',
-    maxWidth: 500,
-    marginTop: 8,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  sectionTitle: {
-    marginBottom: 12,
-    fontWeight: '600',
-    color: brandColors.textPrimary,
+
+  emptyBidsCard: {
+    alignItems: 'center',
   },
+  emptyBidsContent: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xl,
+  },
+
   bidCard: {
-    marginBottom: 12,
-    borderRadius: 22,
-    backgroundColor: brandColors.surface,
+    marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  bidHeader: {
+  bidTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   bidInfo: {
     flex: 1,
-  },
-  bidDesc: {
-    marginTop: 8,
-    color: brandColors.textMuted,
-  },
-  bidActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  actionButton: {
-    marginBottom: 8,
-  },
-  cancelButton: {
-    marginTop: 8,
-  },
-  phone: {
-    color: brandColors.primaryMuted,
-    textDecorationLine: 'underline',
-    marginTop: 4,
-  },
-  confirmed: {
-    color: brandColors.success,
-    fontWeight: '600',
-  },
-  stars: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  input: {
-    marginBottom: 12,
-  },
-  emptyText: {
-    color: brandColors.textMuted,
-    fontStyle: 'italic',
+    gap: 2,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.xs,
   },
-  ratingLink: {
-    color: brandColors.primaryMuted,
-    textDecorationLine: 'underline',
+  bidPriceTag: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.infoSoft,
   },
-  reviewsModal: {
-    backgroundColor: brandColors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 24,
-    maxHeight: '80%',
+  bidPitch: {
+    color: brandColors.textMuted,
+    fontStyle: 'italic',
   },
-  reviewsModalTitle: {
-    marginBottom: 16,
-    color: brandColors.textPrimary,
-  },
-  reviewItemCard: {
-    marginBottom: 8,
-    borderRadius: 16,
-    backgroundColor: brandColors.background,
-  },
-  reviewItemHeader: {
+  bidActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: spacing.md,
   },
-  headerRight: {
+
+  cancelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
   },
-  editModal: {
-    backgroundColor: brandColors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 24,
-    maxHeight: '85%',
+
+  fixerCard: {
+    marginBottom: spacing.lg,
   },
-  editInput: {
-    marginBottom: 10,
-    backgroundColor: brandColors.surface,
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  actionButtons: {
+    gap: spacing.sm,
+  },
+
+  paymentCard: {
+    marginBottom: spacing.md,
+  },
+  confirmedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  confirmedIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: brandColors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paymentActions: {
+    gap: spacing.md,
+  },
+  noPaymentLink: {
+    gap: spacing.md,
+  },
+
+  reviewForm: {
+    gap: spacing.lg,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
 });

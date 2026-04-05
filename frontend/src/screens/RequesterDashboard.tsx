@@ -4,16 +4,18 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Image,
 } from 'react-native';
-import { Text, FAB, useTheme } from 'react-native-paper';
+import { Text, FAB } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import LoadingScreen from '../components/LoadingScreen';
-import { brandColors } from '../theme';
+import { FSectionHeader } from '../components/ui';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
@@ -37,18 +39,18 @@ const CATEGORIES: {
   value: Category;
   label: string;
   icon: string;
-  bg: string;
+  iconBg: string;
+  tileBg: string;
 }[] = [
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', bg: '#FEF3D7' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          bg: '#DDE7EE' },
-  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         bg: '#EDE0D0' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   bg: '#EAE0F0' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          bg: '#D5EBD8' },
-  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         bg: brandColors.surfaceAlt },
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', iconBg: '#F0B429', tileBg: '#FEF3D7' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          iconBg: '#4A90D9', tileBg: '#DDE7EE' },
+  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         iconBg: '#A07553', tileBg: '#EDE0D0' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   iconBg: '#8B6DAF', tileBg: '#EAE0F0' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          iconBg: '#4CAF7D', tileBg: '#D5EBD8' },
+  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         iconBg: '#7A8B96', tileBg: brandColors.surfaceAlt },
 ];
 
 export default function RequesterDashboard({ navigation }: Props) {
-  const theme = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,128 +92,113 @@ export default function RequesterDashboard({ navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Hero ──────────────────────────────────────────────────── */}
-        <View style={styles.hero}>
-          {/* watermark logo — bottom-right */}
+        {/* Hero */}
+        <LinearGradient
+          colors={[brandColors.primaryDark, brandColors.primary, brandColors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
           <Image
             source={require('../../assets/fixit-logo.png')}
             style={styles.heroWatermark}
             resizeMode="contain"
           />
 
-          <Text style={styles.heroEyebrow}>Ready to get things done?</Text>
-          <Text style={styles.heroHeadline}>{"What needs\nfixing today?"}</Text>
+          <Text style={[typography.eyebrow, styles.heroEyebrow]}>Ready to get things done?</Text>
+          <Text style={[typography.hero, styles.heroHeadline]}>{"What needs\nfixing today?"}</Text>
 
-          <TouchableOpacity
-            style={styles.heroCta}
-            activeOpacity={0.82}
+          <Pressable
+            style={({ pressed }) => [
+              styles.heroCta,
+              { transform: [{ scale: pressed ? 0.96 : 1 }] },
+            ]}
             onPress={() => navigation.navigate('CreateTask')}
           >
             <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
-            <Text style={styles.heroCtaText}>Post a Task</Text>
-          </TouchableOpacity>
+            <Text style={[typography.button, { color: brandColors.textPrimary }]}>Post a Task</Text>
+          </Pressable>
 
           {tasks.length > 0 && (
             <View style={styles.heroPills}>
               <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>{activeTasks.length} active</Text>
+                <Text style={[typography.caption, styles.heroPillText]}>{activeTasks.length} active</Text>
               </View>
               <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>{pastTasks.length} past</Text>
+                <Text style={[typography.caption, styles.heroPillText]}>{pastTasks.length} past</Text>
               </View>
             </View>
           )}
-        </View>
+        </LinearGradient>
 
-        {/* ── Category quick-picks ───────────────────────────────────── */}
+        {/* Categories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Browse by category</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryRow}
-          >
+          <Text style={[typography.h3, styles.categorySectionTitle]}>Browse by category</Text>
+          <View style={styles.categoryGrid}>
             {CATEGORIES.map((cat) => (
-              <TouchableOpacity
+              <Pressable
                 key={cat.value}
-                style={[styles.categoryTile, { backgroundColor: cat.bg }]}
-                activeOpacity={0.75}
+                style={({ pressed }) => [
+                  styles.categoryTile,
+                  { backgroundColor: cat.tileBg, opacity: pressed ? 0.8 : 1 },
+                ]}
                 onPress={() => navigation.navigate('CreateTask', { category: cat.value })}
               >
-                <View style={styles.categoryIconShell}>
+                <View style={[styles.categoryIconCircle, { backgroundColor: cat.iconBg }]}>
                   <MaterialCommunityIcons
                     name={cat.icon as never}
-                    size={26}
-                    color={brandColors.primary}
+                    size={22}
+                    color={brandColors.white}
                   />
                 </View>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
-              </TouchableOpacity>
+                <Text style={[typography.caption, styles.categoryLabel]}>{cat.label}</Text>
+              </Pressable>
             ))}
-          </ScrollView>
+          </View>
         </View>
 
-        {/* ── Empty prompt ───────────────────────────────────────────── */}
+        {/* Empty */}
         {tasks.length === 0 && (
           <View style={styles.emptyPrompt}>
-            <MaterialCommunityIcons
-              name="clipboard-text-outline"
-              size={36}
-              color={brandColors.outline}
-            />
-            <Text style={styles.emptyTitle}>No tasks yet</Text>
-            <Text style={styles.emptyBody}>
+            <View style={styles.emptyIconCircle}>
+              <MaterialCommunityIcons
+                name="clipboard-text-outline"
+                size={32}
+                color={brandColors.primaryMuted}
+              />
+            </View>
+            <Text style={[typography.h3, styles.emptyTitle]}>No tasks yet</Text>
+            <Text style={[typography.body, styles.emptyBody]}>
               Pick a category above or tap{' '}
-              <Text style={styles.emptyBodyBold}>Post a Task</Text> to get started.
+              <Text style={{ fontWeight: '700', color: brandColors.textPrimary }}>Post a Task</Text> to get started.
             </Text>
           </View>
         )}
 
-        {/* ── Active tasks ───────────────────────────────────────────── */}
+        {/* Active */}
         {activeTasks.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>Active Tasks</Text>
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>{activeTasks.length}</Text>
-              </View>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.activeRow}
-            >
-              {activeTasks.map((task) => (
-                <View key={task.id} style={styles.activeCard}>
-                  <TaskCard
-                    title={task.title}
-                    category={task.category}
-                    status={task.status}
-                    suggestedPrice={task.suggested_price}
-                    locationName={task.general_location_name}
-                    bidCount={task.bid_count}
-                    fixerName={task.assigned_fixer_name}
-                    onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
-                  />
-                </View>
-              ))}
-            </ScrollView>
+            <FSectionHeader title="Active Tasks" count={activeTasks.length} />
+            {activeTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                title={task.title}
+                category={task.category}
+                status={task.status}
+                suggestedPrice={task.suggested_price}
+                locationName={task.general_location_name}
+                bidCount={task.bid_count}
+                fixerName={task.assigned_fixer_name}
+                onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+              />
+            ))}
           </View>
         )}
 
-        {/* ── Past tasks ─────────────────────────────────────────────── */}
+        {/* Past */}
         {pastTasks.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionAccent, styles.sectionAccentMuted]} />
-              <Text style={[styles.sectionTitle, styles.sectionTitleMuted]}>Past Tasks</Text>
-              <View style={[styles.countBadge, styles.countBadgeMuted]}>
-                <Text style={[styles.countBadgeText, styles.countBadgeTextMuted]}>
-                  {pastTasks.length}
-                </Text>
-              </View>
-            </View>
+            <FSectionHeader title="Past Tasks" count={pastTasks.length} muted />
             {pastTasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -221,6 +208,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 suggestedPrice={task.suggested_price}
                 locationName={task.general_location_name}
                 onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                muted
               />
             ))}
           </View>
@@ -229,7 +217,8 @@ export default function RequesterDashboard({ navigation }: Props) {
 
       <FAB
         icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.secondary }]}
+        style={styles.fab}
+        color={brandColors.textPrimary}
         onPress={() => navigation.navigate('CreateTask')}
       />
     </View>
@@ -245,187 +234,125 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  // ── Hero
   hero: {
-    backgroundColor: brandColors.primary,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl + 4,
+    borderBottomLeftRadius: radii.xxl,
+    borderBottomRightRadius: radii.xxl,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   heroWatermark: {
     position: 'absolute',
-    width: 190,
-    height: 190,
-    right: -24,
-    bottom: -20,
-    opacity: 0.09,
+    width: 200,
+    height: 200,
+    right: -20,
+    bottom: -24,
+    opacity: 0.07,
   },
   heroEyebrow: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255, 252, 246, 0.65)',
-    letterSpacing: 0.4,
-    marginBottom: 6,
+    color: brandColors.textOnDarkMuted,
+    marginBottom: spacing.sm,
   },
   heroHeadline: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: brandColors.surface,
-    lineHeight: 42,
-    marginBottom: 24,
+    color: brandColors.textOnDark,
+    marginBottom: spacing.xxl,
   },
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: brandColors.secondary,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 999,
-    gap: 8,
-    marginBottom: 20,
-  },
-  heroCtaText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: brandColors.textPrimary,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md + 2,
+    borderRadius: radii.pill,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+    ...shadows.md,
   },
   heroPills: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm + 2,
   },
   heroPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
     backgroundColor: 'rgba(255, 252, 246, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 252, 246, 0.18)',
+    borderColor: 'rgba(255, 252, 246, 0.16)',
   },
   heroPillText: {
-    fontSize: 12,
-    fontWeight: '600',
     color: 'rgba(255, 252, 246, 0.9)',
   },
 
-  // ── Sections
   section: {
-    paddingHorizontal: 16,
-    marginTop: 20,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xxl,
   },
-  sectionHeader: {
+  categorySectionTitle: {
+    color: brandColors.textPrimary,
+    marginBottom: spacing.lg,
+  },
+  categoryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionAccent: {
-    width: 4,
-    height: 18,
-    borderRadius: 99,
-    backgroundColor: brandColors.secondary,
-  },
-  sectionAccentMuted: {
-    backgroundColor: brandColors.outline,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: brandColors.textPrimary,
-    marginBottom: 12,
-  },
-  sectionTitleMuted: {
-    color: brandColors.textMuted,
-    marginBottom: 0,
-  },
-  countBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: brandColors.secondary,
-  },
-  countBadgeMuted: {
-    backgroundColor: brandColors.surfaceAlt,
-  },
-  countBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: brandColors.textPrimary,
-  },
-  countBadgeTextMuted: {
-    color: brandColors.textMuted,
-  },
-
-  // ── Category tiles
-  categoryRow: {
-    gap: 10,
-    paddingBottom: 4,
+    flexWrap: 'wrap',
+    gap: spacing.md,
   },
   categoryTile: {
-    width: 80,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    borderRadius: 20,
+    width: '30%',
+    flexGrow: 1,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.lg,
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm + 2,
+    minWidth: 95,
+    maxWidth: '32%',
   },
-  categoryIconShell: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+  categoryIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryLabel: {
-    fontSize: 11,
-    fontWeight: '600',
     color: brandColors.textPrimary,
     textAlign: 'center',
   },
 
-  // ── Active tasks
-  activeRow: {
-    gap: 12,
-    paddingBottom: 4,
-  },
-  activeCard: {
-    width: 272,
-  },
-
-  // ── Empty state
   emptyPrompt: {
     alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 8,
-    paddingHorizontal: 40,
-    gap: 10,
+    paddingTop: spacing.xxxl + 8,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xxxl + 8,
+    gap: spacing.md,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
     color: brandColors.textPrimary,
   },
   emptyBody: {
-    fontSize: 14,
     color: brandColors.textMuted,
     textAlign: 'center',
-    lineHeight: 21,
-  },
-  emptyBodyBold: {
-    fontWeight: '700',
-    color: brandColors.textPrimary,
   },
 
-  // ── FAB
   fab: {
     position: 'absolute',
-    right: 16,
-    bottom: 16,
-    borderRadius: 18,
+    right: spacing.lg,
+    bottom: spacing.lg,
+    borderRadius: radii.xl,
+    backgroundColor: brandColors.secondary,
+    ...shadows.lg,
   },
 });

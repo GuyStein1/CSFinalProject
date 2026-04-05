@@ -1,25 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Card, Icon, Text, useTheme } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { DiscoveryTask } from '../hooks/useTasks';
-import { brandColors } from '../theme';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
-const CATEGORY_ICONS: Record<DiscoveryTask['category'], string> = {
-  ELECTRICITY: 'lightning-bolt',
-  PLUMBING: 'water',
-  CARPENTRY: 'hammer',
-  PAINTING: 'format-paint',
-  MOVING: 'truck',
-  GENERAL: 'wrench',
-};
-
-const CATEGORY_LABELS: Record<DiscoveryTask['category'], string> = {
-  ELECTRICITY: 'Electricity',
-  PLUMBING: 'Plumbing',
-  CARPENTRY: 'Carpentry',
-  PAINTING: 'Painting',
-  MOVING: 'Moving',
-  GENERAL: 'General',
+const CATEGORY_META: Record<string, { icon: string; label: string; color: string; bg: string }> = {
+  ELECTRICITY: { icon: 'lightning-bolt', label: 'Electricity', color: '#F0B429', bg: '#FEF3D7' },
+  PLUMBING:    { icon: 'water',          label: 'Plumbing',    color: '#4A90D9', bg: '#DDE7EE' },
+  CARPENTRY:   { icon: 'hammer',         label: 'Carpentry',   color: '#A07553', bg: '#EDE0D0' },
+  PAINTING:    { icon: 'format-paint',   label: 'Painting',    color: '#8B6DAF', bg: '#EAE0F0' },
+  MOVING:      { icon: 'truck',          label: 'Moving',      color: '#4CAF7D', bg: '#D5EBD8' },
+  GENERAL:     { icon: 'wrench',         label: 'General',     color: '#7A8B96', bg: brandColors.surfaceAlt },
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -45,106 +37,103 @@ interface DiscoveryListCardProps {
 }
 
 export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardProps) {
-  const theme = useTheme();
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
+  const catMeta = CATEGORY_META[task.category] ?? CATEGORY_META.GENERAL;
 
   return (
-    <Card style={styles.card} onPress={onPress} mode="elevated">
-      <Card.Content style={styles.content}>
-        <View style={styles.topRow}>
-          <View style={styles.iconShell}>
-            <Icon source={CATEGORY_ICONS[task.category]} size={22} color={theme.colors.primary} />
-          </View>
-          <View style={styles.titleBlock}>
-            <Text variant="titleSmall" style={styles.title} numberOfLines={2}>
-              {task.title}
-            </Text>
-            <Text variant="labelSmall" style={styles.categoryLabel}>
-              {CATEGORY_LABELS[task.category]}
-            </Text>
-          </View>
-          <Text variant="titleSmall" style={styles.price}>
-            {budgetLabel}
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        shadows.sm,
+        { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+      ]}
+    >
+      <View style={styles.topRow}>
+        <View style={[styles.iconCircle, { backgroundColor: catMeta.bg }]}>
+          <MaterialCommunityIcons name={catMeta.icon as never} size={20} color={catMeta.color} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={[typography.h3, styles.title]} numberOfLines={2}>
+            {task.title}
+          </Text>
+          <Text style={[typography.caption, { color: catMeta.color }]}>{catMeta.label}</Text>
+        </View>
+        <View style={styles.priceTag}>
+          <Text style={[typography.h3, styles.price]}>{budgetLabel}</Text>
+        </View>
+      </View>
+
+      <View style={styles.metaRow}>
+        <View style={styles.metaItem}>
+          <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
+          <Text style={[typography.caption, styles.metaText]}>
+            {task.generalLocationName} — {task.distanceKm.toFixed(1)} km
           </Text>
         </View>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <Icon source="map-marker-outline" size={14} color={brandColors.textMuted} />
-            <Text variant="bodySmall" style={styles.metaText}>
-              {task.generalLocationName} — {task.distanceKm.toFixed(1)} km
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Icon source="clock-outline" size={14} color={brandColors.textMuted} />
-            <Text variant="bodySmall" style={styles.metaText}>
-              Posted {formatTimeAgo(task.createdAt)}
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Icon source="hand-extended-outline" size={14} color={brandColors.textMuted} />
-            <Text variant="bodySmall" style={styles.metaText}>
-              {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
-            </Text>
-          </View>
+        <View style={styles.metaItem}>
+          <MaterialCommunityIcons name="clock-outline" size={13} color={brandColors.textMuted} />
+          <Text style={[typography.caption, styles.metaText]}>
+            {formatTimeAgo(task.createdAt)}
+          </Text>
         </View>
-      </Card.Content>
-    </Card>
+        <View style={styles.metaItem}>
+          <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.textMuted} />
+          <Text style={[typography.caption, styles.metaText]}>
+            {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 22,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.sm,
+    borderRadius: radii.lg,
     backgroundColor: brandColors.surface,
-    shadowColor: '#112336',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  content: {
-    gap: 12,
+    padding: spacing.lg,
+    gap: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
-  iconShell: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: brandColors.surfaceAlt,
+  iconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
   titleBlock: {
     flex: 1,
+    gap: spacing.xs,
   },
   title: {
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
-  categoryLabel: {
-    color: brandColors.textMuted,
-    marginTop: 2,
+  priceTag: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.infoSoft,
   },
   price: {
     color: brandColors.primary,
-    fontWeight: '700',
   },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: spacing.lg,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   metaText: {
     color: brandColors.textMuted,

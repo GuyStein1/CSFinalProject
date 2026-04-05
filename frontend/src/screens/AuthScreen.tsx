@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Text, TextInput } from 'react-native-paper';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
-import { brandColors } from '../theme';
+import { FButton, FCard, FInput } from '../components/ui';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import type { AuthBootstrapStatus } from '../hooks/useAuthBootstrap';
 
 interface AuthScreenProps {
@@ -59,9 +61,9 @@ export default function AuthScreen({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Card style={styles.card}>
-          <Card.Content style={styles.content}>{content}</Card.Content>
-        </Card>
+        <FCard style={styles.card} shadow="lg">
+          {content}
+        </FCard>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -72,134 +74,103 @@ export default function AuthScreen({
 
   if (status === 'needs_sync') {
     return renderShell(
-      <>
+      <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text variant="headlineSmall" style={styles.title}>
-          Finish your account setup
-        </Text>
-        <Text variant="bodyMedium" style={styles.body}>
+        <Text style={[typography.h1, styles.title]}>Finish your account setup</Text>
+        <Text style={[typography.body, styles.body]}>
           You are signed in with Firebase, but this account does not exist in the Fixlt
           database yet.
         </Text>
 
         {userEmail && (
           <View style={styles.infoRow}>
-            <Text variant="labelLarge" style={styles.infoLabel}>
-              Signed in as
-            </Text>
-            <Text variant="bodyMedium" style={styles.infoValue}>
-              {userEmail}
-            </Text>
+            <MaterialCommunityIcons name="email-outline" size={18} color={brandColors.primaryMuted} />
+            <View>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>Signed in as</Text>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{userEmail}</Text>
+            </View>
           </View>
         )}
 
-        <TextInput
-          mode="outlined"
-          label="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          style={styles.input}
-          returnKeyType="next"
-        />
-        <TextInput
-          mode="outlined"
+        <FInput label="Full Name" value={fullName} onChangeText={setFullName} returnKeyType="next" />
+        <FInput
           label="Phone Number (optional)"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           keyboardType="phone-pad"
-          style={styles.input}
           returnKeyType="done"
           onSubmitEditing={submitLocalAccountSync}
         />
 
         {error && (
-          <Text variant="bodySmall" style={styles.errorText}>
-            {error}
-          </Text>
+          <Text style={[typography.bodySm, { color: brandColors.danger }]}>{error}</Text>
         )}
 
-        <Button
-          mode="contained"
-          onPress={submitLocalAccountSync}
-          disabled={!canSyncLocalAccount}
-          style={styles.primaryButton}
-        >
+        <FButton onPress={submitLocalAccountSync} disabled={!canSyncLocalAccount} fullWidth>
           Create Local Account
-        </Button>
-        <Button mode="text" onPress={onLogOut}>
+        </FButton>
+        <FButton variant="ghost" onPress={onLogOut} fullWidth>
           Sign Out
-        </Button>
-      </>
+        </FButton>
+      </View>
     );
   }
 
   if (status === 'error' && userEmail) {
     return renderShell(
-      <>
+      <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text variant="headlineSmall" style={styles.title}>
-          Session verification failed
-        </Text>
-        <Text variant="bodyMedium" style={styles.body}>
+        <View style={styles.errorIconCircle}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={36} color={brandColors.danger} />
+        </View>
+        <Text style={[typography.h1, styles.title]}>Session verification failed</Text>
+        <Text style={[typography.body, styles.body]}>
           {error ?? 'We could not verify your session with the backend.'}
         </Text>
-        <Button mode="contained" onPress={() => void onRetry()} style={styles.primaryButton}>
+        <FButton onPress={() => void onRetry()} fullWidth icon="refresh">
           Try Again
-        </Button>
-        <Button mode="text" onPress={onLogOut}>
+        </FButton>
+        <FButton variant="ghost" onPress={onLogOut} fullWidth>
           Sign Out
-        </Button>
-      </>
+        </FButton>
+      </View>
     );
   }
 
   return renderShell(
-    <>
+    <View style={styles.content}>
       <AppLogo compact showTagline />
-      <Text variant="headlineSmall" style={styles.title}>
-        Sign in to Fixlt
-      </Text>
-      <Text variant="bodyMedium" style={styles.body}>
+      <Text style={[typography.h1, styles.title]}>Sign in to Fixlt</Text>
+      <Text style={[typography.body, styles.body]}>
         Use your Firebase test user so the app can send authenticated API requests locally.
       </Text>
 
-      <TextInput
-        mode="outlined"
+      <FInput
         label="Email"
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
-        style={styles.input}
         returnKeyType="next"
       />
-      <TextInput
-        mode="outlined"
+      <FInput
         label="Password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
-        style={styles.input}
         returnKeyType="done"
         onSubmitEditing={submitSignIn}
       />
 
       {error && (
-        <Text variant="bodySmall" style={styles.errorText}>
-          {error}
-        </Text>
+        <Text style={[typography.bodySm, { color: brandColors.danger }]}>{error}</Text>
       )}
 
-      <Button
-        mode="contained"
-        onPress={submitSignIn}
-        disabled={!canSignIn}
-        style={styles.primaryButton}
-      >
+      <FButton onPress={submitSignIn} disabled={!canSignIn} fullWidth icon="login">
         Sign In
-      </Button>
-    </>
+      </FButton>
+    </View>
   );
 }
 
@@ -212,50 +183,41 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
   },
   card: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 28,
-    backgroundColor: brandColors.surface,
+    borderRadius: radii.xxxl,
   },
   content: {
-    gap: 12,
-    paddingVertical: 28,
+    gap: spacing.md,
   },
   title: {
     color: brandColors.textPrimary,
-    fontWeight: '700',
     textAlign: 'center',
   },
   body: {
     color: brandColors.textMuted,
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: brandColors.surface,
-  },
-  primaryButton: {
-    borderRadius: 999,
-    marginTop: 8,
-  },
-  errorText: {
-    color: brandColors.danger,
+    marginBottom: spacing.sm,
   },
   infoRow: {
-    padding: 12,
-    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
     backgroundColor: brandColors.surfaceAlt,
-    gap: 4,
   },
-  infoLabel: {
-    color: brandColors.textMuted,
-  },
-  infoValue: {
-    color: brandColors.textPrimary,
-    fontWeight: '600',
+  errorIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: brandColors.dangerSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
 });

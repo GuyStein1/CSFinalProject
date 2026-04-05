@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Button, Icon, useTheme } from 'react-native-paper';
-import { brandColors } from '../theme';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { FButton } from './ui';
+import { brandColors, spacing, radii, typography } from '../theme';
 
 interface EmptyStateProps {
   icon: string;
@@ -12,25 +14,19 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
-  const theme = useTheme();
-
   return (
     <View style={styles.container}>
-      <View style={styles.iconShell}>
-        <Icon source={icon} size={40} color={theme.colors.primary} />
+      <View style={styles.iconCircle}>
+        <MaterialCommunityIcons name={icon as never} size={36} color={brandColors.primaryMuted} />
       </View>
-      <Text variant="titleMedium" style={styles.title}>
-        {title}
-      </Text>
+      <Text style={[typography.h2, styles.title]}>{title}</Text>
       {message && (
-        <Text variant="bodyMedium" style={styles.message}>
-          {message}
-        </Text>
+        <Text style={[typography.body, styles.message]}>{message}</Text>
       )}
       {actionLabel && onAction && (
-        <Button mode="contained" onPress={onAction} style={styles.button} buttonColor={theme.colors.primary}>
+        <FButton onPress={onAction} size="md" style={styles.button}>
           {actionLabel}
-        </Button>
+        </FButton>
       )}
     </View>
   );
@@ -41,30 +37,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: spacing.xxxl,
   },
-  iconShell: {
-    width: 88,
-    height: 88,
-    borderRadius: 28,
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: brandColors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.lg,
   },
   title: {
     textAlign: 'center',
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
   message: {
-    marginTop: 8,
+    marginTop: spacing.sm,
     textAlign: 'center',
     color: brandColors.textMuted,
-    maxWidth: 320,
+    maxWidth: 300,
   },
   button: {
-    marginTop: 24,
-    borderRadius: 999,
+    marginTop: spacing.xxl,
   },
 });

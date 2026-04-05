@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import * as Location from 'expo-location';
 import {
   ActivityIndicator,
-  Button,
-  Card,
   Portal,
   Modal,
   Text,
-  TextInput,
 } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import AppLogo from '../components/AppLogo';
 import DiscoveryMap from '../components/DiscoveryMap';
@@ -19,8 +17,9 @@ import DiscoveryListCard from '../components/DiscoveryListCard';
 import EmptyState from '../components/EmptyState';
 import FilterBar, { type PriceRange, type ViewMode } from '../components/FilterBar';
 import LoadingScreen from '../components/LoadingScreen';
+import { FButton, FCard, FInput } from '../components/ui';
 import useTasks, { type Category } from '../hooks/useTasks';
-import { brandColors } from '../theme';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type PermissionState = 'checking' | 'rationale' | 'denied' | 'ready' | 'error';
 type CenterMode = 'gps' | 'manual';
@@ -101,38 +100,28 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     const position = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
-
     syncCenter(
-      {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        label: 'Current location',
-      },
+      { lat: position.coords.latitude, lng: position.coords.longitude, label: 'Current location' },
       'gps'
     );
   }, [syncCenter]);
 
   const evaluatePermissionState = useCallback(async () => {
     setManualError(null);
-
     try {
       const permission = await Location.getForegroundPermissionsAsync();
-
       if (permission.status === 'granted') {
         await loadGpsCenter();
         return;
       }
-
       if (permission.status === 'undetermined') {
         setPermissionState('rationale');
         return;
       }
-
       if (center && centerMode === 'manual') {
         setPermissionState('ready');
         return;
       }
-
       setPermissionState('denied');
     } catch {
       setPermissionState('error');
@@ -154,12 +143,10 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const handleAllowLocation = async () => {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
-
       if (permission.status === 'granted') {
         await loadGpsCenter();
         return;
       }
-
       setPermissionState('denied');
     } catch {
       setPermissionState('error');
@@ -175,24 +162,16 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       setManualError('Enter a city or neighborhood first.');
       return;
     }
-
     setManualLoading(true);
     setManualError(null);
-
     try {
       const results = await Location.geocodeAsync(manualArea.trim());
-
       if (results.length === 0) {
         setManualError('Could not find that area. Try a nearby neighborhood or city.');
         return;
       }
-
       syncCenter(
-        {
-          lat: results[0].latitude,
-          lng: results[0].longitude,
-          label: manualArea.trim(),
-        },
+        { lat: results[0].latitude, lng: results[0].longitude, label: manualArea.trim() },
         'manual'
       );
     } catch {
@@ -218,7 +197,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     );
   }, []);
 
-  // ── Early returns for location-permission states ──────────────────────
+  // Early returns for location-permission states
 
   if (permissionState === 'checking' && !center) {
     return <LoadingScreen label="Checking location permissions..." />;
@@ -244,52 +223,48 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   if (permissionState === 'denied' && !center) {
     return (
       <View style={styles.manualContainer}>
-        <Card style={styles.bannerCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.bannerTitle}>
-              Using manual location
+        <View style={styles.manualBanner}>
+          <MaterialCommunityIcons name="map-marker-off-outline" size={20} color={brandColors.warning} />
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.label, { color: brandColors.warning }]}>Using manual location</Text>
+            <Text style={[typography.bodySm, { color: brandColors.textPrimary, marginTop: spacing.xs }]}>
+              Enable GPS in Settings for automatic detection.
             </Text>
-            <Text variant="bodyMedium" style={styles.bannerText}>
-              Enable GPS in Settings for automatic detection, or enter your city or neighborhood
-              to use as the discovery center.
+          </View>
+        </View>
+
+        <FCard style={styles.manualCard} shadow="md">
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.sm }]}>
+            Enter your city or area
+          </Text>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
+            We will center the job map around the area you choose.
+          </Text>
+
+          <FInput
+            label="City or neighborhood"
+            placeholder="Hadar, Haifa"
+            value={manualArea}
+            onChangeText={setManualArea}
+          />
+
+          {manualError && (
+            <Text style={[typography.bodySm, { color: brandColors.danger, marginTop: spacing.sm }]}>
+              {manualError}
             </Text>
-          </Card.Content>
-        </Card>
+          )}
 
-        <Card style={styles.manualCard}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.manualTitle}>
-              Enter your city or area
-            </Text>
-            <Text variant="bodyMedium" style={styles.manualSubtitle}>
-              We will center the job map around the area you choose.
-            </Text>
-
-            <TextInput
-              mode="outlined"
-              label="City or neighborhood"
-              placeholder="Hadar, Haifa"
-              value={manualArea}
-              onChangeText={setManualArea}
-              style={styles.manualInput}
-            />
-
-            {manualError && (
-              <Text variant="bodySmall" style={styles.manualError}>
-                {manualError}
-              </Text>
-            )}
-
-            <Button
-              mode="contained"
-              onPress={handleUseManualCenter}
-              loading={manualLoading}
-              disabled={manualLoading}
-            >
-              Use This Area
-            </Button>
-          </Card.Content>
-        </Card>
+          <FButton
+            onPress={handleUseManualCenter}
+            loading={manualLoading}
+            disabled={manualLoading}
+            fullWidth
+            icon="map-marker-check-outline"
+            style={{ marginTop: spacing.lg }}
+          >
+            Use This Area
+          </FButton>
+        </FCard>
       </View>
     );
   }
@@ -297,17 +272,17 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   if (permissionState === 'rationale' && !center) {
     return (
       <View style={styles.rationaleContainer}>
-        <Card style={styles.rationaleCard}>
-          <Card.Content style={styles.rationaleContent}>
+        <FCard style={styles.rationaleCard} shadow="md">
+          <View style={styles.rationaleContent}>
             <AppLogo />
-            <Text variant="titleLarge" style={styles.rationaleTitle}>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
               Find jobs near you
             </Text>
-            <Text variant="bodyMedium" style={styles.rationaleBody}>
+            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', maxWidth: 300 }]}>
               We need a discovery center before we can place nearby tasks on the map.
             </Text>
-          </Card.Content>
-        </Card>
+          </View>
+        </FCard>
 
         <Portal>
           <Modal
@@ -315,20 +290,22 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             dismissable={false}
             contentContainerStyle={styles.modalContainer}
           >
-            <Text variant="titleLarge" style={styles.modalTitle}>
+            <View style={styles.modalIconCircle}>
+              <MaterialCommunityIcons name="map-marker-radius-outline" size={32} color={brandColors.primary} />
+            </View>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
               Share your location?
             </Text>
-            <Text variant="bodyMedium" style={styles.modalText}>
-              Fixlt needs your location to show you tasks nearby. You can change this in
-              Settings.
+            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.md }]}>
+              Fixlt needs your location to show you tasks nearby. You can change this in Settings.
             </Text>
             <View style={styles.modalActions}>
-              <Button mode="outlined" onPress={handleSkipLocation} style={styles.modalButton}>
+              <FButton variant="outline" onPress={handleSkipLocation} style={{ flex: 1 }}>
                 Skip
-              </Button>
-              <Button mode="contained" onPress={handleAllowLocation} style={styles.modalButton}>
+              </FButton>
+              <FButton onPress={handleAllowLocation} style={{ flex: 1 }} icon="crosshairs-gps">
                 Allow
-              </Button>
+              </FButton>
             </View>
           </Modal>
         </Portal>
@@ -336,7 +313,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     );
   }
 
-  // ── Main discovery view (map or list with filter bar) ─────────────────
+  // Main discovery view
 
   return (
     <View style={styles.container}>
@@ -366,60 +343,50 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           )}
 
           {centerMode === 'manual' && center && (
-            <Card style={styles.manualOverlayCard}>
-              <Card.Content>
-                <Text variant="labelLarge" style={styles.manualOverlayTitle}>
-                  Using manual discovery center
-                </Text>
-                <Text variant="bodySmall" style={styles.manualOverlayText}>
-                  {center.label}. Enable GPS in Settings to switch back to live location.
-                </Text>
-              </Card.Content>
-            </Card>
+            <View style={styles.manualOverlay}>
+              <MaterialCommunityIcons name="map-marker-outline" size={16} color={brandColors.primary} />
+              <Text style={[typography.caption, { color: brandColors.primary, flex: 1 }]}>
+                {center.label}
+              </Text>
+            </View>
           )}
 
           {loading && (
             <View style={styles.loadingOverlay}>
-              <Card style={styles.overlayCard}>
-                <Card.Content style={styles.overlayContent}>
-                  <ActivityIndicator size="small" />
-                  <Text variant="bodyMedium" style={styles.overlayText}>
+              <FCard style={styles.overlayCard} shadow="md">
+                <View style={styles.overlayContent}>
+                  <ActivityIndicator size="small" color={brandColors.primary} />
+                  <Text style={[typography.body, { color: brandColors.textMuted }]}>
                     Loading nearby tasks...
                   </Text>
-                </Card.Content>
-              </Card>
+                </View>
+              </FCard>
             </View>
           )}
 
           {!loading && error && (
             <View style={styles.loadingOverlay}>
-              <Card style={styles.overlayCard}>
-                <Card.Content>
-                  <Text variant="titleSmall" style={styles.errorTitle}>
-                    Could not load jobs
-                  </Text>
-                  <Text variant="bodySmall" style={styles.overlayText}>
-                    {error}
-                  </Text>
-                  <Button mode="contained" onPress={refetch} style={styles.retryButton}>
-                    Try Again
-                  </Button>
-                </Card.Content>
-              </Card>
+              <FCard style={styles.overlayCard} shadow="md">
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Could not load jobs</Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.sm }]}>
+                  {error}
+                </Text>
+                <FButton onPress={refetch} size="sm" style={{ marginTop: spacing.lg }}>
+                  Try Again
+                </FButton>
+              </FCard>
             </View>
           )}
 
           {!loading && !error && tasks.length === 0 && (
             <View style={styles.loadingOverlay}>
-              <Card style={styles.overlayCard}>
-                <Card.Content style={styles.emptyOverlay}>
-                  <EmptyState
-                    icon="map-search-outline"
-                    title="No tasks found nearby"
-                    message="Try expanding your distance filter or adjusting category and price filters."
-                  />
-                </Card.Content>
-              </Card>
+              <FCard style={styles.overlayCard} shadow="md">
+                <EmptyState
+                  icon="map-search-outline"
+                  title="No tasks found nearby"
+                  message="Try expanding your distance filter or adjusting category and price filters."
+                />
+              </FCard>
             </View>
           )}
 
@@ -480,158 +447,103 @@ const styles = StyleSheet.create({
   manualContainer: {
     flex: 1,
     backgroundColor: brandColors.background,
-    padding: 20,
+    padding: spacing.xl,
     justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  manualBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.warningSoft,
+  },
+  manualCard: {
+    padding: spacing.xxl,
   },
   rationaleContainer: {
     flex: 1,
     backgroundColor: brandColors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   rationaleCard: {
     width: '100%',
     maxWidth: 460,
-    borderRadius: 28,
-    backgroundColor: brandColors.surface,
+    padding: spacing.xxl,
   },
   rationaleContent: {
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 28,
+    gap: spacing.md,
   },
-  rationaleTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  rationaleBody: {
-    color: brandColors.textMuted,
-    textAlign: 'center',
-    maxWidth: 320,
-  },
-  bannerCard: {
-    borderRadius: 24,
-    backgroundColor: brandColors.warningSoft,
-    marginBottom: 16,
-  },
-  bannerTitle: {
-    color: brandColors.warning,
-    fontWeight: '700',
-  },
-  bannerText: {
-    color: brandColors.textPrimary,
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  manualCard: {
-    borderRadius: 28,
+  modalContainer: {
+    margin: spacing.xl,
+    padding: spacing.xxl,
+    borderRadius: radii.xxxl,
     backgroundColor: brandColors.surface,
+    alignItems: 'center',
   },
-  manualTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
+  modalIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
-  manualSubtitle: {
-    color: brandColors.textMuted,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  manualInput: {
-    marginBottom: 8,
-    backgroundColor: brandColors.surface,
-  },
-  manualError: {
-    color: brandColors.danger,
-    marginBottom: 12,
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xxl,
+    width: '100%',
   },
   mapWrapper: {
     flex: 1,
   },
-  manualOverlayCard: {
+  manualOverlay: {
     position: 'absolute',
-    top: 16,
-    left: 16,
-    right: 16,
-    borderRadius: 20,
+    top: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
     backgroundColor: brandColors.surface,
-  },
-  manualOverlayTitle: {
-    color: brandColors.primary,
-    fontWeight: '700',
-  },
-  manualOverlayText: {
-    color: brandColors.textMuted,
-    marginTop: 4,
+    ...shadows.sm,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
     pointerEvents: 'box-none',
   },
   overlayCard: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: 24,
-    backgroundColor: brandColors.surface,
+    padding: spacing.xxl,
   },
   overlayContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  overlayText: {
-    color: brandColors.textMuted,
-    marginTop: 6,
-  },
-  errorTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  retryButton: {
-    marginTop: 16,
-    borderRadius: 999,
-  },
-  emptyOverlay: {
-    minHeight: 260,
+    gap: spacing.md,
   },
   previewCardWrapper: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.lg,
   },
   listWrapper: {
     flex: 1,
   },
   listContent: {
-    paddingVertical: 12,
-  },
-  modalContainer: {
-    margin: 20,
-    padding: 24,
-    borderRadius: 28,
-    backgroundColor: brandColors.surface,
-  },
-  modalTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  modalText: {
-    color: brandColors.textMuted,
-    marginTop: 12,
-    lineHeight: 20,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 999,
+    paddingVertical: spacing.md,
   },
 });

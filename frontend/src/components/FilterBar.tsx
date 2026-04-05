@@ -1,8 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Chip } from 'react-native-paper';
+import { FChip } from './ui';
 import type { Category } from '../hooks/useTasks';
-import { brandColors } from '../theme';
+import { brandColors, spacing, shadows } from '../theme';
 
 export type PriceRange = 'any' | '0-100' | '100-500' | '500+';
 export type ViewMode = 'map' | 'list';
@@ -53,71 +53,56 @@ export default function FilterBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Chip
+        <FChip
+          label="Map"
           icon="map"
           selected={viewMode === 'map'}
           onPress={() => onViewModeChange('map')}
-          showSelectedCheck={false}
           compact
-          style={styles.chip}
-        >
-          Map
-        </Chip>
-        <Chip
+        />
+        <FChip
+          label="List"
           icon="format-list-bulleted"
           selected={viewMode === 'list'}
           onPress={() => onViewModeChange('list')}
-          showSelectedCheck={false}
           compact
-          style={styles.chip}
-        >
-          List
-        </Chip>
+        />
 
         <View style={styles.divider} />
 
         {RADIUS_OPTIONS.map((r) => (
-          <Chip
+          <FChip
             key={`r-${r}`}
+            label={`${r} km`}
             selected={radius === r}
             onPress={() => onRadiusChange(r)}
-            showSelectedCheck={false}
             compact
-            style={styles.chip}
-          >
-            {r} km
-          </Chip>
+          />
         ))}
 
         <View style={styles.divider} />
 
         {CATEGORY_OPTIONS.map(({ value, label, icon }) => (
-          <Chip
+          <FChip
             key={value}
+            label={label}
             icon={icon}
             selected={selectedCategories.includes(value)}
             onPress={() => onToggleCategory(value)}
-            showSelectedCheck={false}
             compact
-            style={styles.chip}
-          >
-            {label}
-          </Chip>
+          />
         ))}
 
         <View style={styles.divider} />
 
         {PRICE_OPTIONS.map(({ value, label }) => (
-          <Chip
+          <FChip
             key={value}
+            label={label}
             selected={priceRange === value}
             onPress={() => onPriceRangeChange(value)}
-            showSelectedCheck={false}
             compact
-            style={styles.chip}
-          >
-            {label}
-          </Chip>
+          />
         ))}
       </ScrollView>
     </View>
@@ -127,22 +112,18 @@ export default function FilterBar({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: brandColors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: brandColors.outline,
+    ...shadows.sm,
   },
   scrollContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    gap: 6,
-  },
-  chip: {
-    backgroundColor: brandColors.surfaceAlt,
+    gap: spacing.sm,
   },
   divider: {
     width: 1,
-    height: 24,
-    backgroundColor: brandColors.outline,
-    marginHorizontal: 4,
+    height: 22,
+    backgroundColor: brandColors.outlineLight,
+    marginHorizontal: spacing.xs,
   },
 });

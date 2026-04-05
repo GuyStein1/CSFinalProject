@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
 import AppLogo from './AppLogo';
-import { brandColors } from '../theme';
+import { brandColors, spacing, typography } from '../theme';
 
 interface LoadingScreenProps {
   label?: string;
@@ -13,9 +13,7 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
     <View style={styles.container}>
       <AppLogo />
       <ActivityIndicator size="large" color={brandColors.primary} style={styles.spinner} />
-      <Text variant="bodyMedium" style={styles.label}>
-        {label}
-      </Text>
+      <Text style={[typography.body, styles.label]}>{label}</Text>
     </View>
   );
 }
@@ -26,13 +24,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: brandColors.background,
-    padding: 24,
+    padding: spacing.xxl,
+    gap: spacing.sm,
   },
   spinner: {
-    marginTop: 8,
+    marginTop: spacing.md,
   },
   label: {
-    marginTop: 16,
     color: brandColors.textMuted,
     textAlign: 'center',
   },

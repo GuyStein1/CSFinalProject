@@ -1,19 +1,20 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Card, Icon, Text, useTheme } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import StatusBadge from './StatusBadge';
-import { brandColors } from '../theme';
+import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
-const CATEGORY_ICONS: Record<Category, string> = {
-  ELECTRICITY: 'lightning-bolt',
-  PLUMBING: 'water',
-  CARPENTRY: 'hammer',
-  PAINTING: 'format-paint',
-  MOVING: 'truck',
-  GENERAL: 'wrench',
+const CATEGORY_META: Record<Category, { icon: string; color: string; bg: string }> = {
+  ELECTRICITY: { icon: 'lightning-bolt', color: '#F0B429', bg: '#FEF3D7' },
+  PLUMBING:    { icon: 'water',          color: '#4A90D9', bg: '#DDE7EE' },
+  CARPENTRY:   { icon: 'hammer',         color: '#A07553', bg: '#EDE0D0' },
+  PAINTING:    { icon: 'format-paint',   color: '#8B6DAF', bg: '#EAE0F0' },
+  MOVING:      { icon: 'truck',          color: '#4CAF7D', bg: '#D5EBD8' },
+  GENERAL:     { icon: 'wrench',         color: '#7A8B96', bg: brandColors.surfaceAlt },
 };
 
 interface TaskCardProps {
@@ -25,6 +26,7 @@ interface TaskCardProps {
   bidCount?: number;
   fixerName?: string;
   onPress?: () => void;
+  muted?: boolean;
 }
 
 export default function TaskCard({
@@ -36,82 +38,140 @@ export default function TaskCard({
   bidCount,
   fixerName,
   onPress,
+  muted = false,
 }: TaskCardProps) {
-  const theme = useTheme();
+  const meta = CATEGORY_META[category] ?? CATEGORY_META.GENERAL;
 
   return (
-    <Card
-      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+    <Pressable
       onPress={onPress}
-      mode="elevated"
+      style={({ pressed }) => [
+        styles.card,
+        muted && styles.cardMuted,
+        shadows.sm,
+        { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+      ]}
     >
-      <Card.Title
-        title={title}
-        titleNumberOfLines={2}
-        titleVariant="titleSmall"
-        titleStyle={styles.title}
-        left={() => (
-          <View style={styles.iconShell}>
-            <Icon source={CATEGORY_ICONS[category]} size={24} color={theme.colors.primary} />
+      <View style={styles.topRow}>
+        <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
+          <MaterialCommunityIcons name={meta.icon as never} size={20} color={meta.color} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={[typography.h3, styles.title]} numberOfLines={2}>
+            {title}
+          </Text>
+          <View style={styles.locationRow}>
+            <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
+            <Text style={[typography.bodySm, styles.location]} numberOfLines={1}>
+              {locationName}
+            </Text>
           </View>
-        )}
-      />
-      <Card.Content style={styles.content}>
+        </View>
+      </View>
+
+      <View style={styles.bottomRow}>
         <StatusBadge status={status} />
-        <Text variant="bodySmall" style={styles.location}>
-          {locationName}
-        </Text>
-        {suggestedPrice != null && (
-          <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
-            ₪{suggestedPrice}
-          </Text>
-        )}
-        {bidCount != null && status === 'OPEN' && (
-          <Text variant="bodySmall" style={styles.meta}>
-            {bidCount} bids
-          </Text>
-        )}
-        {fixerName && status === 'IN_PROGRESS' && (
-          <Text variant="bodySmall" style={styles.meta}>
-            Assigned to {fixerName}
-          </Text>
-        )}
-      </Card.Content>
-    </Card>
+
+        <View style={styles.metaGroup}>
+          {suggestedPrice != null && (
+            <Text style={[typography.h3, styles.price]}>₪{suggestedPrice}</Text>
+          )}
+          {suggestedPrice == null && (
+            <Text style={[typography.bodySm, styles.quoteLabel]}>Quote</Text>
+          )}
+        </View>
+      </View>
+
+      {(bidCount != null && status === 'OPEN') || (fixerName && status === 'IN_PROGRESS') ? (
+        <View style={styles.footer}>
+          {bidCount != null && status === 'OPEN' && (
+            <View style={styles.footerChip}>
+              <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.textMuted} />
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                {bidCount} {bidCount === 1 ? 'bid' : 'bids'}
+              </Text>
+            </View>
+          )}
+          {fixerName && status === 'IN_PROGRESS' && (
+            <View style={styles.footerChip}>
+              <MaterialCommunityIcons name="account-check-outline" size={13} color={brandColors.success} />
+              <Text style={[typography.caption, { color: brandColors.success }]}>
+                {fixerName}
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 6,
-    marginHorizontal: 4,
-    borderRadius: 22,
-    shadowColor: '#112336',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
+    backgroundColor: brandColors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  cardMuted: {
+    opacity: 0.7,
+  },
+  topRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  iconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: {
+    flex: 1,
+    gap: spacing.xs,
   },
   title: {
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
-  content: {
-    gap: 8,
-    paddingBottom: 12,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   location: {
     color: brandColors.textMuted,
+    flex: 1,
   },
-  meta: {
-    color: brandColors.textMuted,
-  },
-  iconShell: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: brandColors.surfaceAlt,
+  bottomRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  metaGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  price: {
+    color: brandColors.primary,
+  },
+  quoteLabel: {
+    color: brandColors.primaryMuted,
+    fontStyle: 'italic',
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  footerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.surfaceAlt,
   },
 });

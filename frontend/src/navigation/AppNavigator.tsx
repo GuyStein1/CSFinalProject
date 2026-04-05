@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
+import { useTheme, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import RequesterTabs from './RequesterTabs';
 import FixerTabs from './FixerTabs';
 import CreateTask from '../screens/CreateTask';
@@ -14,7 +16,7 @@ import TaskDetails from '../screens/TaskDetails';
 import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import AppLogo from '../components/AppLogo';
-import { brandColors } from '../theme';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type Mode = 'requester' | 'fixer';
 
@@ -22,59 +24,86 @@ const Stack = createNativeStackNavigator();
 const ModeTabs = createBottomTabNavigator();
 
 function MainHeader({ navigation, route }: BottomTabHeaderProps) {
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
 
-  const handleModeChange = (value: string) => {
+  const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
-
     if (route.name !== nextRoute) {
       navigation.navigate(nextRoute);
     }
   };
 
   return (
-    <View
-      style={[
-        styles.topBar,
-        {
-          paddingTop: insets.top + 8,
-          backgroundColor: theme.colors.primary,
-        },
-      ]}
+    <LinearGradient
+      colors={[brandColors.primaryDark, brandColors.primary]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}
     >
       <AppLogo compact onDark />
+
       <View style={styles.rightControls}>
-        <SegmentedButtons
-          value={mode}
-          onValueChange={handleModeChange}
-          density="small"
-          buttons={[
-            { value: 'requester', label: 'Requester' },
-            { value: 'fixer', label: 'Fixer' },
-          ]}
-          style={styles.segmentedButtons}
-          theme={{
-            colors: {
-              secondaryContainer: theme.colors.secondary,
-              onSecondaryContainer: theme.colors.primary,
-              outline: 'rgba(255, 252, 246, 0.25)',
-              onSurface: 'rgba(255, 252, 246, 0.82)',
-            },
-          }}
-        />
-        <View style={styles.bellShell}>
-          <IconButton
-            icon="bell-outline"
-            iconColor={theme.colors.onPrimary}
-            size={20}
-            onPress={() => {}}
-            style={styles.bellButton}
-          />
+        <View style={styles.modeToggle}>
+          <Pressable
+            onPress={() => handleModeChange('requester')}
+            style={[
+              styles.modeButton,
+              mode === 'requester' && styles.modeButtonActive,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="home-outline"
+              size={15}
+              color={mode === 'requester' ? brandColors.primary : 'rgba(255,252,246,0.7)'}
+            />
+            <Text
+              style={[
+                typography.buttonSm,
+                {
+                  color: mode === 'requester' ? brandColors.primary : 'rgba(255,252,246,0.7)',
+                  fontSize: 12,
+                },
+              ]}
+            >
+              Requester
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => handleModeChange('fixer')}
+            style={[
+              styles.modeButton,
+              mode === 'fixer' && styles.modeButtonActive,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="wrench-outline"
+              size={15}
+              color={mode === 'fixer' ? brandColors.primary : 'rgba(255,252,246,0.7)'}
+            />
+            <Text
+              style={[
+                typography.buttonSm,
+                {
+                  color: mode === 'fixer' ? brandColors.primary : 'rgba(255,252,246,0.7)',
+                  fontSize: 12,
+                },
+              ]}
+            >
+              Fixer
+            </Text>
+          </Pressable>
         </View>
+
+        <Pressable style={styles.bellShell}>
+          <MaterialCommunityIcons
+            name="bell-outline"
+            size={20}
+            color={brandColors.textOnDark}
+          />
+        </Pressable>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -113,7 +142,7 @@ export default function AppNavigator() {
         headerTintColor: theme.colors.primary,
         headerStyle: { backgroundColor: theme.colors.surface },
         headerShadowVisible: false,
-        headerTitleStyle: { color: brandColors.textPrimary },
+        headerTitleStyle: { ...typography.h3, color: brandColors.textPrimary },
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
@@ -151,34 +180,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    shadowColor: '#132435',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    elevation: 6,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomLeftRadius: radii.xxl,
+    borderBottomRightRadius: radii.xxl,
+    ...shadows.lg,
   },
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm + 2,
   },
-  segmentedButtons: {
-    width: 168,
-    backgroundColor: 'rgba(255, 252, 246, 0.08)',
-    borderRadius: 999,
+  modeToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 252, 246, 0.1)',
+    borderRadius: radii.pill,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 252, 246, 0.12)',
   },
-  bellButton: {
-    margin: 0,
+  modeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  modeButtonActive: {
+    backgroundColor: brandColors.secondary,
   },
   bellShell: {
     width: 40,
     height: 40,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 252, 246, 0.08)',
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255, 252, 246, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255, 252, 246, 0.12)',
     alignItems: 'center',

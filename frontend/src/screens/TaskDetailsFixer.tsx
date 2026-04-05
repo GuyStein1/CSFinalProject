@@ -4,27 +4,28 @@ import {
   FlatList,
   Image,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import {
   Avatar,
-  Button,
-  Card,
   Divider,
   Icon,
-  Modal,
   Portal,
+  Modal,
   Text,
-  TextInput,
 } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
-import { brandColors } from '../theme';
+import { FButton, FCard, FInput } from '../components/ui';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -56,26 +57,17 @@ interface ExistingBid {
   offered_price: number;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  ELECTRICITY: 'lightning-bolt',
-  PLUMBING: 'water',
-  CARPENTRY: 'hammer',
-  PAINTING: 'format-paint',
-  MOVING: 'truck',
-  GENERAL: 'wrench',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ELECTRICITY: 'Electricity',
-  PLUMBING: 'Plumbing',
-  CARPENTRY: 'Carpentry',
-  PAINTING: 'Painting',
-  MOVING: 'Moving',
-  GENERAL: 'General',
+const CATEGORY_META: Record<string, { icon: string; label: string; color: string }> = {
+  ELECTRICITY: { icon: 'lightning-bolt', label: 'Electricity', color: '#F0B429' },
+  PLUMBING:    { icon: 'water',          label: 'Plumbing',    color: '#4A90D9' },
+  CARPENTRY:   { icon: 'hammer',         label: 'Carpentry',   color: '#A07553' },
+  PAINTING:    { icon: 'format-paint',   label: 'Painting',    color: '#8B6DAF' },
+  MOVING:      { icon: 'truck',          label: 'Moving',      color: '#4CAF7D' },
+  GENERAL:     { icon: 'wrench',         label: 'General',     color: '#7A8B96' },
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CAROUSEL_HEIGHT = 240;
+const CAROUSEL_HEIGHT = 260;
 const MAX_PITCH_LENGTH = 500;
 
 interface Props {
@@ -103,15 +95,12 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
     if (!taskId) return;
     setLoading(true);
     setError(null);
-
     try {
       const [taskRes, bidsRes] = await Promise.all([
         api.get(`/api/tasks/${taskId}`),
         api.get('/api/users/me/bids?limit=50'),
       ]);
-
       setTask(taskRes.data.task);
-
       const myBid = (bidsRes.data.bids ?? []).find(
         (b: { task_id: string }) => b.task_id === taskId,
       );
@@ -156,16 +145,13 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
       setBidError('Write a short pitch to the requester.');
       return;
     }
-
     setBidSubmitting(true);
     setBidError(null);
-
     try {
       const res = await api.post(`/api/tasks/${taskId}/bids`, {
         offered_price: price,
         description: bidPitch.trim(),
       });
-
       const bid = res.data.bid;
       setExistingBid({ id: bid.id, status: bid.status, offered_price: bid.offered_price });
       setBidModalVisible(false);
@@ -201,12 +187,11 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
 
   const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'Quote Required';
   const hasPhotos = task.media_urls && task.media_urls.length > 0;
-  const categoryIcon = CATEGORY_ICONS[task.category] ?? 'wrench';
-  const categoryLabel = CATEGORY_LABELS[task.category] ?? task.category;
+  const catMeta = CATEGORY_META[task.category] ?? CATEGORY_META.GENERAL;
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Photo Carousel */}
         {hasPhotos ? (
           <View>
@@ -237,10 +222,12 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
           </View>
         ) : (
           <View style={styles.placeholderCarousel}>
-            <Icon source="image-off-outline" size={48} color={brandColors.textMuted} />
-            <Text variant="bodySmall" style={styles.placeholderText}>
-              No photos attached
-            </Text>
+            <LinearGradient
+              colors={[brandColors.surfaceAlt, brandColors.background]}
+              style={StyleSheet.absoluteFill}
+            />
+            <MaterialCommunityIcons name="image-off-outline" size={44} color={brandColors.textMuted} />
+            <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>No photos attached</Text>
           </View>
         )}
 
@@ -248,7 +235,7 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
         <View style={styles.infoSection}>
           {/* Title + Status */}
           <View style={styles.titleRow}>
-            <Text variant="headlineSmall" style={styles.title} numberOfLines={3}>
+            <Text style={[typography.h1, styles.title]} numberOfLines={3}>
               {task.title}
             </Text>
             <StatusBadge status={task.status} />
@@ -256,110 +243,77 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
 
           {/* Category + Budget */}
           <View style={styles.chipRow}>
-            <View style={styles.categoryChip}>
-              <Icon source={categoryIcon} size={16} color={brandColors.primary} />
-              <Text variant="labelMedium" style={styles.categoryText}>
-                {categoryLabel}
-              </Text>
+            <View style={[styles.categoryChip, { backgroundColor: catMeta.color + '18' }]}>
+              <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
+              <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
             </View>
-            <Text variant="titleMedium" style={styles.budget}>
-              {budgetLabel}
-            </Text>
+            <Text style={[typography.h2, styles.budget]}>{budgetLabel}</Text>
           </View>
 
           <Divider style={styles.divider} />
 
           {/* Description */}
-          <Text variant="bodyMedium" style={styles.description}>
-            {task.description}
-          </Text>
+          <Text style={[typography.body, styles.description]}>{task.description}</Text>
 
           <Divider style={styles.divider} />
 
-          {/* Location */}
-          <View style={styles.detailRow}>
-            <Icon source="map-marker-outline" size={20} color={brandColors.textMuted} />
-            <View style={styles.detailContent}>
-              <Text variant="labelMedium" style={styles.detailLabel}>General Area</Text>
-              <Text variant="bodyMedium" style={styles.detailValue}>
-                {task.general_location_name || 'Not specified'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Posted date */}
-          <View style={styles.detailRow}>
-            <Icon source="clock-outline" size={20} color={brandColors.textMuted} />
-            <View style={styles.detailContent}>
-              <Text variant="labelMedium" style={styles.detailLabel}>Posted</Text>
-              <Text variant="bodyMedium" style={styles.detailValue}>
-                {new Date(task.created_at).toLocaleDateString(undefined, {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
-            </View>
-          </View>
-
-          {/* Bid count */}
-          <View style={styles.detailRow}>
-            <Icon source="hand-extended-outline" size={20} color={brandColors.textMuted} />
-            <View style={styles.detailContent}>
-              <Text variant="labelMedium" style={styles.detailLabel}>Bids</Text>
-              <Text variant="bodyMedium" style={styles.detailValue}>
-                {bidCount} {bidCount === 1 ? 'bid' : 'bids'} submitted
-              </Text>
-            </View>
-          </View>
+          {/* Detail Rows */}
+          <InfoRow icon="map-marker-outline" label="General Area" value={task.general_location_name || 'Not specified'} />
+          <InfoRow
+            icon="calendar-outline"
+            label="Posted"
+            value={new Date(task.created_at).toLocaleDateString(undefined, {
+              year: 'numeric', month: 'long', day: 'numeric',
+            })}
+          />
+          <InfoRow
+            icon="hand-extended-outline"
+            label="Bids"
+            value={`${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} submitted`}
+          />
 
           <Divider style={styles.divider} />
 
           {/* Requester */}
           {task.requester && (
-            <Card
-              style={styles.requesterCard}
-              mode="elevated"
+            <Pressable
+              style={({ pressed }) => [styles.requesterRow, { opacity: pressed ? 0.85 : 1 }]}
               onPress={() => {
                 try {
                   navigation.navigate('PublicProfile', { userId: task.requester!.id });
                 } catch {
-                  // PublicProfile screen not yet implemented
+                  // Not yet implemented
                 }
               }}
             >
-              <Card.Content style={styles.requesterContent}>
-                {task.requester.avatar_url ? (
-                  <Avatar.Image size={48} source={{ uri: task.requester.avatar_url }} />
-                ) : (
-                  <Avatar.Icon size={48} icon="account" />
-                )}
-                <View style={styles.requesterInfo}>
-                  <Text variant="titleSmall" style={styles.requesterName}>
-                    {task.requester.full_name}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.requesterRole}>
-                    Task Requester
-                  </Text>
-                </View>
-                <Icon source="chevron-right" size={20} color={brandColors.textMuted} />
-              </Card.Content>
-            </Card>
+              {task.requester.avatar_url ? (
+                <Avatar.Image size={48} source={{ uri: task.requester.avatar_url }} />
+              ) : (
+                <Avatar.Icon size={48} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
+              )}
+              <View style={styles.requesterInfo}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                  {task.requester.full_name}
+                </Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                  Task Requester
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+            </Pressable>
           )}
 
           {/* Existing bid info */}
           {existingBid && (
-            <Card style={styles.existingBidCard}>
-              <Card.Content style={styles.existingBidContent}>
-                <Icon source="check-circle-outline" size={24} color={brandColors.success} />
-                <View style={styles.existingBidInfo}>
-                  <Text variant="titleSmall" style={styles.existingBidTitle}>
-                    Your Bid: ₪{existingBid.offered_price}
-                  </Text>
-                  <StatusBadge status={existingBid.status} />
-                </View>
-              </Card.Content>
-            </Card>
+            <View style={styles.existingBidBanner}>
+              <MaterialCommunityIcons name="check-circle" size={22} color={brandColors.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.h3, { color: brandColors.success }]}>
+                  Your Bid: ₪{existingBid.offered_price}
+                </Text>
+              </View>
+              <StatusBadge status={existingBid.status} />
+            </View>
           )}
         </View>
       </ScrollView>
@@ -367,38 +321,24 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
       {/* Sticky Bottom Bar */}
       <View style={styles.bottomBar}>
         {bottomBarState === 'submit' && (
-          <Button
-            mode="contained"
+          <FButton
             onPress={handleOpenBidModal}
-            style={styles.bottomButton}
-            contentStyle={styles.bottomButtonContent}
-            labelStyle={styles.bottomButtonLabel}
+            fullWidth
             icon="hand-extended-outline"
+            size="lg"
           >
             Submit Bid
-          </Button>
+          </FButton>
         )}
         {bottomBarState === 'submitted' && (
-          <Button
-            mode="outlined"
-            disabled
-            style={styles.bottomButton}
-            contentStyle={styles.bottomButtonContent}
-            icon="check-circle-outline"
-          >
+          <FButton variant="outline" fullWidth disabled icon="check-circle-outline" size="lg">
             Bid Submitted
-          </Button>
+          </FButton>
         )}
         {bottomBarState === 'closed' && (
-          <Button
-            mode="outlined"
-            disabled
-            style={styles.bottomButton}
-            contentStyle={styles.bottomButtonContent}
-            icon="lock-outline"
-          >
+          <FButton variant="outline" fullWidth disabled icon="lock-outline" size="lg">
             No longer accepting bids
-          </Button>
+          </FButton>
         )}
       </View>
 
@@ -409,75 +349,89 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
           onDismiss={() => !bidSubmitting && setBidModalVisible(false)}
           contentContainerStyle={styles.modalContainer}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>
-            Submit Your Bid
-          </Text>
-          <Text variant="bodySmall" style={styles.modalSubtitle}>
-            {task.suggested_price != null
-              ? `Suggested budget: ₪${task.suggested_price}`
-              : 'The requester is open to quotes.'}
-          </Text>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalIconCircle}>
+              <MaterialCommunityIcons name="hand-extended-outline" size={24} color={brandColors.primary} />
+            </View>
+            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Submit Your Bid</Text>
+            <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.xs }]}>
+              {task.suggested_price != null
+                ? `Suggested budget: ₪${task.suggested_price}`
+                : 'The requester is open to quotes.'}
+            </Text>
+          </View>
 
-          <TextInput
-            mode="outlined"
+          <FInput
             label="Your price (₪)"
             placeholder="e.g. 250"
             value={bidPrice}
-            onChangeText={(text) => {
+            onChangeText={(text: string) => {
               setBidPrice(text.replace(/[^0-9.]/g, ''));
               setBidError(null);
             }}
             keyboardType="numeric"
-            left={<TextInput.Affix text="₪" />}
-            style={styles.modalInput}
+            left={<FInput.Affix text="₪" />}
           />
 
-          <TextInput
-            mode="outlined"
+          <View style={{ height: spacing.md }} />
+
+          <FInput
             label="Your pitch"
-            placeholder="Tell the requester why you're the right person for this job..."
+            placeholder="Tell the requester why you're the right person..."
             value={bidPitch}
-            onChangeText={(text) => {
+            onChangeText={(text: string) => {
               setBidPitch(text);
               setBidError(null);
             }}
             multiline
             numberOfLines={Platform.OS === 'web' ? 5 : 4}
             maxLength={MAX_PITCH_LENGTH}
-            style={styles.modalInput}
           />
-          <Text variant="bodySmall" style={styles.charCount}>
+          <Text style={[typography.caption, { textAlign: 'right', color: brandColors.textMuted, marginTop: spacing.xs }]}>
             {bidPitch.length}/{MAX_PITCH_LENGTH}
           </Text>
 
           {bidError && (
-            <Text variant="bodySmall" style={styles.bidErrorText}>
+            <Text style={[typography.bodySm, { color: brandColors.danger, marginTop: spacing.sm }]}>
               {bidError}
             </Text>
           )}
 
           <View style={styles.modalActions}>
-            <Button
-              mode="outlined"
+            <FButton
+              variant="outline"
               onPress={() => setBidModalVisible(false)}
               disabled={bidSubmitting}
-              style={styles.modalButton}
+              style={{ flex: 1 }}
             >
               Cancel
-            </Button>
-            <Button
-              mode="contained"
+            </FButton>
+            <FButton
               onPress={handleSubmitBid}
               loading={bidSubmitting}
               disabled={bidSubmitting}
-              style={styles.modalButton}
+              style={{ flex: 1 }}
               icon="send"
             >
               Send Offer
-            </Button>
+            </FButton>
           </View>
         </Modal>
       </Portal>
+    </View>
+  );
+}
+
+function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <View style={styles.infoIconShell}>
+        <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
+      </View>
+      <View style={styles.infoText}>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
+        <Text style={[typography.body, { color: brandColors.textPrimary }]}>{value}</Text>
+      </View>
     </View>
   );
 }
@@ -502,45 +456,41 @@ const styles = StyleSheet.create({
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
+    gap: spacing.xs + 2,
+    paddingVertical: spacing.md,
     backgroundColor: brandColors.surface,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: brandColors.outline,
+    backgroundColor: brandColors.outlineLight,
   },
   dotActive: {
     backgroundColor: brandColors.primary,
-    width: 20,
+    width: 22,
+    borderRadius: 4,
   },
   placeholderCarousel: {
     height: CAROUSEL_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: brandColors.surfaceAlt,
-    gap: 8,
-  },
-  placeholderText: {
-    color: brandColors.textMuted,
+    gap: spacing.sm,
   },
 
   infoSection: {
-    padding: 20,
-    gap: 16,
+    padding: spacing.xl,
+    gap: spacing.lg,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: spacing.md,
   },
   title: {
     flex: 1,
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
   chipRow: {
     flexDirection: 'row',
@@ -550,81 +500,60 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: brandColors.infoSoft,
-  },
-  categoryText: {
-    color: brandColors.primary,
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
   },
   budget: {
     color: brandColors.primary,
-    fontWeight: '700',
   },
   divider: {
-    backgroundColor: brandColors.outline,
+    backgroundColor: brandColors.outlineLight,
   },
   description: {
-    color: brandColors.textPrimary,
-    lineHeight: 22,
+    color: brandColors.textSecondary,
   },
-  detailRow: {
+
+  infoRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  detailContent: {
+  infoIconShell: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoText: {
     flex: 1,
     gap: 2,
   },
-  detailLabel: {
-    color: brandColors.textMuted,
-  },
-  detailValue: {
-    color: brandColors.textPrimary,
-  },
 
-  requesterCard: {
-    borderRadius: 22,
-    backgroundColor: brandColors.surface,
-  },
-  requesterContent: {
+  requesterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surface,
+    ...shadows.sm,
   },
   requesterInfo: {
     flex: 1,
-  },
-  requesterName: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  requesterRole: {
-    color: brandColors.textMuted,
-    marginTop: 2,
+    gap: 2,
   },
 
-  existingBidCard: {
-    borderRadius: 22,
+  existingBidBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     backgroundColor: brandColors.successSoft,
-  },
-  existingBidContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  existingBidInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  existingBidTitle: {
-    color: brandColors.success,
-    fontWeight: '700',
   },
 
   bottomBar: {
@@ -632,64 +561,35 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
     backgroundColor: brandColors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: brandColors.outline,
-    shadowColor: '#112336',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  bottomButton: {
-    borderRadius: 999,
-  },
-  bottomButtonContent: {
-    paddingVertical: 6,
-  },
-  bottomButtonLabel: {
-    fontSize: 16,
-    fontWeight: '700',
+    ...shadows.lg,
   },
 
   modalContainer: {
-    margin: 20,
-    padding: 24,
+    margin: spacing.xl,
+    padding: spacing.xxl,
+    borderRadius: radii.xxxl,
+    backgroundColor: brandColors.surface,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  modalIconCircle: {
+    width: 56,
+    height: 56,
     borderRadius: 28,
-    backgroundColor: brandColors.surface,
-  },
-  modalTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  modalSubtitle: {
-    color: brandColors.textMuted,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  modalInput: {
-    marginBottom: 8,
-    backgroundColor: brandColors.surface,
-  },
-  charCount: {
-    textAlign: 'right',
-    color: brandColors.textMuted,
-    marginBottom: 8,
-  },
-  bidErrorText: {
-    color: brandColors.danger,
-    marginBottom: 12,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 999,
+    gap: spacing.md,
+    marginTop: spacing.xl,
   },
 });
