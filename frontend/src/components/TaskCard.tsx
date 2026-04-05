@@ -28,6 +28,11 @@ interface TaskCardProps {
   bidCount?: number;
   fixerName?: string;
   onPress?: () => void;
+  onDelete?: () => void;
+  onReactivate?: () => void;
+  onCancel?: () => void;
+  onMarkCompleted?: () => void;
+  onEdit?: () => void;
   muted?: boolean;
 }
 
@@ -40,9 +45,15 @@ export default function TaskCard({
   bidCount,
   fixerName,
   onPress,
+  onDelete,
+  onReactivate,
+  onCancel,
+  onMarkCompleted,
+  onEdit,
   muted = false,
 }: TaskCardProps) {
   const meta = CATEGORY_META[category] ?? { icon: 'wrench', color: '#7A8B96', bg: '#E9E2D5' };
+  const hasActions = onDelete || onReactivate || onCancel || onMarkCompleted || onEdit;
 
   return (
     <Pressable
@@ -69,11 +80,10 @@ export default function TaskCard({
             </Text>
           </View>
         </View>
+        <StatusBadge status={status} />
       </View>
 
       <View style={styles.bottomRow}>
-        <StatusBadge status={status} />
-
         <View style={styles.metaGroup}>
           {suggestedPrice != null && (
             <Text style={[typography.h3, styles.price]}>₪{suggestedPrice}</Text>
@@ -84,26 +94,87 @@ export default function TaskCard({
         </View>
       </View>
 
-      {(bidCount != null && status === 'OPEN') || (fixerName && status === 'IN_PROGRESS') ? (
-        <View style={styles.footer}>
-          {bidCount != null && status === 'OPEN' && (
-            <View style={styles.footerChip}>
-              <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.textMuted} />
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                {bidCount} {bidCount === 1 ? 'bid' : 'bids'}
+      {/* Bid badges & fixer assignment */}
+      {bidCount != null && bidCount > 0 && status === 'OPEN' && (
+        <View style={styles.newOffersBadge}>
+          <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.warning} />
+          <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>
+            {bidCount} {bidCount === 1 ? 'new offer' : 'new offers'} — tap to review
+          </Text>
+        </View>
+      )}
+      {bidCount != null && bidCount === 0 && status === 'OPEN' && (
+        <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>No bids yet</Text>
+      )}
+      {fixerName && status === 'IN_PROGRESS' && (
+        <View style={styles.footerChip}>
+          <MaterialCommunityIcons name="account-check-outline" size={13} color={brandColors.success} />
+          <Text style={[typography.caption, { color: brandColors.success }]}>
+            Assigned to {fixerName}
+          </Text>
+        </View>
+      )}
+
+      {/* Action buttons */}
+      {hasActions && (
+        <View style={styles.actionRow}>
+          {onReactivate && status === 'CANCELED' && (
+            <Pressable
+              style={[styles.actionBtn, styles.successBtn]}
+              onPress={(e) => { e.stopPropagation(); onReactivate(); }}
+            >
+              <MaterialCommunityIcons name="refresh" size={14} color={brandColors.success} />
+              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
+                Reactivate
               </Text>
-            </View>
+            </Pressable>
           )}
-          {fixerName && status === 'IN_PROGRESS' && (
-            <View style={styles.footerChip}>
-              <MaterialCommunityIcons name="account-check-outline" size={13} color={brandColors.success} />
-              <Text style={[typography.caption, { color: brandColors.success }]}>
-                {fixerName}
+          {onEdit && (
+            <Pressable
+              style={[styles.actionBtn, styles.defaultBtn]}
+              onPress={(e) => { e.stopPropagation(); onEdit(); }}
+            >
+              <MaterialCommunityIcons name="pencil" size={14} color={brandColors.primaryMuted} />
+              <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>
+                Edit
               </Text>
-            </View>
+            </Pressable>
+          )}
+          {onMarkCompleted && (
+            <Pressable
+              style={[styles.actionBtn, styles.successBtn]}
+              onPress={(e) => { e.stopPropagation(); onMarkCompleted(); }}
+            >
+              <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
+              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
+                Mark as Completed
+              </Text>
+            </Pressable>
+          )}
+          {onCancel && (
+            <Pressable
+              style={[styles.actionBtn, styles.dangerBtn]}
+              onPress={(e) => { e.stopPropagation(); onCancel(); }}
+            >
+              <MaterialCommunityIcons name="close-circle-outline" size={14} color={brandColors.danger} />
+              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
+                Cancel
+              </Text>
+            </Pressable>
+          )}
+          {onDelete && (
+            <Pressable
+              style={[styles.actionBtn, styles.dangerBtn]}
+              onPress={(e) => { e.stopPropagation(); onDelete(); }}
+            >
+              <MaterialCommunityIcons name="delete-outline" size={14} color={brandColors.danger} />
+              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
+                Delete
+              </Text>
+            </Pressable>
           )}
         </View>
-      ) : null}
+      )}
     </Pressable>
   );
 }
@@ -122,6 +193,7 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     gap: spacing.md,
+    alignItems: 'center',
   },
   iconCircle: {
     width: 42,
@@ -163,9 +235,15 @@ const styles = StyleSheet.create({
     color: brandColors.primaryMuted,
     fontStyle: 'italic',
   },
-  footer: {
+  newOffersBadge: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
+    alignSelf: 'flex-start',
   },
   footerChip: {
     flexDirection: 'row',
@@ -175,5 +253,33 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 1,
     borderRadius: radii.pill,
     backgroundColor: brandColors.surfaceAlt,
+    alignSelf: 'flex-start',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: brandColors.outlineLight,
+    paddingTop: spacing.md,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  successBtn: {
+    borderColor: brandColors.success,
+  },
+  dangerBtn: {
+    borderColor: brandColors.danger,
+  },
+  defaultBtn: {
+    borderColor: brandColors.outline,
   },
 });

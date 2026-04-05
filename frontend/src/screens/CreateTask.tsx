@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -16,7 +16,10 @@ import {
   IconButton,
 } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import api from '../api/axiosInstance';
+import LocationMap from '../components/LocationMap';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
@@ -53,8 +56,63 @@ export default function CreateTask({ navigation, route }: Props) {
   const [exactAddress, setExactAddress] = useState('');
   const [showReview, setShowReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
+  const [showLocationRationale, setShowLocationRationale] = useState(false);
+  const [mapRegion, setMapRegion] = useState({ latitude: 32.8, longitude: 35.0, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+  const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const totalSteps = 5;
+
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'web') {
+      setLocationPermission('granted');
+      return;
+    }
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status === 'granted') {
+      setLocationPermission('granted');
+      await getCurrentLocation();
+    } else {
+      setShowLocationRationale(true);
+    }
+  };
+
+  const handleLocationPermissionResponse = async (allow: boolean) => {
+    setShowLocationRationale(false);
+    if (!allow) {
+      setLocationPermission('denied');
+      return;
+    }
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      setLocationPermission('granted');
+      await getCurrentLocation();
+    } else {
+      setLocationPermission('denied');
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const region = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+      setMapRegion(region);
+      setPinCoords({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+    } catch {
+      // fallback to default region
+    }
+  };
+
+  useEffect(() => {
+    if (step === 5 && locationPermission === 'undetermined') {
+      requestLocationPermission();
+    }
+  }, [step]);
 
   const canNext = (): boolean => {
     switch (step) {
@@ -74,7 +132,19 @@ export default function CreateTask({ navigation, route }: Props) {
     if (Platform.OS === 'web') {
       fileInputRef.current?.click();
     } else {
-      Alert.alert('Info', 'Photo picker coming soon.');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Please allow access to your photo library to add images.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        setPhotos((prev) => [...prev, result.assets[0].uri]);
+      }
     }
   };
 
@@ -101,8 +171,8 @@ export default function CreateTask({ navigation, route }: Props) {
         suggested_price: budgetType === 'fixed' ? parseFloat(price) : null,
         general_location_name: generalLocation.trim(),
         exact_address: exactAddress.trim(),
-        lat: 32.8,
-        lng: 35.0,
+        lat: pinCoords?.latitude ?? 32.8,
+        lng: pinCoords?.longitude ?? 35.0,
       });
       setShowReview(false);
       navigation.goBack();
@@ -289,6 +359,30 @@ export default function CreateTask({ navigation, route }: Props) {
           <View style={styles.stepContent}>
             <Text style={[typography.h2, styles.stepTitle]}>Location</Text>
             <Text style={[typography.bodySm, styles.stepSubtitle]}>Tell fixers where the job is</Text>
+
+            {/* Map (native only, when permission granted) */}
+            {Platform.OS !== 'web' && locationPermission === 'granted' && (
+              <View style={styles.mapContainer}>
+                <LocationMap
+                  region={mapRegion}
+                  pinCoords={pinCoords}
+                  onRegionChange={setMapRegion}
+                  onPress={(coords: { latitude: number; longitude: number }) => setPinCoords(coords)}
+                />
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center' }]}>
+                  Tap the map to set the general area pin
+                </Text>
+              </View>
+            )}
+            {Platform.OS !== 'web' && locationPermission === 'denied' && (
+              <View style={styles.locationDeniedNote}>
+                <MaterialCommunityIcons name="map-marker-off-outline" size={18} color={brandColors.textMuted} />
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
+                  Location access was denied. Enter the location manually below.
+                </Text>
+              </View>
+            )}
+
             <FInput
               label="General area (e.g., 'Hadar, Haifa')"
               value={generalLocation}
@@ -399,6 +493,31 @@ export default function CreateTask({ navigation, route }: Props) {
             style={{ marginTop: spacing.sm }}
           >
             Go Back & Edit
+          </FButton>
+        </Modal>
+      </Portal>
+
+      {/* Location Permission Rationale Modal */}
+      <Portal>
+        <Modal
+          visible={showLocationRationale}
+          onDismiss={() => handleLocationPermissionResponse(false)}
+          contentContainerStyle={styles.rationaleModal}
+        >
+          <View style={styles.rationaleIconWrap}>
+            <MaterialCommunityIcons name="map-marker-radius-outline" size={40} color={brandColors.primary} />
+          </View>
+          <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: 'center', marginBottom: spacing.sm }]}>
+            Enable Location Access
+          </Text>
+          <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.xl }]}>
+            We use your location to place a pin on the map so fixers in your area can find your task. Your exact address stays private.
+          </Text>
+          <FButton onPress={() => handleLocationPermissionResponse(true)} fullWidth>
+            Allow Location
+          </FButton>
+          <FButton variant="ghost" onPress={() => handleLocationPermissionResponse(false)} fullWidth style={{ marginTop: spacing.sm }}>
+            No thanks, I'll enter manually
           </FButton>
         </Modal>
       </Portal>
@@ -614,6 +733,35 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     alignItems: 'center',
     paddingVertical: spacing.xs,
+  },
+  mapContainer: {
+    gap: spacing.xs,
+    borderRadius: radii.md,
+    overflow: 'hidden',
+  },
+  locationDeniedNote: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: brandColors.surfaceAlt,
+    borderRadius: radii.md,
+    alignItems: 'center',
+  },
+  rationaleModal: {
+    backgroundColor: brandColors.surface,
+    margin: spacing.xl,
+    padding: spacing.xxl,
+    borderRadius: radii.xxxl,
+    alignItems: 'center',
+  },
+  rationaleIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
 
   buttons: {

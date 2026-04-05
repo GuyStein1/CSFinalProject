@@ -45,8 +45,15 @@ export default function useBids({ status = null, enabled = true }: UseBidsOption
       const res = await api.get('/api/users/me/bids', { params });
       setBids(res.data.bids ?? []);
       setTotal(res.data.total ?? 0);
-    } catch {
-      setError('Failed to load your bids.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number }; message?: string };
+      if (axiosErr.response?.status === 401) {
+        setError('Not signed in. Please log in to view your bids.');
+      } else if (axiosErr.message === 'Network Error') {
+        setError('Cannot reach the server. Make sure the backend is running.');
+      } else {
+        setError('Failed to load your bids.');
+      }
     } finally {
       setLoading(false);
     }

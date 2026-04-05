@@ -12,6 +12,8 @@ import {
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { sendEmailVerification } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
@@ -198,8 +200,26 @@ function useDisplayFont() {
 
 export default function RequesterDashboard({ navigation }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [verificationSent, setVerificationSent] = useState(false);
   const { width } = useWindowDimensions();
   const displayFont = useDisplayFont();
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user && !user.emailVerified) setEmailVerified(false);
+  }, []);
+
+  const handleResendVerification = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      await sendEmailVerification(user);
+      setVerificationSent(true);
+    } catch {
+      // silently fail
+    }
+  };
 
   const isDesktop = width >= 768;
   const heroPaddingH = isDesktop ? 80 : spacing.xxl;
@@ -292,6 +312,30 @@ export default function RequesterDashboard({ navigation }: Props) {
           </Pressable>
         </View>
       </LinearGradient>
+
+      {/* ── Email Verification Banner ──────────────────────────── */}
+      {!emailVerified && (
+        <View style={[styles.verifyBanner, { marginHorizontal: heroPaddingH }]}>
+          <MaterialCommunityIcons name="email-alert-outline" size={20} color={brandColors.warning} />
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.label, { color: brandColors.textPrimary }]}>
+              Verify your email
+            </Text>
+            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              {verificationSent
+                ? 'Verification email sent — check your inbox!'
+                : 'Please verify your email to unlock all features.'}
+            </Text>
+          </View>
+          {!verificationSent && (
+            <Pressable onPress={handleResendVerification} style={styles.verifyBtn}>
+              <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '700' }]}>
+                Resend
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {/* ── Category Carousel ────────────────────────────────────── */}
       <View style={styles.section}>
@@ -582,6 +626,28 @@ const styles = StyleSheet.create({
   heroCtaDesktop: {
     paddingHorizontal: 36,
     paddingVertical: 14,
+  },
+
+  // ── Verification banner ────────────────────────────────────────
+  verifyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(241,181,69,0.3)',
+  },
+  verifyBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
 
   // ── Carousel ───────────────────────────────────────────────────

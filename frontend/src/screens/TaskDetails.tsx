@@ -1,20 +1,17 @@
-import React, { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Pressable } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, ScrollView, StyleSheet, Alert, Linking, Pressable, Platform, Image } from 'react-native';
 import {
   Text,
   Avatar,
-  IconButton,
-  Divider,
   Portal,
   Modal,
 } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
-import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, spacing, radii, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -41,8 +38,10 @@ interface Task {
   suggested_price: number | null;
   general_location_name: string;
   exact_address: string;
+  media_urls: string[];
   is_payment_confirmed: boolean;
   created_at: string;
+  completed_at: string | null;
 }
 
 const STATUS_BANNER: Record<TaskStatus, { bg: string; color: string; icon: string }> = {
@@ -52,15 +51,56 @@ const STATUS_BANNER: Record<TaskStatus, { bg: string; color: string; icon: strin
   CANCELED: { bg: brandColors.dangerSoft, color: brandColors.danger, icon: 'close-circle-outline' },
 };
 
+interface FixerReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  reviewer?: { full_name: string };
+  created_at: string;
+}
+
+function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <MaterialCommunityIcons
+          key={star}
+          name={star <= Math.round(rating) ? 'star' : 'star-outline'}
+          size={size}
+          color={brandColors.secondary}
+        />
+      ))}
+    </View>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TaskDetails({ route, navigation }: { route: any; navigation: any }) {
-  const { taskId } = route.params;
+  const { taskId, openEdit } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [fixerReviews, setFixerReviews] = useState<FixerReview[]>([]);
+  const [showFixerReviews, setShowFixerReviews] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+
+  const showReviewsForFixer = async (fixerId: string) => {
+    try {
+      const res = await api.get(`/api/users/${fixerId}/reviews`);
+      setFixerReviews(res.data.reviews || []);
+      setShowFixerReviews(true);
+    } catch {
+      Alert.alert('Error', 'Failed to load reviews.');
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,21 +142,26 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   const cancelTask = async () => {
-    Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
-      { text: 'No' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
-            navigation.goBack();
-          } catch {
-            Alert.alert('Error', 'Failed to cancel task.');
-          }
-        },
-      },
-    ]);
+    const doCancel = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
+        navigation.goBack();
+      } catch {
+        Alert.alert('Error', 'Failed to cancel task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Are you sure you want to cancel this task?')) {
+        doCancel();
+      }
+    } else {
+      Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+        { text: 'No' },
+        { text: 'Yes, Cancel', style: 'destructive', onPress: doCancel },
+      ]);
+    }
   };
 
   const markCompleted = async () => {
@@ -150,6 +195,41 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
+  const openEditModal = () => {
+    if (!task) return;
+    setEditTitle(task.title);
+    setEditDescription(task.description);
+    setEditPrice(task.suggested_price?.toString() || '');
+    setEditLocation(task.general_location_name);
+    setEditAddress(task.exact_address);
+    setShowEditModal(true);
+  };
+
+  // Auto-open edit modal when navigated from reactivate flow
+  const didAutoOpen = useRef(false);
+  useEffect(() => {
+    if (openEdit && task && !didAutoOpen.current) {
+      didAutoOpen.current = true;
+      openEditModal();
+    }
+  }, [task, openEdit]);
+
+  const saveEdit = async () => {
+    try {
+      await api.put(`/api/tasks/${taskId}`, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        suggested_price: editPrice ? parseFloat(editPrice) : null,
+        general_location_name: editLocation.trim(),
+        exact_address: editAddress.trim(),
+      });
+      setShowEditModal(false);
+      fetchData();
+    } catch {
+      Alert.alert('Error', 'Failed to update task.');
+    }
+  };
+
   if (loading) {
     return <LoadingScreen label="Loading task details..." />;
   }
@@ -166,18 +246,52 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const pendingBids = bids.filter((b) => b.status === 'PENDING');
   const banner = STATUS_BANNER[task.status];
 
+  // 14-day review window
+  const reviewWindowDays = 14;
+  const daysSinceCompleted = task.completed_at
+    ? (Date.now() - new Date(task.completed_at).getTime()) / (1000 * 60 * 60 * 24)
+    : 0;
+  const daysRemaining = Math.max(0, Math.ceil(reviewWindowDays - daysSinceCompleted));
+  const reviewWindowExpired = task.completed_at ? daysSinceCompleted > reviewWindowDays : false;
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      {/* Status Banner */}
-      <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
-        <MaterialCommunityIcons name={banner.icon as never} size={20} color={banner.color} />
-        <Text style={[typography.label, { color: banner.color }]}>
-          {task.status.replace('_', ' ')}
-        </Text>
+      {/* Status Banner + Edit button */}
+      <View style={styles.statusRow}>
+        <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
+          <MaterialCommunityIcons name={banner.icon as never} size={20} color={banner.color} />
+          <Text style={[typography.label, { color: banner.color }]}>
+            {task.status.replace('_', ' ')}
+          </Text>
+        </View>
+        {task.status === 'OPEN' && (
+          <Pressable onPress={openEditModal} style={styles.editIconBtn}>
+            <MaterialCommunityIcons name="pencil" size={18} color={brandColors.primaryMuted} />
+          </Pressable>
+        )}
       </View>
+
+      {/* Photo Carousel */}
+      {task.media_urls && task.media_urls.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photoCarousel}
+          style={styles.photoCarouselWrap}
+        >
+          {task.media_urls.map((url, idx) => (
+            <Image
+              key={idx}
+              source={{ uri: url }}
+              style={styles.photoItem}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* Title & Details Card */}
       <FCard style={styles.mainCard}>
@@ -223,13 +337,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
                       {bid.fixer?.full_name || 'Fixer'}
                     </Text>
-                    {bid.fixer?.average_rating_as_fixer != null && (
+                    {bid.fixer?.average_rating_as_fixer != null ? (
                       <View style={styles.ratingRow}>
-                        <MaterialCommunityIcons name="star" size={14} color={brandColors.secondary} />
+                        <StarRating rating={bid.fixer.average_rating_as_fixer} size={14} />
                         <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
                           {bid.fixer.average_rating_as_fixer.toFixed(1)}
                         </Text>
+                        <Pressable onPress={() => showReviewsForFixer(bid.fixer_id)}>
+                          <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>see reviews</Text>
+                        </Pressable>
                       </View>
+                    ) : (
+                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
                     )}
                   </View>
                   <View style={styles.bidPriceTag}>
@@ -272,13 +391,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
                   {acceptedBid.fixer?.full_name || 'Fixer'}
                 </Text>
-                {acceptedBid.fixer?.average_rating_as_fixer != null && (
+                {acceptedBid.fixer?.average_rating_as_fixer != null ? (
                   <View style={styles.ratingRow}>
-                    <MaterialCommunityIcons name="star" size={14} color={brandColors.secondary} />
+                    <StarRating rating={acceptedBid.fixer.average_rating_as_fixer} size={14} />
                     <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
                       {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)}
                     </Text>
+                    <Pressable onPress={() => showReviewsForFixer(acceptedBid.fixer_id)}>
+                      <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>see reviews</Text>
+                    </Pressable>
                   </View>
+                ) : (
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
                 )}
                 {acceptedBid.fixer?.phone_number && (
                   <Pressable
@@ -307,6 +431,72 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </View>
         </View>
       )}
+
+      {/* Edit Task Modal */}
+      <Portal>
+        <Modal
+          visible={showEditModal}
+          onDismiss={() => setShowEditModal(false)}
+          contentContainerStyle={styles.editModal}
+        >
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+            Edit Task
+          </Text>
+          <FInput label="Title" value={editTitle} onChangeText={setEditTitle} maxLength={200} />
+          <FInput label="Description" value={editDescription} onChangeText={setEditDescription} multiline numberOfLines={4} maxLength={2000} />
+          <FInput label="Budget (₪)" value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" />
+          <FInput label="General location" value={editLocation} onChangeText={setEditLocation} />
+          <FInput label="Exact address" value={editAddress} onChangeText={setEditAddress} />
+          <FButton onPress={saveEdit} fullWidth style={{ marginTop: spacing.md }}>
+            Save Changes
+          </FButton>
+          <FButton variant="outline" onPress={() => setShowEditModal(false)} fullWidth style={{ marginTop: spacing.sm }}>
+            Cancel
+          </FButton>
+        </Modal>
+      </Portal>
+
+      {/* Fixer Reviews Modal */}
+      <Portal>
+        <Modal
+          visible={showFixerReviews}
+          onDismiss={() => setShowFixerReviews(false)}
+          contentContainerStyle={styles.reviewsModal}
+        >
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+            Fixer Reviews
+          </Text>
+          {fixerReviews.length === 0 ? (
+            <Text style={[typography.body, { color: brandColors.textMuted }]}>No reviews yet.</Text>
+          ) : (
+            <ScrollView style={{ maxHeight: 400 }}>
+              {fixerReviews.map((review) => (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.ratingRow}>
+                    <StarRating rating={review.rating} size={14} />
+                    <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                      {review.reviewer?.full_name || 'Anonymous'}
+                    </Text>
+                  </View>
+                  {review.comment && (
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: spacing.xs }]}>
+                      {review.comment}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          <FButton
+            variant="outline"
+            onPress={() => setShowFixerReviews(false)}
+            style={{ marginTop: spacing.lg }}
+            fullWidth
+          >
+            Close
+          </FButton>
+        </Modal>
+      </Portal>
 
       {/* COMPLETED: Payment & Review */}
       {task.status === 'COMPLETED' && (
@@ -366,8 +556,21 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 </View>
                 <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Review submitted. Thank you!</Text>
               </View>
+            ) : reviewWindowExpired ? (
+              <View style={styles.reviewExpired}>
+                <MaterialCommunityIcons name="clock-alert-outline" size={24} color={brandColors.textMuted} />
+                <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
+                  The 14-day review window has expired. You can no longer leave a review for this task.
+                </Text>
+              </View>
             ) : (
               <View style={styles.reviewForm}>
+                <View style={styles.reviewWindowBanner}>
+                  <MaterialCommunityIcons name="clock-outline" size={14} color={brandColors.primaryMuted} />
+                  <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>
+                    {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left to leave a review
+                  </Text>
+                </View>
                 <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>Rate the fixer:</Text>
                 <View style={styles.stars}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -435,6 +638,12 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
 
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
   statusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,8 +651,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radii.md,
-    marginBottom: spacing.lg,
-    alignSelf: 'flex-start',
+  },
+  editIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   mainCard: {
@@ -577,5 +792,56 @@ const styles = StyleSheet.create({
   stars: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  reviewsModal: {
+    backgroundColor: brandColors.surface,
+    padding: spacing.xl,
+    margin: spacing.xl,
+    borderRadius: radii.xl,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '90%',
+  },
+  reviewItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: brandColors.outlineLight,
+  },
+  photoCarouselWrap: {
+    marginBottom: spacing.lg,
+  },
+  photoCarousel: {
+    gap: spacing.md,
+  },
+  photoItem: {
+    width: 240,
+    height: 160,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  reviewWindowBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.infoSoft,
+    alignSelf: 'flex-start',
+  },
+  reviewExpired: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xl,
+  },
+  editModal: {
+    backgroundColor: brandColors.surface,
+    padding: spacing.xl,
+    margin: spacing.xl,
+    borderRadius: radii.xl,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '90%',
+    gap: spacing.md,
   },
 });

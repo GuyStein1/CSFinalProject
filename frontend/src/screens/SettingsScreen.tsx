@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Alert, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-native';
 import { Text, Switch, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import AppLogo from '../components/AppLogo';
 import { FButton, FCard, FInput } from '../components/ui';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, spacing, typography } from '../theme';
 
 export default function SettingsScreen() {
   const user = auth.currentUser;
@@ -25,28 +24,30 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut(auth);
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Are you sure you want to log out?')) {
+        await signOut(auth);
+      }
+    } else {
+      Alert.alert('Log Out', 'Are you sure you want to log out?', [
+        { text: 'Cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut(auth);
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Hero */}
-      <FCard style={styles.heroCard} shadow="md">
-        <View style={styles.heroContent}>
-          <AppLogo />
-          <Text style={[typography.body, { color: brandColors.textMuted }]}>
-            Account preferences, sign-in settings, and notification controls.
-          </Text>
-        </View>
+      <FCard style={styles.heroCard} shadow="sm">
+        <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Settings</Text>
       </FCard>
 
       {/* Account Section */}
@@ -163,9 +164,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     marginBottom: spacing.lg,
-  },
-  heroContent: {
-    gap: spacing.md,
   },
   sectionCard: {
     width: '100%',

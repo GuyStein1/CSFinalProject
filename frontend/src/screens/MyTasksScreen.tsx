@@ -1,13 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, RefreshControl, ScrollView } from 'react-native';
+import { Pressable, View, StyleSheet, RefreshControl, ScrollView, Alert, Platform } from 'react-native';
 import { FAB } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
 import { FSectionHeader } from '../components/ui';
-import { brandColors, spacing, shadows } from '../theme';
+import { brandColors, spacing, shadows, radii } from '../theme';
 
 type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
 
@@ -55,7 +56,124 @@ export default function MyTasksScreen({ navigation }: Props) {
     fetchTasks();
   };
 
-  const activeTasks = tasks.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS');
+  // ── Action handlers ──────────────────────────────────────────────
+
+  const webConfirm = (msg: string): boolean => {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      return confirm(msg);
+    }
+    return true;
+  };
+
+  const deleteTask = (taskId: string) => {
+    const doDelete = async () => {
+      try {
+        await api.delete(`/api/tasks/${taskId}`);
+        fetchTasks();
+      } catch {
+        Alert.alert('Error', 'Failed to delete task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (webConfirm('Delete this task permanently? This cannot be undone.')) doDelete();
+    } else {
+      Alert.alert('Delete Task', 'Delete this task permanently? This cannot be undone.', [
+        { text: 'Cancel' },
+        { text: 'Delete', style: 'destructive', onPress: doDelete },
+      ]);
+    }
+  };
+
+  const cancelTask = (taskId: string) => {
+    const doCancel = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
+        fetchTasks();
+      } catch {
+        Alert.alert('Error', 'Failed to cancel task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (webConfirm('Are you sure you want to cancel this task?')) doCancel();
+    } else {
+      Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
+        { text: 'No' },
+        { text: 'Yes, Cancel', style: 'destructive', onPress: doCancel },
+      ]);
+    }
+  };
+
+  const markCompleted = (taskId: string) => {
+    const doComplete = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/status`, { status: 'COMPLETED' });
+        navigation.navigate('TaskDetails', { taskId });
+      } catch {
+        Alert.alert('Error', 'Failed to mark task as completed.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (webConfirm('Mark this task as completed?')) doComplete();
+    } else {
+      doComplete();
+    }
+  };
+
+  const reactivateTask = (taskId: string) => {
+    const doReactivate = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/status`, { status: 'OPEN' });
+        fetchTasks();
+      } catch {
+        Alert.alert('Error', 'Failed to reactivate task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const wantsEdit = webConfirm(
+        'Would you like to edit this task before reactivating?\n\nOK — Yes, edit first\nCancel — No, reactivate as-is'
+      );
+      if (wantsEdit) {
+        doReactivate().then(() => navigation.navigate('TaskDetails', { taskId, openEdit: true }));
+      } else {
+        doReactivate();
+      }
+    } else {
+      Alert.alert('Reactivate Task', 'Reactivate this task?', [
+        { text: 'Cancel' },
+        {
+          text: 'Reactivate',
+          onPress: () => {
+            Alert.alert('Edit first?', 'Would you like to edit the task before reactivating?', [
+              { text: 'Reactivate as-is', onPress: doReactivate },
+              {
+                text: 'Edit first',
+                onPress: async () => {
+                  await doReactivate();
+                  navigation.navigate('TaskDetails', { taskId, openEdit: true });
+                },
+              },
+            ]);
+          },
+        },
+      ]);
+    }
+  };
+
+  // ── Sorting: IN_PROGRESS first, then by bid count ────────────────
+
+  const activeTasks = tasks
+    .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
+    .sort((a, b) => {
+      if (a.status === 'IN_PROGRESS' && b.status !== 'IN_PROGRESS') return -1;
+      if (b.status === 'IN_PROGRESS' && a.status !== 'IN_PROGRESS') return 1;
+      return (b.bid_count || 0) - (a.bid_count || 0);
+    });
+
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
 
   if (loading) return <LoadingScreen label="Loading your tasks..." />;
@@ -101,6 +219,9 @@ export default function MyTasksScreen({ navigation }: Props) {
                 bidCount={task.bid_count}
                 fixerName={task.assigned_fixer_name}
                 onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                onCancel={() => cancelTask(task.id)}
+                onEdit={task.status === 'OPEN' ? () => navigation.navigate('TaskDetails', { taskId: task.id, openEdit: true }) : undefined}
+                onMarkCompleted={task.status === 'IN_PROGRESS' ? () => markCompleted(task.id) : undefined}
               />
             ))}
           </View>
@@ -110,15 +231,27 @@ export default function MyTasksScreen({ navigation }: Props) {
           <View style={styles.section}>
             <FSectionHeader title="Past Tasks" count={pastTasks.length} muted />
             {pastTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                title={task.title}
-                category={task.category}
-                status={task.status}
-                suggestedPrice={task.suggested_price}
-                locationName={task.general_location_name}
-                onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
-              />
+              <View key={task.id} style={styles.taskRow}>
+                <View style={styles.taskCardWrap}>
+                  <TaskCard
+                    title={task.title}
+                    category={task.category}
+                    status={task.status}
+                    suggestedPrice={task.suggested_price}
+                    locationName={task.general_location_name}
+                    onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                    onReactivate={task.status === 'CANCELED' ? () => reactivateTask(task.id) : undefined}
+                    muted
+                  />
+                </View>
+                <Pressable
+                  style={styles.trashBtn}
+                  hitSlop={8}
+                  onPress={() => deleteTask(task.id)}
+                >
+                  <MaterialCommunityIcons name="delete-outline" size={22} color={brandColors.danger} />
+                </Pressable>
+              </View>
             ))}
           </View>
         )}
@@ -145,6 +278,21 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: spacing.lg,
     marginTop: spacing.xxl,
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  taskCardWrap: {
+    flex: 1,
+  },
+  trashBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.xs,
   },
   fab: {
     position: 'absolute',

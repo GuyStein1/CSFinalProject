@@ -20,7 +20,7 @@ export const createTaskSchema = z.object({
 export const updateTaskSchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   description: z.string().trim().min(1).max(2000).optional(),
-  category: z.enum(['ELECTRICITY', 'PLUMBING', 'CARPENTRY', 'PAINTING', 'MOVING', 'GENERAL']).optional(),
+  category: z.enum(['ASSEMBLY', 'MOUNTING', 'MOVING', 'PAINTING', 'PLUMBING', 'ELECTRICITY', 'OUTDOORS', 'CLEANING']).optional(),
   suggested_price: z.number().positive().nullable().optional(),
   general_location_name: z.string().trim().min(1).optional(),
   exact_address: z.string().trim().min(1).optional(),

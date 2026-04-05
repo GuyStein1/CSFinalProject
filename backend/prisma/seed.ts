@@ -235,7 +235,10 @@ async function main() {
     requester1.id, requester1.id, requester2.id, requester3.id,
   ];
 
-  console.log('Clearing existing tasks and bids...');
+  console.log('Clearing existing data...');
+  await prisma.review.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.bid.deleteMany();
   await prisma.task.deleteMany();
 
