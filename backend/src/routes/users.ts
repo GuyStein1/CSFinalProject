@@ -35,6 +35,10 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
     const [tasks, total] = await prisma.$transaction([
       prisma.task.findMany({
         where,
+        include: {
+          _count: { select: { bids: { where: { status: 'PENDING' } } } },
+          fixer: { select: { full_name: true } },
+        },
         orderBy: { created_at: 'desc' },
         skip: offset,
         take: limitNum,
@@ -42,7 +46,15 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
       prisma.task.count({ where }),
     ]);
 
-    res.json({ tasks, total, page: pageNum, limit: limitNum });
+    const enriched = tasks.map((t) => ({
+      ...t,
+      bid_count: t._count.bids,
+      assigned_fixer_name: t.fixer?.full_name ?? null,
+      _count: undefined,
+      fixer: undefined,
+    }));
+
+    res.json({ tasks: enriched, total, page: pageNum, limit: limitNum });
   } catch (err) {
     next(err);
   }

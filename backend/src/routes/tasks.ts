@@ -270,6 +270,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
     const task = await prisma.task.findUnique({ where: { id: req.params.id } });
 
     if (!task) throw new NotFoundError('Task not found');
+
     if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can update task status');
 
     const validTransitions: Partial<Record<TaskStatus, TaskStatus[]>> = {
