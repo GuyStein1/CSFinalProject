@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Icon, Text, useTheme } from 'react-native-paper';
+import { Button, Card, Icon, Text, useTheme } from 'react-native-paper';
 import StatusBadge from './StatusBadge';
 import { brandColors } from '../theme';
 
@@ -25,6 +25,9 @@ interface TaskCardProps {
   bidCount?: number;
   fixerName?: string;
   onPress?: () => void;
+  onCancel?: () => void;
+  onMarkCompleted?: () => void;
+  onEdit?: () => void;
 }
 
 export default function TaskCard({
@@ -36,6 +39,9 @@ export default function TaskCard({
   bidCount,
   fixerName,
   onPress,
+  onCancel,
+  onMarkCompleted,
+  onEdit,
 }: TaskCardProps) {
   const theme = useTheme();
 
@@ -55,9 +61,10 @@ export default function TaskCard({
             <Icon source={CATEGORY_ICONS[category]} size={24} color={theme.colors.primary} />
           </View>
         )}
+        right={() => <StatusBadge status={status} />}
+        rightStyle={styles.statusRight}
       />
       <Card.Content style={styles.content}>
-        <StatusBadge status={status} />
         <Text variant="bodySmall" style={styles.location}>
           {locationName}
         </Text>
@@ -83,6 +90,25 @@ export default function TaskCard({
           <Text variant="bodySmall" style={styles.meta}>
             Assigned to {fixerName}
           </Text>
+        )}
+        {(onCancel || onMarkCompleted || onEdit) && (
+          <View style={styles.actions}>
+            {onEdit && (
+              <Button mode="outlined" compact onPress={onEdit} icon="pencil" style={styles.actionBtn}>
+                Edit
+              </Button>
+            )}
+            {onMarkCompleted && (
+              <Button mode="outlined" compact textColor={brandColors.success} onPress={onMarkCompleted} style={[styles.actionBtn, { borderColor: brandColors.success }]}>
+                Mark as Completed
+              </Button>
+            )}
+            {onCancel && (
+              <Button mode="outlined" compact textColor={brandColors.danger} onPress={onCancel} style={[styles.actionBtn, { borderColor: brandColors.danger }]}>
+                Cancel
+              </Button>
+            )}
+          </View>
         )}
       </Card.Content>
     </Card>
@@ -127,6 +153,19 @@ const styles = StyleSheet.create({
   bidBadgeText: {
     color: brandColors.warning,
     fontWeight: '700',
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 4,
+  },
+  actionBtn: {
+    borderRadius: 12,
+  },
+  statusRight: {
+    marginRight: 8,
   },
   iconShell: {
     width: 40,

@@ -12,6 +12,7 @@ import {
 } from '../utils/errors';
 import {
   createTaskSchema,
+  updateTaskSchema,
   updateTaskStatusSchema,
   createBidSchema,
   createReviewSchema,
@@ -258,6 +259,34 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       : taskWithoutAddress;
 
     res.json({ task: { ...response, bid_count: bidCount } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/tasks/:id — edit an OPEN task
+router.put('/:id', validate(updateTaskSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can edit this task');
+    if (task.status !== 'OPEN') throw new ConflictError('Only OPEN tasks can be edited');
+
+    const { title, description, category, suggested_price, general_location_name, exact_address } = req.body;
+
+    const updated = await prisma.task.update({
+      where: { id: req.params.id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(description !== undefined && { description }),
+        ...(category !== undefined && { category }),
+        ...(suggested_price !== undefined && { suggested_price }),
+        ...(general_location_name !== undefined && { general_location_name }),
+        ...(exact_address !== undefined && { exact_address }),
+      },
+    });
+
+    res.json({ task: updated });
   } catch (err) {
     next(err);
   }

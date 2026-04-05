@@ -75,6 +75,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [fixerReviews, setFixerReviews] = useState<{ rating: number; comment: string | null; reviewer?: { full_name: string } }[]>([]);
   const [showFixerReviews, setShowFixerReviews] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editAddress, setEditAddress] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -179,6 +185,32 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
+  const openEditModal = () => {
+    if (!task) return;
+    setEditTitle(task.title);
+    setEditDescription(task.description);
+    setEditPrice(task.suggested_price?.toString() || '');
+    setEditLocation(task.general_location_name);
+    setEditAddress(task.exact_address);
+    setShowEditModal(true);
+  };
+
+  const saveEdit = async () => {
+    try {
+      await api.put(`/api/tasks/${taskId}`, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        suggested_price: editPrice ? parseFloat(editPrice) : null,
+        general_location_name: editLocation.trim(),
+        exact_address: editAddress.trim(),
+      });
+      setShowEditModal(false);
+      fetchData();
+    } catch {
+      Alert.alert('Error', 'Failed to update task.');
+    }
+  };
+
   if (loading) {
     return <LoadingScreen label="Loading task details..." />;
   }
@@ -200,7 +232,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {/* Header */}
       <View style={styles.header}>
         <Text variant="headlineSmall" style={styles.title}>{task.title}</Text>
-        <StatusBadge status={task.status} />
+        <View style={styles.headerRight}>
+          {task.status === 'OPEN' && (
+            <IconButton icon="pencil" size={20} onPress={openEditModal} />
+          )}
+          <StatusBadge status={task.status} />
+        </View>
       </View>
 
       {/* Details */}
@@ -453,6 +490,19 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     </ScrollView>
 
       <Portal>
+        <Modal visible={showEditModal} onDismiss={() => setShowEditModal(false)} contentContainerStyle={styles.editModal}>
+          <Text variant="titleLarge" style={styles.reviewsModalTitle}>Edit Task</Text>
+          <TextInput label="Title" value={editTitle} onChangeText={setEditTitle} mode="outlined" maxLength={200} style={styles.editInput} />
+          <TextInput label="Description" value={editDescription} onChangeText={setEditDescription} mode="outlined" multiline numberOfLines={4} maxLength={2000} style={styles.editInput} />
+          <TextInput label="Budget (₪)" value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" mode="outlined" style={styles.editInput} />
+          <TextInput label="General location" value={editLocation} onChangeText={setEditLocation} mode="outlined" style={styles.editInput} />
+          <TextInput label="Exact address" value={editAddress} onChangeText={setEditAddress} mode="outlined" style={styles.editInput} />
+          <Button mode="contained" onPress={saveEdit} style={{ marginTop: 8 }}>Save Changes</Button>
+          <Button mode="text" onPress={() => setShowEditModal(false)} style={{ marginTop: 4 }}>Cancel</Button>
+        </Modal>
+      </Portal>
+
+      <Portal>
         <Modal visible={showFixerReviews} onDismiss={() => setShowFixerReviews(false)} contentContainerStyle={styles.reviewsModal}>
           <Text variant="titleLarge" style={styles.reviewsModalTitle}>Fixer Reviews</Text>
           {fixerReviews.length === 0 ? (
@@ -619,5 +669,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  editModal: {
+    backgroundColor: brandColors.surface,
+    margin: 20,
+    padding: 24,
+    borderRadius: 24,
+    maxHeight: '85%',
+  },
+  editInput: {
+    marginBottom: 10,
+    backgroundColor: brandColors.surface,
   },
 });
