@@ -28,15 +28,16 @@ const CATEGORIES: { value: Category; label: string; icon: string }[] = [
 
 interface Props {
   navigation: { goBack: () => void; navigate: (screen: string) => void };
+  route?: { params?: { category?: Category } };
 }
 
-export default function CreateTask({ navigation }: Props) {
+export default function CreateTask({ navigation, route }: Props) {
   const theme = useTheme();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
-  const [category, setCategory] = useState<Category | null>(null);
+  const [category, setCategory] = useState<Category | null>(route?.params?.category ?? null);
   const [budgetType, setBudgetType] = useState<'fixed' | 'quote'>('fixed');
   const [price, setPrice] = useState('');
   const [generalLocation, setGeneralLocation] = useState('');

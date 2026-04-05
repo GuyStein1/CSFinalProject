@@ -1,18 +1,26 @@
 import React, { useCallback, useState } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, Platform } from 'react-native';
-import { Text, FAB, useTheme, Card, SegmentedButtons, IconButton } from 'react-native-paper';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { Text, FAB, useTheme } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
-import EmptyState from '../components/EmptyState';
-import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors } from '../theme';
+
+type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
 
 interface Task {
   id: string;
   title: string;
-  category: 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+  category: Category;
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   suggested_price: number | null;
   general_location_name: string;
@@ -24,6 +32,20 @@ interface Task {
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
+
+const CATEGORIES: {
+  value: Category;
+  label: string;
+  icon: string;
+  bg: string;
+}[] = [
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', bg: '#FEF3D7' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          bg: '#DDE7EE' },
+  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         bg: '#EDE0D0' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   bg: '#EAE0F0' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          bg: '#D5EBD8' },
+  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         bg: brandColors.surfaceAlt },
+];
 
 export default function RequesterDashboard({ navigation }: Props) {
   const theme = useTheme();
@@ -54,165 +76,157 @@ export default function RequesterDashboard({ navigation }: Props) {
     fetchTasks();
   };
 
-  const [tab, setTab] = useState<'active' | 'past'>('active');
-
-  const deleteTask = async (taskId: string) => {
-    const confirmed = Platform.OS === 'web'
-      ? window.confirm('Delete this task permanently?')
-      : true;
-    if (!confirmed) return;
-    try {
-      await api.delete(`/api/tasks/${taskId}`);
-      fetchTasks();
-    } catch {
-      // ignore
-    }
-  };
-
-  const cancelTask = async (taskId: string) => {
-    const confirmed = Platform.OS === 'web'
-      ? window.confirm('Are you sure you want to cancel this task?')
-      : true;
-    if (!confirmed) return;
-    try {
-      await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
-      fetchTasks();
-    } catch {
-      // ignore
-    }
-  };
-
-  const markCompleted = async (taskId: string) => {
-    const confirmed = Platform.OS === 'web'
-      ? window.confirm('Mark this task as completed?')
-      : true;
-    if (!confirmed) return;
-    try {
-      await api.put(`/api/tasks/${taskId}/status`, { status: 'COMPLETED' });
-      fetchTasks();
-    } catch {
-      // ignore
-    }
-  };
-
-  const reactivateTask = async (taskId: string) => {
-    if (Platform.OS === 'web') {
-      const wantsEdit = window.confirm(
-        'Would you like to edit this task before reactivating?\n\nOK — Yes, edit first\nCancel — No, reactivate as-is'
-      );
-      if (wantsEdit) {
-        try {
-          await api.put(`/api/tasks/${taskId}/status`, { status: 'OPEN' });
-          navigation.navigate('TaskDetails', { taskId });
-        } catch {
-          // ignore
-        }
-        return;
-      }
-    }
-    try {
-      await api.put(`/api/tasks/${taskId}/status`, { status: 'OPEN' });
-      fetchTasks();
-    } catch {
-      // ignore
-    }
-  };
-
-  const activeTasks = tasks
-    .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
-    .sort((a, b) => {
-      // IN_PROGRESS first
-      if (a.status === 'IN_PROGRESS' && b.status !== 'IN_PROGRESS') return -1;
-      if (b.status === 'IN_PROGRESS' && a.status !== 'IN_PROGRESS') return 1;
-      // Then by bid count
-      return (b.bid_count || 0) - (a.bid_count || 0);
-    });
+  const activeTasks = tasks.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS');
   const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
-  const displayedTasks = tab === 'active' ? activeTasks : pastTasks;
 
   if (loading) {
     return <LoadingScreen label="Loading your tasks..." />;
   }
 
-  if (tasks.length === 0) {
-    return (
-      <View style={styles.flex}>
-        <EmptyState
-          icon="clipboard-text-outline"
-          title="No tasks yet"
-          message="Post your first task and get help today!"
-          actionLabel="Create Task"
-          onAction={() => navigation.navigate('CreateTask')}
-        />
-        <FAB
-          icon="plus"
-          style={[styles.fab, { backgroundColor: theme.colors.secondary }]}
-          onPress={() => navigation.navigate('CreateTask')}
-        />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.flex}>
-      <FlatList
-        data={displayedTasks}
-        keyExtractor={(item) => item.id}
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <>
-            <Card style={styles.heroCard} mode="elevated">
-              <Card.Content style={styles.heroContent}>
-                <AppLogo />
-              </Card.Content>
-            </Card>
-            <SegmentedButtons
-              value={tab}
-              onValueChange={(v) => setTab(v as 'active' | 'past')}
-              buttons={[
-                { value: 'active', label: `Active (${activeTasks.length})` },
-                { value: 'past', label: `Past (${pastTasks.length})` },
-              ]}
-              style={styles.tabs}
-            />
-          </>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.taskRow}>
-            <View style={styles.taskCardWrap}>
-              <TaskCard
-                title={item.title}
-                category={item.category}
-                status={item.status}
-                suggestedPrice={item.suggested_price}
-                locationName={item.general_location_name}
-                bidCount={item.bid_count}
-                fixerName={item.assigned_fixer_name}
-                onPress={() => navigation.navigate('TaskDetails', { taskId: item.id })}
-                onCancel={tab === 'active' ? () => cancelTask(item.id) : undefined}
-                onMarkCompleted={tab === 'active' && item.status === 'IN_PROGRESS' ? () => markCompleted(item.id) : undefined}
-                onEdit={tab === 'active' && item.status === 'OPEN' ? () => navigation.navigate('TaskDetails', { taskId: item.id }) : undefined}
-                onReactivate={tab === 'past' && item.status === 'CANCELED' ? () => reactivateTask(item.id) : undefined}
-              />
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Hero ──────────────────────────────────────────────────── */}
+        <View style={styles.hero}>
+          {/* watermark logo — bottom-right */}
+          <Image
+            source={require('../../assets/fixit-logo.png')}
+            style={styles.heroWatermark}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.heroEyebrow}>Ready to get things done?</Text>
+          <Text style={styles.heroHeadline}>{"What needs\nfixing today?"}</Text>
+
+          <TouchableOpacity
+            style={styles.heroCta}
+            activeOpacity={0.82}
+            onPress={() => navigation.navigate('CreateTask')}
+          >
+            <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
+            <Text style={styles.heroCtaText}>Post a Task</Text>
+          </TouchableOpacity>
+
+          {tasks.length > 0 && (
+            <View style={styles.heroPills}>
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>{activeTasks.length} active</Text>
+              </View>
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>{pastTasks.length} past</Text>
+              </View>
             </View>
-            {tab === 'past' && (
-              <IconButton
-                icon="delete-outline"
-                iconColor={brandColors.danger}
-                size={22}
-                onPress={() => deleteTask(item.id)}
-                style={styles.deleteButton}
-              />
-            )}
+          )}
+        </View>
+
+        {/* ── Category quick-picks ───────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Browse by category</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryRow}
+          >
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat.value}
+                style={[styles.categoryTile, { backgroundColor: cat.bg }]}
+                activeOpacity={0.75}
+                onPress={() => navigation.navigate('CreateTask', { category: cat.value })}
+              >
+                <View style={styles.categoryIconShell}>
+                  <MaterialCommunityIcons
+                    name={cat.icon as never}
+                    size={26}
+                    color={brandColors.primary}
+                  />
+                </View>
+                <Text style={styles.categoryLabel}>{cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── Empty prompt ───────────────────────────────────────────── */}
+        {tasks.length === 0 && (
+          <View style={styles.emptyPrompt}>
+            <MaterialCommunityIcons
+              name="clipboard-text-outline"
+              size={36}
+              color={brandColors.outline}
+            />
+            <Text style={styles.emptyTitle}>No tasks yet</Text>
+            <Text style={styles.emptyBody}>
+              Pick a category above or tap{' '}
+              <Text style={styles.emptyBodyBold}>Post a Task</Text> to get started.
+            </Text>
           </View>
         )}
-        ListEmptyComponent={
-          <Text variant="bodyMedium" style={styles.emptyText}>
-            {tab === 'active' ? 'No active tasks.' : 'No past tasks.'}
-          </Text>
-        }
-        contentContainerStyle={styles.list}
-      />
+
+        {/* ── Active tasks ───────────────────────────────────────────── */}
+        {activeTasks.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionAccent} />
+              <Text style={styles.sectionTitle}>Active Tasks</Text>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{activeTasks.length}</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.activeRow}
+            >
+              {activeTasks.map((task) => (
+                <View key={task.id} style={styles.activeCard}>
+                  <TaskCard
+                    title={task.title}
+                    category={task.category}
+                    status={task.status}
+                    suggestedPrice={task.suggested_price}
+                    locationName={task.general_location_name}
+                    bidCount={task.bid_count}
+                    fixerName={task.assigned_fixer_name}
+                    onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Past tasks ─────────────────────────────────────────────── */}
+        {pastTasks.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionAccent, styles.sectionAccentMuted]} />
+              <Text style={[styles.sectionTitle, styles.sectionTitleMuted]}>Past Tasks</Text>
+              <View style={[styles.countBadge, styles.countBadgeMuted]}>
+                <Text style={[styles.countBadgeText, styles.countBadgeTextMuted]}>
+                  {pastTasks.length}
+                </Text>
+              </View>
+            </View>
+            {pastTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                title={task.title}
+                category={task.category}
+                status={task.status}
+                suggestedPrice={task.suggested_price}
+                locationName={task.general_location_name}
+                onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.secondary }]}
@@ -223,47 +237,191 @@ export default function RequesterDashboard({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: {
+  root: {
     flex: 1,
     backgroundColor: brandColors.background,
   },
-  center: {
-    flex: 1,
+  scroll: {
+    paddingBottom: 100,
+  },
+
+  // ── Hero
+  hero: {
+    backgroundColor: brandColors.primary,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 28,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  heroWatermark: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    right: -24,
+    bottom: -20,
+    opacity: 0.09,
+  },
+  heroEyebrow: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 252, 246, 0.65)',
+    letterSpacing: 0.4,
+    marginBottom: 6,
+  },
+  heroHeadline: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: brandColors.surface,
+    lineHeight: 42,
+    marginBottom: 24,
+  },
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: brandColors.secondary,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 999,
+    gap: 8,
+    marginBottom: 20,
+  },
+  heroCtaText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: brandColors.textPrimary,
+  },
+  heroPills: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  heroPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 252, 246, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 252, 246, 0.18)',
+  },
+  heroPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 252, 246, 0.9)',
+  },
+
+  // ── Sections
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionAccent: {
+    width: 4,
+    height: 18,
+    borderRadius: 99,
+    backgroundColor: brandColors.secondary,
+  },
+  sectionAccentMuted: {
+    backgroundColor: brandColors.outline,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: brandColors.textPrimary,
+    marginBottom: 12,
+  },
+  sectionTitleMuted: {
+    color: brandColors.textMuted,
+    marginBottom: 0,
+  },
+  countBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: brandColors.secondary,
+  },
+  countBadgeMuted: {
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  countBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: brandColors.textPrimary,
+  },
+  countBadgeTextMuted: {
+    color: brandColors.textMuted,
+  },
+
+  // ── Category tiles
+  categoryRow: {
+    gap: 10,
+    paddingBottom: 4,
+  },
+  categoryTile: {
+    width: 80,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  categoryIconShell: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCard: {
-    marginBottom: 8,
-    borderRadius: 20,
-    backgroundColor: brandColors.surface,
+  categoryLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: brandColors.textPrimary,
+    textAlign: 'center',
   },
-  heroContent: {
-    alignItems: 'center' as const,
-    paddingVertical: 0,
+
+  // ── Active tasks
+  activeRow: {
+    gap: 12,
+    paddingBottom: 4,
   },
-  tabs: {
-    marginBottom: 12,
+  activeCard: {
+    width: 272,
   },
-  taskRow: {
-    flexDirection: 'row',
+
+  // ── Empty state
+  emptyPrompt: {
     alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 8,
+    paddingHorizontal: 40,
+    gap: 10,
   },
-  taskCardWrap: {
-    flex: 1,
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: brandColors.textPrimary,
   },
-  deleteButton: {
-    margin: 0,
-  },
-  emptyText: {
+  emptyBody: {
+    fontSize: 14,
     color: brandColors.textMuted,
-    fontStyle: 'italic',
-    textAlign: 'center' as const,
-    marginTop: 24,
+    textAlign: 'center',
+    lineHeight: 21,
   },
-  list: {
-    padding: 16,
-    paddingBottom: 92,
+  emptyBodyBold: {
+    fontWeight: '700',
+    color: brandColors.textPrimary,
   },
+
+  // ── FAB
   fab: {
     position: 'absolute',
     right: 16,
