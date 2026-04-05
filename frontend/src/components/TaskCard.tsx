@@ -6,15 +6,17 @@ import StatusBadge from './StatusBadge';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
-type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
 
-const CATEGORY_META: Record<Category, { icon: string; color: string; bg: string }> = {
-  ELECTRICITY: { icon: 'lightning-bolt', color: '#F0B429', bg: '#FEF3D7' },
-  PLUMBING:    { icon: 'water',          color: '#4A90D9', bg: '#DDE7EE' },
-  CARPENTRY:   { icon: 'hammer',         color: '#A07553', bg: '#EDE0D0' },
-  PAINTING:    { icon: 'format-paint',   color: '#8B6DAF', bg: '#EAE0F0' },
-  MOVING:      { icon: 'truck',          color: '#4CAF7D', bg: '#D5EBD8' },
-  GENERAL:     { icon: 'wrench',         color: '#7A8B96', bg: brandColors.surfaceAlt },
+const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
+  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
+  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
+  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
+  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
+  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
+  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
+  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
+  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
 };
 
 interface TaskCardProps {
@@ -40,7 +42,7 @@ export default function TaskCard({
   onPress,
   muted = false,
 }: TaskCardProps) {
-  const meta = CATEGORY_META[category] ?? CATEGORY_META.GENERAL;
+  const meta = CATEGORY_META[category] ?? { icon: 'wrench', color: '#7A8B96', bg: '#E9E2D5' };
 
   return (
     <Pressable

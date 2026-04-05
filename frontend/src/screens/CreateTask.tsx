@@ -20,15 +20,17 @@ import api from '../api/axiosInstance';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
-type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
 
 const CATEGORIES: { value: Category; label: string; icon: string; color: string; bg: string }[] = [
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt', color: '#F0B429', bg: '#FEF3D7' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water',          color: '#4A90D9', bg: '#DDE7EE' },
-  { value: 'CARPENTRY',   label: 'Carpentry',   icon: 'hammer',         color: '#A07553', bg: '#EDE0D0' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'format-paint',   color: '#8B6DAF', bg: '#EAE0F0' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck',          color: '#4CAF7D', bg: '#D5EBD8' },
-  { value: 'GENERAL',     label: 'General',     icon: 'wrench',         color: '#7A8B96', bg: brandColors.surfaceAlt },
+  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
+  { value: 'MOUNTING',    label: 'Mounting',    icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
+  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
+  { value: 'CLEANING',    label: 'Cleaning',    icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
 ];
 
 const STEP_ICONS = ['text-box-outline', 'camera-outline', 'shape-outline', 'cash-multiple', 'map-marker-outline'];

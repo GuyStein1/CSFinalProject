@@ -10,12 +10,14 @@ export type ViewMode = 'map' | 'list';
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200] as const;
 
 const CATEGORY_OPTIONS: { value: Category; label: string; icon: string }[] = [
+  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'hammer-screwdriver' },
+  { value: 'MOUNTING',    label: 'Mounting',    icon: 'television' },
+  { value: 'MOVING',      label: 'Moving',      icon: 'truck-delivery' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'brush' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water-pump' },
   { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
-  { value: 'PLUMBING', label: 'Plumbing', icon: 'water' },
-  { value: 'CARPENTRY', label: 'Carpentry', icon: 'hammer' },
-  { value: 'PAINTING', label: 'Painting', icon: 'format-paint' },
-  { value: 'MOVING', label: 'Moving', icon: 'truck' },
-  { value: 'GENERAL', label: 'General', icon: 'wrench' },
+  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'tree-outline' },
+  { value: 'CLEANING',    label: 'Cleaning',    icon: 'broom' },
 ];
 
 const PRICE_OPTIONS: { value: PriceRange; label: string }[] = [

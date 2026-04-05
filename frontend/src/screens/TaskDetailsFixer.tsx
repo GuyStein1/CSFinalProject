@@ -12,7 +12,6 @@ import {
 import {
   Avatar,
   Divider,
-  Icon,
   Portal,
   Modal,
   Text,
@@ -24,7 +23,7 @@ import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
-import { FButton, FCard, FInput } from '../components/ui';
+import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -58,13 +57,16 @@ interface ExistingBid {
 }
 
 const CATEGORY_META: Record<string, { icon: string; label: string; color: string }> = {
-  ELECTRICITY: { icon: 'lightning-bolt', label: 'Electricity', color: '#F0B429' },
-  PLUMBING:    { icon: 'water',          label: 'Plumbing',    color: '#4A90D9' },
-  CARPENTRY:   { icon: 'hammer',         label: 'Carpentry',   color: '#A07553' },
-  PAINTING:    { icon: 'format-paint',   label: 'Painting',    color: '#8B6DAF' },
-  MOVING:      { icon: 'truck',          label: 'Moving',      color: '#4CAF7D' },
-  GENERAL:     { icon: 'wrench',         label: 'General',     color: '#7A8B96' },
+  ASSEMBLY:    { icon: 'hammer-screwdriver', label: 'Assembly',    color: '#7B61FF' },
+  MOUNTING:    { icon: 'television',         label: 'Mounting',    color: '#0D7C6E' },
+  MOVING:      { icon: 'truck-delivery',     label: 'Moving',      color: '#1E8449' },
+  PAINTING:    { icon: 'brush',              label: 'Painting',    color: '#C0392B' },
+  PLUMBING:    { icon: 'water-pump',         label: 'Plumbing',    color: '#2E86C1' },
+  ELECTRICITY: { icon: 'lightning-bolt',     label: 'Electricity', color: '#D4900A' },
+  OUTDOORS:    { icon: 'tree-outline',       label: 'Outdoors',    color: '#27AE60' },
+  CLEANING:    { icon: 'broom',             label: 'Cleaning',    color: '#8E44AD' },
 };
+const DEFAULT_CAT_META = { icon: 'wrench', label: 'Other', color: '#7A8B96' };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CAROUSEL_HEIGHT = 260;
@@ -187,7 +189,7 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
 
   const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'Quote Required';
   const hasPhotos = task.media_urls && task.media_urls.length > 0;
-  const catMeta = CATEGORY_META[task.category] ?? CATEGORY_META.GENERAL;
+  const catMeta = CATEGORY_META[task.category] ?? DEFAULT_CAT_META;
 
   return (
     <View style={styles.container}>

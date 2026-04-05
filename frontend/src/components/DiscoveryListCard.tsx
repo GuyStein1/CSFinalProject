@@ -6,12 +6,14 @@ import type { DiscoveryTask } from '../hooks/useTasks';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 const CATEGORY_META: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-  ELECTRICITY: { icon: 'lightning-bolt', label: 'Electricity', color: '#F0B429', bg: '#FEF3D7' },
-  PLUMBING:    { icon: 'water',          label: 'Plumbing',    color: '#4A90D9', bg: '#DDE7EE' },
-  CARPENTRY:   { icon: 'hammer',         label: 'Carpentry',   color: '#A07553', bg: '#EDE0D0' },
-  PAINTING:    { icon: 'format-paint',   label: 'Painting',    color: '#8B6DAF', bg: '#EAE0F0' },
-  MOVING:      { icon: 'truck',          label: 'Moving',      color: '#4CAF7D', bg: '#D5EBD8' },
-  GENERAL:     { icon: 'wrench',         label: 'General',     color: '#7A8B96', bg: brandColors.surfaceAlt },
+  ASSEMBLY:    { icon: 'hammer-screwdriver', label: 'Assembly',    color: '#7B61FF', bg: '#EFECFF' },
+  MOUNTING:    { icon: 'television',         label: 'Mounting',    color: '#0D7C6E', bg: '#E0F5F3' },
+  MOVING:      { icon: 'truck-delivery',     label: 'Moving',      color: '#1E8449', bg: '#E6F4EC' },
+  PAINTING:    { icon: 'brush',              label: 'Painting',    color: '#C0392B', bg: '#FCECEA' },
+  PLUMBING:    { icon: 'water-pump',         label: 'Plumbing',    color: '#2E86C1', bg: '#E4F2FB' },
+  ELECTRICITY: { icon: 'lightning-bolt',     label: 'Electricity', color: '#D4900A', bg: '#FEF3D7' },
+  OUTDOORS:    { icon: 'tree-outline',       label: 'Outdoors',    color: '#27AE60', bg: '#E8F8EF' },
+  CLEANING:    { icon: 'broom',             label: 'Cleaning',    color: '#8E44AD', bg: '#F4ECF7' },
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -38,7 +40,7 @@ interface DiscoveryListCardProps {
 
 export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardProps) {
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
-  const catMeta = CATEGORY_META[task.category] ?? CATEGORY_META.GENERAL;
+  const catMeta = CATEGORY_META[task.category] ?? { icon: 'wrench', label: 'Other', color: '#7A8B96', bg: '#E9E2D5' };
 
   return (
     <Pressable

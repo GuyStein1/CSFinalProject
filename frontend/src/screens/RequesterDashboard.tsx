@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   Pressable,
   Image,
+  Platform,
+  useWindowDimensions,
+  ImageSourcePropType,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,7 +15,15 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
-type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+type Category =
+  | 'ASSEMBLY'
+  | 'MOUNTING'
+  | 'MOVING'
+  | 'PAINTING'
+  | 'PLUMBING'
+  | 'ELECTRICITY'
+  | 'OUTDOORS'
+  | 'CLEANING';
 
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
@@ -22,63 +33,190 @@ interface CategoryInfo {
   value: Category;
   label: string;
   icon: string;
+  image: ImageSourcePropType;
   description: string;
-  examples: string[];
+  jobs: string[];
+  color: string;
+  softColor: string;
 }
 
 const CATEGORIES: CategoryInfo[] = [
   {
-    value: 'ELECTRICITY',
-    label: 'Electricity',
-    icon: 'lightning-bolt',
-    description: 'Wiring, lighting, outlets & electrical repairs',
-    examples: ['Fix a light fixture', 'Install an outlet', 'Replace a breaker'],
+    value: 'ASSEMBLY',
+    label: 'Assembly',
+    icon: 'hammer-screwdriver',
+    image: require('../../assets/Assembly.jpg'),
+    description: 'Professional assembly of furniture, flat-packs, and home equipment.',
+    jobs: [
+      'Assemble IKEA furniture',
+      'Build a wardrobe',
+      'Set up a desk & chair',
+      'Assemble a bed frame',
+      'Put together shelving units',
+      'Build a TV stand or sideboard',
+    ],
+    color: '#7B61FF',
+    softColor: '#EFECFF',
   },
   {
-    value: 'PLUMBING',
-    label: 'Plumbing',
-    icon: 'water',
-    description: 'Leaks, pipes, faucets & water installations',
-    examples: ['Fix a leaking pipe', 'Unclog a drain', 'Install a faucet'],
-  },
-  {
-    value: 'CARPENTRY',
-    label: 'Carpentry',
-    icon: 'hammer',
-    description: 'Furniture, shelves, doors & woodwork',
-    examples: ['Assemble furniture', 'Hang shelves', 'Fix a door'],
-  },
-  {
-    value: 'PAINTING',
-    label: 'Painting',
-    icon: 'format-paint',
-    description: 'Interior & exterior walls, touch-ups, full rooms',
-    examples: ['Paint a room', 'Touch up walls', 'Paint exterior trim'],
+    value: 'MOUNTING',
+    label: 'Mounting',
+    icon: 'television',
+    image: require('../../assets/Mounting.jpg'),
+    description: 'Secure mounting of TVs, shelves, mirrors, curtain rods, and more.',
+    jobs: [
+      'Mount a TV on the wall',
+      'Hang wall shelves',
+      'Install curtain rods',
+      'Hang a mirror or artwork',
+      'Mount a whiteboard or corkboard',
+      'Install floating wall cabinets',
+    ],
+    color: '#0D7C6E',
+    softColor: '#E0F5F3',
   },
   {
     value: 'MOVING',
     label: 'Moving',
-    icon: 'truck',
-    description: 'Help moving furniture, packing & heavy lifting',
-    examples: ['Move furniture', 'Pack boxes', 'Load / unload a truck'],
+    icon: 'truck-delivery',
+    image: require('../../assets/Moving.jpg'),
+    description: 'Help with moving furniture, packing, and heavy lifting.',
+    jobs: [
+      'Move furniture within home',
+      'Help with apartment move',
+      'Pack and label boxes',
+      'Load / unload a truck',
+      'Carry heavy items upstairs',
+      'Disassemble & reassemble furniture for moving',
+    ],
+    color: '#1E8449',
+    softColor: '#E6F4EC',
   },
   {
-    value: 'GENERAL',
-    label: 'General',
-    icon: 'wrench',
-    description: "Handyman tasks that don't fit other categories",
-    examples: ['Mount a TV', 'Hang pictures', 'General repairs'],
+    value: 'PAINTING',
+    label: 'Painting',
+    icon: 'brush',
+    image: require('../../assets/Painting.jpg'),
+    description: 'Interior and exterior painting — from single rooms to full homes.',
+    jobs: [
+      'Paint a room',
+      'Touch up walls and ceilings',
+      'Paint exterior trim',
+      'Repaint kitchen cabinets',
+      'Apply wallpaper',
+      'Stain or varnish wood surfaces',
+    ],
+    color: '#C0392B',
+    softColor: '#FCECEA',
+  },
+  {
+    value: 'PLUMBING',
+    label: 'Plumbing',
+    icon: 'water-pump',
+    image: require('../../assets/Plumbing.jpg'),
+    description: 'Leaks, blocked drains, faucet replacements, and water installations.',
+    jobs: [
+      'Fix a leaking pipe',
+      'Unclog a drain',
+      'Replace a faucet or tap',
+      'Install a new shower head',
+      'Fix a running toilet',
+      'Connect a washing machine',
+    ],
+    color: '#2E86C1',
+    softColor: '#E4F2FB',
+  },
+  {
+    value: 'ELECTRICITY',
+    label: 'Electricity',
+    icon: 'lightning-bolt',
+    image: require('../../assets/Electricity.jpg'),
+    description: 'Electrical repairs, lighting installations, and outlet work.',
+    jobs: [
+      'Fix or replace a light fixture',
+      'Install a new power outlet',
+      'Replace a circuit breaker',
+      'Set up smart home lighting',
+      'Install a ceiling fan',
+      'Rewire a light switch',
+    ],
+    color: '#D4900A',
+    softColor: '#FEF3D7',
+  },
+  {
+    value: 'OUTDOORS',
+    label: 'Outdoors',
+    icon: 'tree-outline',
+    image: require('../../assets/Outdoors.jpg'),
+    description: 'Garden care, lawn work, pressure washing, and outdoor maintenance.',
+    jobs: [
+      'Mow and edge the lawn',
+      'Trim hedges and bushes',
+      'Pressure wash patio or driveway',
+      'Plant flowers or build garden beds',
+      'Clear leaves and garden waste',
+      'Assemble or repair garden furniture',
+    ],
+    color: '#27AE60',
+    softColor: '#E8F8EF',
+  },
+  {
+    value: 'CLEANING',
+    label: 'Cleaning',
+    icon: 'broom',
+    image: require('../../assets/Cleaning.jpg'),
+    description: 'Professional home cleaning, deep cleans, and post-renovation tidy-ups.',
+    jobs: [
+      'Full apartment clean',
+      'Deep clean kitchen and bathrooms',
+      'Post-renovation cleanup',
+      'Spring cleaning & decluttering',
+      'Carpet and upholstery cleaning',
+      'Window cleaning inside & out',
+    ],
+    color: '#8E44AD',
+    softColor: '#F4ECF7',
   },
 ];
 
+// Injects Poppins from Google Fonts on web (once, no extra package needed)
+function useDisplayFont() {
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      if (document.getElementById('fixit-poppins')) return;
+      const link = document.createElement('link');
+      link.id = 'fixit-poppins';
+      link.rel = 'stylesheet';
+      link.href =
+        'https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  return Platform.OS === 'web' ? 'Poppins' : undefined;
+}
+
 export default function RequesterDashboard({ navigation }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const { width } = useWindowDimensions();
+  const displayFont = useDisplayFont();
+
+  const isDesktop = width >= 768;
+  const heroPaddingH = isDesktop ? 80 : spacing.xxl;
+
+  const selected = CATEGORIES.find((c) => c.value === selectedCategory) ?? null;
 
   const handleCategoryPress = (value: Category) => {
     setSelectedCategory((prev) => (prev === value ? null : value));
   };
 
-  const selected = CATEGORIES.find((c) => c.value === selectedCategory) ?? null;
+  const CARD_WIDTH = isDesktop ? 190 : 150;
+  const CARD_HEIGHT = isDesktop ? 240 : 200;
+
+  // On desktop keep headline on one line; let mobile wrap naturally
+  const headlineText = isDesktop
+    ? "Let's Fix Your Problems"
+    : "Let's Fix Your Problems";
 
   return (
     <ScrollView
@@ -88,90 +226,229 @@ export default function RequesterDashboard({ navigation }: Props) {
     >
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <LinearGradient
-        colors={[brandColors.primaryDark, brandColors.primary, brandColors.primaryLight]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
+        colors={['#050D18', '#0C1E33', '#132D4A', '#1A3D63']}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={[styles.hero, isDesktop && styles.heroDesktop]}
       >
+        {/* Decorative glow orbs */}
+        <View style={[styles.orb, styles.orbTopLeft]} />
+        <View style={[styles.orb, styles.orbBottomRight]} />
+
+        {/* Logo watermark — white-tinted, blended into gradient */}
         <Image
-          source={require('../../assets/fixit-logo.png')}
-          style={styles.heroWatermark}
+          source={require('../../assets/logo-without-text.png')}
+          style={[
+            styles.heroLogoDecor,
+            // CSS filter turns all pixels white on web; tintColor does it on native
+            Platform.OS === 'web'
+              ? ({ filter: 'brightness(0) invert(1)', opacity: 0.1 } as object)
+              : { tintColor: '#ffffff', opacity: 0.1 },
+          ]}
           resizeMode="contain"
         />
-        <Text style={[typography.eyebrow, styles.heroEyebrow]}>Ready to get things done?</Text>
-        <Text style={[typography.hero, styles.heroHeadline]}>{"What needs\nfixing today?"}</Text>
-        <Pressable
-          style={({ pressed }) => [styles.heroCta, { transform: [{ scale: pressed ? 0.96 : 1 }] }]}
-          onPress={() => navigation.navigate('CreateTask')}
-        >
-          <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
-          <Text style={[typography.button, { color: brandColors.textPrimary }]}>Post a Task</Text>
-        </Pressable>
+
+        {/* Content */}
+        <View style={[styles.heroContent, isDesktop && styles.heroContentDesktop]}>
+          {/* Eyebrow badge */}
+          <View style={styles.eyebrowBadge}>
+            <MaterialCommunityIcons
+              name="shield-check-outline"
+              size={13}
+              color={brandColors.secondary}
+            />
+            <Text style={styles.eyebrowText}>YOUR TRUSTED LOCAL FIXERS</Text>
+          </View>
+
+          {/* Main headline */}
+          <Text
+            style={[
+              styles.headline,
+              isDesktop && styles.headlineDesktop,
+              displayFont ? { fontFamily: displayFont } : null,
+            ]}
+          >
+            {headlineText}
+          </Text>
+
+          {/* Subtitle */}
+          <Text style={[styles.heroSubtitle, isDesktop && styles.heroSubtitleDesktop]}>
+            What do you need help with?
+          </Text>
+
+          {/* CTA */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.heroCta,
+              isDesktop && styles.heroCtaDesktop,
+              { transform: [{ scale: pressed ? 0.96 : 1 }] },
+            ]}
+            onPress={() => navigation.navigate('CreateTask')}
+          >
+            <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
+            <Text style={[typography.button, { color: brandColors.textPrimary }]}>
+              Post a Task
+            </Text>
+          </Pressable>
+        </View>
       </LinearGradient>
 
-      {/* ── Categories ───────────────────────────────────────────── */}
+      {/* ── Category Carousel ────────────────────────────────────── */}
       <View style={styles.section}>
-        <Text style={[typography.h3, styles.sectionTitle]}>Browse by category</Text>
-        <View style={styles.categoryGrid}>
+        <Text
+          style={[
+            typography.h3,
+            styles.sectionTitle,
+            { paddingHorizontal: heroPaddingH },
+          ]}
+        >
+          Browse by category
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.carouselContent,
+            { paddingHorizontal: heroPaddingH },
+          ]}
+          decelerationRate="fast"
+        >
           {CATEGORIES.map((cat) => {
             const isActive = selectedCategory === cat.value;
             return (
               <Pressable
                 key={cat.value}
                 style={({ pressed }) => [
-                  styles.categoryTile,
-                  isActive && styles.categoryTileActive,
-                  { opacity: pressed ? 0.8 : 1 },
+                  styles.carouselCard,
+                  {
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT,
+                    borderColor: isActive ? cat.color : 'transparent',
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  },
                 ]}
                 onPress={() => handleCategoryPress(cat.value)}
               >
-                <MaterialCommunityIcons
-                  name={cat.icon as never}
-                  size={24}
-                  color={isActive ? brandColors.secondary : brandColors.primary}
+                <Image
+                  source={cat.image}
+                  style={styles.carouselImage}
+                  resizeMode="cover"
                 />
-                <Text style={[
-                  typography.caption,
-                  styles.categoryLabel,
-                  isActive && styles.categoryLabelActive,
-                ]}>
-                  {cat.label}
-                </Text>
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.72)']}
+                  style={styles.carouselOverlay}
+                >
+                  <View
+                    style={[
+                      styles.carouselIconBadge,
+                      { backgroundColor: cat.color },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={cat.icon as never}
+                      size={14}
+                      color="#fff"
+                    />
+                  </View>
+                  <Text style={styles.carouselLabel}>{cat.label}</Text>
+                </LinearGradient>
+
+                {isActive && (
+                  <View
+                    style={[styles.activeRing, { borderColor: cat.color }]}
+                  />
+                )}
               </Pressable>
             );
           })}
-        </View>
-
-        {/* ── Category info panel ─────────────────────────────────── */}
-        {selected && (
-          <View style={styles.infoPanel}>
-            <View style={styles.infoPanelHeader}>
-              <View style={styles.infoPanelIcon}>
-                <MaterialCommunityIcons name={selected.icon as never} size={20} color={brandColors.primary} />
-              </View>
-              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{selected.label}</Text>
-            </View>
-            <Text style={[typography.body, styles.infoDescription]}>{selected.description}</Text>
-            <View style={styles.exampleChips}>
-              {selected.examples.map((ex) => (
-                <View key={ex} style={styles.chip}>
-                  <Text style={[typography.caption, styles.chipText]}>{ex}</Text>
-                </View>
-              ))}
-            </View>
-            <FButton
-              onPress={() => navigation.navigate('CreateTask', { category: selected.value })}
-              variant="primary"
-              size="md"
-              icon="arrow-right"
-              iconRight
-              fullWidth
-            >
-              {`Post a ${selected.label} Task`}
-            </FButton>
-          </View>
-        )}
+        </ScrollView>
       </View>
+
+      {/* ── Category info panel ──────────────────────────────────── */}
+      {selected && (
+        <View
+          style={[
+            styles.infoPanel,
+            {
+              marginHorizontal: heroPaddingH,
+              borderColor: selected.softColor,
+            },
+          ]}
+        >
+          <View style={styles.infoPanelHeader}>
+            <View
+              style={[
+                styles.infoPanelIconWrap,
+                { backgroundColor: selected.softColor },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={selected.icon as never}
+                size={22}
+                color={selected.color}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[typography.h3, { color: brandColors.textPrimary }]}
+              >
+                {selected.label}
+              </Text>
+              <Text
+                style={[typography.bodySm, { color: brandColors.textMuted }]}
+              >
+                {selected.description}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[typography.label, styles.jobsLabel]}>Popular jobs</Text>
+          <View style={styles.jobChips}>
+            {selected.jobs.map((job) => (
+              <Pressable
+                key={job}
+                style={[
+                  styles.jobChip,
+                  { borderColor: selected.softColor },
+                ]}
+                onPress={() =>
+                  navigation.navigate('CreateTask', {
+                    category: selected.value,
+                    title: job,
+                  })
+                }
+              >
+                <MaterialCommunityIcons
+                  name={selected.icon as never}
+                  size={13}
+                  color={selected.color}
+                />
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: brandColors.textPrimary },
+                  ]}
+                >
+                  {job}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <FButton
+            onPress={() =>
+              navigation.navigate('CreateTask', { category: selected.value })
+            }
+            variant="primary"
+            size="md"
+            iconRight="arrow-right"
+            fullWidth
+          >
+            {`Post a ${selected.label} Task`}
+          </FButton>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -182,39 +459,119 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
   scroll: {
-    paddingBottom: spacing.huge,
+    paddingBottom: 64,
   },
 
-  // hero
+  // ── Hero ───────────────────────────────────────────────────────
   hero: {
+    paddingTop: spacing.xxxl + 8,
+    paddingBottom: spacing.xxxl,
     paddingHorizontal: spacing.xxl,
-    paddingTop: spacing.xxxl,
-    paddingBottom: spacing.xxl + 4,
-    borderBottomLeftRadius: radii.xxl,
-    borderBottomRightRadius: radii.xxl,
+    borderBottomLeftRadius: radii.xxxl,
+    borderBottomRightRadius: radii.xxxl,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
-  heroWatermark: {
+  heroDesktop: {
+    paddingTop: 72,
+    paddingBottom: 72,
+    paddingHorizontal: 80,
+  },
+
+  // Decorative orbs (blurred circles for depth)
+  orb: {
     position: 'absolute',
+    borderRadius: 999,
+  },
+  orbTopLeft: {
+    width: 260,
+    height: 260,
+    top: -100,
+    left: -80,
+    backgroundColor: 'rgba(42, 100, 160, 0.35)',
+  },
+  orbBottomRight: {
     width: 200,
     height: 200,
-    right: -20,
-    bottom: -24,
-    opacity: 0.07,
+    bottom: -80,
+    right: -60,
+    backgroundColor: 'rgba(26, 61, 99, 0.5)',
   },
-  heroEyebrow: {
-    color: brandColors.textOnDarkMuted,
-    marginBottom: spacing.sm,
+
+  // Logo watermark
+  heroLogoDecor: {
+    position: 'absolute',
+    right: 24,
+    top: '50%' as unknown as number,
+    marginTop: -90,
+    width: 180,
+    height: 180,
   },
-  heroHeadline: {
-    color: brandColors.textOnDark,
-    marginBottom: spacing.xxl,
+
+  // Content block
+  heroContent: {
+    alignItems: 'flex-start',
   },
+  heroContentDesktop: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    maxWidth: 680,
+    width: '100%',
+  },
+
+  // Eyebrow pill badge
+  eyebrowBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(241, 181, 69, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(241, 181, 69, 0.35)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radii.pill,
+    marginBottom: spacing.lg,
+  },
+  eyebrowText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    color: brandColors.secondary,
+    textTransform: 'uppercase' as const,
+  },
+
+  // Headline
+  headline: {
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 42,
+    letterSpacing: -1,
+    color: '#FFFFFF',
+    marginBottom: spacing.md,
+  },
+  headlineDesktop: {
+    fontSize: 54,
+    lineHeight: 64,
+    letterSpacing: -2,
+    textAlign: 'center',
+  },
+
+  heroSubtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: spacing.xxl + 4,
+    lineHeight: 22,
+  },
+  heroSubtitleDesktop: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: spacing.xxxl,
+  },
+
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     backgroundColor: brandColors.secondary,
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.md + 2,
@@ -222,89 +579,106 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     ...shadows.md,
   },
+  heroCtaDesktop: {
+    paddingHorizontal: 36,
+    paddingVertical: 14,
+  },
 
-  // categories
+  // ── Carousel ───────────────────────────────────────────────────
   section: {
-    paddingHorizontal: spacing.lg,
     marginTop: spacing.xxl,
   },
   sectionTitle: {
     color: brandColors.textPrimary,
     marginBottom: spacing.lg,
   },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  carouselContent: {
     gap: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  categoryTile: {
-    width: '30%',
-    flexGrow: 1,
-    minWidth: 95,
-    maxWidth: '32%',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.lg,
+  carouselCard: {
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    borderWidth: 3,
+    ...shadows.md,
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  carouselOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.outline,
+    gap: spacing.xs + 2,
   },
-  categoryTileActive: {
-    borderColor: brandColors.secondary,
-    backgroundColor: brandColors.warningSoft,
+  carouselIconBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryLabel: {
-    color: brandColors.textMuted,
-    textAlign: 'center',
-  },
-  categoryLabelActive: {
-    color: brandColors.textPrimary,
+  carouselLabel: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 0.2,
+    flexShrink: 1,
+  },
+  activeRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radii.xl,
+    borderWidth: 3,
   },
 
-  // info panel
+  // ── Info panel ─────────────────────────────────────────────────
   infoPanel: {
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     padding: spacing.xl,
     borderRadius: radii.xl,
     backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
+    borderWidth: 1.5,
     gap: spacing.md,
     ...shadows.md,
   },
   infoPanelHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
   },
-  infoPanelIcon: {
-    width: 36,
-    height: 36,
+  infoPanelIconWrap: {
+    width: 44,
+    height: 44,
     borderRadius: radii.md,
-    backgroundColor: brandColors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  infoDescription: {
+  jobsLabel: {
     color: brandColors.textMuted,
+    marginTop: spacing.xs,
   },
-  exampleChips: {
+  jobChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  chip: {
+  jobChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: brandColors.outline,
     backgroundColor: brandColors.background,
-  },
-  chipText: {
-    color: brandColors.textPrimary,
   },
 });

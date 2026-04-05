@@ -18,10 +18,12 @@ export interface DiscoveryMapProps {
 }
 
 export const CATEGORY_MARKER_COLORS: Record<DiscoveryTask['category'], string> = {
-  ELECTRICITY: '#D28F1B',
-  PLUMBING: '#496B84',
-  CARPENTRY: '#7B5D3D',
-  PAINTING: '#A85B5B',
-  MOVING: '#517A58',
-  GENERAL: '#1C3C56',
+  ASSEMBLY:    '#7B61FF',
+  MOUNTING:    '#0D7C6E',
+  MOVING:      '#1E8449',
+  PAINTING:    '#C0392B',
+  PLUMBING:    '#2E86C1',
+  ELECTRICITY: '#D4900A',
+  OUTDOORS:    '#27AE60',
+  CLEANING:    '#8E44AD',
 };

@@ -9,7 +9,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { FSectionHeader } from '../components/ui';
 import { brandColors, spacing, shadows } from '../theme';
 
-type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
 
 interface Task {
   id: string;

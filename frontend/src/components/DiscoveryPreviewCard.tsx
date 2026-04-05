@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { FButton } from './ui';
@@ -7,12 +7,14 @@ import type { DiscoveryTask } from '../hooks/useTasks';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 const CATEGORY_META: Record<string, { label: string; color: string }> = {
-  ELECTRICITY: { label: 'Electricity', color: '#F0B429' },
-  PLUMBING:    { label: 'Plumbing',    color: '#4A90D9' },
-  CARPENTRY:   { label: 'Carpentry',   color: '#A07553' },
-  PAINTING:    { label: 'Painting',    color: '#8B6DAF' },
-  MOVING:      { label: 'Moving',      color: '#4CAF7D' },
-  GENERAL:     { label: 'General',     color: '#7A8B96' },
+  ASSEMBLY:    { label: 'Assembly',    color: '#7B61FF' },
+  MOUNTING:    { label: 'Mounting',    color: '#0D7C6E' },
+  MOVING:      { label: 'Moving',      color: '#1E8449' },
+  PAINTING:    { label: 'Painting',    color: '#C0392B' },
+  PLUMBING:    { label: 'Plumbing',    color: '#2E86C1' },
+  ELECTRICITY: { label: 'Electricity', color: '#D4900A' },
+  OUTDOORS:    { label: 'Outdoors',    color: '#27AE60' },
+  CLEANING:    { label: 'Cleaning',    color: '#8E44AD' },
 };
 
 interface DiscoveryPreviewCardProps {
@@ -25,7 +27,7 @@ export default function DiscoveryPreviewCard({
   onViewDetails,
 }: DiscoveryPreviewCardProps) {
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
-  const catMeta = CATEGORY_META[task.category] ?? CATEGORY_META.GENERAL;
+  const catMeta = CATEGORY_META[task.category] ?? { label: 'Other', color: '#7A8B96' };
 
   return (
     <View style={[styles.card, shadows.lg]}>

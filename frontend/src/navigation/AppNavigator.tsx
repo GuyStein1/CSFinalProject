@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
@@ -9,6 +9,7 @@ import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Text } from 'react-native-paper';
 import RequesterTabs from './RequesterTabs';
 import FixerTabs from './FixerTabs';
 import CreateTask from '../screens/CreateTask';
@@ -21,10 +22,86 @@ import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type Mode = 'requester' | 'fixer';
 
+const DESKTOP_BREAKPOINT = 768;
+
 const Stack = createNativeStackNavigator();
 const ModeTabs = createBottomTabNavigator();
 
-function MainHeader({ navigation, route }: BottomTabHeaderProps) {
+// ─── Desktop header (wide screens / web) ─────────────────────────────────────
+function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+
+  const handleModeChange = (value: Mode) => {
+    const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
+    if (route.name !== nextRoute) navigation.navigate(nextRoute);
+  };
+
+  return (
+    <View
+      style={[
+        styles.desktopBar,
+        { paddingTop: insets.top > 0 ? insets.top : spacing.md },
+      ]}
+    >
+      {/* Logo */}
+      <AppLogo compact />
+
+      {/* Spacer */}
+      <View style={{ flex: 1 }} />
+
+      {/* Mode toggle */}
+      <View style={styles.modeToggleWrap}>
+        <Pressable
+          style={[styles.modeToggleBtn, mode === 'requester' && styles.modeToggleBtnActive]}
+          onPress={() => handleModeChange('requester')}
+        >
+          <MaterialCommunityIcons
+            name="home-outline"
+            size={16}
+            color={mode === 'requester' ? brandColors.textOnDark : brandColors.primaryMuted}
+          />
+          <Text
+            style={[
+              typography.label,
+              styles.modeToggleLabel,
+              mode === 'requester' && styles.modeToggleLabelActive,
+            ]}
+          >
+            Requester
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.modeToggleBtn, mode === 'fixer' && styles.modeToggleBtnActive]}
+          onPress={() => handleModeChange('fixer')}
+        >
+          <MaterialCommunityIcons
+            name="wrench-outline"
+            size={16}
+            color={mode === 'fixer' ? brandColors.textOnDark : brandColors.primaryMuted}
+          />
+          <Text
+            style={[
+              typography.label,
+              styles.modeToggleLabel,
+              mode === 'fixer' && styles.modeToggleLabelActive,
+            ]}
+          >
+            Fixer
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Bell */}
+      <Pressable style={styles.desktopIconBtn} hitSlop={8}>
+        <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.primary} />
+      </Pressable>
+    </View>
+  );
+}
+
+// ─── Mobile header (narrow screens / native) ──────────────────────────────────
+function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
@@ -37,7 +114,7 @@ function MainHeader({ navigation, route }: BottomTabHeaderProps) {
   return (
     <>
       <LinearGradient
-        colors={[brandColors.primaryDark, brandColors.primary]}
+        colors={['#050D18', '#0C1E33']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}
@@ -67,6 +144,13 @@ function MainHeader({ navigation, route }: BottomTabHeaderProps) {
       />
     </>
   );
+}
+
+// ─── Responsive header dispatcher ─────────────────────────────────────────────
+function MainHeader(props: BottomTabHeaderProps) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= DESKTOP_BREAKPOINT && Platform.OS === 'web';
+  return isDesktop ? <DesktopHeader {...props} /> : <MobileHeader {...props} />;
 }
 
 function MainNavigator() {
@@ -110,15 +194,13 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  // ── Mobile header ────────────────────────────────────────────
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-    borderBottomLeftRadius: radii.xxl,
-    borderBottomRightRadius: radii.xxl,
-    ...shadows.lg,
   },
   logoCenter: {
     position: 'absolute',
@@ -136,5 +218,53 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,252,246,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // ── Desktop header ────────────────────────────────────────────
+  desktopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.huge,
+    paddingBottom: spacing.md,
+    backgroundColor: brandColors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: brandColors.outlineLight,
+    ...shadows.sm,
+  },
+  desktopIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
+
+  // Mode toggle (desktop)
+  modeToggleWrap: {
+    flexDirection: 'row',
+    backgroundColor: brandColors.surfaceAlt,
+    borderRadius: radii.pill,
+    padding: 3,
+    gap: 2,
+    marginRight: spacing.md,
+  },
+  modeToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  modeToggleBtnActive: {
+    backgroundColor: brandColors.primary,
+    ...shadows.sm,
+  },
+  modeToggleLabel: {
+    color: brandColors.textMuted,
+  },
+  modeToggleLabelActive: {
+    color: brandColors.textOnDark,
   },
 });
