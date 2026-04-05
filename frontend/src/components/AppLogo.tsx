@@ -10,14 +10,17 @@ interface AppLogoProps {
   compact?: boolean;
   onDark?: boolean;
   showTagline?: boolean;
+  /** Renders only the icon shell — no wordmark or tagline */
+  iconOnly?: boolean;
 }
 
 export default function AppLogo({
   compact = false,
   onDark = false,
   showTagline = !compact,
+  iconOnly = false,
 }: AppLogoProps) {
-  if (!compact) {
+  if (!compact && !iconOnly) {
     return (
       <Image
         source={require('../../assets/fixit-logo.png')}
@@ -30,22 +33,27 @@ export default function AppLogo({
   const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
   const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
 
+  const iconShell = (
+    <View
+      style={[
+        styles.markShell,
+        onDark ? styles.markShellDark : styles.markShellLight,
+      ]}
+    >
+      <View style={styles.accent} />
+      <MaterialCommunityIcons
+        name="hammer-wrench"
+        size={20}
+        color={wordmarkColor}
+      />
+    </View>
+  );
+
+  if (iconOnly) return iconShell;
+
   return (
     <View style={styles.row}>
-      <View
-        style={[
-          styles.markShell,
-          onDark ? styles.markShellDark : styles.markShellLight,
-        ]}
-      >
-        <View style={styles.accent} />
-        <MaterialCommunityIcons
-          name="hammer-wrench"
-          size={20}
-          color={wordmarkColor}
-        />
-      </View>
-
+      {iconShell}
       <View>
         <Text style={[styles.wordmark, { color: wordmarkColor }]}>FIXIT</Text>
         {showTagline && (

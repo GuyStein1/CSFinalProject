@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import RequesterDashboard from '../screens/RequesterDashboard';
+import MyTasksScreen from '../screens/MyTasksScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { brandColors, shadows, spacing } from '../theme';
@@ -45,6 +46,16 @@ export default function RequesterTabs() {
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'home' : 'home-outline'} color={color} size={size} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MyTasks"
+        component={MyTasksScreen}
+        options={{
+          tabBarLabel: 'My Tasks',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name={focused ? 'clipboard-list' : 'clipboard-list-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
