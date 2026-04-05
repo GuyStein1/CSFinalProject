@@ -305,6 +305,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
     const validTransitions: Partial<Record<TaskStatus, TaskStatus[]>> = {
       OPEN: ['CANCELED'],
       IN_PROGRESS: ['COMPLETED', 'CANCELED'],
+      CANCELED: ['OPEN'],
     };
 
     if (!validTransitions[task.status]?.includes(newStatus)) {
@@ -372,6 +373,11 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
           'Task',
         );
       }
+    } else if (task.status === 'CANCELED' && newStatus === 'OPEN') {
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { status: 'OPEN' },
+      });
     }
 
     const updated = await prisma.task.findUnique({ where: { id: task.id } });
