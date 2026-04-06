@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { FButton } from './ui';
-import { brandColors, spacing, radii, typography } from '../theme';
+import { brandColors, spacing, typography } from '../theme';
 
 interface EmptyStateProps {
   icon: string;

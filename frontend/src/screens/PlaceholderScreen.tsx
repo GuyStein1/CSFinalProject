@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import { FCard } from '../components/ui';
-import { brandColors, spacing, radii, typography } from '../theme';
+import { brandColors, spacing, typography } from '../theme';
 
 interface Props {
   title: string;

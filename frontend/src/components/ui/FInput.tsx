@@ -7,7 +7,7 @@ interface FInputProps extends Omit<TextInputProps, 'mode' | 'theme'> {
   containerStyle?: ViewStyle;
 }
 
-function FInputComponent({ containerStyle, style, ...props }: FInputProps) {
+function FInputComponent({ containerStyle: _containerStyle, style, ...props }: FInputProps) {
   return (
     <TextInput
       mode="outlined"

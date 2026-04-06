@@ -5,7 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, spacing, radii, typography } from '../theme';
 import type { AuthBootstrapStatus } from '../hooks/useAuthBootstrap';
 
 interface AuthScreenProps {
