@@ -84,17 +84,20 @@ const styles = StyleSheet.create({
   },
   // Tilted badge — amber border frames the mascot, overflow clips it to shape
   markBadge: {
-    width: 30,
-    height: 30,
+    width: 34,
+    height: 34,
     borderRadius: radii.xs,
     borderWidth: 2,
     borderColor: brandColors.secondary,
     overflow: 'hidden',
     backgroundColor: '#FFFCF6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  // Image smaller than the badge so the full mascot (hammer included) fits
   markImage: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
   },
   wordmark: {
     fontSize: 17,

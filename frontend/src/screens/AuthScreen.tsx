@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -19,10 +19,6 @@ interface AuthScreenProps {
   onRetry: () => Promise<void>;
   onLogOut: () => Promise<void>;
 }
-
-const MASCOT_TINT = Platform.OS === 'web'
-  ? ({ filter: 'brightness(0) invert(1)' } as object)
-  : { tintColor: '#FFFFFF' };
 
 export default function AuthScreen({
   status,
@@ -62,13 +58,6 @@ export default function AuthScreen({
       locations={[0, 0.2, 0.55, 1]}
       style={styles.gradient}
     >
-      {/* Mascot watermark — visible in the dark upper area */}
-      <Image
-        source={require('../../assets/logo-without-text.png')}
-        style={[styles.watermark, MASCOT_TINT]}
-        resizeMode="contain"
-      />
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.kavContainer}
@@ -195,14 +184,6 @@ export default function AuthScreen({
 const styles = StyleSheet.create({
   gradient: {
     flex: 1,
-  },
-  watermark: {
-    position: 'absolute',
-    top: -50,
-    right: -60,
-    width: 300,
-    height: 300,
-    opacity: 0.08,
   },
   kavContainer: {
     flex: 1,
