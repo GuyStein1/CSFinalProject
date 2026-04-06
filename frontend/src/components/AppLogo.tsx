@@ -1,6 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { brandColors, spacing, radii } from '../theme';
 
@@ -33,6 +32,11 @@ export default function AppLogo({
   const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
   const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
 
+  // Use the actual mascot image as the brand mark instead of a generic icon
+  const whiteTint = Platform.OS === 'web'
+    ? ({ filter: 'brightness(0) invert(1)' } as object)
+    : { tintColor: '#FFFFFF' };
+
   const iconShell = (
     <View
       style={[
@@ -40,11 +44,10 @@ export default function AppLogo({
         onDark ? styles.markShellDark : styles.markShellLight,
       ]}
     >
-      <View style={styles.accent} />
-      <MaterialCommunityIcons
-        name="hammer-wrench"
-        size={20}
-        color={wordmarkColor}
+      <Image
+        source={require('../../assets/logo-without-text.png')}
+        style={[styles.markImage, onDark && whiteTint]}
+        resizeMode="contain"
       />
     </View>
   );
@@ -91,14 +94,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 252, 246, 0.12)',
     borderColor: 'rgba(255, 252, 246, 0.16)',
   },
-  accent: {
-    position: 'absolute',
-    top: 4,
-    left: 5,
-    width: 10,
-    height: 7,
-    borderRadius: 10,
-    backgroundColor: brandColors.secondary,
+  markImage: {
+    width: 32,
+    height: 32,
   },
   wordmark: {
     fontSize: 17,
