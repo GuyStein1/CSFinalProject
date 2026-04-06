@@ -53,6 +53,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<DiscoveryMapRegion | null>(null);
@@ -114,6 +115,11 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     try {
       const permission = await Location.getForegroundPermissionsAsync();
       if (permission.status === 'granted') {
+        // If the user already chose a work area manually, respect it — don't snap back to GPS.
+        if (centerMode === 'manual') {
+          setPermissionState('ready');
+          return;
+        }
         await loadGpsCenter();
         return;
       }
@@ -121,17 +127,18 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         setPermissionState('rationale');
         return;
       }
-      if (center && centerMode === 'manual') {
+      // GPS denied — keep manual center if set, otherwise default to Tel Aviv
+      if (centerMode === 'manual') {
         setPermissionState('ready');
         return;
       }
-      // GPS denied — default to Tel Aviv and go straight to map
       syncCenter(DEFAULT_CENTER, 'manual');
     } catch {
-      // On error, still show the map with default center
-      syncCenter(DEFAULT_CENTER, 'manual');
+      if (centerMode !== 'manual') syncCenter(DEFAULT_CENTER, 'manual');
     }
-  }, [center, centerMode, loadGpsCenter, syncCenter]);
+  // Intentionally exclude `center` — including it causes useFocusEffect to re-run
+  // every time the center changes, which would snap the map back to GPS after a manual search.
+  }, [centerMode, loadGpsCenter, syncCenter]);
 
   useFocusEffect(
     useCallback(() => {
@@ -163,7 +170,45 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     syncCenter(DEFAULT_CENTER, 'manual');
   };
 
-  // --- Autocomplete ---
+  // --- Autocomplete & geocoding ---
+  // We use PlacesService.getDetails (placeId → lat/lng) instead of the REST Geocoding API.
+  // This works with just the Places library already loaded — no separate Geocoding API needed.
+
+  function getOrCreatePlacesService(): google.maps.places.PlacesService | null {
+    if (placesServiceRef.current) return placesServiceRef.current;
+    if (typeof google === 'undefined' || !google.maps?.places) return null;
+    // PlacesService needs a DOM node that is attached to the document body,
+    // otherwise getDetails silently fails in some browsers.
+    const div = document.createElement('div');
+    div.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;width:0;height:0;';
+    document.body.appendChild(div);
+    placesServiceRef.current = new google.maps.places.PlacesService(div);
+    return placesServiceRef.current;
+  }
+
+  const geocodeByPlaceId = useCallback((placeId: string, label: string) => {
+    const service = getOrCreatePlacesService();
+    if (!service) {
+      setSearchError('Maps not ready — please try again.');
+      return;
+    }
+    setSearchLoading(true);
+    setSearchError(null);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    service.getDetails(
+      { placeId, fields: ['geometry', 'formatted_address', 'name'] },
+      (place, status) => {
+        setSearchLoading(false);
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          const loc = place.geometry.location;
+          syncCenter({ lat: loc.lat(), lng: loc.lng(), label }, 'manual');
+        } else {
+          setSearchError('Could not resolve that place. Please try again.');
+        }
+      },
+    );
+  }, [syncCenter]);
 
   const fetchSuggestions = useCallback((text: string) => {
     if (Platform.OS !== 'web' || text.trim().length < 2) {
@@ -194,7 +239,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           },
         );
       } catch {
-        // Places library not loaded yet
+        // Places library not loaded yet — ignore
       }
     }, 300);
   }, []);
@@ -205,61 +250,40 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     fetchSuggestions(text);
   }, [fetchSuggestions]);
 
-  const geocodeAndCenter = useCallback(async (address: string) => {
+  // Select an autocomplete suggestion — geocode via placeId (reliable, no REST Geocoding API needed)
+  const handleSelectSuggestion = useCallback((placeId: string, description: string) => {
+    setSearchText(description);
+    geocodeByPlaceId(placeId, description);
+  }, [geocodeByPlaceId]);
+
+  // Submit raw text — first get the top prediction, then geocode its placeId
+  const handleSearchSubmit = useCallback(() => {
+    const query = searchText.trim();
+    if (!query) return;
+    setShowSuggestions(false);
+
+    if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
+      autocompleteRef.current = new google.maps.places.AutocompleteService();
+    }
+    const autoSvc = autocompleteRef.current;
+    if (!autoSvc) {
+      setSearchError('Maps not ready — please try again.');
+      return;
+    }
     setSearchLoading(true);
     setSearchError(null);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    try {
-      let lat: number | null = null;
-      let lng: number | null = null;
-
-      const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (key) {
-        try {
-          const res = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`,
-          );
-          const data = await res.json();
-          if (data.status === 'OK' && data.results.length > 0) {
-            lat = data.results[0].geometry.location.lat;
-            lng = data.results[0].geometry.location.lng;
-          }
-        } catch {
-          // Fall through to expo-location
+    autoSvc.getPlacePredictions(
+      { input: query, types: ['geocode'] },
+      (predictions, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && predictions?.[0]) {
+          geocodeByPlaceId(predictions[0].place_id, predictions[0].description);
+        } else {
+          setSearchLoading(false);
+          setSearchError('No results found for that area.');
         }
-      }
-
-      if (lat === null || lng === null) {
-        const results = await Location.geocodeAsync(address);
-        if (results.length > 0) {
-          lat = results[0].latitude;
-          lng = results[0].longitude;
-        }
-      }
-
-      if (lat === null || lng === null) {
-        setSearchError('Could not find that area.');
-        return;
-      }
-      syncCenter({ lat, lng, label: address }, 'manual');
-    } catch {
-      setSearchError('Failed to search. Please try again.');
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [syncCenter]);
-
-  const handleSelectSuggestion = useCallback((description: string) => {
-    setSearchText(description);
-    geocodeAndCenter(description);
-  }, [geocodeAndCenter]);
-
-  const handleSearchSubmit = useCallback(() => {
-    if (!searchText.trim()) return;
-    setShowSuggestions(false);
-    geocodeAndCenter(searchText.trim());
-  }, [searchText, geocodeAndCenter]);
+      },
+    );
+  }, [searchText, geocodeByPlaceId]);
 
   const handleViewDetails = () => {
     if (!selectedTask) return;
@@ -343,6 +367,82 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         onPriceChange={(min, max) => { setPriceMin(min); setPriceMax(max); }}
       />
 
+      {/* Work-area search strip — always visible, affects both map and list */}
+      <View style={styles.workAreaStrip}>
+        <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
+        <View style={styles.workAreaInputWrapper}>
+          <FInput
+            placeholder="Search a city or area to find work there…"
+            value={searchText}
+            onChangeText={handleSearchTextChange}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+            onSubmitEditing={handleSearchSubmit}
+            dense
+            style={styles.workAreaInput}
+            right={
+              searchText.length > 0 ? (
+                <FInput.Icon
+                  icon="close-circle"
+                  size={16}
+                  onPress={() => {
+                    setSearchText('');
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                    setSearchError(null);
+                  }}
+                />
+              ) : undefined
+            }
+          />
+          {showSuggestions && suggestions.length > 0 && searchFocused && (
+            <View style={styles.suggestionsContainer}>
+              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                {suggestions.map((s) => (
+                  <Pressable
+                    key={s.placeId}
+                    style={({ pressed }) => [
+                      styles.suggestionItem,
+                      pressed && { backgroundColor: brandColors.surfaceAlt },
+                    ]}
+                    onPress={() => handleSelectSuggestion(s.placeId, s.description)}
+                  >
+                    <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
+                    <Text style={[typography.bodySm, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                      {s.description}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+        {searchLoading ? (
+          <ActivityIndicator size="small" color={brandColors.primary} />
+        ) : (
+          <Pressable onPress={handleSearchSubmit} style={styles.searchGoBtn}>
+            <MaterialCommunityIcons name="arrow-right" size={18} color={brandColors.surface} />
+          </Pressable>
+        )}
+      </View>
+      {center && centerMode === 'manual' && !searchLoading && (
+        <View style={styles.workAreaActiveBar}>
+          <MaterialCommunityIcons name="map-marker-check" size={13} color={brandColors.success} />
+          <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]} numberOfLines={1}>
+            Showing tasks in: <Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
+          </Text>
+          <Pressable onPress={() => { setSearchText(''); loadGpsCenter(); }}>
+            <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>Use my location</Text>
+          </Pressable>
+        </View>
+      )}
+      {searchError && (
+        <View style={styles.searchErrorBar}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={13} color={brandColors.danger} />
+          <Text style={[typography.caption, { color: brandColors.danger }]}>{searchError}</Text>
+        </View>
+      )}
+
       {viewMode === 'map' ? (
         <View style={styles.mapWrapper}>
           {mapRegion && center && (
@@ -360,75 +460,6 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               onRegionChangeComplete={setMapRegion}
             />
           )}
-
-          {/* Search bar overlay */}
-          <View style={styles.searchOverlay}>
-            <View style={styles.searchBarContainer}>
-              <FInput
-                placeholder="Search city, street, or area..."
-                value={searchText}
-                onChangeText={handleSearchTextChange}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => {
-                  // Delay hiding so suggestion press can register
-                  setTimeout(() => setSearchFocused(false), 200);
-                }}
-                onSubmitEditing={handleSearchSubmit}
-                dense
-                style={styles.searchInput}
-                left={<FInput.Icon icon="magnify" size={20} />}
-                right={
-                  searchText.length > 0 ? (
-                    <FInput.Icon
-                      icon="close-circle"
-                      size={18}
-                      onPress={() => {
-                        setSearchText('');
-                        setSuggestions([]);
-                        setShowSuggestions(false);
-                        setSearchError(null);
-                      }}
-                    />
-                  ) : undefined
-                }
-              />
-              {searchLoading && (
-                <ActivityIndicator
-                  size="small"
-                  color={brandColors.primary}
-                  style={styles.searchSpinner}
-                />
-              )}
-            </View>
-
-            {showSuggestions && suggestions.length > 0 && searchFocused && (
-              <View style={styles.suggestionsContainer}>
-                <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-                  {suggestions.map((s) => (
-                    <Pressable
-                      key={s.placeId}
-                      style={({ pressed }) => [
-                        styles.suggestionItem,
-                        pressed && { backgroundColor: brandColors.surfaceAlt },
-                      ]}
-                      onPress={() => handleSelectSuggestion(s.description)}
-                    >
-                      <MaterialCommunityIcons name="map-marker-outline" size={16} color={brandColors.textMuted} />
-                      <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
-                        {s.description}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {searchError && (
-              <View style={styles.searchErrorBubble}>
-                <Text style={[typography.bodySm, { color: brandColors.danger }]}>{searchError}</Text>
-              </View>
-            )}
-          </View>
 
           {loading && (
             <View style={styles.loadingOverlay}>
@@ -557,55 +588,79 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
     width: '100%',
   },
-  mapWrapper: {
-    flex: 1,
-  },
-  searchOverlay: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.lg,
-    right: spacing.lg,
-    zIndex: 10,
-  },
-  searchBarContainer: {
+  workAreaStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: brandColors.surface,
-    fontSize: 14,
-  },
-  searchSpinner: {
-    position: 'absolute',
-    right: 48,
-  },
-  searchErrorBubble: {
-    marginTop: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.md,
+    paddingVertical: spacing.xs,
     backgroundColor: brandColors.surface,
-    ...shadows.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+    zIndex: 20,
+  },
+  workAreaInputWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  workAreaInput: {
+    backgroundColor: brandColors.surfaceAlt,
+    fontSize: 13,
+  },
+  workAreaActiveBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 1,
+    backgroundColor: brandColors.successSoft ?? brandColors.surfaceAlt,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+  },
+  searchErrorBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 1,
+    backgroundColor: brandColors.dangerSoft ?? '#fff0f0',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+  },
+  searchGoBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   suggestionsContainer: {
-    maxHeight: 220,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    backgroundColor: brandColors.surface,
     borderWidth: 1,
     borderColor: brandColors.outlineLight,
     borderTopWidth: 0,
     borderBottomLeftRadius: radii.md,
     borderBottomRightRadius: radii.md,
-    backgroundColor: brandColors.surface,
+    zIndex: 30,
     ...shadows.md,
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
+  },
+  mapWrapper: {
+    flex: 1,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
