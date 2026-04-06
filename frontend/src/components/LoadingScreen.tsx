@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { brandColors, spacing, typography } from '../theme';
@@ -7,10 +7,6 @@ import { brandColors, spacing, typography } from '../theme';
 interface LoadingScreenProps {
   label?: string;
 }
-
-const WHITE_TINT = Platform.OS === 'web'
-  ? ({ filter: 'brightness(0) invert(1)' } as object)
-  : { tintColor: '#FFFFFF' };
 
 function PulsingDot({ delay }: { delay: number }) {
   const opacity = useRef(new Animated.Value(0.25)).current;
@@ -54,7 +50,7 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
   useEffect(() => {
     Animated.timing(fadeIn, {
       toValue: 1,
-      duration: 600,
+      duration: 700,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
@@ -62,14 +58,14 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(scale, {
-          toValue: 1.08,
-          duration: 950,
+          toValue: 1.06,
+          duration: 1100,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(scale, {
           toValue: 1,
-          duration: 950,
+          duration: 1100,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -86,17 +82,23 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
       end={{ x: 0.85, y: 1 }}
       style={styles.container}
     >
-      {/* Decorative depth orbs */}
+      {/* Depth orbs */}
       <View style={[styles.orb, styles.orbTopLeft]} />
       <View style={[styles.orb, styles.orbBottomRight]} />
 
       <Animated.View style={[styles.inner, { opacity: fadeIn }]}>
-        {/* Pulsing mascot mark */}
-        <Animated.Image
-          source={require('../../assets/logo-without-text.png')}
-          style={[styles.mascot, WHITE_TINT, { transform: [{ scale }] }]}
-          resizeMode="contain"
-        />
+        {/*
+         * Circular "coin" — the logo's light background becomes the coin surface.
+         * No tinting needed; the white circle contains the logo naturally.
+         */}
+        <Animated.View style={[styles.coin, { transform: [{ scale }] }]}>
+          <View style={styles.coinRing} />
+          <Image
+            source={require('../../assets/fixit-logo.png')}
+            style={styles.coinLogo}
+            resizeMode="contain"
+          />
+        </Animated.View>
 
         {/* Staggered amber dots */}
         <View style={styles.dotsRow}>
@@ -105,7 +107,6 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
           <PulsingDot delay={380} />
         </View>
 
-        {/* Label */}
         <Text style={[typography.bodySm, styles.label]}>{label}</Text>
       </Animated.View>
     </LinearGradient>
@@ -140,9 +141,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xxl,
   },
-  mascot: {
-    width: 148,
-    height: 148,
+  // White circular "coin/medallion" that contains the logo
+  coin: {
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    backgroundColor: '#FFFCF6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Ring shadow for depth
+    shadowColor: brandColors.secondary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  // Amber ring accent around the coin
+  coinRing: {
+    position: 'absolute',
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    borderWidth: 3,
+    borderColor: brandColors.secondary,
+    opacity: 0.6,
+  },
+  coinLogo: {
+    width: 104,
+    height: 84,
   },
   dotsRow: {
     flexDirection: 'row',

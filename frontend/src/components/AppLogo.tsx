@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Platform, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { brandColors, spacing, radii } from '../theme';
 
@@ -32,23 +32,20 @@ export default function AppLogo({
   const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
   const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
 
-  // Use the actual mascot image as the brand mark instead of a generic icon
-  const whiteTint = Platform.OS === 'web'
-    ? ({ filter: 'brightness(0) invert(1)' } as object)
-    : { tintColor: '#FFFFFF' };
-
+  /**
+   * Geometric brand mark — a slightly rotated amber square with a bold "F" inside.
+   * Counter-rotating the text keeps it upright while the badge tilts.
+   * No images → no tinting issues, works on every platform and background.
+   */
+  const TILT = 13;
   const iconShell = (
-    <View
-      style={[
-        styles.markShell,
-        onDark ? styles.markShellDark : styles.markShellLight,
-      ]}
-    >
-      <Image
-        source={require('../../assets/logo-without-text.png')}
-        style={[styles.markImage, onDark && whiteTint]}
-        resizeMode="contain"
-      />
+    <View style={styles.markOuter}>
+      {/* Rotated amber badge */}
+      <View style={[styles.markBadge, { transform: [{ rotate: `${TILT}deg` }] }]} />
+      {/* Counter-rotated letter stays upright */}
+      <Text style={[styles.markLetter, { transform: [{ rotate: `-${TILT}deg` }] }]}>
+        F
+      </Text>
     </View>
   );
 
@@ -77,26 +74,28 @@ const styles = StyleSheet.create({
     width: 188,
     aspectRatio: FULL_LOGO_ASPECT_RATIO,
   },
-  markShell: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  // Outer container holds the stacked badge + letter
+  markOuter: {
     width: 36,
     height: 36,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  markShellLight: {
-    backgroundColor: brandColors.surfaceAlt,
-    borderColor: brandColors.outlineLight,
+  // The badge shape itself — sits behind the letter
+  markBadge: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: radii.xs,
+    backgroundColor: brandColors.secondary,
   },
-  markShellDark: {
-    backgroundColor: 'rgba(255, 252, 246, 0.12)',
-    borderColor: 'rgba(255, 252, 246, 0.16)',
-  },
-  markImage: {
-    width: 32,
-    height: 32,
+  // Bold "F" on top, counter-rotated to stay upright
+  markLetter: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: brandColors.primaryDark,
+    lineHeight: 18,
+    letterSpacing: -0.5,
   },
   wordmark: {
     fontSize: 17,

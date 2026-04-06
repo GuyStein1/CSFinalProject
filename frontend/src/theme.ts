@@ -46,6 +46,7 @@ export const spacing = {
 } as const;
 
 export const radii = {
+  sharp: 0,
   xs: 6,
   sm: 8,
   md: 12,
