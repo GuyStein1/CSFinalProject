@@ -46,7 +46,13 @@ export default function FCard({
         onPress={onPress}
         style={({ pressed }) => [
           ...cardStyle,
-          { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+          {
+            opacity: pressed ? 0.94 : 1,
+            transform: [{ scale: pressed ? 0.975 : 1 }],
+            backgroundColor: pressed
+              ? (bg === brandColors.surface ? brandColors.surfaceAlt : bg)
+              : bg,
+          },
         ]}
       >
         {inner}
