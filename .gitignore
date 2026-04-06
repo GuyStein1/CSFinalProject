@@ -5,3 +5,4 @@ dist/
 .expo/
 firebase-service-account.json
 *.js.map
+.claude/
