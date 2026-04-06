@@ -131,7 +131,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                 </Text>
               </View>
             </View>
-            <StatusBadge status={bid.status} />
+            <StatusBadge status={bid.status === 'ACCEPTED' && bid.task.status === 'COMPLETED' ? 'COMPLETED' : bid.status} />
           </View>
 
           <View style={styles.bidDetails}>
@@ -183,24 +183,63 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
   );
 }
 
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function getMonthKey(dateStr: string | null): string {
+  if (!dateStr) return 'unknown';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function formatMonthLabel(key: string): string {
+  const [year, month] = key.split('-');
+  return `${MONTH_NAMES[parseInt(month) - 1]} ${year}`;
+}
+
 export default function MyBidsScreen() {
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
   const [activeTab, setActiveTab] = useState<TabFilter>('ALL');
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
   const statusFilter = activeTab === 'COMPLETED' ? 'ACCEPTED' : activeTab === 'ALL' ? null : activeTab;
 
   const { bids: rawBids, loading, error, refetch, updateBidLocally, removeBidLocally } = useBids({
     status: statusFilter as BidStatus | null,
   });
 
-  // Accepted tab: only accepted bids where task is still in progress
-  // Completed tab: only accepted bids where task is completed
-  const bids = rawBids.filter((b) => {
-    if (activeTab === 'ACCEPTED') return b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED';
-    if (activeTab === 'COMPLETED') return b.status === 'ACCEPTED' && b.task.status === 'COMPLETED';
-    return true;
-  });
+  // All completed bids (before month filter)
+  const allCompletedBids = rawBids.filter(
+    (b) => b.status === 'ACCEPTED' && b.task.status === 'COMPLETED',
+  );
 
-  // Summary for Completed tab
+  // Available months from completed bids
+  const availableMonths = [...new Set(allCompletedBids.map((b) => getMonthKey(b.task.completed_at ?? b.created_at)))].sort().reverse();
+
+  // Ensure selected month is valid — if current selection isn't in the list, pick the most recent
+  const effectiveMonth =
+    availableMonths.length > 0 && !availableMonths.includes(selectedMonth)
+      ? availableMonths[0]
+      : selectedMonth;
+
+  const bids = rawBids
+    .filter((b) => {
+      if (activeTab === 'ALL') return b.status !== 'REJECTED' && !(b.status === 'ACCEPTED' && b.task.status === 'COMPLETED');
+      if (activeTab === 'ACCEPTED') return b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED';
+      if (activeTab === 'COMPLETED') {
+        if (b.status !== 'ACCEPTED' || b.task.status !== 'COMPLETED') return false;
+        const monthKey = getMonthKey(b.task.completed_at ?? b.created_at);
+        return monthKey === effectiveMonth;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.status === 'ACCEPTED' && b.status !== 'ACCEPTED') return -1;
+      if (b.status === 'ACCEPTED' && a.status !== 'ACCEPTED') return 1;
+      return 0;
+    });
+
+  // Summary for Completed tab (filtered by month)
   const completedTotal = activeTab === 'COMPLETED' ? bids.length : 0;
   const completedEarnings = activeTab === 'COMPLETED'
     ? bids.reduce((sum, b) => sum + b.offered_price, 0)
@@ -379,20 +418,44 @@ export default function MyBidsScreen() {
         <FlatList
           data={bids}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={activeTab === 'COMPLETED' && bids.length > 0 ? (
-            <FCard style={styles.summaryCard}>
-              <View style={styles.summaryContent}>
-                <View style={styles.summaryItem}>
-                  <Text style={[typography.h1, { color: brandColors.primary }]}>{completedTotal}</Text>
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Jobs Completed</Text>
+          ListHeaderComponent={activeTab === 'COMPLETED' ? (
+            <View>
+              {/* Month selector */}
+              {availableMonths.length > 0 && (
+                <FlatList
+                  data={availableMonths}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item}
+                  contentContainerStyle={styles.monthRow}
+                  renderItem={({ item }) => (
+                    <FChip
+                      label={formatMonthLabel(item)}
+                      selected={effectiveMonth === item}
+                      onPress={() => setSelectedMonth(item)}
+                      compact
+                    />
+                  )}
+                />
+              )}
+              {/* Summary card for selected month */}
+              <FCard style={styles.summaryCard}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.sm }]}>
+                  {formatMonthLabel(effectiveMonth)}
+                </Text>
+                <View style={styles.summaryContent}>
+                  <View style={styles.summaryItem}>
+                    <Text style={[typography.h1, { color: brandColors.primary }]}>{completedTotal}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>Jobs</Text>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryItem}>
+                    <Text style={[typography.h1, { color: brandColors.primary }]}>₪{completedEarnings.toLocaleString()}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>Earned</Text>
+                  </View>
                 </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                  <Text style={[typography.h1, { color: brandColors.primary }]}>₪{completedEarnings.toLocaleString()}</Text>
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Total Earned</Text>
-                </View>
-              </View>
-            </FCard>
+              </FCard>
+            </View>
           ) : null}
           renderItem={({ item }) => (
             <View style={styles.bidRow}>
@@ -583,9 +646,15 @@ const styles = StyleSheet.create({
   successActionBtn: {
     borderColor: brandColors.success,
   },
+  monthRow: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
   summaryCard: {
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   summaryContent: {

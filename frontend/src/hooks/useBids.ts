@@ -10,6 +10,7 @@ export interface BidTask {
   status: string;
   suggested_price: number | null;
   general_location_name: string;
+  completed_at: string | null;
 }
 
 export interface UserBid {
