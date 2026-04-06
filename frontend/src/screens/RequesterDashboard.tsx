@@ -249,18 +249,6 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={[styles.orb, styles.orbTopLeft]} />
         <View style={[styles.orb, styles.orbBottomRight]} />
 
-        {/* Logo watermark */}
-        <Image
-          source={require('../../assets/logo-without-text.png')}
-          style={[
-            styles.heroLogoDecor,
-            Platform.OS === 'web'
-              ? ({ filter: 'brightness(0) invert(1)', opacity: 0.1 } as object)
-              : { tintColor: '#ffffff', opacity: 0.1 },
-          ]}
-          resizeMode="contain"
-        />
-
         <View style={[styles.heroContent, isDesktop && styles.heroContentDesktop]}>
           {/* Eyebrow */}
           <View style={styles.eyebrowBadge}>
@@ -300,12 +288,6 @@ export default function RequesterDashboard({ navigation }: Props) {
           </Pressable>
         </View>
       </LinearGradient>
-
-      {/*
-       * Diagonal transition — a skewed View in the page background color
-       * overlaps the hero bottom, creating a diagonal cut edge.
-       */}
-      <View style={styles.heroDiagonal} />
 
       {/* ── Email Verification Banner ──────────────────────────── */}
       {!emailVerified && (
@@ -502,14 +484,6 @@ const styles = StyleSheet.create({
     right: -60,
     backgroundColor: 'rgba(26, 61, 99, 0.5)',
   },
-  heroLogoDecor: {
-    position: 'absolute',
-    right: 24,
-    top: '50%' as unknown as number,
-    marginTop: -90,
-    width: 180,
-    height: 180,
-  },
   heroContent: {
     alignItems: 'flex-start',
   },
@@ -578,14 +552,6 @@ const styles = StyleSheet.create({
   heroCtaDesktop: {
     paddingHorizontal: 36,
     paddingVertical: 14,
-  },
-
-  // ── Diagonal hero → content transition ─────────────────────────
-  heroDiagonal: {
-    height: 36,
-    backgroundColor: brandColors.background,
-    marginTop: -36,
-    transform: [{ skewY: '2.5deg' }],
   },
 
   // ── Verification banner ────────────────────────────────────────
