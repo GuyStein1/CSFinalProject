@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axiosInstance';
 
 export type Category =
-  | 'ELECTRICITY'
-  | 'PLUMBING'
-  | 'CARPENTRY'
-  | 'PAINTING'
+  | 'ASSEMBLY'
+  | 'MOUNTING'
   | 'MOVING'
-  | 'GENERAL';
+  | 'PAINTING'
+  | 'PLUMBING'
+  | 'ELECTRICITY'
+  | 'OUTDOORS'
+  | 'CLEANING';
 
 export interface DiscoveryTask {
   id: string;

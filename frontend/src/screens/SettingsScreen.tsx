@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Alert, Platform } from 'react-native';
-import { View } from 'react-native';
-import { Text, TextInput, Button, Card, Divider, Switch, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-native';
+import { Text, Switch, Divider } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import { brandColors } from '../theme';
+import { FButton, FCard, FInput } from '../components/ui';
+import { brandColors, spacing, typography } from '../theme';
 
 export default function SettingsScreen() {
-  const theme = useTheme();
   const user = auth.currentUser;
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,7 +25,8 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to log out?')) {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Are you sure you want to log out?')) {
         await signOut(auth);
       }
     } else {
@@ -43,31 +44,31 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Card style={styles.heroCard}>
-        <Card.Content style={styles.heroContent}>
-          <Text variant="titleMedium" style={styles.heroTitle}>Settings</Text>
-        </Card.Content>
-      </Card>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Hero */}
+      <FCard style={styles.heroCard} shadow="sm">
+        <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Settings</Text>
+      </FCard>
 
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="labelLarge">Email</Text>
-          <Text variant="bodyMedium" style={styles.value}>{user?.email || 'Not signed in'}</Text>
+      {/* Account Section */}
+      <FCard style={styles.sectionCard} shadow="sm">
+        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
+          Account
+        </Text>
 
-          <Divider style={styles.divider} />
+        <SettingRow icon="email-outline" label="Email" value={user?.email || 'Not signed in'} />
 
-          <Text variant="labelLarge">Phone Number</Text>
-          <TextInput
+        <Divider style={styles.divider} />
+
+        <View style={styles.phoneSection}>
+          <SettingRow icon="phone-outline" label="Phone Number" />
+          <FInput
             value={phone}
             onChangeText={setPhone}
-            mode="outlined"
             placeholder="Enter phone number"
             keyboardType="phone-pad"
-            style={styles.input}
           />
-          <Button
-            mode="contained"
+          <FButton
             onPress={() => {
               setSaving(true);
               setTimeout(() => {
@@ -77,96 +78,136 @@ export default function SettingsScreen() {
             }}
             loading={saving}
             disabled={saving || phone.trim().length === 0}
-            compact
-            buttonColor={theme.colors.primary}
+            size="sm"
+            style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}
           >
             Save
-          </Button>
-        </Card.Content>
-      </Card>
+          </FButton>
+        </View>
+      </FCard>
 
-      <Card style={styles.card}>
-        <Card.Content>
-          <View style={styles.pushRow}>
-            <Text variant="labelLarge">Push Notifications</Text>
-            <Switch value={pushEnabled} onValueChange={setPushEnabled} />
+      {/* Preferences Section */}
+      <FCard style={styles.sectionCard} shadow="sm">
+        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
+          Preferences
+        </Text>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleLeft}>
+            <View style={styles.settingIcon}>
+              <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primaryMuted} />
+            </View>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+              Push Notifications
+            </Text>
           </View>
+          <Switch
+            value={pushEnabled}
+            onValueChange={setPushEnabled}
+            trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
+            thumbColor={brandColors.white}
+          />
+        </View>
 
-          <Divider style={styles.divider} />
+        <Divider style={styles.divider} />
 
-          <Button
-            mode="outlined"
-            onPress={handleChangePassword}
-            style={styles.settingsButton}
-            icon="lock-reset"
-          >
+        <Pressable onPress={handleChangePassword} style={styles.actionRow}>
+          <View style={styles.settingIcon}>
+            <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
+          </View>
+          <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, flex: 1 }]}>
             Change Password
-          </Button>
+          </Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+        </Pressable>
+      </FCard>
 
-          <Button
-            mode="outlined"
-            onPress={handleLogout}
-            textColor={brandColors.danger}
-            style={styles.settingsButton}
-            icon="logout"
-          >
-            Log Out
-          </Button>
-        </Card.Content>
-      </Card>
+      {/* Danger Zone */}
+      <FButton
+        variant="danger"
+        icon="logout"
+        onPress={handleLogout}
+        fullWidth
+        style={styles.logoutButton}
+      >
+        Log Out
+      </FButton>
     </ScrollView>
+  );
+}
+
+function SettingRow({ icon, label, value }: { icon: string; label: string; value?: string }) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={styles.settingIcon}>
+        <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
+        {value && (
+          <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2 }]}>{value}</Text>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    paddingTop: 24,
-    paddingBottom: 24,
+    padding: spacing.lg,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.huge,
     backgroundColor: brandColors.background,
     alignItems: 'center',
   },
   heroCard: {
     width: '100%',
     maxWidth: 500,
-    marginBottom: 16,
-    borderRadius: 28,
-    backgroundColor: brandColors.surface,
+    marginBottom: spacing.lg,
   },
-  heroContent: {
-    paddingVertical: 4,
-  },
-  heroTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '600',
-  },
-  card: {
+  sectionCard: {
     width: '100%',
     maxWidth: 500,
-    marginBottom: 16,
-    borderRadius: 24,
-    backgroundColor: brandColors.surface,
-  },
-  value: {
-    marginTop: 4,
-    marginBottom: 8,
-    color: brandColors.textMuted,
+    marginBottom: spacing.lg,
   },
   divider: {
-    marginVertical: 12,
+    marginVertical: spacing.lg,
+    backgroundColor: brandColors.outlineLight,
   },
-  input: {
-    marginTop: 4,
-    marginBottom: 12,
-    backgroundColor: brandColors.surface,
-  },
-  pushRow: {
+  settingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  settingsButton: {
-    marginBottom: 8,
-    borderRadius: 999,
+  settingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phoneSection: {
+    gap: spacing.md,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  logoutButton: {
+    maxWidth: 500,
+    marginTop: spacing.sm,
   },
 });

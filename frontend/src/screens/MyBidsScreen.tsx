@@ -8,14 +8,16 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Button, Card, Chip, Icon, IconButton, Modal, Portal, Text, TextInput } from 'react-native-paper';
+import { Portal, Modal, Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
+import { FButton, FCard, FChip, FInput } from '../components/ui';
 import useBids, { type BidStatus, type UserBid } from '../hooks/useBids';
-import { brandColors } from '../theme';
+import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type TabFilter = 'ALL' | BidStatus | 'COMPLETED';
 
@@ -28,14 +30,17 @@ const TABS: { value: TabFilter; label: string }[] = [
   { value: 'WITHDRAWN', label: 'Withdrawn' },
 ];
 
-const CATEGORY_ICONS: Record<string, string> = {
-  ELECTRICITY: 'lightning-bolt',
-  PLUMBING: 'water',
-  CARPENTRY: 'hammer',
-  PAINTING: 'format-paint',
-  MOVING: 'truck',
-  GENERAL: 'wrench',
+const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
+  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
+  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
+  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
+  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
+  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
+  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
+  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
+  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
 };
+const DEFAULT_CAT_META = { icon: 'wrench', color: '#7A8B96', bg: brandColors.surfaceAlt };
 
 const SWIPE_THRESHOLD = -80;
 const WITHDRAW_BUTTON_WIDTH = 90;
@@ -54,14 +59,13 @@ interface BidCardProps {
   onWithdraw: (bidId: string) => void;
   onReactivate: (bidId: string) => void;
   onEdit: (bid: UserBid) => void;
-  _onDelete: (bidId: string) => void;
-  _onMarkCompleted: (bid: UserBid) => void;
   onCancelAccepted: (bid: UserBid) => void;
 }
 
-function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _onMarkCompleted, onCancelAccepted }: BidCardProps) {
+function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted }: BidCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isPending = bid.status === 'PENDING';
+  const catMeta = CATEGORY_META[bid.task.category] ?? DEFAULT_CAT_META;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -74,23 +78,15 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
       },
       onPanResponderRelease: (_, gesture) => {
         if (gesture.dx < SWIPE_THRESHOLD) {
-          Animated.spring(translateX, {
-            toValue: -WITHDRAW_BUTTON_WIDTH,
-            useNativeDriver: true,
-          }).start();
+          Animated.spring(translateX, { toValue: -WITHDRAW_BUTTON_WIDTH, useNativeDriver: true }).start();
         } else {
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
         }
       },
     }),
   ).current;
 
-  const categoryIcon = CATEGORY_ICONS[bid.task.category] ?? 'wrench';
-  const budgetLabel =
-    bid.task.suggested_price != null ? `₪${bid.task.suggested_price}` : 'Quote';
+  const budgetLabel = bid.task.suggested_price != null ? `₪${bid.task.suggested_price}` : 'Quote';
 
   return (
     <View style={styles.swipeContainer}>
@@ -98,15 +94,12 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
         <Pressable
           style={styles.withdrawAction}
           onPress={() => {
-            Animated.spring(translateX, {
-              toValue: 0,
-              useNativeDriver: true,
-            }).start();
+            Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
             onWithdraw(bid.id);
           }}
         >
-          <Icon source="close-circle-outline" size={22} color="#FFF" />
-          <Text variant="labelSmall" style={styles.withdrawText}>
+          <MaterialCommunityIcons name="close-circle-outline" size={22} color={brandColors.white} />
+          <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' }]}>
             Withdraw
           </Text>
         </Pressable>
@@ -116,86 +109,75 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, _onDelete, _o
         style={[styles.cardAnimated, { transform: [{ translateX }] }]}
         {...(isPending ? panResponder.panHandlers : {})}
       >
-        <Card style={styles.bidCard} onPress={onPress} mode="elevated">
-          <Card.Content style={styles.cardContent}>
-            <View style={styles.topRow}>
-              <View style={styles.iconShell}>
-                <Icon source={categoryIcon} size={20} color={brandColors.primary} />
-              </View>
-              <View style={styles.titleBlock}>
-                <Text variant="titleSmall" style={styles.taskTitle} numberOfLines={1}>
-                  {bid.task.title}
-                </Text>
-                <Text variant="bodySmall" style={styles.taskLocation} numberOfLines={1}>
+        <Pressable
+          onPress={onPress}
+          style={({ pressed }) => [
+            styles.bidCard,
+            { opacity: pressed ? 0.92 : 1 },
+          ]}
+        >
+          <View style={styles.topRow}>
+            <View style={[styles.iconCircle, { backgroundColor: catMeta.bg }]}>
+              <MaterialCommunityIcons name={catMeta.icon as never} size={18} color={catMeta.color} />
+            </View>
+            <View style={styles.titleBlock}>
+              <Text style={[typography.h3, { color: brandColors.textPrimary }]} numberOfLines={1}>
+                {bid.task.title}
+              </Text>
+              <View style={styles.metaRow}>
+                <MaterialCommunityIcons name="map-marker-outline" size={12} color={brandColors.textMuted} />
+                <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
                   {bid.task.general_location_name || 'Location not set'} · {budgetLabel}
                 </Text>
               </View>
-              <StatusBadge status={bid.status} />
             </View>
+            <StatusBadge status={bid.status} />
+          </View>
 
-            <View style={styles.bidDetails}>
-              <View style={styles.priceRow}>
-                <Text variant="labelMedium" style={styles.priceLabel}>Your offer</Text>
-                <Text variant="titleSmall" style={styles.priceValue}>₪{bid.offered_price}</Text>
+          <View style={styles.bidDetails}>
+            <View style={styles.priceRow}>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>Your offer</Text>
+              <View style={styles.priceTag}>
+                <Text style={[typography.h3, { color: brandColors.primary }]}>₪{bid.offered_price}</Text>
               </View>
-              <Text variant="bodySmall" style={styles.pitch} numberOfLines={1}>
-                {bid.description}
-              </Text>
             </View>
+            <Text style={[typography.bodySm, styles.pitch]} numberOfLines={1}>
+              {bid.description}
+            </Text>
+          </View>
 
-            <View style={styles.bottomRow}>
-              <Text variant="bodySmall" style={styles.dateText}>
+          <View style={styles.bottomRow}>
+            <View style={styles.dateRow}>
+              <MaterialCommunityIcons name="clock-outline" size={12} color={brandColors.textMuted} />
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
                 Submitted {formatDate(bid.created_at)}
               </Text>
-              <View style={styles.actionButtons}>
-                {isPending && Platform.OS === 'web' && (
-                  <>
-                    <Button
-                      mode="outlined"
-                      compact
-                      icon="pencil"
-                      onPress={() => onEdit(bid)}
-                      style={styles.actionBtn}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      textColor={brandColors.danger}
-                      compact
-                      onPress={() => onWithdraw(bid.id)}
-                      style={[styles.actionBtn, { borderColor: brandColors.danger }]}
-                    >
-                      Withdraw
-                    </Button>
-                  </>
-                )}
-                {bid.status === 'ACCEPTED' && bid.task.status !== 'COMPLETED' && (
-                  <Button
-                    mode="outlined"
-                    textColor={brandColors.danger}
-                    compact
-                    onPress={() => onCancelAccepted(bid)}
-                    style={[styles.actionBtn, { borderColor: brandColors.danger }]}
-                  >
-                    Cancel
-                  </Button>
-                )}
-                {bid.status === 'WITHDRAWN' && (
-                  <Button
-                    mode="outlined"
-                    textColor={brandColors.success}
-                    compact
-                    onPress={() => onReactivate(bid.id)}
-                    style={[styles.actionBtn, { borderColor: brandColors.success }]}
-                  >
-                    Reactivate
-                  </Button>
-                )}
-              </View>
             </View>
-          </Card.Content>
-        </Card>
+            <View style={styles.actionButtons}>
+              {isPending && Platform.OS === 'web' && (
+                <>
+                  <Pressable style={[styles.actionBtn, styles.defaultActionBtn]} onPress={(e) => { e.stopPropagation(); onEdit(bid); }}>
+                    <MaterialCommunityIcons name="pencil" size={13} color={brandColors.primaryMuted} />
+                    <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>Edit</Text>
+                  </Pressable>
+                  <Pressable style={[styles.actionBtn, styles.dangerActionBtn]} onPress={(e) => { e.stopPropagation(); onWithdraw(bid.id); }}>
+                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Withdraw</Text>
+                  </Pressable>
+                </>
+              )}
+              {bid.status === 'ACCEPTED' && bid.task.status !== 'COMPLETED' && (
+                <Pressable style={[styles.actionBtn, styles.dangerActionBtn]} onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}>
+                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Cancel</Text>
+                </Pressable>
+              )}
+              {bid.status === 'WITHDRAWN' && (
+                <Pressable style={[styles.actionBtn, styles.successActionBtn]} onPress={(e) => { e.stopPropagation(); onReactivate(bid.id); }}>
+                  <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>Reactivate</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </Pressable>
       </Animated.View>
     </View>
   );
@@ -230,16 +212,23 @@ export default function MyBidsScreen() {
     }, [refetch]),
   );
 
+  // Edit bid modal state
   const [editingBid, setEditingBid] = useState<UserBid | null>(null);
   const [editPrice, setEditPrice] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editSaving, setEditSaving] = useState(false);
 
+  const webConfirm = (msg: string): boolean => {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      return confirm(msg);
+    }
+    return true;
+  };
+
   const handleWithdraw = useCallback(
     async (bidId: string) => {
-      if (Platform.OS === 'web') {
-        if (!window.confirm('Are you sure you want to withdraw this bid?')) return;
-      }
+      if (Platform.OS === 'web' && !webConfirm('Are you sure you want to withdraw this bid?')) return;
       updateBidLocally(bidId, 'WITHDRAWN');
       try {
         await api.put(`/api/bids/${bidId}/withdraw`);
@@ -259,7 +248,7 @@ export default function MyBidsScreen() {
   const handleReactivate = useCallback(
     async (bidId: string) => {
       if (Platform.OS === 'web') {
-        const wantEdit = window.confirm('Would you like to edit your bid before reactivating?\n\nOK = Edit first\nCancel = Reactivate as-is');
+        const wantEdit = webConfirm('Would you like to edit your bid before reactivating?\n\nOK = Edit first\nCancel = Reactivate as-is');
         if (wantEdit) {
           updateBidLocally(bidId, 'PENDING');
           try {
@@ -286,9 +275,7 @@ export default function MyBidsScreen() {
 
   const handleDelete = useCallback(
     async (bidId: string) => {
-      if (Platform.OS === 'web') {
-        if (!window.confirm('Delete this bid permanently?')) return;
-      }
+      if (Platform.OS === 'web' && !webConfirm('Delete this bid permanently?')) return;
       removeBidLocally(bidId);
       try {
         await api.delete(`/api/bids/${bidId}`);
@@ -299,26 +286,9 @@ export default function MyBidsScreen() {
     [removeBidLocally, refetch],
   );
 
-  const handleMarkCompleted = useCallback(
-    async (bid: UserBid) => {
-      if (Platform.OS === 'web') {
-        if (!window.confirm('Mark this task as completed?')) return;
-      }
-      try {
-        await api.put(`/api/tasks/${bid.task_id}/status`, { status: 'COMPLETED' });
-        refetch();
-      } catch {
-        // ignore
-      }
-    },
-    [refetch],
-  );
-
   const handleCancelAccepted = useCallback(
     async (bid: UserBid) => {
-      if (Platform.OS === 'web') {
-        if (!window.confirm('Cancel this job? The task will be reopened for other fixers.')) return;
-      }
+      if (Platform.OS === 'web' && !webConfirm('Cancel this job? The task will be reopened for other fixers.')) return;
       try {
         await api.put(`/api/bids/${bid.id}/cancel-accepted`);
         refetch();
@@ -358,15 +328,8 @@ export default function MyBidsScreen() {
     (navigation as { navigate: (screen: string) => void }).navigate('FindJobs');
   }, [navigation]);
 
-  const emptyMessage =
-    activeTab === 'ALL'
-      ? undefined
-      : `No ${activeTab.toLowerCase()} bids.`;
-
-  const emptyTitle =
-    activeTab === 'ALL'
-      ? "You haven't submitted any bids yet"
-      : `No ${activeTab.toLowerCase()} bids`;
+  const emptyMessage = activeTab === 'ALL' ? undefined : `No ${activeTab.toLowerCase()} bids.`;
+  const emptyTitle = activeTab === 'ALL' ? "You haven't submitted any bids yet" : `No ${activeTab.toLowerCase()} bids`;
 
   return (
     <View style={styles.container}>
@@ -379,15 +342,12 @@ export default function MyBidsScreen() {
           keyExtractor={(item) => item.value}
           contentContainerStyle={styles.tabContent}
           renderItem={({ item }) => (
-            <Chip
+            <FChip
+              label={item.label}
               selected={activeTab === item.value}
               onPress={() => setActiveTab(item.value)}
-              showSelectedCheck={false}
               compact
-              style={styles.tabChip}
-            >
-              {item.label}
-            </Chip>
+            />
           )}
         />
       </View>
@@ -420,19 +380,19 @@ export default function MyBidsScreen() {
           data={bids}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={activeTab === 'COMPLETED' && bids.length > 0 ? (
-            <Card style={styles.summaryCard}>
-              <Card.Content style={styles.summaryContent}>
+            <FCard style={styles.summaryCard}>
+              <View style={styles.summaryContent}>
                 <View style={styles.summaryItem}>
-                  <Text variant="headlineMedium" style={styles.summaryNumber}>{completedTotal}</Text>
-                  <Text variant="bodySmall" style={styles.summaryLabel}>Jobs Completed</Text>
+                  <Text style={[typography.h1, { color: brandColors.primary }]}>{completedTotal}</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Jobs Completed</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                  <Text variant="headlineMedium" style={styles.summaryNumber}>₪{completedEarnings.toLocaleString()}</Text>
-                  <Text variant="bodySmall" style={styles.summaryLabel}>Total Earned</Text>
+                  <Text style={[typography.h1, { color: brandColors.primary }]}>₪{completedEarnings.toLocaleString()}</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Total Earned</Text>
                 </View>
-              </Card.Content>
-            </Card>
+              </View>
+            </FCard>
           ) : null}
           renderItem={({ item }) => (
             <View style={styles.bidRow}>
@@ -443,19 +403,17 @@ export default function MyBidsScreen() {
                   onWithdraw={handleWithdraw}
                   onReactivate={handleReactivate}
                   onEdit={handleEdit}
-                  _onDelete={handleDelete}
-                  _onMarkCompleted={handleMarkCompleted}
                   onCancelAccepted={handleCancelAccepted}
                 />
               </View>
               {(item.status === 'REJECTED' || item.status === 'WITHDRAWN') && (
-                <IconButton
-                  icon="delete-outline"
-                  iconColor={brandColors.danger}
-                  size={22}
+                <Pressable
+                  style={styles.trashBtn}
+                  hitSlop={8}
                   onPress={() => handleDelete(item.id)}
-                  style={styles.trashIcon}
-                />
+                >
+                  <MaterialCommunityIcons name="delete-outline" size={22} color={brandColors.danger} />
+                </Pressable>
               )}
             </View>
           )}
@@ -465,42 +423,41 @@ export default function MyBidsScreen() {
         />
       )}
 
+      {/* Edit Bid Modal */}
       <Portal>
         <Modal
           visible={editingBid !== null}
           onDismiss={() => setEditingBid(null)}
           contentContainerStyle={styles.editModal}
         >
-          <Text variant="titleLarge" style={styles.editModalTitle}>Edit Bid</Text>
-          <TextInput
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+            Edit Bid
+          </Text>
+          <FInput
             label="Price (₪)"
             value={editPrice}
             onChangeText={setEditPrice}
             keyboardType="numeric"
-            mode="outlined"
-            style={styles.editInput}
           />
-          <TextInput
+          <FInput
             label="Description"
             value={editDescription}
             onChangeText={setEditDescription}
-            mode="outlined"
             multiline
             numberOfLines={3}
-            style={styles.editInput}
           />
-          <Button
-            mode="contained"
+          <FButton
             onPress={handleEditSave}
             loading={editSaving}
             disabled={editSaving || !editPrice || parseFloat(editPrice) <= 0}
-            style={styles.editSaveButton}
+            fullWidth
+            style={{ marginTop: spacing.sm }}
           >
             Save Changes
-          </Button>
-          <Button mode="text" onPress={() => setEditingBid(null)}>
+          </FButton>
+          <FButton variant="outline" onPress={() => setEditingBid(null)} fullWidth style={{ marginTop: spacing.sm }}>
             Cancel
-          </Button>
+          </FButton>
         </Modal>
       </Portal>
     </View>
@@ -514,26 +471,22 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     backgroundColor: brandColors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: brandColors.outline,
+    ...shadows.sm,
   },
   tabContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
-  },
-  tabChip: {
-    backgroundColor: brandColors.surfaceAlt,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   listContent: {
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
   },
 
   swipeContainer: {
-    marginHorizontal: 16,
-    marginVertical: 6,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.sm + 2,
     overflow: 'hidden',
-    borderRadius: 22,
+    borderRadius: radii.lg,
   },
   withdrawAction: {
     position: 'absolute',
@@ -544,80 +497,55 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.danger,
     alignItems: 'center',
     justifyContent: 'center',
-    borderTopRightRadius: 22,
-    borderBottomRightRadius: 22,
-    gap: 4,
-  },
-  withdrawText: {
-    color: '#FFF',
-    fontWeight: '700',
+    borderTopRightRadius: radii.lg,
+    borderBottomRightRadius: radii.lg,
+    gap: spacing.xs,
   },
   cardAnimated: {
     backgroundColor: brandColors.surface,
-    borderRadius: 22,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#112336',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: { elevation: 3 },
-      web: {
-        shadowColor: '#112336',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-    }),
+    borderRadius: radii.lg,
+    ...shadows.sm,
   },
   bidCard: {
-    borderRadius: 22,
+    borderRadius: radii.lg,
     backgroundColor: brandColors.surface,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  cardContent: {
-    gap: 10,
+    padding: spacing.lg,
+    gap: spacing.md,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.md,
   },
-  iconShell: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: brandColors.surfaceAlt,
+  iconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   titleBlock: {
     flex: 1,
+    gap: spacing.xs,
   },
-  taskTitle: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  taskLocation: {
-    color: brandColors.textMuted,
-    marginTop: 1,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   bidDetails: {
-    gap: 4,
+    gap: spacing.sm,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  priceLabel: {
-    color: brandColors.textMuted,
-  },
-  priceValue: {
-    color: brandColors.primary,
-    fontWeight: '700',
+  priceTag: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.infoSoft,
   },
   pitch: {
     color: brandColors.textMuted,
@@ -628,45 +556,51 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dateText: {
-    color: brandColors.textMuted,
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
   actionBtn: {
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  defaultActionBtn: {
+    borderColor: brandColors.outline,
+  },
+  dangerActionBtn: {
+    borderColor: brandColors.danger,
+  },
+  successActionBtn: {
+    borderColor: brandColors.success,
   },
   summaryCard: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 22,
-    backgroundColor: brandColors.surface,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
   summaryContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
-    paddingVertical: 8,
+    gap: spacing.xxl,
   },
   summaryItem: {
     alignItems: 'center',
   },
-  summaryNumber: {
-    color: brandColors.primary,
-    fontWeight: '800',
-  },
-  summaryLabel: {
-    color: brandColors.textMuted,
-    marginTop: 2,
-  },
   summaryDivider: {
     width: 1,
     height: 40,
-    backgroundColor: brandColors.outline,
+    backgroundColor: brandColors.outlineLight,
   },
   bidRow: {
     flexDirection: 'row',
@@ -675,26 +609,22 @@ const styles = StyleSheet.create({
   bidCardWrap: {
     flex: 1,
   },
-  trashIcon: {
-    margin: 0,
-    marginRight: 8,
+  trashBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   editModal: {
     backgroundColor: brandColors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 24,
-  },
-  editModalTitle: {
-    marginBottom: 16,
-    color: brandColors.textPrimary,
-  },
-  editInput: {
-    marginBottom: 12,
-    backgroundColor: brandColors.surface,
-  },
-  editSaveButton: {
-    marginBottom: 8,
-    borderRadius: 999,
+    margin: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radii.xl,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '90%',
+    gap: spacing.md,
   },
 });

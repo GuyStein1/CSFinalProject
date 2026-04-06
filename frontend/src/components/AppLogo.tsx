@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from 'react-native-paper';
-import { brandColors } from '../theme';
+import { brandColors, spacing, radii } from '../theme';
 
 const FULL_LOGO_ASPECT_RATIO = 662 / 534;
 
@@ -10,14 +10,17 @@ interface AppLogoProps {
   compact?: boolean;
   onDark?: boolean;
   showTagline?: boolean;
+  /** Renders only the icon shell — no wordmark or tagline */
+  iconOnly?: boolean;
 }
 
 export default function AppLogo({
   compact = false,
   onDark = false,
   showTagline = !compact,
+  iconOnly = false,
 }: AppLogoProps) {
-  if (!compact) {
+  if (!compact && !iconOnly) {
     return (
       <Image
         source={require('../../assets/fixit-logo.png')}
@@ -27,34 +30,34 @@ export default function AppLogo({
     );
   }
 
-  const wordmarkColor = onDark ? '#FFFCF6' : brandColors.primary;
-  const taglineColor = onDark ? 'rgba(255, 252, 246, 0.78)' : brandColors.textMuted;
+  const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
+  const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
+
+  const iconShell = (
+    <View
+      style={[
+        styles.markShell,
+        onDark ? styles.markShellDark : styles.markShellLight,
+      ]}
+    >
+      <View style={styles.accent} />
+      <MaterialCommunityIcons
+        name="hammer-wrench"
+        size={20}
+        color={wordmarkColor}
+      />
+    </View>
+  );
+
+  if (iconOnly) return iconShell;
 
   return (
     <View style={styles.row}>
-      <View
-        style={[
-          styles.markShell,
-          compact && styles.markShellCompact,
-          onDark ? styles.markShellDark : styles.markShellLight,
-        ]}
-      >
-        <View style={[styles.accent, compact && styles.accentCompact]} />
-        <MaterialCommunityIcons
-          name="hammer-wrench"
-          size={compact ? 22 : 28}
-          color={wordmarkColor}
-        />
-      </View>
-
+      {iconShell}
       <View>
-        <Text style={[styles.wordmark, compact && styles.wordmarkCompact, { color: wordmarkColor }]}>
-          FIXIT
-        </Text>
+        <Text style={[styles.wordmark, { color: wordmarkColor }]}>FIXIT</Text>
         {showTagline && (
-          <Text style={[styles.tagline, compact && styles.taglineCompact, { color: taglineColor }]}>
-            YOUR HOME HERO
-          </Text>
+          <Text style={[styles.tagline, { color: taglineColor }]}>YOUR HOME HERO</Text>
         )}
       </View>
     </View>
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.sm + 2,
   },
   fullLogo: {
     width: 188,
@@ -74,58 +77,39 @@ const styles = StyleSheet.create({
   markShell: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
     borderWidth: 1,
     overflow: 'hidden',
   },
-  markShellCompact: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-  },
   markShellLight: {
     backgroundColor: brandColors.surfaceAlt,
-    borderColor: brandColors.outline,
+    borderColor: brandColors.outlineLight,
   },
   markShellDark: {
-    backgroundColor: 'rgba(255, 252, 246, 0.14)',
-    borderColor: 'rgba(255, 252, 246, 0.18)',
+    backgroundColor: 'rgba(255, 252, 246, 0.12)',
+    borderColor: 'rgba(255, 252, 246, 0.16)',
   },
   accent: {
     position: 'absolute',
-    top: 5,
-    left: 6,
-    width: 14,
-    height: 10,
+    top: 4,
+    left: 5,
+    width: 10,
+    height: 7,
     borderRadius: 10,
     backgroundColor: brandColors.secondary,
   },
-  accentCompact: {
-    top: 4,
-    left: 5,
-    width: 11,
-    height: 8,
-  },
   wordmark: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: '800',
     letterSpacing: 1.2,
-    lineHeight: 24,
-  },
-  wordmarkCompact: {
-    fontSize: 18,
     lineHeight: 20,
   },
   tagline: {
-    marginTop: 2,
-    fontSize: 10,
+    marginTop: 1,
+    fontSize: 7,
     fontWeight: '600',
-    letterSpacing: 2.4,
-  },
-  taglineCompact: {
-    fontSize: 8,
     letterSpacing: 1.8,
   },
 });

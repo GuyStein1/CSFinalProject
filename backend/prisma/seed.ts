@@ -44,18 +44,18 @@ const users = [
     full_name: 'Guy Toledo',
     email: 'guy@example.com',
     phone_number: '0505555555',
-    specializations: [Category.CARPENTRY, Category.PAINTING],
+    specializations: [Category.ASSEMBLY, Category.PAINTING],
   },
   {
     firebase_uid: 'N2g4806EevaLyi3qkEtExowPgck2',
     full_name: 'Avi Ron',
     email: 'avi@example.com',
     phone_number: '0506666666',
-    specializations: [Category.MOVING, Category.GENERAL],
+    specializations: [Category.MOVING, Category.CLEANING],
   },
 ];
 
-// 12 tasks with real Haifa-area coordinates (lon, lat)
+// 16 tasks with real Haifa-area coordinates (lon, lat)
 // ST_MakePoint expects (longitude, latitude)
 const taskSeedData = [
   // ELECTRICITY x2
@@ -66,8 +66,7 @@ const taskSeedData = [
     suggested_price: 200,
     general_location_name: 'הדר הכרמל, חיפה',
     exact_address: 'רחוב הרצל 45, הדר הכרמל',
-    lon: 35.0061,
-    lat: 32.8165,
+    lon: 35.0061, lat: 32.8165,
   },
   {
     title: 'החלפת לוח חשמל ביתי',
@@ -76,8 +75,7 @@ const taskSeedData = [
     suggested_price: 1500,
     general_location_name: 'כרמל מרכז, חיפה',
     exact_address: 'שדרות הנשיא 12, כרמל מרכז',
-    lon: 35.0000,
-    lat: 32.7940,
+    lon: 35.0000, lat: 32.7940,
   },
   // PLUMBING x2
   {
@@ -87,8 +85,7 @@ const taskSeedData = [
     suggested_price: 150,
     general_location_name: 'נווה שאנן, חיפה',
     exact_address: 'רחוב חסן שוקרי 8, נווה שאנן',
-    lon: 35.0100,
-    lat: 32.8010,
+    lon: 35.0100, lat: 32.8010,
   },
   {
     title: 'פתיחת סתימה בכיור האמבטיה',
@@ -97,29 +94,26 @@ const taskSeedData = [
     suggested_price: 120,
     general_location_name: 'מרכז העיר, חיפה',
     exact_address: 'רחוב נתניהו 3, מרכז העיר',
-    lon: 35.0010,
-    lat: 32.8175,
+    lon: 35.0010, lat: 32.8175,
   },
-  // CARPENTRY x2
+  // ASSEMBLY x2
   {
     title: 'הרכבת ארון בגדים PAX מאיקאה',
     description: 'ארון PAX בן 3 דלתות, כולל מראות. כל החלקים קיימים. צריך הרכבה מקצועית וקיבוע לקיר.',
-    category: Category.CARPENTRY,
+    category: Category.ASSEMBLY,
     suggested_price: 350,
     general_location_name: 'המושבה הגרמנית, חיפה',
     exact_address: 'רחוב בן גוריון 22, המושבה הגרמנית',
-    lon: 34.9890,
-    lat: 32.8140,
+    lon: 34.9890, lat: 32.8140,
   },
   {
-    title: 'תיקון דלת עץ שאינה נסגרת',
-    description: 'דלת כניסה לחדר ילדים נתקעת במסגרת. ייתכן שהמסגרת עקמה בגלל לחות. צריך כוונון או קיצוץ.',
-    category: Category.CARPENTRY,
+    title: 'הרכבת שולחן עבודה וכיסא משרדי',
+    description: 'שולחן עבודה מאיקאה BEKANT וכיסא MARKUS — שניהם בקופסאות. צריך הרכבה מסודרת.',
+    category: Category.ASSEMBLY,
     suggested_price: 180,
     general_location_name: "ואדי ניסנס, חיפה",
     exact_address: "רחוב חאלצה 5, ואדי ניסנס",
-    lon: 34.9970,
-    lat: 32.8155,
+    lon: 34.9970, lat: 32.8155,
   },
   // PAINTING x2
   {
@@ -129,8 +123,7 @@ const taskSeedData = [
     suggested_price: 800,
     general_location_name: 'בת גלים, חיפה',
     exact_address: 'רחוב יפו 18, בת גלים',
-    lon: 34.9780,
-    lat: 32.8280,
+    lon: 34.9780, lat: 32.8280,
   },
   {
     title: 'צביעת גדר בטון בחצר',
@@ -139,8 +132,7 @@ const taskSeedData = [
     suggested_price: 600,
     general_location_name: 'קריית חיים, חיפה',
     exact_address: 'רחוב ביאליק 40, קריית חיים',
-    lon: 35.0780,
-    lat: 32.8330,
+    lon: 35.0780, lat: 32.8330,
   },
   // MOVING x2
   {
@@ -150,8 +142,7 @@ const taskSeedData = [
     suggested_price: 1800,
     general_location_name: 'כרמל צרפתי, חיפה',
     exact_address: 'רחוב מוריה 55, כרמל צרפתי',
-    lon: 34.9890,
-    lat: 32.7870,
+    lon: 34.9890, lat: 32.7870,
   },
   {
     title: 'העברת ספה ומקרר לקומה שנייה',
@@ -160,29 +151,64 @@ const taskSeedData = [
     suggested_price: 400,
     general_location_name: 'רומימה, חיפה',
     exact_address: 'רחוב יגאל אלון 9, רומימה',
-    lon: 35.0190,
-    lat: 32.8120,
+    lon: 35.0190, lat: 32.8120,
   },
-  // GENERAL x2
+  // CLEANING x2
   {
     title: 'ניקיון מעמיק אחרי שיפוץ',
     description: 'דירת 4 חדרים לאחר שיפוץ — אבק בנייה, שאריות גבס, כתמי צבע. צריך ניקיון מקצועי מלא.',
-    category: Category.GENERAL,
+    category: Category.CLEANING,
     suggested_price: 700,
     general_location_name: 'קריית אתא, חיפה',
     exact_address: 'רחוב ויצמן 14, קריית אתא',
-    lon: 35.1060,
-    lat: 32.8100,
+    lon: 35.1060, lat: 32.8100,
   },
   {
-    title: 'הרכבת מוצרי בית שונים',
-    description: 'צריך להרכיב: מדף קיר, מנורת עמידה, ומסגרת מיטה. כל הציוד קיים. עבודה של כמה שעות.',
-    category: Category.GENERAL,
+    title: 'ניקיון שוטף לדירת 3 חדרים',
+    description: 'צריך ניקיון שבועי קבוע לדירת 3 חדרים, כולל מטבח ושני חדרי שירותים.',
+    category: Category.CLEANING,
     suggested_price: 250,
     general_location_name: 'קריית אליעזר, חיפה',
     exact_address: 'רחוב שמחה גולן 7, קריית אליעזר',
-    lon: 34.9820,
-    lat: 32.8050,
+    lon: 34.9820, lat: 32.8050,
+  },
+  // MOUNTING x2
+  {
+    title: 'תלייה של טלוויזיה 65 אינץ על הקיר',
+    description: 'טלוויזיה Samsung 65" צריכה להיות מוצמדת לקיר בסלון. יש לי את הברגים, צריך מישהו עם כלים.',
+    category: Category.MOUNTING,
+    suggested_price: 200,
+    general_location_name: 'הדר הכרמל, חיפה',
+    exact_address: 'רחוב ביאליק 12, הדר הכרמל',
+    lon: 35.0040, lat: 32.8180,
+  },
+  {
+    title: 'התקנת מוטות וילון בחדר שינה',
+    description: 'שני חלונות בחדר שינה צריכים מוטות וילון. יש לי את כל החומרים, צריך מישהו שיתקין.',
+    category: Category.MOUNTING,
+    suggested_price: 120,
+    general_location_name: 'נווה שאנן, חיפה',
+    exact_address: 'רחוב חסן שוקרי 22, נווה שאנן',
+    lon: 35.0120, lat: 32.8020,
+  },
+  // OUTDOORS x2
+  {
+    title: 'גיזום וסידור גינה קטנה',
+    description: 'גינה קטנה בחזית הבית — עשבייה, שיחים שגדלו חסר שליטה, ופינת קומפוסט להסרה.',
+    category: Category.OUTDOORS,
+    suggested_price: 300,
+    general_location_name: 'קריית חיים, חיפה',
+    exact_address: 'רחוב רוטשילד 5, קריית חיים',
+    lon: 35.0800, lat: 32.8350,
+  },
+  {
+    title: 'שטיפת רחבה וכניסה בלחץ מים',
+    description: 'רחבת הכניסה לבית ומדרגות חיצוניות מלוכלכות. צריך שטיפה בלחץ גבוה.',
+    category: Category.OUTDOORS,
+    suggested_price: 200,
+    general_location_name: 'כרמל צרפתי, חיפה',
+    exact_address: 'רחוב מוריה 30, כרמל צרפתי',
+    lon: 34.9910, lat: 32.7890,
   },
 ];
 
@@ -201,14 +227,18 @@ async function main() {
 
   const [requester1, requester2, requester3, fixer1, fixer2, fixer3] = createdUsers;
 
-  // Requester assignment: tasks 0-3 → requester1, 4-7 → requester2, 8-11 → requester3
+  // Distribute tasks across requesters
   const requesterIds = [
     requester1.id, requester1.id, requester1.id, requester1.id,
     requester2.id, requester2.id, requester2.id, requester2.id,
     requester3.id, requester3.id, requester3.id, requester3.id,
+    requester1.id, requester1.id, requester2.id, requester3.id,
   ];
 
-  console.log('Clearing existing tasks and bids...');
+  console.log('Clearing existing data...');
+  await prisma.review.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.bid.deleteMany();
   await prisma.task.deleteMany();
 
@@ -222,19 +252,9 @@ async function main() {
 
     await prisma.$executeRaw`
       INSERT INTO "Task" (
-        id,
-        requester_id,
-        title,
-        description,
-        media_urls,
-        category,
-        suggested_price,
-        status,
-        general_location_name,
-        exact_address,
-        coordinates,
-        created_at,
-        updated_at
+        id, requester_id, title, description, media_urls, category,
+        suggested_price, status, general_location_name, exact_address,
+        coordinates, created_at, updated_at
       ) VALUES (
         ${id}::uuid,
         ${requesterIds[i]}::uuid,
@@ -247,26 +267,22 @@ async function main() {
         ${task.general_location_name},
         ${task.exact_address},
         ST_SetSRID(ST_MakePoint(${task.lon}::float8, ${task.lat}::float8), 4326),
-        NOW(),
-        NOW()
+        NOW(), NOW()
       )
     `;
   }
 
   console.log('Seeding bids...');
-  // 2-3 bids per task, rotating through the 3 fixers
   const fixerIds = [fixer1.id, fixer2.id, fixer3.id];
-  const bidPriceOffsets = [-50, 0, 100]; // variety in offered prices
+  const bidPriceOffsets = [-50, 0, 100];
 
   for (let t = 0; t < taskIds.length; t++) {
     const task = taskSeedData[t];
     const basePrice = task.suggested_price ?? 300;
-    const numBids = t % 3 === 0 ? 3 : 2; // alternate between 2 and 3 bids
+    const numBids = t % 3 === 0 ? 3 : 2;
 
     for (let b = 0; b < numBids; b++) {
       const fixerIndex = (t + b) % 3;
-
-      // Skip if fixer is the requester (can't bid on own task)
       const requesterId = requesterIds[t];
       if (fixerIds[fixerIndex] === requesterId) continue;
 
@@ -275,14 +291,14 @@ async function main() {
           task_id: taskIds[t],
           fixer_id: fixerIds[fixerIndex],
           offered_price: basePrice + bidPriceOffsets[b],
-          description: `אני ${['חשמלאי', 'אינסטלטור', 'נגר', 'צבעי', 'פועל הובלה', 'איש כללי'][fixerIndex % 6]} מנוסה עם ${5 + fixerIndex * 3} שנות ניסיון. אוכל להגיע תוך יומיים.`,
+          description: `אני בעל מקצוע מנוסה עם ${5 + fixerIndex * 3} שנות ניסיון. אוכל להגיע תוך יומיים ולסיים את העבודה ביום אחד.`,
           status: BidStatus.PENDING,
         },
       });
     }
   }
 
-  console.log('Seed complete');
+  console.log('✓ Seed complete — 6 users, 16 tasks, bids created');
 }
 
 main()

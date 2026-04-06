@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
-import { brandColors } from '../theme';
+import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,6 +16,15 @@ function MessagesScreen() {
 
 function FixerProfileScreen() {
   return <PlaceholderScreen title="Fixer Profile" />;
+}
+
+function TabIcon({ name, color, size, focused }: { name: string; color: string; size: number; focused: boolean }) {
+  return (
+    <View style={styles.tabIconWrapper}>
+      <MaterialCommunityIcons name={name as never} color={color} size={size} />
+      {focused && <View style={[styles.activeIndicator, { backgroundColor: color }]} />}
+    </View>
+  );
 }
 
 export default function FixerTabs() {
@@ -30,6 +39,7 @@ export default function FixerTabs() {
         sceneStyle: { backgroundColor: theme.colors.background },
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
       }}
     >
       <Tab.Screen
@@ -37,8 +47,8 @@ export default function FixerTabs() {
         component={DiscoveryFeedScreen}
         options={{
           tabBarLabel: 'Find Jobs',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="map-search" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+            <TabIcon name={focused ? 'map-search' : 'map-search-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -47,8 +57,8 @@ export default function FixerTabs() {
         component={MyBidsScreen}
         options={{
           tabBarLabel: 'My Bids',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="format-list-bulleted" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+            <TabIcon name={focused ? 'format-list-bulleted' : 'format-list-bulleted'} color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -57,8 +67,8 @@ export default function FixerTabs() {
         component={MessagesScreen}
         options={{
           tabBarLabel: 'Messages',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="chat" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+            <TabIcon name={focused ? 'chat' : 'chat-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -67,8 +77,8 @@ export default function FixerTabs() {
         component={FixerProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="account" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+            <TabIcon name={focused ? 'account' : 'account-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -78,15 +88,28 @@ export default function FixerTabs() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 72,
-    paddingTop: 8,
-    paddingBottom: 10,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.outline,
+    height: 68,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm + 2,
+    borderTopWidth: 0,
     backgroundColor: brandColors.surface,
+    ...shadows.md,
   },
   tabBarLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    marginTop: 2,
+  },
+  tabBarItem: {
+    gap: 2,
+  },
+  tabIconWrapper: {
+    alignItems: 'center',
+  },
+  activeIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 3,
   },
 });

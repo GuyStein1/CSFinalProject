@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
-import { brandColors } from '../theme';
+import { FCard } from '../components/ui';
+import { brandColors, spacing, typography } from '../theme';
 
 interface Props {
   title: string;
@@ -11,15 +13,18 @@ interface Props {
 export default function PlaceholderScreen({ title }: Props) {
   return (
     <View style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content style={styles.content}>
+      <FCard style={styles.card} shadow="md">
+        <View style={styles.content}>
           <AppLogo />
-          <Text variant="headlineSmall" style={styles.title}>{title}</Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
+          <View style={styles.iconCircle}>
+            <MaterialCommunityIcons name="hammer-wrench" size={28} color={brandColors.primaryMuted} />
+          </View>
+          <Text style={[typography.h2, styles.title]}>{title}</Text>
+          <Text style={[typography.body, styles.subtitle]}>
             This part of the app is being polished next.
           </Text>
-        </Card.Content>
-      </Card>
+        </View>
+      </FCard>
     </View>
   );
 }
@@ -30,22 +35,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: brandColors.background,
-    padding: 20,
+    padding: spacing.xl,
   },
   card: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 28,
-    backgroundColor: brandColors.surface,
   },
   content: {
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 28,
+    gap: spacing.md,
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: brandColors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
   subtitle: {
     color: brandColors.textMuted,

@@ -1,19 +1,22 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Button, Card, Icon, Text, useTheme } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import StatusBadge from './StatusBadge';
-import { brandColors } from '../theme';
+import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
-type Category = 'ELECTRICITY' | 'PLUMBING' | 'CARPENTRY' | 'PAINTING' | 'MOVING' | 'GENERAL';
+type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
 
-const CATEGORY_ICONS: Record<Category, string> = {
-  ELECTRICITY: 'lightning-bolt',
-  PLUMBING: 'water',
-  CARPENTRY: 'hammer',
-  PAINTING: 'format-paint',
-  MOVING: 'truck',
-  GENERAL: 'wrench',
+const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
+  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
+  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
+  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
+  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
+  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
+  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
+  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
+  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
 };
 
 interface TaskCardProps {
@@ -25,10 +28,12 @@ interface TaskCardProps {
   bidCount?: number;
   fixerName?: string;
   onPress?: () => void;
+  onDelete?: () => void;
+  onReactivate?: () => void;
   onCancel?: () => void;
   onMarkCompleted?: () => void;
   onEdit?: () => void;
-  onReactivate?: () => void;
+  muted?: boolean;
 }
 
 export default function TaskCard({
@@ -40,146 +45,241 @@ export default function TaskCard({
   bidCount,
   fixerName,
   onPress,
+  onDelete,
+  onReactivate,
   onCancel,
   onMarkCompleted,
   onEdit,
-  onReactivate,
+  muted = false,
 }: TaskCardProps) {
-  const theme = useTheme();
+  const meta = CATEGORY_META[category] ?? { icon: 'wrench', color: '#7A8B96', bg: '#E9E2D5' };
+  const hasActions = onDelete || onReactivate || onCancel || onMarkCompleted || onEdit;
 
   return (
-    <Card
-      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+    <Pressable
       onPress={onPress}
-      mode="elevated"
+      style={({ pressed }) => [
+        styles.card,
+        muted && styles.cardMuted,
+        shadows.sm,
+        { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+      ]}
     >
-      <Card.Title
-        title={title}
-        titleNumberOfLines={2}
-        titleVariant="titleSmall"
-        titleStyle={styles.title}
-        left={() => (
-          <View style={styles.iconShell}>
-            <Icon source={CATEGORY_ICONS[category]} size={24} color={theme.colors.primary} />
-          </View>
-        )}
-        right={() => <StatusBadge status={status} />}
-        rightStyle={styles.statusRight}
-      />
-      <Card.Content style={styles.content}>
-        <Text variant="bodySmall" style={styles.location}>
-          {locationName}
-        </Text>
-        {suggestedPrice != null && (
-          <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
-            ₪{suggestedPrice}
+      <View style={styles.topRow}>
+        <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
+          <MaterialCommunityIcons name={meta.icon as never} size={20} color={meta.color} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={[typography.h3, styles.title]} numberOfLines={2}>
+            {title}
           </Text>
-        )}
-        {bidCount != null && bidCount > 0 && status === 'OPEN' && (
-          <View style={styles.bidBadge}>
-            <Icon source="hand-extended" size={14} color={brandColors.primary} />
-            <Text variant="labelSmall" style={styles.bidBadgeText}>
-              {bidCount} {bidCount === 1 ? 'new offer' : 'new offers'} — tap to review
+          <View style={styles.locationRow}>
+            <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
+            <Text style={[typography.bodySm, styles.location]} numberOfLines={1}>
+              {locationName}
             </Text>
           </View>
-        )}
-        {bidCount != null && bidCount === 0 && status === 'OPEN' && (
-          <Text variant="bodySmall" style={styles.meta}>
-            No bids yet
+        </View>
+        <StatusBadge status={status} />
+      </View>
+
+      <View style={styles.bottomRow}>
+        <View style={styles.metaGroup}>
+          {suggestedPrice != null && (
+            <Text style={[typography.h3, styles.price]}>₪{suggestedPrice}</Text>
+          )}
+          {suggestedPrice == null && (
+            <Text style={[typography.bodySm, styles.quoteLabel]}>Quote</Text>
+          )}
+        </View>
+      </View>
+
+      {/* Bid badges & fixer assignment */}
+      {bidCount != null && bidCount > 0 && status === 'OPEN' && (
+        <View style={styles.newOffersBadge}>
+          <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.warning} />
+          <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>
+            {bidCount} {bidCount === 1 ? 'new offer' : 'new offers'} — tap to review
           </Text>
-        )}
-        {fixerName && status === 'IN_PROGRESS' && (
-          <Text variant="bodySmall" style={styles.meta}>
+        </View>
+      )}
+      {bidCount != null && bidCount === 0 && status === 'OPEN' && (
+        <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>No bids yet</Text>
+      )}
+      {fixerName && status === 'IN_PROGRESS' && (
+        <View style={styles.footerChip}>
+          <MaterialCommunityIcons name="account-check-outline" size={13} color={brandColors.success} />
+          <Text style={[typography.caption, { color: brandColors.success }]}>
             Assigned to {fixerName}
           </Text>
-        )}
-        {(onCancel || onMarkCompleted || onEdit || onReactivate) && (
-          <View style={styles.actions}>
-            {onReactivate && (
-              <Button mode="outlined" compact textColor={brandColors.success} onPress={onReactivate} style={[styles.actionBtn, { borderColor: brandColors.success }]}>
+        </View>
+      )}
+
+      {/* Action buttons */}
+      {hasActions && (
+        <View style={styles.actionRow}>
+          {onReactivate && status === 'CANCELED' && (
+            <Pressable
+              style={[styles.actionBtn, styles.successBtn]}
+              onPress={(e) => { e.stopPropagation(); onReactivate(); }}
+            >
+              <MaterialCommunityIcons name="refresh" size={14} color={brandColors.success} />
+              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
                 Reactivate
-              </Button>
-            )}
-            {onEdit && (
-              <Button mode="outlined" compact onPress={onEdit} icon="pencil" style={styles.actionBtn}>
+              </Text>
+            </Pressable>
+          )}
+          {onEdit && (
+            <Pressable
+              style={[styles.actionBtn, styles.defaultBtn]}
+              onPress={(e) => { e.stopPropagation(); onEdit(); }}
+            >
+              <MaterialCommunityIcons name="pencil" size={14} color={brandColors.primaryMuted} />
+              <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>
                 Edit
-              </Button>
-            )}
-            {onMarkCompleted && (
-              <Button mode="outlined" compact textColor={brandColors.success} onPress={onMarkCompleted} style={[styles.actionBtn, { borderColor: brandColors.success }]}>
+              </Text>
+            </Pressable>
+          )}
+          {onMarkCompleted && (
+            <Pressable
+              style={[styles.actionBtn, styles.successBtn]}
+              onPress={(e) => { e.stopPropagation(); onMarkCompleted(); }}
+            >
+              <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
+              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
                 Mark as Completed
-              </Button>
-            )}
-            {onCancel && (
-              <Button mode="outlined" compact textColor={brandColors.danger} onPress={onCancel} style={[styles.actionBtn, { borderColor: brandColors.danger }]}>
+              </Text>
+            </Pressable>
+          )}
+          {onCancel && (
+            <Pressable
+              style={[styles.actionBtn, styles.dangerBtn]}
+              onPress={(e) => { e.stopPropagation(); onCancel(); }}
+            >
+              <MaterialCommunityIcons name="close-circle-outline" size={14} color={brandColors.danger} />
+              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
                 Cancel
-              </Button>
-            )}
-          </View>
-        )}
-      </Card.Content>
-    </Card>
+              </Text>
+            </Pressable>
+          )}
+          {onDelete && (
+            <Pressable
+              style={[styles.actionBtn, styles.dangerBtn]}
+              onPress={(e) => { e.stopPropagation(); onDelete(); }}
+            >
+              <MaterialCommunityIcons name="delete-outline" size={14} color={brandColors.danger} />
+              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
+                Delete
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 6,
-    marginHorizontal: 4,
-    borderRadius: 22,
-    shadowColor: '#112336',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
+    backgroundColor: brandColors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  cardMuted: {
+    opacity: 0.7,
+  },
+  topRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: {
+    flex: 1,
+    gap: spacing.xs,
   },
   title: {
     color: brandColors.textPrimary,
-    fontWeight: '700',
   },
-  content: {
-    gap: 8,
-    paddingBottom: 12,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   location: {
     color: brandColors.textMuted,
+    flex: 1,
   },
-  meta: {
-    color: brandColors.textMuted,
-  },
-  bidBadge: {
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+  },
+  metaGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  price: {
+    color: brandColors.primary,
+  },
+  quoteLabel: {
+    color: brandColors.primaryMuted,
+    fontStyle: 'italic',
+  },
+  newOffersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
     backgroundColor: brandColors.warningSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
     alignSelf: 'flex-start',
   },
-  bidBadgeText: {
-    color: brandColors.warning,
-    fontWeight: '700',
+  footerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.surfaceAlt,
+    alignSelf: 'flex-start',
   },
-  actions: {
+  actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 4,
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: brandColors.outlineLight,
+    paddingTop: spacing.md,
   },
   actionBtn: {
-    borderRadius: 12,
-  },
-  statusRight: {
-    marginRight: 8,
-  },
-  iconShell: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: brandColors.surfaceAlt,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+  },
+  successBtn: {
+    borderColor: brandColors.success,
+  },
+  dangerBtn: {
+    borderColor: brandColors.danger,
+  },
+  defaultBtn: {
+    borderColor: brandColors.outline,
   },
 });

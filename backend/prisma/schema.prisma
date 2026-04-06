@@ -10,12 +10,14 @@ datasource db {
 }
 
 enum Category {
-  ELECTRICITY
-  PLUMBING
-  CARPENTRY
-  PAINTING
+  ASSEMBLY
+  MOUNTING
   MOVING
-  GENERAL
+  PAINTING
+  PLUMBING
+  ELECTRICITY
+  OUTDOORS
+  CLEANING
 }
 
 enum TaskStatus {
