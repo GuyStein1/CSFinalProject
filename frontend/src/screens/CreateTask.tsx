@@ -60,6 +60,8 @@ export default function CreateTask({ navigation, route }: Props) {
   const [showLocationRationale, setShowLocationRationale] = useState(false);
   const [mapRegion, setMapRegion] = useState({ latitude: 32.8, longitude: 35.0, latitudeDelta: 0.05, longitudeDelta: 0.05 });
   const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
   const totalSteps = 5;
 
@@ -105,6 +107,41 @@ export default function CreateTask({ navigation, route }: Props) {
       setPinCoords({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
     } catch {
       // fallback to default region
+    }
+  };
+
+  const geocodeAddress = async (address: string) => {
+    if (!address.trim()) return;
+    setGeocoding(true);
+    setGeocodeError(null);
+    try {
+      const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+      if (key) {
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`,
+        );
+        const data = await res.json();
+        if (data.status === 'OK' && data.results.length > 0) {
+          const { lat, lng } = data.results[0].geometry.location;
+          const coords = { latitude: lat, longitude: lng };
+          setPinCoords(coords);
+          setMapRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 });
+          return;
+        }
+      }
+      // Fallback to expo-location geocoding
+      const results = await Location.geocodeAsync(address);
+      if (results.length > 0) {
+        const coords = { latitude: results[0].latitude, longitude: results[0].longitude };
+        setPinCoords(coords);
+        setMapRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 });
+      } else {
+        setGeocodeError('Could not find this location. Try a more specific address.');
+      }
+    } catch {
+      setGeocodeError('Geocoding failed. Please place the pin manually on the map.');
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -360,8 +397,28 @@ export default function CreateTask({ navigation, route }: Props) {
             <Text style={[typography.h2, styles.stepTitle]}>Location</Text>
             <Text style={[typography.bodySm, styles.stepSubtitle]}>Tell fixers where the job is</Text>
 
-            {/* Map (native only, when permission granted) */}
-            {Platform.OS !== 'web' && locationPermission === 'granted' && (
+            <FInput
+              label="General area (e.g., 'Hadar, Haifa')"
+              value={generalLocation}
+              onChangeText={(text) => { setGeneralLocation(text); setGeocodeError(null); }}
+            />
+            <FButton
+              variant="outline"
+              onPress={() => geocodeAddress(generalLocation)}
+              disabled={geocoding || !generalLocation.trim()}
+              loading={geocoding}
+              icon="map-search"
+              size="sm"
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {geocoding ? 'Locating...' : 'Find on map'}
+            </FButton>
+            {geocodeError && (
+              <Text style={[typography.caption, { color: brandColors.danger }]}>{geocodeError}</Text>
+            )}
+
+            {/* Map — show on all platforms (web uses Google Maps, native uses react-native-maps) */}
+            {(Platform.OS === 'web' || locationPermission === 'granted') && (
               <View style={styles.mapContainer}>
                 <LocationMap
                   region={mapRegion}
@@ -383,11 +440,6 @@ export default function CreateTask({ navigation, route }: Props) {
               </View>
             )}
 
-            <FInput
-              label="General area (e.g., 'Hadar, Haifa')"
-              value={generalLocation}
-              onChangeText={setGeneralLocation}
-            />
             <View style={styles.addressNote}>
               <MaterialCommunityIcons name="shield-lock-outline" size={16} color={brandColors.primaryMuted} />
               <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
