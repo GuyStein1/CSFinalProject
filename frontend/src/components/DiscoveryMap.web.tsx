@@ -1,104 +1,126 @@
-import React, { useCallback } from 'react';
-import { type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { Asset } from 'expo-asset';
 import { brandColors } from '../theme';
 import {
-  CATEGORY_MARKER_COLORS,
-  DiscoveryMapProps,
+  type DiscoveryMapProps,
+  type DiscoveryMapRegion,
 } from './DiscoveryMap.types';
 
-const WEB_MAP_WIDTH = 320;
-const WEB_MAP_HEIGHT = 420;
+const GOOGLE_MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+const LIBRARIES: ('places')[] = ['places'];
+
+const MAP_CONTAINER_STYLE = { width: '100%', height: '100%' } as const;
+
+const MAP_OPTIONS: google.maps.MapOptions = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+  clickableIcons: false,
+  styles: [
+    { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+    { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  ],
+};
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const logoAsset = require('../../assets/logo-without-text.png');
+
+function resolveLogoUri(): string {
+  try {
+    const asset = Asset.fromModule(logoAsset);
+    return asset.uri ?? asset.localUri ?? '';
+  } catch {
+    return '';
+  }
+}
 
 export default function DiscoveryMap({
   tasks,
-  centerLat,
-  centerLng,
   mapRegion,
   onSelectTask,
   onClearSelection,
+  onRegionChangeComplete,
 }: DiscoveryMapProps) {
-  const handleMarkerPress = useCallback(
-    (taskId: string, e: GestureResponderEvent) => {
-      e.stopPropagation?.();
-      onSelectTask(taskId);
-    },
-    [onSelectTask],
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
+  const markerIconRef = useRef<google.maps.Icon | null>(null);
+
+  const center = useMemo(
+    () => ({ lat: mapRegion.latitude, lng: mapRegion.longitude }),
+    [mapRegion.latitude, mapRegion.longitude],
   );
+
+  const getMarkerIcon = useCallback((): google.maps.Icon | undefined => {
+    if (markerIconRef.current) return markerIconRef.current;
+    const uri = resolveLogoUri();
+    if (!uri) return undefined;
+    markerIconRef.current = {
+      url: uri,
+      scaledSize: new google.maps.Size(36, 24),
+      anchor: new google.maps.Point(18, 12),
+    };
+    return markerIconRef.current;
+  }, []);
+
+  const handleIdle = useCallback(
+    (map: google.maps.Map) => {
+      const c = map.getCenter();
+      const bounds = map.getBounds();
+      if (!c || !bounds) return;
+
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      const region: DiscoveryMapRegion = {
+        latitude: c.lat(),
+        longitude: c.lng(),
+        latitudeDelta: Math.abs(ne.lat() - sw.lat()),
+        longitudeDelta: Math.abs(ne.lng() - sw.lng()),
+      };
+      onRegionChangeComplete(region);
+    },
+    [onRegionChangeComplete],
+  );
+
+  if (!isLoaded) {
+    return <View style={styles.loading} />;
+  }
 
   return (
     <View style={styles.container}>
-      <Text variant="titleMedium" style={styles.title}>
-        Nearby Jobs Map
-      </Text>
-      <Text variant="bodySmall" style={styles.subtitle}>
-        Tap a marker to preview a task. Tap the background to dismiss.
-      </Text>
-
-      <Pressable style={styles.canvas} onPress={onClearSelection}>
-        {tasks.map((task) => {
-          const leftRatio = getRelativeOffset(task.lng, centerLng, mapRegion.longitudeDelta);
-          const topRatio = getRelativeOffset(task.lat, centerLat, mapRegion.latitudeDelta, true);
-
-          return (
-            <Pressable
-              key={task.id}
-              onPress={(e) => handleMarkerPress(task.id, e)}
-              style={[
-                styles.marker,
-                {
-                  left: leftRatio * WEB_MAP_WIDTH,
-                  top: topRatio * WEB_MAP_HEIGHT,
-                  backgroundColor: CATEGORY_MARKER_COLORS[task.category],
-                },
-              ]}
-            />
-          );
-        })}
-      </Pressable>
+      <GoogleMap
+        mapContainerStyle={MAP_CONTAINER_STYLE}
+        center={center}
+        zoom={14}
+        options={MAP_OPTIONS}
+        onClick={onClearSelection}
+        onLoad={(map) => {
+          map.addListener('idle', () => handleIdle(map));
+        }}
+      >
+        {tasks.map((task) => (
+          <MarkerF
+            key={task.id}
+            position={{ lat: task.lat, lng: task.lng }}
+            icon={getMarkerIcon()}
+            onClick={() => onSelectTask(task.id)}
+          />
+        ))}
+      </GoogleMap>
     </View>
   );
-}
-
-function getRelativeOffset(value: number, center: number, delta: number, invert = false) {
-  const normalized = 0.5 + (value - center) / (delta * 2);
-  const clamped = Math.max(0.08, Math.min(0.92, normalized));
-
-  return invert ? 1 - clamped : clamped;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  title: {
-    color: brandColors.textPrimary,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: brandColors.textMuted,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  canvas: {
-    width: WEB_MAP_WIDTH,
-    height: WEB_MAP_HEIGHT,
-    alignSelf: 'center',
-    borderRadius: 28,
-    backgroundColor: brandColors.surfaceAlt,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: brandColors.outline,
   },
-  marker: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: brandColors.surface,
-    marginLeft: -9,
-    marginTop: -9,
+  loading: {
+    flex: 1,
+    backgroundColor: brandColors.surfaceAlt,
   },
 });

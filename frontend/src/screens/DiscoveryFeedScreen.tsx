@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import * as Location from 'expo-location';
 import {
   ActivityIndicator,
@@ -15,7 +15,7 @@ import type { DiscoveryMapRegion } from '../components/DiscoveryMap.types';
 import DiscoveryPreviewCard from '../components/DiscoveryPreviewCard';
 import DiscoveryListCard from '../components/DiscoveryListCard';
 import EmptyState from '../components/EmptyState';
-import FilterBar, { type PriceRange, type ViewMode } from '../components/FilterBar';
+import FilterBar, { type ViewMode } from '../components/FilterBar';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
 import useTasks, { type Category } from '../hooks/useTasks';
@@ -37,31 +37,34 @@ interface DiscoveryCenter {
 const DEFAULT_RADIUS_KM = 10;
 const DEFAULT_DELTA = 0.06;
 
-function priceBounds(range: PriceRange): { minPrice: number | null; maxPrice: number | null } {
-  switch (range) {
-    case '0-100': return { minPrice: 0, maxPrice: 100 };
-    case '100-500': return { minPrice: 100, maxPrice: 500 };
-    case '500+': return { minPrice: 500, maxPrice: 100000 };
-    default: return { minPrice: null, maxPrice: null };
-  }
-}
+// Default center (Tel Aviv) when GPS is unavailable
+const DEFAULT_CENTER: DiscoveryCenter = { lat: 32.0853, lng: 34.7818, label: 'Tel Aviv' };
+
+const PRICE_SLIDER_MAX = 5000;
 
 export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [permissionState, setPermissionState] = useState<PermissionState>('checking');
   const [centerMode, setCenterMode] = useState<CenterMode>('gps');
   const [center, setCenter] = useState<DiscoveryCenter | null>(null);
-  const [manualArea, setManualArea] = useState('');
-  const [manualError, setManualError] = useState<string | null>(null);
-  const [manualLoading, setManualLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ placeId: string; description: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<DiscoveryMapRegion | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [radius, setRadius] = useState(DEFAULT_RADIUS_KM);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
-  const [priceRange, setPriceRange] = useState<PriceRange>('any');
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(PRICE_SLIDER_MAX);
 
-  const { minPrice, maxPrice } = priceBounds(priceRange);
+  const apiMinPrice = priceMin > 0 ? priceMin : null;
+  const apiMaxPrice = priceMax < PRICE_SLIDER_MAX ? priceMax : null;
   const apiCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
 
   const { tasks: rawTasks, loading, error, refetch } = useTasks({
@@ -69,8 +72,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     lng: center?.lng,
     radius,
     category: apiCategory,
-    minPrice,
-    maxPrice,
+    minPrice: apiMinPrice,
+    maxPrice: apiMaxPrice,
     enabled: permissionState === 'ready' && center != null,
   });
 
@@ -107,7 +110,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   }, [syncCenter]);
 
   const evaluatePermissionState = useCallback(async () => {
-    setManualError(null);
+    setSearchError(null);
     try {
       const permission = await Location.getForegroundPermissionsAsync();
       if (permission.status === 'granted') {
@@ -122,11 +125,13 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         setPermissionState('ready');
         return;
       }
-      setPermissionState('denied');
+      // GPS denied — default to Tel Aviv and go straight to map
+      syncCenter(DEFAULT_CENTER, 'manual');
     } catch {
-      setPermissionState('error');
+      // On error, still show the map with default center
+      syncCenter(DEFAULT_CENTER, 'manual');
     }
-  }, [center, centerMode, loadGpsCenter]);
+  }, [center, centerMode, loadGpsCenter, syncCenter]);
 
   useFocusEffect(
     useCallback(() => {
@@ -147,39 +152,114 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         await loadGpsCenter();
         return;
       }
-      setPermissionState('denied');
+      // Denied — go straight to map with default
+      syncCenter(DEFAULT_CENTER, 'manual');
     } catch {
-      setPermissionState('error');
+      syncCenter(DEFAULT_CENTER, 'manual');
     }
   };
 
   const handleSkipLocation = () => {
-    setPermissionState('denied');
+    syncCenter(DEFAULT_CENTER, 'manual');
   };
 
-  const handleUseManualCenter = async () => {
-    if (!manualArea.trim()) {
-      setManualError('Enter a city or neighborhood first.');
+  // --- Autocomplete ---
+
+  const fetchSuggestions = useCallback((text: string) => {
+    if (Platform.OS !== 'web' || text.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
-    setManualLoading(true);
-    setManualError(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      try {
+        if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
+          autocompleteRef.current = new google.maps.places.AutocompleteService();
+        }
+        const service = autocompleteRef.current;
+        if (!service) return;
+        service.getPlacePredictions(
+          { input: text.trim(), types: ['geocode'] },
+          (predictions, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+              setSuggestions(
+                predictions.slice(0, 5).map((p) => ({ placeId: p.place_id, description: p.description })),
+              );
+              setShowSuggestions(true);
+            } else {
+              setSuggestions([]);
+              setShowSuggestions(false);
+            }
+          },
+        );
+      } catch {
+        // Places library not loaded yet
+      }
+    }, 300);
+  }, []);
+
+  const handleSearchTextChange = useCallback((text: string) => {
+    setSearchText(text);
+    setSearchError(null);
+    fetchSuggestions(text);
+  }, [fetchSuggestions]);
+
+  const geocodeAndCenter = useCallback(async (address: string) => {
+    setSearchLoading(true);
+    setSearchError(null);
+    setSuggestions([]);
+    setShowSuggestions(false);
     try {
-      const results = await Location.geocodeAsync(manualArea.trim());
-      if (results.length === 0) {
-        setManualError('Could not find that area. Try a nearby neighborhood or city.');
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+      if (key) {
+        try {
+          const res = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`,
+          );
+          const data = await res.json();
+          if (data.status === 'OK' && data.results.length > 0) {
+            lat = data.results[0].geometry.location.lat;
+            lng = data.results[0].geometry.location.lng;
+          }
+        } catch {
+          // Fall through to expo-location
+        }
+      }
+
+      if (lat === null || lng === null) {
+        const results = await Location.geocodeAsync(address);
+        if (results.length > 0) {
+          lat = results[0].latitude;
+          lng = results[0].longitude;
+        }
+      }
+
+      if (lat === null || lng === null) {
+        setSearchError('Could not find that area.');
         return;
       }
-      syncCenter(
-        { lat: results[0].latitude, lng: results[0].longitude, label: manualArea.trim() },
-        'manual'
-      );
+      syncCenter({ lat, lng, label: address }, 'manual');
     } catch {
-      setManualError('Failed to geocode that area. Please try again.');
+      setSearchError('Failed to search. Please try again.');
     } finally {
-      setManualLoading(false);
+      setSearchLoading(false);
     }
-  };
+  }, [syncCenter]);
+
+  const handleSelectSuggestion = useCallback((description: string) => {
+    setSearchText(description);
+    geocodeAndCenter(description);
+  }, [geocodeAndCenter]);
+
+  const handleSearchSubmit = useCallback(() => {
+    if (!searchText.trim()) return;
+    setShowSuggestions(false);
+    geocodeAndCenter(searchText.trim());
+  }, [searchText, geocodeAndCenter]);
 
   const handleViewDetails = () => {
     if (!selectedTask) return;
@@ -201,72 +281,6 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   if (permissionState === 'checking' && !center) {
     return <LoadingScreen label="Checking location permissions..." />;
-  }
-
-  if (permissionState === 'error' && !center) {
-    return (
-      <View style={styles.stateContainer}>
-        <EmptyState
-          icon="map-marker-alert-outline"
-          title="We could not access location yet"
-          message="Try again to load nearby jobs."
-          actionLabel="Retry"
-          onAction={() => {
-            setPermissionState('checking');
-            evaluatePermissionState();
-          }}
-        />
-      </View>
-    );
-  }
-
-  if (permissionState === 'denied' && !center) {
-    return (
-      <View style={styles.manualContainer}>
-        <View style={styles.manualBanner}>
-          <MaterialCommunityIcons name="map-marker-off-outline" size={20} color={brandColors.warning} />
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.label, { color: brandColors.warning }]}>Using manual location</Text>
-            <Text style={[typography.bodySm, { color: brandColors.textPrimary, marginTop: spacing.xs }]}>
-              Enable GPS in Settings for automatic detection.
-            </Text>
-          </View>
-        </View>
-
-        <FCard style={styles.manualCard} shadow="md">
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.sm }]}>
-            Enter your city or area
-          </Text>
-          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
-            We will center the job map around the area you choose.
-          </Text>
-
-          <FInput
-            label="City or neighborhood"
-            placeholder="Hadar, Haifa"
-            value={manualArea}
-            onChangeText={setManualArea}
-          />
-
-          {manualError && (
-            <Text style={[typography.bodySm, { color: brandColors.danger, marginTop: spacing.sm }]}>
-              {manualError}
-            </Text>
-          )}
-
-          <FButton
-            onPress={handleUseManualCenter}
-            loading={manualLoading}
-            disabled={manualLoading}
-            fullWidth
-            icon="map-marker-check-outline"
-            style={{ marginTop: spacing.lg }}
-          >
-            Use This Area
-          </FButton>
-        </FCard>
-      </View>
-    );
   }
 
   if (permissionState === 'rationale' && !center) {
@@ -313,7 +327,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     );
   }
 
-  // Main discovery view
+  // Main discovery view — always show the map
 
   return (
     <View style={styles.container}>
@@ -324,8 +338,9 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         onRadiusChange={setRadius}
         selectedCategories={selectedCategories}
         onToggleCategory={handleToggleCategory}
-        priceRange={priceRange}
-        onPriceRangeChange={setPriceRange}
+        priceMin={priceMin}
+        priceMax={priceMax}
+        onPriceChange={(min, max) => { setPriceMin(min); setPriceMax(max); }}
       />
 
       {viewMode === 'map' ? (
@@ -337,19 +352,83 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               centerLng={center.lng}
               mapRegion={mapRegion}
               onSelectTask={setSelectedTaskId}
-              onClearSelection={() => setSelectedTaskId(null)}
+              onClearSelection={() => {
+                setSelectedTaskId(null);
+                setShowSuggestions(false);
+                setSearchFocused(false);
+              }}
               onRegionChangeComplete={setMapRegion}
             />
           )}
 
-          {centerMode === 'manual' && center && (
-            <View style={styles.manualOverlay}>
-              <MaterialCommunityIcons name="map-marker-outline" size={16} color={brandColors.primary} />
-              <Text style={[typography.caption, { color: brandColors.primary, flex: 1 }]}>
-                {center.label}
-              </Text>
+          {/* Search bar overlay */}
+          <View style={styles.searchOverlay}>
+            <View style={styles.searchBarContainer}>
+              <FInput
+                placeholder="Search city, street, or area..."
+                value={searchText}
+                onChangeText={handleSearchTextChange}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => {
+                  // Delay hiding so suggestion press can register
+                  setTimeout(() => setSearchFocused(false), 200);
+                }}
+                onSubmitEditing={handleSearchSubmit}
+                dense
+                style={styles.searchInput}
+                left={<FInput.Icon icon="magnify" size={20} />}
+                right={
+                  searchText.length > 0 ? (
+                    <FInput.Icon
+                      icon="close-circle"
+                      size={18}
+                      onPress={() => {
+                        setSearchText('');
+                        setSuggestions([]);
+                        setShowSuggestions(false);
+                        setSearchError(null);
+                      }}
+                    />
+                  ) : undefined
+                }
+              />
+              {searchLoading && (
+                <ActivityIndicator
+                  size="small"
+                  color={brandColors.primary}
+                  style={styles.searchSpinner}
+                />
+              )}
             </View>
-          )}
+
+            {showSuggestions && suggestions.length > 0 && searchFocused && (
+              <View style={styles.suggestionsContainer}>
+                <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                  {suggestions.map((s) => (
+                    <Pressable
+                      key={s.placeId}
+                      style={({ pressed }) => [
+                        styles.suggestionItem,
+                        pressed && { backgroundColor: brandColors.surfaceAlt },
+                      ]}
+                      onPress={() => handleSelectSuggestion(s.description)}
+                    >
+                      <MaterialCommunityIcons name="map-marker-outline" size={16} color={brandColors.textMuted} />
+                      <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                        {s.description}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {searchError && (
+              <View style={styles.searchErrorBubble}>
+                <Text style={[typography.bodySm, { color: brandColors.danger }]}>{searchError}</Text>
+              </View>
+            )}
+          </View>
 
           {loading && (
             <View style={styles.loadingOverlay}>
@@ -440,28 +519,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brandColors.background,
   },
-  stateContainer: {
-    flex: 1,
-    backgroundColor: brandColors.background,
-  },
-  manualContainer: {
-    flex: 1,
-    backgroundColor: brandColors.background,
-    padding: spacing.xl,
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  manualBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: brandColors.warningSoft,
-  },
-  manualCard: {
-    padding: spacing.xxl,
-  },
   rationaleContainer: {
     flex: 1,
     backgroundColor: brandColors.background,
@@ -503,19 +560,52 @@ const styles = StyleSheet.create({
   mapWrapper: {
     flex: 1,
   },
-  manualOverlay: {
+  searchOverlay: {
     position: 'absolute',
     top: spacing.md,
     left: spacing.lg,
     right: spacing.lg,
+    zIndex: 10,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: brandColors.surface,
+    fontSize: 14,
+  },
+  searchSpinner: {
+    position: 'absolute',
+    right: 48,
+  },
+  searchErrorBubble: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surface,
+    ...shadows.sm,
+  },
+  suggestionsContainer: {
+    maxHeight: 220,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: radii.md,
+    borderBottomRightRadius: radii.md,
+    backgroundColor: brandColors.surface,
+    ...shadows.md,
+  },
+  suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: brandColors.surface,
-    ...shadows.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
