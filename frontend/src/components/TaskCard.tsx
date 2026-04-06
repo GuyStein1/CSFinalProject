@@ -62,12 +62,19 @@ export default function TaskCard({
         styles.card,
         muted && styles.cardMuted,
         shadows.sm,
-        { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+        {
+          opacity: pressed ? 0.94 : 1,
+          transform: [{ scale: pressed ? 0.975 : 1 }],
+          backgroundColor: pressed ? brandColors.surfaceAlt : brandColors.surface,
+        },
       ]}
     >
+      {/* Category accent bar */}
+      <View style={[styles.accentBar, { backgroundColor: meta.color }]} />
+
       <View style={styles.topRow}>
         <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
-          <MaterialCommunityIcons name={meta.icon as never} size={20} color={meta.color} />
+          <MaterialCommunityIcons name={meta.icon as never} size={22} color={meta.color} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>
@@ -104,7 +111,10 @@ export default function TaskCard({
         </View>
       )}
       {bidCount != null && bidCount === 0 && status === 'OPEN' && (
-        <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>No bids yet</Text>
+        <View style={styles.noBidChip}>
+          <MaterialCommunityIcons name="clock-outline" size={13} color={brandColors.textMuted} />
+          <Text style={[typography.caption, { color: brandColors.textMuted }]}>No bids yet</Text>
+        </View>
       )}
       {fixerName && status === 'IN_PROGRESS' && (
         <View style={styles.footerChip}>
@@ -184,8 +194,10 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.surface,
     borderRadius: radii.lg,
     padding: spacing.lg,
+    paddingLeft: spacing.lg + 4,
     marginBottom: spacing.md,
     gap: spacing.md,
+    overflow: 'hidden',
   },
   cardMuted: {
     opacity: 0.7,
@@ -195,16 +207,24 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     alignItems: 'center',
   },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
   iconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   titleBlock: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 3,
   },
   title: {
     color: brandColors.textPrimary,
@@ -245,6 +265,16 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.warningSoft,
     alignSelf: 'flex-start',
   },
+  noBidChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.neutralSoft,
+    alignSelf: 'flex-start',
+  },
   footerChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -270,16 +300,19 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     borderWidth: 1,
   },
   successBtn: {
     borderColor: brandColors.success,
+    backgroundColor: brandColors.successSoft,
   },
   dangerBtn: {
     borderColor: brandColors.danger,
+    backgroundColor: brandColors.dangerSoft,
   },
   defaultBtn: {
     borderColor: brandColors.outline,
+    backgroundColor: brandColors.surfaceAlt,
   },
 });

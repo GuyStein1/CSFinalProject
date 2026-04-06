@@ -46,6 +46,7 @@ export const spacing = {
 } as const;
 
 export const radii = {
+  sharp: 0,
   xs: 6,
   sm: 8,
   md: 12,
@@ -60,9 +61,9 @@ type ShadowStyle = Pick<ViewStyle, 'shadowColor' | 'shadowOffset' | 'shadowOpaci
 
 export const shadows: Record<'sm' | 'md' | 'lg', ShadowStyle> = Platform.select({
   ios: {
-    sm: { shadowColor: '#112336', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-    md: { shadowColor: '#112336', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 4 },
-    lg: { shadowColor: '#112336', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 8 },
+    sm: { shadowColor: '#112336', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 },
+    md: { shadowColor: '#112336', shadowOffset: { width: 1, height: 5 }, shadowOpacity: 0.11, shadowRadius: 16, elevation: 4 },
+    lg: { shadowColor: '#112336', shadowOffset: { width: 2, height: 10 }, shadowOpacity: 0.15, shadowRadius: 28, elevation: 8 },
   },
   android: {
     sm: { shadowColor: '#112336', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 2 },
@@ -70,9 +71,9 @@ export const shadows: Record<'sm' | 'md' | 'lg', ShadowStyle> = Platform.select(
     lg: { shadowColor: '#112336', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 8 },
   },
   default: {
-    sm: { shadowColor: '#112336', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-    md: { shadowColor: '#112336', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 4 },
-    lg: { shadowColor: '#112336', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 8 },
+    sm: { shadowColor: '#112336', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 },
+    md: { shadowColor: '#112336', shadowOffset: { width: 1, height: 5 }, shadowOpacity: 0.11, shadowRadius: 16, elevation: 4 },
+    lg: { shadowColor: '#112336', shadowOffset: { width: 2, height: 10 }, shadowOpacity: 0.15, shadowRadius: 28, elevation: 8 },
   },
 })!;
 
@@ -88,7 +89,7 @@ export const typography: Record<string, TextStyle> = {
   label: { fontSize: 13, fontWeight: '600', lineHeight: 18, letterSpacing: 0.3 },
   button: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
   buttonSm: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
-  eyebrow: { fontSize: 11, fontWeight: '600', lineHeight: 14, letterSpacing: 0.8, textTransform: 'uppercase' },
+  eyebrow: { fontSize: 11, fontWeight: '700', lineHeight: 14, letterSpacing: 0.8, textTransform: 'uppercase' },
 };
 
 export const theme = {

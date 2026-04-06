@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Feather from '@expo/vector-icons/Feather';
 import { sendEmailVerification } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
@@ -34,7 +34,7 @@ interface Props {
 interface CategoryInfo {
   value: Category;
   label: string;
-  icon: string;
+  emoji: string;
   image: ImageSourcePropType;
   description: string;
   jobs: string[];
@@ -46,7 +46,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'ASSEMBLY',
     label: 'Assembly',
-    icon: 'hammer-screwdriver',
+    emoji: '🔩',
     image: require('../../assets/Assembly.jpg'),
     description: 'Professional assembly of furniture, flat-packs, and home equipment.',
     jobs: [
@@ -63,7 +63,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'MOUNTING',
     label: 'Mounting',
-    icon: 'television',
+    emoji: '📺',
     image: require('../../assets/Mounting.jpg'),
     description: 'Secure mounting of TVs, shelves, mirrors, curtain rods, and more.',
     jobs: [
@@ -80,7 +80,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'MOVING',
     label: 'Moving',
-    icon: 'truck-delivery',
+    emoji: '🚚',
     image: require('../../assets/Moving.jpg'),
     description: 'Help with moving furniture, packing, and heavy lifting.',
     jobs: [
@@ -97,7 +97,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'PAINTING',
     label: 'Painting',
-    icon: 'brush',
+    emoji: '🎨',
     image: require('../../assets/Painting.jpg'),
     description: 'Interior and exterior painting — from single rooms to full homes.',
     jobs: [
@@ -114,7 +114,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'PLUMBING',
     label: 'Plumbing',
-    icon: 'water-pump',
+    emoji: '🚿',
     image: require('../../assets/Plumbing.jpg'),
     description: 'Leaks, blocked drains, faucet replacements, and water installations.',
     jobs: [
@@ -131,7 +131,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'ELECTRICITY',
     label: 'Electricity',
-    icon: 'lightning-bolt',
+    emoji: '⚡',
     image: require('../../assets/Electricity.jpg'),
     description: 'Electrical repairs, lighting installations, and outlet work.',
     jobs: [
@@ -148,7 +148,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'OUTDOORS',
     label: 'Outdoors',
-    icon: 'tree-outline',
+    emoji: '🌿',
     image: require('../../assets/Outdoors.jpg'),
     description: 'Garden care, lawn work, pressure washing, and outdoor maintenance.',
     jobs: [
@@ -165,7 +165,7 @@ const CATEGORIES: CategoryInfo[] = [
   {
     value: 'CLEANING',
     label: 'Cleaning',
-    icon: 'broom',
+    emoji: '🧹',
     image: require('../../assets/Cleaning.jpg'),
     description: 'Professional home cleaning, deep cleans, and post-renovation tidy-ups.',
     jobs: [
@@ -223,7 +223,6 @@ export default function RequesterDashboard({ navigation }: Props) {
 
   const isDesktop = width >= 768;
   const heroPaddingH = isDesktop ? 80 : spacing.xxl;
-
   const selected = CATEGORIES.find((c) => c.value === selectedCategory) ?? null;
 
   const handleCategoryPress = (value: Category) => {
@@ -232,11 +231,6 @@ export default function RequesterDashboard({ navigation }: Props) {
 
   const CARD_WIDTH = isDesktop ? 190 : 150;
   const CARD_HEIGHT = isDesktop ? 240 : 200;
-
-  // On desktop keep headline on one line; let mobile wrap naturally
-  const headlineText = isDesktop
-    ? "Let's Fix Your Problems"
-    : "Let's Fix Your Problems";
 
   return (
     <ScrollView
@@ -255,32 +249,14 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={[styles.orb, styles.orbTopLeft]} />
         <View style={[styles.orb, styles.orbBottomRight]} />
 
-        {/* Logo watermark — white-tinted, blended into gradient */}
-        <Image
-          source={require('../../assets/logo-without-text.png')}
-          style={[
-            styles.heroLogoDecor,
-            // CSS filter turns all pixels white on web; tintColor does it on native
-            Platform.OS === 'web'
-              ? ({ filter: 'brightness(0) invert(1)', opacity: 0.1 } as object)
-              : { tintColor: '#ffffff', opacity: 0.1 },
-          ]}
-          resizeMode="contain"
-        />
-
-        {/* Content */}
         <View style={[styles.heroContent, isDesktop && styles.heroContentDesktop]}>
-          {/* Eyebrow badge */}
+          {/* Eyebrow */}
           <View style={styles.eyebrowBadge}>
-            <MaterialCommunityIcons
-              name="shield-check-outline"
-              size={13}
-              color={brandColors.secondary}
-            />
+            <Feather name="shield" size={11} color={brandColors.secondary} />
             <Text style={styles.eyebrowText}>YOUR TRUSTED LOCAL FIXERS</Text>
           </View>
 
-          {/* Main headline */}
+          {/* Headline */}
           <Text
             style={[
               styles.headline,
@@ -288,25 +264,25 @@ export default function RequesterDashboard({ navigation }: Props) {
               displayFont ? { fontFamily: displayFont } : null,
             ]}
           >
-            {headlineText}
+            Let's Fix Your Problems
           </Text>
 
           {/* Subtitle */}
           <Text style={[styles.heroSubtitle, isDesktop && styles.heroSubtitleDesktop]}>
-            What do you need help with?
+            What do you need help with today?
           </Text>
 
-          {/* CTA */}
+          {/* CTA — sharp corners for contrast with the rounded hero */}
           <Pressable
             style={({ pressed }) => [
               styles.heroCta,
               isDesktop && styles.heroCtaDesktop,
-              { transform: [{ scale: pressed ? 0.96 : 1 }] },
+              { transform: [{ scale: pressed ? 0.96 : 1 }], opacity: pressed ? 0.9 : 1 },
             ]}
             onPress={() => navigation.navigate('CreateTask')}
           >
-            <MaterialCommunityIcons name="plus" size={20} color={brandColors.textPrimary} />
-            <Text style={[typography.button, { color: brandColors.textPrimary }]}>
+            <Feather name="plus" size={18} color={brandColors.primaryDark} />
+            <Text style={[typography.button, { color: brandColors.primaryDark }]}>
               Post a Task
             </Text>
           </Pressable>
@@ -316,7 +292,7 @@ export default function RequesterDashboard({ navigation }: Props) {
       {/* ── Email Verification Banner ──────────────────────────── */}
       {!emailVerified && (
         <View style={[styles.verifyBanner, { marginHorizontal: heroPaddingH }]}>
-          <MaterialCommunityIcons name="email-alert-outline" size={20} color={brandColors.warning} />
+          <Feather name="alert-circle" size={18} color={brandColors.warning} />
           <View style={{ flex: 1 }}>
             <Text style={[typography.label, { color: brandColors.textPrimary }]}>
               Verify your email
@@ -339,15 +315,16 @@ export default function RequesterDashboard({ navigation }: Props) {
 
       {/* ── Category Carousel ────────────────────────────────────── */}
       <View style={styles.section}>
-        <Text
-          style={[
-            typography.h3,
-            styles.sectionTitle,
-            { paddingHorizontal: heroPaddingH },
-          ]}
-        >
-          Browse by category
-        </Text>
+        {/* Editorial section header */}
+        <View style={[styles.sectionHeader, { paddingHorizontal: heroPaddingH }]}>
+          <View style={styles.sectionAccentRule} />
+          <View style={styles.sectionHeaderText}>
+            <Text style={styles.sectionEyebrow}>POPULAR SERVICES</Text>
+            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
+              Browse by category
+            </Text>
+          </View>
+        </View>
 
         <ScrollView
           horizontal
@@ -380,28 +357,18 @@ export default function RequesterDashboard({ navigation }: Props) {
                   resizeMode="cover"
                 />
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.72)']}
+                  colors={['transparent', 'rgba(0,0,0,0.78)']}
                   style={styles.carouselOverlay}
                 >
-                  <View
-                    style={[
-                      styles.carouselIconBadge,
-                      { backgroundColor: cat.color },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={cat.icon as never}
-                      size={14}
-                      color="#fff"
-                    />
+                  {/* Emoji badge — much more distinctive than a tiny icon */}
+                  <View style={[styles.carouselEmojiBadge, { backgroundColor: cat.color }]}>
+                    <Text style={styles.carouselEmoji}>{cat.emoji}</Text>
                   </View>
                   <Text style={styles.carouselLabel}>{cat.label}</Text>
                 </LinearGradient>
 
                 {isActive && (
-                  <View
-                    style={[styles.activeRing, { borderColor: cat.color }]}
-                  />
+                  <View style={[styles.activeRing, { borderColor: cat.color }]} />
                 )}
               </Pressable>
             );
@@ -415,82 +382,63 @@ export default function RequesterDashboard({ navigation }: Props) {
           style={[
             styles.infoPanel,
             {
-              marginHorizontal: heroPaddingH,
-              borderColor: selected.softColor,
+              marginHorizontal: isDesktop ? heroPaddingH : 0,
+              borderTopColor: selected.color,
             },
           ]}
         >
-          <View style={styles.infoPanelHeader}>
-            <View
-              style={[
-                styles.infoPanelIconWrap,
-                { backgroundColor: selected.softColor },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={selected.icon as never}
-                size={22}
-                color={selected.color}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[typography.h3, { color: brandColors.textPrimary }]}
-              >
-                {selected.label}
-              </Text>
-              <Text
-                style={[typography.bodySm, { color: brandColors.textMuted }]}
-              >
-                {selected.description}
-              </Text>
-            </View>
-          </View>
+          {/* Top color stripe */}
+          <View style={[styles.infoPanelStripe, { backgroundColor: selected.color }]} />
 
-          <Text style={[typography.label, styles.jobsLabel]}>Popular jobs</Text>
-          <View style={styles.jobChips}>
-            {selected.jobs.map((job) => (
-              <Pressable
-                key={job}
-                style={[
-                  styles.jobChip,
-                  { borderColor: selected.softColor },
-                ]}
-                onPress={() =>
-                  navigation.navigate('CreateTask', {
-                    category: selected.value,
-                    title: job,
-                  })
-                }
-              >
-                <MaterialCommunityIcons
-                  name={selected.icon as never}
-                  size={13}
-                  color={selected.color}
-                />
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: brandColors.textPrimary },
-                  ]}
-                >
-                  {job}
+          <View style={styles.infoPanelBody}>
+            <View style={styles.infoPanelHeader}>
+              <Text style={styles.infoPanelEmoji}>{selected.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                  {selected.label}
                 </Text>
-              </Pressable>
-            ))}
-          </View>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                  {selected.description}
+                </Text>
+              </View>
+            </View>
 
-          <FButton
-            onPress={() =>
-              navigation.navigate('CreateTask', { category: selected.value })
-            }
-            variant="primary"
-            size="md"
-            iconRight="arrow-right"
-            fullWidth
-          >
-            {`Post a ${selected.label} Task`}
-          </FButton>
+            <Text style={[typography.label, styles.jobsLabel]}>Popular jobs</Text>
+            <View style={styles.jobChips}>
+              {selected.jobs.map((job) => (
+                <Pressable
+                  key={job}
+                  style={({ pressed }) => [
+                    styles.jobChip,
+                    { borderColor: selected.softColor, opacity: pressed ? 0.8 : 1 },
+                  ]}
+                  onPress={() =>
+                    navigation.navigate('CreateTask', {
+                      category: selected.value,
+                      title: job,
+                    })
+                  }
+                >
+                  <Text style={styles.jobChipEmoji}>{selected.emoji}</Text>
+                  <Text style={[typography.caption, { color: brandColors.textPrimary }]}>
+                    {job}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <FButton
+              onPress={() =>
+                navigation.navigate('CreateTask', { category: selected.value })
+              }
+              variant="primary"
+              size="md"
+              iconRight="arrow-right"
+              fullWidth
+            >
+              {`Post a ${selected.label} Task`}
+            </FButton>
+          </View>
         </View>
       )}
     </ScrollView>
@@ -509,20 +457,15 @@ const styles = StyleSheet.create({
   // ── Hero ───────────────────────────────────────────────────────
   hero: {
     paddingTop: spacing.xxxl + 8,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.xxxl + 8,
     paddingHorizontal: spacing.xxl,
-    borderBottomLeftRadius: radii.xxxl,
-    borderBottomRightRadius: radii.xxxl,
     overflow: 'hidden',
-    marginBottom: spacing.sm,
   },
   heroDesktop: {
     paddingTop: 72,
     paddingBottom: 72,
     paddingHorizontal: 80,
   },
-
-  // Decorative orbs (blurred circles for depth)
   orb: {
     position: 'absolute',
     borderRadius: 999,
@@ -541,18 +484,6 @@ const styles = StyleSheet.create({
     right: -60,
     backgroundColor: 'rgba(26, 61, 99, 0.5)',
   },
-
-  // Logo watermark
-  heroLogoDecor: {
-    position: 'absolute',
-    right: 24,
-    top: '50%' as unknown as number,
-    marginTop: -90,
-    width: 180,
-    height: 180,
-  },
-
-  // Content block
   heroContent: {
     alignItems: 'flex-start',
   },
@@ -562,8 +493,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
   },
-
-  // Eyebrow pill badge
   eyebrowBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -583,23 +512,20 @@ const styles = StyleSheet.create({
     color: brandColors.secondary,
     textTransform: 'uppercase' as const,
   },
-
-  // Headline
   headline: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '800',
-    lineHeight: 42,
-    letterSpacing: -1,
+    lineHeight: 38,
+    letterSpacing: -0.8,
     color: '#FFFFFF',
     marginBottom: spacing.md,
   },
   headlineDesktop: {
-    fontSize: 54,
-    lineHeight: 64,
+    fontSize: 56,
+    lineHeight: 66,
     letterSpacing: -2,
     textAlign: 'center',
   },
-
   heroSubtitle: {
     fontSize: 15,
     fontWeight: '400',
@@ -612,14 +538,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xxxl,
   },
-
+  // Sharp-cornered CTA — deliberate contrast with the rounded hero elements
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: brandColors.secondary,
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.md + 2,
-    borderRadius: radii.pill,
+    borderRadius: radii.sharp,
     gap: spacing.sm,
     ...shadows.md,
   },
@@ -636,27 +562,46 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.lg,
+    borderRadius: radii.sharp,
     backgroundColor: brandColors.warningSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(241,181,69,0.3)',
+    borderLeftWidth: 3,
+    borderLeftColor: brandColors.warning,
   },
   verifyBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.md,
+    borderRadius: radii.xs,
     backgroundColor: brandColors.surface,
     borderWidth: 1,
     borderColor: brandColors.outlineLight,
   },
 
-  // ── Carousel ───────────────────────────────────────────────────
+  // ── Category section ───────────────────────────────────────────
   section: {
     marginTop: spacing.xxl,
   },
-  sectionTitle: {
-    color: brandColors.textPrimary,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  // Amber vertical rule to the left of the section title
+  sectionAccentRule: {
+    width: 4,
+    height: 44,
+    borderRadius: radii.sharp,
+    backgroundColor: brandColors.secondary,
+  },
+  sectionHeaderText: {
+    gap: 2,
+  },
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    color: brandColors.textMuted,
+    textTransform: 'uppercase' as const,
   },
   carouselContent: {
     gap: spacing.md,
@@ -683,14 +628,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs + 2,
+    gap: spacing.sm,
   },
-  carouselIconBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  // Emoji badge — more character than a tiny icon
+  carouselEmojiBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  carouselEmoji: {
+    fontSize: 15,
+    lineHeight: 20,
   },
   carouselLabel: {
     color: '#fff',
@@ -705,28 +655,34 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
 
-  // ── Info panel ─────────────────────────────────────────────────
+  // ── Info panel — sharp top, rounded bottom, color stripe ───────
   infoPanel: {
     marginTop: spacing.xl,
-    padding: spacing.xl,
     borderRadius: radii.xl,
+    borderTopLeftRadius: radii.sharp,
+    borderTopRightRadius: radii.sharp,
     backgroundColor: brandColors.surface,
-    borderWidth: 1.5,
-    gap: spacing.md,
+    borderWidth: 1,
+    borderTopWidth: 0, // stripe takes its place
+    borderColor: brandColors.outlineLight,
+    overflow: 'hidden',
     ...shadows.md,
+  },
+  infoPanelStripe: {
+    height: 5,
+  },
+  infoPanelBody: {
+    padding: spacing.xl,
+    gap: spacing.md,
   },
   infoPanelHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
   },
-  infoPanelIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+  infoPanelEmoji: {
+    fontSize: 32,
+    lineHeight: 40,
   },
   jobsLabel: {
     color: brandColors.textMuted,
@@ -743,8 +699,12 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: radii.pill,
+    borderRadius: radii.xs,
     borderWidth: 1,
     backgroundColor: brandColors.background,
+  },
+  jobChipEmoji: {
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

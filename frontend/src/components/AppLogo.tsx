@@ -1,6 +1,5 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from 'react-native-paper';
 import { brandColors, spacing, radii } from '../theme';
 
@@ -33,19 +32,21 @@ export default function AppLogo({
   const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
   const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
 
+  /**
+   * Geometric brand mark — the mascot image clipped inside a tilted amber-bordered badge.
+   * overflow:hidden on the rotated badge clips the image to that diamond/sticker shape.
+   * The image tilts with the badge, giving a stamp/sticker feel.
+   */
+  const TILT = 13;
   const iconShell = (
-    <View
-      style={[
-        styles.markShell,
-        onDark ? styles.markShellDark : styles.markShellLight,
-      ]}
-    >
-      <View style={styles.accent} />
-      <MaterialCommunityIcons
-        name="hammer-wrench"
-        size={20}
-        color={wordmarkColor}
-      />
+    <View style={styles.markOuter}>
+      <View style={[styles.markBadge, { transform: [{ rotate: `${TILT}deg` }] }]}>
+        <Image
+          source={require('../../assets/logo-without-text.png')}
+          style={styles.markImage}
+          resizeMode="cover"
+        />
+      </View>
     </View>
   );
 
@@ -74,31 +75,29 @@ const styles = StyleSheet.create({
     width: 188,
     aspectRatio: FULL_LOGO_ASPECT_RATIO,
   },
-  markShell: {
+  // Outer container — sized to contain the badge even when rotated
+  markOuter: {
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
-    borderWidth: 1,
+  },
+  // Tilted badge — amber border frames the mascot, overflow clips it to shape
+  markBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.xs,
+    borderWidth: 2,
+    borderColor: brandColors.secondary,
     overflow: 'hidden',
+    backgroundColor: '#FFFCF6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  markShellLight: {
-    backgroundColor: brandColors.surfaceAlt,
-    borderColor: brandColors.outlineLight,
-  },
-  markShellDark: {
-    backgroundColor: 'rgba(255, 252, 246, 0.12)',
-    borderColor: 'rgba(255, 252, 246, 0.16)',
-  },
-  accent: {
-    position: 'absolute',
-    top: 4,
-    left: 5,
-    width: 10,
-    height: 7,
-    borderRadius: 10,
-    backgroundColor: brandColors.secondary,
+  // Image smaller than the badge so the full mascot (hammer included) fits
+  markImage: {
+    width: 26,
+    height: 26,
   },
   wordmark: {
     fontSize: 17,

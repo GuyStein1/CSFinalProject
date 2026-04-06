@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
@@ -52,20 +53,26 @@ export default function AuthScreen({
   };
 
   const renderShell = (content: React.ReactNode) => (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
+    <LinearGradient
+      colors={['#050D18', '#0C1E33', '#2A5478', brandColors.background]}
+      locations={[0, 0.2, 0.55, 1]}
+      style={styles.gradient}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kavContainer}
       >
-        <FCard style={styles.card} shadow="lg">
-          {content}
-        </FCard>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <FCard style={styles.card} shadow="lg">
+            {content}
+          </FCard>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 
   if (status === 'checking') {
@@ -175,9 +182,11 @@ export default function AuthScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
     flex: 1,
-    backgroundColor: brandColors.background,
+  },
+  kavContainer: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

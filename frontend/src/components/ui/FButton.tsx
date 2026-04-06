@@ -69,10 +69,10 @@ export default function FButton({
           paddingVertical: sConf.paddingV,
           borderWidth: vConf.border ? 1.5 : 0,
           borderColor: vConf.border,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
-          transform: [{ scale: pressed && !isDisabled ? 0.97 : 1 }],
+          opacity: isDisabled ? 0.5 : pressed ? 0.88 : 1,
+          transform: [{ scale: pressed && !isDisabled ? 0.96 : 1 }],
         },
-        variant === 'primary' && shadows.md,
+        variant === 'primary' && (pressed ? shadows.sm : shadows.md),
         fullWidth && styles.fullWidth,
         style,
       ]}
