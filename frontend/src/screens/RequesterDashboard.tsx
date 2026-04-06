@@ -264,7 +264,7 @@ export default function RequesterDashboard({ navigation }: Props) {
               displayFont ? { fontFamily: displayFont } : null,
             ]}
           >
-            Let's Fix Your{'\n'}Problems
+            Let's Fix Your Problems
           </Text>
 
           {/* Subtitle */}
@@ -513,10 +513,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase' as const,
   },
   headline: {
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: '800',
-    lineHeight: 44,
-    letterSpacing: -1,
+    lineHeight: 38,
+    letterSpacing: -0.8,
     color: '#FFFFFF',
     marginBottom: spacing.md,
   },

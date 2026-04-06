@@ -33,19 +33,20 @@ export default function AppLogo({
   const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
 
   /**
-   * Geometric brand mark — a slightly rotated amber square with a bold "F" inside.
-   * Counter-rotating the text keeps it upright while the badge tilts.
-   * No images → no tinting issues, works on every platform and background.
+   * Geometric brand mark — the mascot image clipped inside a tilted amber-bordered badge.
+   * overflow:hidden on the rotated badge clips the image to that diamond/sticker shape.
+   * The image tilts with the badge, giving a stamp/sticker feel.
    */
   const TILT = 13;
   const iconShell = (
     <View style={styles.markOuter}>
-      {/* Rotated amber badge */}
-      <View style={[styles.markBadge, { transform: [{ rotate: `${TILT}deg` }] }]} />
-      {/* Counter-rotated letter stays upright */}
-      <Text style={[styles.markLetter, { transform: [{ rotate: `-${TILT}deg` }] }]}>
-        F
-      </Text>
+      <View style={[styles.markBadge, { transform: [{ rotate: `${TILT}deg` }] }]}>
+        <Image
+          source={require('../../assets/logo-without-text.png')}
+          style={styles.markImage}
+          resizeMode="cover"
+        />
+      </View>
     </View>
   );
 
@@ -74,28 +75,26 @@ const styles = StyleSheet.create({
     width: 188,
     aspectRatio: FULL_LOGO_ASPECT_RATIO,
   },
-  // Outer container holds the stacked badge + letter
+  // Outer container — sized to contain the badge even when rotated
   markOuter: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // The badge shape itself — sits behind the letter
+  // Tilted badge — amber border frames the mascot, overflow clips it to shape
   markBadge: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     borderRadius: radii.xs,
-    backgroundColor: brandColors.secondary,
+    borderWidth: 2,
+    borderColor: brandColors.secondary,
+    overflow: 'hidden',
+    backgroundColor: '#FFFCF6',
   },
-  // Bold "F" on top, counter-rotated to stay upright
-  markLetter: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: brandColors.primaryDark,
-    lineHeight: 18,
-    letterSpacing: -0.5,
+  markImage: {
+    width: 30,
+    height: 30,
   },
   wordmark: {
     fontSize: 17,
