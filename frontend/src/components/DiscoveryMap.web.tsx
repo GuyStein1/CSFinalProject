@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { Asset } from 'expo-asset';
@@ -40,17 +40,22 @@ function resolveLogoUri(): string {
 
 export default function DiscoveryMap({
   tasks,
-  mapRegion,
+  centerLat,
+  centerLng,
+  mapRegion: _mapRegion,
   onSelectTask,
   onClearSelection,
   onRegionChangeComplete,
 }: DiscoveryMapProps) {
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
   const markerIconRef = useRef<google.maps.Icon | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
+  // Stable center: only changes when the user explicitly searches or GPS updates.
+  // Do NOT derive from mapRegion — that would snap the map back on every pan.
   const center = useMemo(
-    () => ({ lat: mapRegion.latitude, lng: mapRegion.longitude }),
-    [mapRegion.latitude, mapRegion.longitude],
+    () => ({ lat: centerLat, lng: centerLng }),
+    [centerLat, centerLng],
   );
 
   const getMarkerIcon = useCallback((): google.maps.Icon | undefined => {
@@ -64,6 +69,17 @@ export default function DiscoveryMap({
     };
     return markerIconRef.current;
   }, []);
+
+  // When user explicitly searches / GPS updates, pan to the new center imperatively.
+  // This avoids the snap-back caused by passing a controlled `center` prop.
+  const prevCenterRef = useRef({ lat: centerLat, lng: centerLng });
+  useEffect(() => {
+    const prev = prevCenterRef.current;
+    if (mapRef.current && (prev.lat !== centerLat || prev.lng !== centerLng)) {
+      mapRef.current.panTo({ lat: centerLat, lng: centerLng });
+      prevCenterRef.current = { lat: centerLat, lng: centerLng };
+    }
+  }, [centerLat, centerLng]);
 
   const handleIdle = useCallback(
     (map: google.maps.Map) => {
@@ -97,6 +113,7 @@ export default function DiscoveryMap({
         options={MAP_OPTIONS}
         onClick={onClearSelection}
         onLoad={(map) => {
+          mapRef.current = map;
           map.addListener('idle', () => handleIdle(map));
         }}
       >

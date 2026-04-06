@@ -15,15 +15,16 @@ import { brandColors, radii, spacing, shadows, typography } from '../theme';
 
 export type ViewMode = 'map' | 'list';
 
+// Icons must be valid MaterialCommunityIcons names (used by FChip internally)
 const CATEGORY_OPTIONS: { value: Category; label: string; icon: string }[] = [
-  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'tool' },
+  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'wrench' },
   { value: 'MOUNTING',    label: 'Mounting',    icon: 'monitor' },
   { value: 'MOVING',      label: 'Moving',      icon: 'truck' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'edit-2' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'droplet' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'zap' },
-  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'sun' },
-  { value: 'CLEANING',    label: 'Cleaning',    icon: 'wind' },
+  { value: 'PAINTING',    label: 'Painting',    icon: 'pencil' },
+  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water' },
+  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
+  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'weather-sunny' },
+  { value: 'CLEANING',    label: 'Cleaning',    icon: 'weather-windy' },
 ];
 
 // --- Distance slider ---
