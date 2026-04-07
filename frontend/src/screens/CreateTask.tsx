@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -52,30 +52,51 @@ export default function CreateTask({ navigation, route }: Props) {
   const [category, setCategory] = useState<Category | null>(route?.params?.category ?? null);
   const [budgetType, setBudgetType] = useState<'fixed' | 'quote'>('fixed');
   const [price, setPrice] = useState('');
-  const [generalLocation, setGeneralLocation] = useState('');
-  const [exactAddress, setExactAddress] = useState('');
+  const [address, setAddress] = useState('');
+  const [generalLocationName, setGeneralLocationName] = useState('');
   const [showReview, setShowReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [locationPermission, setLocationPermission] = useState<'undetermined' | 'granted' | 'denied'>('undetermined');
   const [showLocationRationale, setShowLocationRationale] = useState(false);
-  const [mapRegion, setMapRegion] = useState({ latitude: 32.8, longitude: 35.0, latitudeDelta: 0.05, longitudeDelta: 0.05 });
+  const [mapRegion, setMapRegion] = useState({ latitude: 32.0853, longitude: 34.7818, latitudeDelta: 0.05, longitudeDelta: 0.05 });
   const [pinCoords, setPinCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ placeId: string; description: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalSteps = 5;
 
+  const centerMapOnGps = (lat: number, lng: number) => {
+    setMapRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.02, longitudeDelta: 0.02 });
+  };
+
   const requestLocationPermission = async () => {
-    if (Platform.OS === 'web') {
-      setLocationPermission('granted');
-      return;
-    }
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status === 'granted') {
-      setLocationPermission('granted');
-      await getCurrentLocation();
-    } else {
-      setShowLocationRationale(true);
+    try {
+      // Use the same approach as the fixer's DiscoveryFeedScreen
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      console.log('[CreateTask] Location permission:', status);
+      if (status === 'granted') {
+        setLocationPermission('granted');
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        console.log('[CreateTask] GPS coords:', loc.coords.latitude, loc.coords.longitude);
+        centerMapOnGps(loc.coords.latitude, loc.coords.longitude);
+      } else {
+        if (Platform.OS === 'web') {
+          setLocationPermission('granted'); // still show map on web
+        } else {
+          setShowLocationRationale(true);
+        }
+      }
+    } catch (err) {
+      console.error('[CreateTask] Location error:', err);
+      if (Platform.OS === 'web') {
+        setLocationPermission('granted');
+      }
     }
   };
 
@@ -88,68 +109,153 @@ export default function CreateTask({ navigation, route }: Props) {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
       setLocationPermission('granted');
-      await getCurrentLocation();
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        centerMapOnGps(loc.coords.latitude, loc.coords.longitude);
+      } catch { /* ignore */ }
     } else {
       setLocationPermission('denied');
     }
   };
 
-  const getCurrentLocation = async () => {
-    try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const region = {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      };
-      setMapRegion(region);
-      setPinCoords({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-    } catch {
-      // fallback to default region
-    }
-  };
+  // --- Autocomplete helpers (web only, uses Places library loaded by LocationMap) ---
 
-  const geocodeAddress = async (address: string) => {
-    if (!address.trim()) return;
+  function getOrCreatePlacesService(): google.maps.places.PlacesService | null {
+    if (placesServiceRef.current) return placesServiceRef.current;
+    if (typeof google === 'undefined' || !google.maps?.places) return null;
+    const div = document.createElement('div');
+    div.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;width:0;height:0;';
+    document.body.appendChild(div);
+    placesServiceRef.current = new google.maps.places.PlacesService(div);
+    return placesServiceRef.current;
+  }
+
+  const fetchSuggestions = useCallback((text: string) => {
+    if (Platform.OS !== 'web' || text.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      try {
+        if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
+          autocompleteRef.current = new google.maps.places.AutocompleteService();
+        }
+        const service = autocompleteRef.current;
+        if (!service) return;
+        service.getPlacePredictions(
+          { input: text.trim(), componentRestrictions: { country: 'il' } },
+          (predictions, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+              setSuggestions(predictions.slice(0, 5).map((p) => ({ placeId: p.place_id, description: p.description })));
+              setShowSuggestions(true);
+            } else {
+              setSuggestions([]);
+              setShowSuggestions(false);
+            }
+          },
+        );
+      } catch {
+        // Places library not loaded yet
+      }
+    }, 300);
+  }, []);
+
+  const geocodeByPlaceId = useCallback((placeId: string, label: string) => {
+    const service = getOrCreatePlacesService();
+    if (!service) {
+      setGeocodeError('Maps not ready — please try again.');
+      return;
+    }
     setGeocoding(true);
     setGeocodeError(null);
-    try {
-      const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (key) {
-        const res = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`,
-        );
-        const data = await res.json();
-        if (data.status === 'OK' && data.results.length > 0) {
-          const { lat, lng } = data.results[0].geometry.location;
-          const coords = { latitude: lat, longitude: lng };
+    setSuggestions([]);
+    setShowSuggestions(false);
+    service.getDetails(
+      { placeId, fields: ['geometry', 'formatted_address', 'address_components'] },
+      (place, status) => {
+        setGeocoding(false);
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+          const loc = place.geometry.location;
+          const coords = { latitude: loc.lat(), longitude: loc.lng() };
           setPinCoords(coords);
-          setMapRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 });
-          return;
-        }
-      }
-      // Fallback to expo-location geocoding
-      const results = await Location.geocodeAsync(address);
-      if (results.length > 0) {
-        const coords = { latitude: results[0].latitude, longitude: results[0].longitude };
-        setPinCoords(coords);
-        setMapRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 });
-      } else {
-        setGeocodeError('Could not find this location. Try a more specific address.');
-      }
-    } catch {
-      setGeocodeError('Geocoding failed. Please place the pin manually on the map.');
-    } finally {
-      setGeocoding(false);
-    }
-  };
+          setMapRegion({ ...coords, latitudeDelta: 0.005, longitudeDelta: 0.005 });
+          setAddressConfirmed(true);
 
+          // Derive general location name from address components
+          const components = place.address_components ?? [];
+          const neighborhood = components.find((c) => c.types.includes('neighborhood'))?.long_name;
+          const locality = components.find((c) => c.types.includes('locality'))?.long_name;
+          const sublocality = components.find((c) => c.types.includes('sublocality'))?.long_name;
+          setGeneralLocationName(
+            [neighborhood ?? sublocality, locality].filter(Boolean).join(', ') || label,
+          );
+        } else {
+          setGeocodeError('Could not find this location. Please try again.');
+        }
+      },
+    );
+  }, []);
+
+  const handleAddressChange = useCallback((text: string) => {
+    setAddress(text);
+    setGeocodeError(null);
+    setAddressConfirmed(false);
+    fetchSuggestions(text);
+  }, [fetchSuggestions]);
+
+  const handleSelectSuggestion = useCallback((placeId: string, description: string) => {
+    setAddress(description);
+    setShowSuggestions(false);
+    geocodeByPlaceId(placeId, description);
+  }, [geocodeByPlaceId]);
+
+  const handleAddressSubmit = useCallback(() => {
+    const query = address.trim();
+    if (!query) return;
+    setShowSuggestions(false);
+
+    if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
+      autocompleteRef.current = new google.maps.places.AutocompleteService();
+    }
+    const autoSvc = autocompleteRef.current;
+    if (!autoSvc) {
+      setGeocodeError('Maps not ready — please try again.');
+      return;
+    }
+    setGeocoding(true);
+    setGeocodeError(null);
+    autoSvc.getPlacePredictions(
+      { input: query, componentRestrictions: { country: 'il' } },
+      (predictions, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && predictions?.[0]) {
+          geocodeByPlaceId(predictions[0].place_id, predictions[0].description);
+        } else {
+          setGeocoding(false);
+          setGeocodeError('No results found. Try a more specific address.');
+        }
+      },
+    );
+  }, [address, geocodeByPlaceId]);
+
+  // Request GPS as soon as the component mounts so the map is ready by step 5
   useEffect(() => {
-    if (step === 5 && locationPermission === 'undetermined') {
+    console.log('[CreateTask] Mount — requesting GPS...');
+    if (Platform.OS === 'web') {
+      setLocationPermission('granted');
+      navigator.geolocation?.getCurrentPosition(
+        (pos) => {
+          console.log('[CreateTask] Got GPS:', pos.coords.latitude, pos.coords.longitude);
+          centerMapOnGps(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => console.warn('[CreateTask] GPS error:', err.message),
+        { enableHighAccuracy: true, timeout: 10000 },
+      );
+    } else {
       requestLocationPermission();
     }
-  }, [step]);
+  }, []);
 
   const canNext = (): boolean => {
     switch (step) {
@@ -157,7 +263,7 @@ export default function CreateTask({ navigation, route }: Props) {
       case 2: return true;
       case 3: return category !== null;
       case 4: return budgetType === 'quote' || (budgetType === 'fixed' && parseFloat(price) > 0);
-      case 5: return generalLocation.trim().length > 0 && exactAddress.trim().length > 0;
+      case 5: return address.trim().length > 0 && addressConfirmed && pinCoords != null;
       default: return false;
     }
   };
@@ -206,8 +312,8 @@ export default function CreateTask({ navigation, route }: Props) {
         media_urls: [],
         category,
         suggested_price: budgetType === 'fixed' ? parseFloat(price) : null,
-        general_location_name: generalLocation.trim(),
-        exact_address: exactAddress.trim(),
+        general_location_name: generalLocationName || address.trim(),
+        exact_address: address.trim(),
         lat: pinCoords?.latitude ?? 32.8,
         lng: pinCoords?.longitude ?? 35.0,
       });
@@ -395,47 +501,99 @@ export default function CreateTask({ navigation, route }: Props) {
         return (
           <View style={styles.stepContent}>
             <Text style={[typography.h2, styles.stepTitle]}>Location</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Tell fixers where the job is</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>
+              Enter the address and verify the pin on the map
+            </Text>
 
-            <FInput
-              label="General area (e.g., 'Hadar, Haifa')"
-              value={generalLocation}
-              onChangeText={(text) => { setGeneralLocation(text); setGeocodeError(null); }}
-            />
-            <FButton
-              variant="outline"
-              onPress={() => geocodeAddress(generalLocation)}
-              disabled={geocoding || !generalLocation.trim()}
-              loading={geocoding}
-              icon="map-search"
-              size="sm"
-              style={{ alignSelf: 'flex-start' }}
-            >
-              {geocoding ? 'Locating...' : 'Find on map'}
-            </FButton>
+            <View style={styles.addressInputWrapper}>
+              <FInput
+                label="Task location"
+                placeholder="e.g., Dizengoff 120, Tel Aviv"
+                value={address}
+                onChangeText={handleAddressChange}
+                onSubmitEditing={handleAddressSubmit}
+                textContentType="none"
+                autoComplete="off"
+                // @ts-expect-error -- web-only: prevent Safari autofill
+                name="task-loc-search"
+                id="task-loc-search"
+                inputMode="search"
+                right={
+                  geocoding ? (
+                    <FInput.Icon icon="loading" size={16} />
+                  ) : address.length > 0 ? (
+                    <FInput.Icon
+                      icon="close-circle"
+                      size={16}
+                      onPress={() => {
+                        setAddress('');
+                        setSuggestions([]);
+                        setShowSuggestions(false);
+                        setGeocodeError(null);
+                        setAddressConfirmed(false);
+                        setPinCoords(null);
+                      }}
+                    />
+                  ) : undefined
+                }
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                    {suggestions.map((s) => (
+                      <Pressable
+                        key={s.placeId}
+                        style={({ pressed }) => [
+                          styles.suggestionItem,
+                          pressed && { backgroundColor: brandColors.surfaceAlt },
+                        ]}
+                        onPress={() => handleSelectSuggestion(s.placeId, s.description)}
+                      >
+                        <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
+                        <Text style={[typography.bodySm, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                          {s.description}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
             {geocodeError && (
               <Text style={[typography.caption, { color: brandColors.danger }]}>{geocodeError}</Text>
             )}
 
-            {/* Map — show on all platforms (web uses Google Maps, native uses react-native-maps) */}
+            {/* Map — always shown on web; on native only if permission granted */}
             {(Platform.OS === 'web' || locationPermission === 'granted') && (
               <View style={styles.mapContainer}>
                 <LocationMap
                   region={mapRegion}
                   pinCoords={pinCoords}
                   onRegionChange={setMapRegion}
-                  onPress={(coords: { latitude: number; longitude: number }) => setPinCoords(coords)}
+                  onPress={(coords: { latitude: number; longitude: number }) => {
+                    setPinCoords(coords);
+                    setAddressConfirmed(true);
+                  }}
                 />
-                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center' }]}>
-                  Tap the map to set the general area pin
-                </Text>
+                {pinCoords && (
+                  <Text style={[typography.caption, { color: brandColors.success, textAlign: 'center', marginTop: spacing.xs }]}>
+                    <MaterialCommunityIcons name="check-circle" size={12} color={brandColors.success} />
+                    {' '}Pin placed — drag it or tap the map to adjust
+                  </Text>
+                )}
+                {!pinCoords && (
+                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                    Enter an address above to place the pin
+                  </Text>
+                )}
               </View>
             )}
             {Platform.OS !== 'web' && locationPermission === 'denied' && (
               <View style={styles.locationDeniedNote}>
                 <MaterialCommunityIcons name="map-marker-off-outline" size={18} color={brandColors.textMuted} />
                 <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
-                  Location access was denied. Enter the location manually below.
+                  Location access was denied. Enter the address above and we'll find it on the map.
                 </Text>
               </View>
             )}
@@ -443,14 +601,9 @@ export default function CreateTask({ navigation, route }: Props) {
             <View style={styles.addressNote}>
               <MaterialCommunityIcons name="shield-lock-outline" size={16} color={brandColors.primaryMuted} />
               <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                Exact address is only shared with the accepted fixer
+                Fixers see only an approximate location. The exact address is shared only after you accept a bid.
               </Text>
             </View>
-            <FInput
-              label="Exact address (private)"
-              value={exactAddress}
-              onChangeText={setExactAddress}
-            />
           </View>
         );
 
@@ -525,7 +678,7 @@ export default function CreateTask({ navigation, route }: Props) {
             <ReviewRow icon="text-box-outline" label="Title" value={title} />
             <ReviewRow icon="shape-outline" label="Category" value={CATEGORIES.find((c) => c.value === category)?.label ?? ''} />
             <ReviewRow icon="cash-multiple" label="Budget" value={budgetType === 'fixed' ? `₪${price}` : 'Quote Required'} />
-            <ReviewRow icon="map-marker-outline" label="Location" value={generalLocation} />
+            <ReviewRow icon="map-marker-outline" label="Location" value={address} />
             <ReviewRow icon="camera-outline" label="Photos" value={`${photos.length} photo(s)`} />
           </View>
 
@@ -786,8 +939,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
   },
+  addressInputWrapper: {
+    position: 'relative',
+    zIndex: 10,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: radii.md,
+    borderBottomRightRadius: radii.md,
+    zIndex: 20,
+    ...shadows.md,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
+  },
   mapContainer: {
-    gap: spacing.xs,
     borderRadius: radii.md,
     overflow: 'hidden',
   },

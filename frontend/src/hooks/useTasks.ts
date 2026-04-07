@@ -60,6 +60,32 @@ type ApiTask = {
   bid_count: number;
 };
 
+// --- Privacy offset: shift task markers by up to 50 m so the exact address is hidden ---
+// Uses a simple hash of the task ID to produce a deterministic angle + distance.
+const OFFSET_MAX_METERS = 50;
+const METERS_PER_DEG_LAT = 111_320; // roughly constant
+
+function hashCode(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return h >>> 0; // unsigned
+}
+
+function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: number; lng: number } {
+  const h = hashCode(taskId);
+  // Derive angle (0–2π) and distance (10–50 m) from the hash
+  const angle = ((h & 0xffff) / 0xffff) * Math.PI * 2;
+  const distance = 10 + ((h >>> 16) / 0xffff) * (OFFSET_MAX_METERS - 10);
+
+  const metersPerDegLng = METERS_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180);
+  const dLat = (Math.sin(angle) * distance) / METERS_PER_DEG_LAT;
+  const dLng = (Math.cos(angle) * distance) / metersPerDegLng;
+
+  return { lat: lat + dLat, lng: lng + dLng };
+}
+
 // Dev-only mock tasks shown when the real backend returns 0 results.
 // Placed relative to the provided center so they always appear on screen.
 // Remove or disable once the DB is seeded (`cd backend && npx ts-node prisma/seed.ts`).
@@ -137,7 +163,9 @@ export default function useTasks({
         params: queryParams,
       });
 
-      const nextTasks = (response.data.tasks ?? []).map((task: ApiTask): DiscoveryTask => ({
+      const nextTasks = (response.data.tasks ?? []).map((task: ApiTask): DiscoveryTask => {
+        const offset = applyPrivacyOffset(Number(task.lat), Number(task.lng), task.id);
+        return {
         id: task.id,
         requesterId: task.requester_id,
         title: task.title,
@@ -150,13 +178,25 @@ export default function useTasks({
         isPaymentConfirmed: task.is_payment_confirmed,
         createdAt: task.created_at,
         updatedAt: task.updated_at,
-        lat: Number(task.lat),
-        lng: Number(task.lng),
+        lat: offset.lat,
+        lng: offset.lng,
         distanceKm: Number(task.distance_km),
         bidCount: Number(task.bid_count ?? 0),
-      }));
+      };
+      });
 
-      setTasks(nextTasks.length > 0 ? nextTasks : makeMockTasks(lat as number, lng as number));
+      if (nextTasks.length > 0) {
+        setTasks(nextTasks);
+      } else {
+        const mocks = makeMockTasks(lat as number, lng as number);
+        // Apply the same filters that the API would have applied
+        setTasks(mocks.filter((t) => {
+          if (minPrice != null && (t.suggestedPrice == null || t.suggestedPrice < minPrice)) return false;
+          if (maxPrice != null && (t.suggestedPrice == null || t.suggestedPrice > maxPrice)) return false;
+          if (category && t.category !== category) return false;
+          return true;
+        }));
+      }
     } catch (nextError) {
       const status = getErrorStatus(nextError);
       const message = getErrorMessage(nextError);
@@ -165,7 +205,13 @@ export default function useTasks({
         setError('Sign in is required before nearby jobs can load.');
       } else if (message === 'Network Error') {
         if (__DEV__) {
-          setTasks(makeMockTasks(lat as number, lng as number));
+          const mocks = makeMockTasks(lat as number, lng as number);
+          setTasks(mocks.filter((t) => {
+            if (minPrice != null && (t.suggestedPrice == null || t.suggestedPrice < minPrice)) return false;
+            if (maxPrice != null && (t.suggestedPrice == null || t.suggestedPrice > maxPrice)) return false;
+            if (category && t.category !== category) return false;
+            return true;
+          }));
           setError(null);
           return;
         }
