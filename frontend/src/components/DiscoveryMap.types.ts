@@ -11,6 +11,8 @@ export interface DiscoveryMapProps {
   tasks: DiscoveryTask[];
   centerLat: number;
   centerLng: number;
+  fixerLat?: number;
+  fixerLng?: number;
   mapRegion: DiscoveryMapRegion;
   onSelectTask: (taskId: string) => void;
   onClearSelection: () => void;

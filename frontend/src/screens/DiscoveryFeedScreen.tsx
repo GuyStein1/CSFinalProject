@@ -35,7 +35,7 @@ interface DiscoveryCenter {
 }
 
 const DEFAULT_RADIUS_KM = 10;
-const DEFAULT_DELTA = 0.06;
+const DEFAULT_DELTA = 0.03;
 
 // Default center (Tel Aviv) when GPS is unavailable
 const DEFAULT_CENTER: DiscoveryCenter = { lat: 32.0853, lng: 34.7818, label: 'Tel Aviv' };
@@ -52,6 +52,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [suggestions, setSuggestions] = useState<{ placeId: string; description: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,8 +65,9 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(PRICE_SLIDER_MAX);
 
-  const apiMinPrice = priceMin > 0 ? priceMin : null;
-  const apiMaxPrice = priceMax < PRICE_SLIDER_MAX ? priceMax : null;
+  const hasPriceFilter = priceMin > 0 || priceMax < PRICE_SLIDER_MAX;
+  const apiMinPrice = hasPriceFilter ? priceMin : null;
+  const apiMaxPrice = hasPriceFilter ? (priceMax < PRICE_SLIDER_MAX ? priceMax : 999999) : null;
   const apiCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
 
   const { tasks: rawTasks, loading, error, refetch } = useTasks({
@@ -104,10 +106,9 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     const position = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
-    syncCenter(
-      { lat: position.coords.latitude, lng: position.coords.longitude, label: 'Current location' },
-      'gps'
-    );
+    const gps = { lat: position.coords.latitude, lng: position.coords.longitude };
+    setFixerGps(gps);
+    syncCenter({ ...gps, label: 'Current location' }, 'gps');
   }, [syncCenter]);
 
   const evaluatePermissionState = useCallback(async () => {
@@ -450,6 +451,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               tasks={tasks}
               centerLat={center.lat}
               centerLng={center.lng}
+              fixerLat={fixerGps?.lat}
+              fixerLng={fixerGps?.lng}
               mapRegion={mapRegion}
               onSelectTask={setSelectedTaskId}
               onClearSelection={() => {

@@ -86,21 +86,6 @@ function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: nu
   return { lat: lat + dLat, lng: lng + dLng };
 }
 
-// Dev-only mock tasks shown when the real backend returns 0 results.
-// Placed relative to the provided center so they always appear on screen.
-// Remove or disable once the DB is seeded (`cd backend && npx ts-node prisma/seed.ts`).
-function makeMockTasks(lat: number, lng: number): DiscoveryTask[] {
-  if (!__DEV__) return [];
-  const now = new Date().toISOString();
-  const base = { mediaUrls: [] as string[], status: 'OPEN' as const, isPaymentConfirmed: false, createdAt: now, updatedAt: now };
-  return [
-    { ...base, id: 'mock-1', requesterId: 'u1', title: 'Assemble IKEA wardrobe', description: 'Large PAX wardrobe, 2 doors', category: 'ASSEMBLY', suggestedPrice: 150, generalLocationName: 'Nearby', lat: lat + 0.003, lng: lng + 0.002, distanceKm: 0.4, bidCount: 2 },
-    { ...base, id: 'mock-2', requesterId: 'u2', title: 'Fix leaking kitchen sink', description: 'Dripping tap, needs new washer', category: 'PLUMBING', suggestedPrice: 200, generalLocationName: 'Nearby', lat: lat - 0.004, lng: lng + 0.005, distanceKm: 0.7, bidCount: 0 },
-    { ...base, id: 'mock-3', requesterId: 'u3', title: 'Paint living room walls', description: 'Two walls ~20m², white paint supplied', category: 'PAINTING', suggestedPrice: 400, generalLocationName: 'Nearby', lat: lat + 0.006, lng: lng - 0.003, distanceKm: 0.9, bidCount: 1 },
-    { ...base, id: 'mock-4', requesterId: 'u1', title: 'Help moving boxes to 3rd floor', description: '20 boxes, no elevator', category: 'MOVING', suggestedPrice: 250, generalLocationName: 'Nearby', lat: lat - 0.002, lng: lng - 0.006, distanceKm: 0.6, bidCount: 3 },
-    { ...base, id: 'mock-5', requesterId: 'u2', title: 'Replace ceiling light fixture', description: 'Swap old lamp for new pendant light', category: 'ELECTRICITY', suggestedPrice: 180, generalLocationName: 'Nearby', lat: lat + 0.001, lng: lng + 0.008, distanceKm: 1.2, bidCount: 0 },
-  ];
-}
 
 function getErrorStatus(error: unknown) {
   const response = (error as { response?: { status?: unknown } } | null)?.response;
@@ -185,18 +170,7 @@ export default function useTasks({
       };
       });
 
-      if (nextTasks.length > 0) {
-        setTasks(nextTasks);
-      } else {
-        const mocks = makeMockTasks(lat as number, lng as number);
-        // Apply the same filters that the API would have applied
-        setTasks(mocks.filter((t) => {
-          if (minPrice != null && (t.suggestedPrice == null || t.suggestedPrice < minPrice)) return false;
-          if (maxPrice != null && (t.suggestedPrice == null || t.suggestedPrice > maxPrice)) return false;
-          if (category && t.category !== category) return false;
-          return true;
-        }));
-      }
+      setTasks(nextTasks);
     } catch (nextError) {
       const status = getErrorStatus(nextError);
       const message = getErrorMessage(nextError);
@@ -204,17 +178,6 @@ export default function useTasks({
       if (status === 401) {
         setError('Sign in is required before nearby jobs can load.');
       } else if (message === 'Network Error') {
-        if (__DEV__) {
-          const mocks = makeMockTasks(lat as number, lng as number);
-          setTasks(mocks.filter((t) => {
-            if (minPrice != null && (t.suggestedPrice == null || t.suggestedPrice < minPrice)) return false;
-            if (maxPrice != null && (t.suggestedPrice == null || t.suggestedPrice > maxPrice)) return false;
-            if (category && t.category !== category) return false;
-            return true;
-          }));
-          setError(null);
-          return;
-        }
         setError('Could not reach the backend. Check your local API server.');
       } else if (message) {
         setError(message);
