@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { Asset } from 'expo-asset';
@@ -38,6 +38,49 @@ function resolveLogoUri(): string {
   }
 }
 
+const MARKER_SIZE = 40;
+const BORDER_WIDTH = 3;
+
+function buildCircleMarkerUrl(logoUri: string): Promise<string> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = MARKER_SIZE;
+    canvas.height = MARKER_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { resolve(''); return; }
+
+    const r = MARKER_SIZE / 2;
+
+    // Draw white filled circle
+    ctx.beginPath();
+    ctx.arc(r, r, r - BORDER_WIDTH / 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFCF6';
+    ctx.fill();
+
+    // Draw blue border
+    ctx.lineWidth = BORDER_WIDTH;
+    ctx.strokeStyle = brandColors.primary;
+    ctx.stroke();
+
+    // Draw logo inside the circle
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(r, r, r - BORDER_WIDTH - 1, 0, Math.PI * 2);
+      ctx.clip();
+      const pad = BORDER_WIDTH + 3;
+      const drawSize = MARKER_SIZE - pad * 2;
+      ctx.drawImage(img, pad, pad, drawSize, drawSize);
+      ctx.restore();
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve('');
+    img.src = logoUri;
+  });
+}
+
 export default function DiscoveryMap({
   tasks,
   centerLat,
@@ -48,27 +91,29 @@ export default function DiscoveryMap({
   onRegionChangeComplete,
 }: DiscoveryMapProps) {
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
-  const markerIconRef = useRef<google.maps.Icon | null>(null);
+  const [markerIcon, setMarkerIcon] = useState<google.maps.Icon | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
+  // Build the circular marker icon once the Maps JS API is loaded
+  useEffect(() => {
+    if (!isLoaded) return;
+    const uri = resolveLogoUri();
+    if (!uri) return;
+    buildCircleMarkerUrl(uri).then((dataUrl) => {
+      if (!dataUrl) return;
+      setMarkerIcon({
+        url: dataUrl,
+        scaledSize: new google.maps.Size(MARKER_SIZE, MARKER_SIZE),
+        anchor: new google.maps.Point(MARKER_SIZE / 2, MARKER_SIZE / 2),
+      });
+    });
+  }, [isLoaded]);
+
   // Stable center: only changes when the user explicitly searches or GPS updates.
-  // Do NOT derive from mapRegion — that would snap the map back on every pan.
   const center = useMemo(
     () => ({ lat: centerLat, lng: centerLng }),
     [centerLat, centerLng],
   );
-
-  const getMarkerIcon = useCallback((): google.maps.Icon | undefined => {
-    if (markerIconRef.current) return markerIconRef.current;
-    const uri = resolveLogoUri();
-    if (!uri) return undefined;
-    markerIconRef.current = {
-      url: uri,
-      scaledSize: new google.maps.Size(36, 24),
-      anchor: new google.maps.Point(18, 12),
-    };
-    return markerIconRef.current;
-  }, []);
 
   // When user explicitly searches / GPS updates, pan to the new center imperatively.
   // This avoids the snap-back caused by passing a controlled `center` prop.
@@ -121,7 +166,7 @@ export default function DiscoveryMap({
           <MarkerF
             key={task.id}
             position={{ lat: task.lat, lng: task.lng }}
-            icon={getMarkerIcon()}
+            icon={markerIcon ?? undefined}
             onClick={() => onSelectTask(task.id)}
           />
         ))}

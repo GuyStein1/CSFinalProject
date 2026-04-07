@@ -538,14 +538,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xxxl,
   },
-  // Sharp-cornered CTA — deliberate contrast with the rounded hero elements
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: brandColors.secondary,
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.md + 2,
-    borderRadius: radii.sharp,
+    borderRadius: radii.pill,
     gap: spacing.sm,
     ...shadows.md,
   },
