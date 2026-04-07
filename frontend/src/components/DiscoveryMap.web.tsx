@@ -41,6 +41,7 @@ function resolveLogoUri(): string {
 const MARKER_SIZE = 40;
 const BORDER_WIDTH = 3;
 
+// Task markers: circular white background with blue border + logo
 function buildCircleMarkerUrl(logoUri: string): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
@@ -51,18 +52,15 @@ function buildCircleMarkerUrl(logoUri: string): Promise<string> {
 
     const r = MARKER_SIZE / 2;
 
-    // Draw white filled circle
     ctx.beginPath();
     ctx.arc(r, r, r - BORDER_WIDTH / 2, 0, Math.PI * 2);
     ctx.fillStyle = '#FFFCF6';
     ctx.fill();
 
-    // Draw blue border
     ctx.lineWidth = BORDER_WIDTH;
     ctx.strokeStyle = brandColors.primary;
     ctx.stroke();
 
-    // Draw logo inside the circle
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -81,10 +79,48 @@ function buildCircleMarkerUrl(logoUri: string): Promise<string> {
   });
 }
 
+// Fixer "you are here" marker: just the handyman figure, background removed
+const FIXER_MARKER_SIZE = 36;
+
+function buildFixerMarkerUrl(logoUri: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = FIXER_MARKER_SIZE;
+      canvas.height = FIXER_MARKER_SIZE;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(''); return; }
+
+      // Draw the logo onto the canvas
+      ctx.drawImage(img, 0, 0, FIXER_MARKER_SIZE, FIXER_MARKER_SIZE);
+
+      // Remove the cream/beige background — make it transparent
+      const imageData = ctx.getImageData(0, 0, FIXER_MARKER_SIZE, FIXER_MARKER_SIZE);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        // Detect light background pixels (cream/white/beige)
+        if (r > 220 && g > 210 && b > 200) {
+          data[i + 3] = 0; // make transparent
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve('');
+    img.src = logoUri;
+  });
+}
+
 export default function DiscoveryMap({
   tasks,
   centerLat,
   centerLng,
+  fixerLat,
+  fixerLng,
   mapRegion: _mapRegion,
   onSelectTask,
   onClearSelection,
@@ -92,13 +128,16 @@ export default function DiscoveryMap({
 }: DiscoveryMapProps) {
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
   const [markerIcon, setMarkerIcon] = useState<google.maps.Icon | null>(null);
+  const [fixerIcon, setFixerIcon] = useState<google.maps.Icon | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Build the circular marker icon once the Maps JS API is loaded
+  // Build icons once the Maps JS API is loaded
   useEffect(() => {
     if (!isLoaded) return;
     const uri = resolveLogoUri();
     if (!uri) return;
+
+    // Task marker (circle + logo)
     buildCircleMarkerUrl(uri).then((dataUrl) => {
       if (!dataUrl) return;
       setMarkerIcon({
@@ -107,16 +146,23 @@ export default function DiscoveryMap({
         anchor: new google.maps.Point(MARKER_SIZE / 2, MARKER_SIZE / 2),
       });
     });
+
+    // Fixer marker (just the handyman, no background)
+    buildFixerMarkerUrl(uri).then((dataUrl) => {
+      if (!dataUrl) return;
+      setFixerIcon({
+        url: dataUrl,
+        scaledSize: new google.maps.Size(FIXER_MARKER_SIZE, FIXER_MARKER_SIZE),
+        anchor: new google.maps.Point(FIXER_MARKER_SIZE / 2, FIXER_MARKER_SIZE / 2),
+      });
+    });
   }, [isLoaded]);
 
-  // Stable center: only changes when the user explicitly searches or GPS updates.
   const center = useMemo(
     () => ({ lat: centerLat, lng: centerLng }),
     [centerLat, centerLng],
   );
 
-  // When user explicitly searches / GPS updates, pan to the new center imperatively.
-  // This avoids the snap-back caused by passing a controlled `center` prop.
   const prevCenterRef = useRef({ lat: centerLat, lng: centerLng });
   useEffect(() => {
     const prev = prevCenterRef.current;
@@ -154,7 +200,7 @@ export default function DiscoveryMap({
       <GoogleMap
         mapContainerStyle={MAP_CONTAINER_STYLE}
         center={center}
-        zoom={14}
+        zoom={15}
         options={MAP_OPTIONS}
         onClick={onClearSelection}
         onLoad={(map) => {
@@ -170,6 +216,16 @@ export default function DiscoveryMap({
             onClick={() => onSelectTask(task.id)}
           />
         ))}
+
+        {/* Fixer's own location — handyman icon without background */}
+        {fixerLat != null && fixerLng != null && fixerIcon && (
+          <MarkerF
+            position={{ lat: fixerLat, lng: fixerLng }}
+            icon={fixerIcon}
+            clickable={false}
+            zIndex={999}
+          />
+        )}
       </GoogleMap>
     </View>
   );
