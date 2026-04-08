@@ -13,6 +13,8 @@ export interface DiscoveryMapProps {
   centerLng: number;
   fixerLat?: number;
   fixerLng?: number;
+  /** Task IDs the fixer has already bid on — shown with green border */
+  bidTaskIds?: Set<string>;
   mapRegion: DiscoveryMapRegion;
   onSelectTask: (taskId: string) => void;
   onClearSelection: () => void;

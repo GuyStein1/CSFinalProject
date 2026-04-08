@@ -73,4 +73,35 @@ router.put('/:id/read', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// DELETE /api/notifications — delete all notifications for current user
+router.delete('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await prisma.notification.deleteMany({
+      where: { user_id: req.user.id },
+    });
+    res.json({ message: 'All notifications deleted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/notifications/:id — delete a single notification
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const notification = await prisma.notification.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!notification) throw new NotFoundError('Notification not found');
+    if (notification.user_id !== req.user.id) {
+      throw new ForbiddenError('Cannot delete another user\'s notification');
+    }
+
+    await prisma.notification.delete({ where: { id: notification.id } });
+    res.json({ message: 'Notification deleted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

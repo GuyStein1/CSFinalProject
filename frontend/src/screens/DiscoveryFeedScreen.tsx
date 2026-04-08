@@ -19,6 +19,7 @@ import FilterBar, { type ViewMode } from '../components/FilterBar';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
 import useTasks, { type Category } from '../hooks/useTasks';
+import api from '../api/axiosInstance';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type PermissionState = 'checking' | 'rationale' | 'denied' | 'ready' | 'error';
@@ -53,6 +54,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,9 +84,16 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   });
 
   const tasks = useMemo(() => {
-    if (selectedCategories.length <= 1) return rawTasks;
-    return rawTasks.filter((t) => selectedCategories.includes(t.category));
-  }, [rawTasks, selectedCategories]);
+    let filtered = rawTasks;
+    // Hide tasks the current user created (fixer shouldn't see own tasks)
+    if (currentUserId) {
+      filtered = filtered.filter((t) => t.requesterId !== currentUserId);
+    }
+    if (selectedCategories.length > 1) {
+      filtered = filtered.filter((t) => selectedCategories.includes(t.category));
+    }
+    return filtered;
+  }, [rawTasks, selectedCategories, currentUserId]);
 
   const selectedTask = useMemo(
     () => tasks.find((task) => task.id === selectedTaskId) ?? null,
@@ -103,12 +113,32 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   }, []);
 
   const loadGpsCenter = useCallback(async () => {
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    const gps = { lat: position.coords.latitude, lng: position.coords.longitude };
-    setFixerGps(gps);
-    syncCenter({ ...gps, label: 'Current location' }, 'gps');
+    try {
+      let gps: { lat: number; lng: number };
+
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
+        // Use browser geolocation directly — expo-location can hang on web
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 60_000,
+          });
+        });
+        gps = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      } else {
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        gps = { lat: position.coords.latitude, lng: position.coords.longitude };
+      }
+
+      setFixerGps(gps);
+      syncCenter({ ...gps, label: 'Current location' }, 'gps');
+    } catch {
+      // GPS failed — fall back to default
+      syncCenter(DEFAULT_CENTER, 'manual');
+    }
   }, [syncCenter]);
 
   const evaluatePermissionState = useCallback(async () => {
@@ -144,6 +174,20 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       evaluatePermissionState();
+      // Fetch current user ID to hide own tasks + fixer's bids for green markers
+      api.get('/api/users/me')
+        .then((res) => setCurrentUserId(res.data.user?.id ?? null))
+        .catch(() => { /* ignore */ });
+      api.get('/api/users/me/bids', { params: { limit: 50 } })
+        .then((res) => {
+          const ids = new Set<string>(
+            (res.data.bids ?? [])
+              .filter((b: { status: string }) => b.status === 'PENDING' || b.status === 'ACCEPTED')
+              .map((b: { task_id: string }) => b.task_id),
+          );
+          setBidTaskIds(ids);
+        })
+        .catch(() => { /* ignore */ });
     }, [evaluatePermissionState])
   );
 
@@ -155,12 +199,17 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   const handleAllowLocation = async () => {
     try {
+      if (Platform.OS === 'web') {
+        // On web, skip expo-location permission API — go straight to browser geolocation
+        // which triggers the native permission prompt automatically
+        await loadGpsCenter();
+        return;
+      }
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status === 'granted') {
         await loadGpsCenter();
         return;
       }
-      // Denied — go straight to map with default
       syncCenter(DEFAULT_CENTER, 'manual');
     } catch {
       syncCenter(DEFAULT_CENTER, 'manual');
@@ -453,6 +502,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               centerLng={center.lng}
               fixerLat={fixerGps?.lat}
               fixerLng={fixerGps?.lng}
+              bidTaskIds={bidTaskIds}
               mapRegion={mapRegion}
               onSelectTask={setSelectedTaskId}
               onClearSelection={() => {

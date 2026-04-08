@@ -198,6 +198,26 @@ export default function CreateTask({ navigation, route }: Props) {
     );
   }, []);
 
+  const reverseGeocode = useCallback((lat: number, lng: number) => {
+    if (typeof google === 'undefined') return;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const result = results[0];
+        setAddress(result.formatted_address ?? '');
+        setAddressConfirmed(true);
+
+        const components = result.address_components ?? [];
+        const neighborhood = components.find((c) => c.types.includes('neighborhood'))?.long_name;
+        const locality = components.find((c) => c.types.includes('locality'))?.long_name;
+        const sublocality = components.find((c) => c.types.includes('sublocality'))?.long_name;
+        setGeneralLocationName(
+          [neighborhood ?? sublocality, locality].filter(Boolean).join(', ') || (result.formatted_address ?? ''),
+        );
+      }
+    });
+  }, []);
+
   const handleAddressChange = useCallback((text: string) => {
     setAddress(text);
     setGeocodeError(null);
@@ -573,7 +593,11 @@ export default function CreateTask({ navigation, route }: Props) {
                   onRegionChange={setMapRegion}
                   onPress={(coords: { latitude: number; longitude: number }) => {
                     setPinCoords(coords);
-                    setAddressConfirmed(true);
+                    if (!address.trim()) {
+                      reverseGeocode(coords.latitude, coords.longitude);
+                    } else {
+                      setAddressConfirmed(true);
+                    }
                   }}
                 />
                 {pinCoords && (

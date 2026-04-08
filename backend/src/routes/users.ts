@@ -38,6 +38,7 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
         include: {
           _count: { select: { bids: { where: { status: 'PENDING' } } } },
           fixer: { select: { full_name: true } },
+          reviews: { where: { reviewer_id: req.user.id }, select: { id: true }, take: 1 },
         },
         orderBy: { created_at: 'desc' },
         skip: offset,
@@ -50,8 +51,10 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
       ...t,
       bid_count: t._count.bids,
       assigned_fixer_name: t.fixer?.full_name ?? null,
+      has_review: t.reviews.length > 0,
       _count: undefined,
       fixer: undefined,
+      reviews: undefined,
     }));
 
     res.json({ tasks: enriched, total, page: pageNum, limit: limitNum });
@@ -90,6 +93,27 @@ router.get('/me/bids', async (req: Request, res: Response, next: NextFunction) =
     ]);
 
     res.json({ bids, total, page: pageNum, limit: limitNum });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/users/:id — public profile (limited fields)
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        full_name: true,
+        avatar_url: true,
+        average_rating_as_fixer: true,
+        specializations: true,
+        created_at: true,
+      },
+    });
+    if (!user) throw new NotFoundError('User not found');
+    res.json({ user });
   } catch (err) {
     next(err);
   }

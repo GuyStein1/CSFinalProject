@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   FlatList,
   Image,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -54,6 +54,7 @@ interface ExistingBid {
   id: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   offered_price: number;
+  description?: string;
 }
 
 const CATEGORY_META: Record<string, { icon: string; label: string; color: string }> = {
@@ -74,10 +75,9 @@ const MAX_PITCH_LENGTH = 500;
 
 interface Props {
   route: { params?: { taskId?: string } };
-  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
 
-export default function TaskDetailsFixer({ route, navigation }: Props) {
+export default function TaskDetailsFixer({ route }: Props) {
   const taskId = route.params?.taskId;
 
   const [task, setTask] = useState<Task | null>(null);
@@ -130,11 +130,43 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
     return 'submit';
   }, [task, existingBid, bidCount]);
 
+  const [isEditing, setIsEditing] = useState(false);
+
   const handleOpenBidModal = () => {
     setBidPrice('');
     setBidPitch('');
     setBidError(null);
+    setIsEditing(false);
     setBidModalVisible(true);
+  };
+
+  const handleEditBid = () => {
+    if (!existingBid) return;
+    setBidPrice(String(existingBid.offered_price));
+    setBidPitch(existingBid.description ?? '');
+    setBidError(null);
+    setIsEditing(true);
+    setBidModalVisible(true);
+  };
+
+  const handleWithdrawBid = () => {
+    if (!existingBid) return;
+    const doWithdraw = async () => {
+      try {
+        await api.put(`/api/bids/${existingBid.id}/withdraw`);
+        setExistingBid({ ...existingBid, status: 'WITHDRAWN' });
+      } catch {
+        Alert.alert('Error', 'Failed to withdraw bid. Please try again.');
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to withdraw your bid?')) doWithdraw();
+    } else {
+      Alert.alert('Withdraw Bid', 'Are you sure you want to withdraw your bid?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Withdraw', style: 'destructive', onPress: doWithdraw },
+      ]);
+    }
   };
 
   const handleSubmitBid = async () => {
@@ -150,12 +182,21 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
     setBidSubmitting(true);
     setBidError(null);
     try {
-      const res = await api.post(`/api/tasks/${taskId}/bids`, {
-        offered_price: price,
-        description: bidPitch.trim(),
-      });
-      const bid = res.data.bid;
-      setExistingBid({ id: bid.id, status: bid.status, offered_price: bid.offered_price });
+      if (isEditing && existingBid) {
+        const res = await api.put(`/api/bids/${existingBid.id}`, {
+          offered_price: price,
+          description: bidPitch.trim(),
+        });
+        const bid = res.data.bid;
+        setExistingBid({ id: bid.id, status: bid.status, offered_price: bid.offered_price, description: bid.description });
+      } else {
+        const res = await api.post(`/api/tasks/${taskId}/bids`, {
+          offered_price: price,
+          description: bidPitch.trim(),
+        });
+        const bid = res.data.bid;
+        setExistingBid({ id: bid.id, status: bid.status, offered_price: bid.offered_price, description: bid.description });
+      }
       setBidModalVisible(false);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } }; status?: number } };
@@ -278,15 +319,8 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
 
           {/* Requester */}
           {task.requester && (
-            <Pressable
-              style={({ pressed }) => [styles.requesterRow, { opacity: pressed ? 0.85 : 1 }]}
-              onPress={() => {
-                try {
-                  navigation.navigate('PublicProfile', { userId: task.requester!.id });
-                } catch {
-                  // Not yet implemented
-                }
-              }}
+            <View
+              style={styles.requesterRow}
             >
               {task.requester.avatar_url ? (
                 <Avatar.Image size={48} source={{ uri: task.requester.avatar_url }} />
@@ -301,8 +335,7 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
                   Task Requester
                 </Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
-            </Pressable>
+            </View>
           )}
 
           {/* Existing bid info */}
@@ -333,9 +366,14 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
           </FButton>
         )}
         {bottomBarState === 'submitted' && (
-          <FButton variant="outline" fullWidth disabled icon="check-circle-outline" size="lg">
-            Bid Submitted
-          </FButton>
+          <View style={styles.submittedActions}>
+            <FButton variant="outline" icon="pencil-outline" size="lg" onPress={handleEditBid} style={{ flex: 1 }}>
+              Edit Bid
+            </FButton>
+            <FButton variant="danger" icon="close-circle-outline" size="lg" onPress={handleWithdrawBid} style={{ flex: 1 }}>
+              Withdraw
+            </FButton>
+          </View>
         )}
         {bottomBarState === 'closed' && (
           <FButton variant="outline" fullWidth disabled icon="lock-outline" size="lg">
@@ -355,7 +393,7 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
             <View style={styles.modalIconCircle}>
               <MaterialCommunityIcons name="hand-extended-outline" size={24} color={brandColors.primary} />
             </View>
-            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Submit Your Bid</Text>
+            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{isEditing ? 'Edit Your Bid' : 'Submit Your Bid'}</Text>
             <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.xs }]}>
               {task.suggested_price != null
                 ? `Suggested budget: ₪${task.suggested_price}`
@@ -413,9 +451,9 @@ export default function TaskDetailsFixer({ route, navigation }: Props) {
               loading={bidSubmitting}
               disabled={bidSubmitting}
               style={{ flex: 1 }}
-              icon="send"
+              icon={isEditing ? 'check' : 'send'}
             >
-              Send Offer
+              {isEditing ? 'Update Offer' : 'Send Offer'}
             </FButton>
           </View>
         </Modal>
@@ -588,6 +626,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+  },
+  submittedActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   modalActions: {
     flexDirection: 'row',

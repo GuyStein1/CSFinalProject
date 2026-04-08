@@ -45,10 +45,10 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
     await sendNotification(
       bid.fixer_id,
       'Bid Accepted',
-      'Your bid has been accepted!',
+      `Your bid of ₪${bid.offered_price} on "${bid.task.title}" has been accepted!`,
       'BID_ACCEPTED',
-      bid.id,
-      'Bid',
+      bid.task_id,
+      'Task',
     );
 
     const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
@@ -78,10 +78,10 @@ router.put('/:id/reject', async (req: Request, res: Response, next: NextFunction
     await sendNotification(
       bid.fixer_id,
       'Bid Rejected',
-      'Your bid was not accepted.',
+      `Your bid of ₪${bid.offered_price} on "${bid.task.title}" was not accepted.`,
       'BID_REJECTED',
-      bid.id,
-      'Bid',
+      bid.task_id,
+      'Task',
     );
 
     res.json({ bid: updated });

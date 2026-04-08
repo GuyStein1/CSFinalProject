@@ -6,6 +6,7 @@ import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import { NotificationProvider } from './src/context/NotificationContext';
 
 function RootContent() {
   const authState = useAuthBootstrap();
@@ -26,9 +27,11 @@ function RootContent() {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <AppNavigator />
-    </NavigationContainer>
+    <NotificationProvider>
+      <NavigationContainer theme={navigationTheme}>
+        <AppNavigator />
+      </NavigationContainer>
+    </NotificationProvider>
   );
 }
 

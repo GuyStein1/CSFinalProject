@@ -41,8 +41,8 @@ function resolveLogoUri(): string {
 const MARKER_SIZE = 40;
 const BORDER_WIDTH = 3;
 
-// Task markers: circular white background with blue border + logo
-function buildCircleMarkerUrl(logoUri: string): Promise<string> {
+// Task markers: circular white background with colored border + logo
+function buildCircleMarkerUrl(logoUri: string, borderColor: string): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     canvas.width = MARKER_SIZE;
@@ -58,7 +58,7 @@ function buildCircleMarkerUrl(logoUri: string): Promise<string> {
     ctx.fill();
 
     ctx.lineWidth = BORDER_WIDTH;
-    ctx.strokeStyle = brandColors.primary;
+    ctx.strokeStyle = borderColor;
     ctx.stroke();
 
     const img = new Image();
@@ -121,6 +121,7 @@ export default function DiscoveryMap({
   centerLng,
   fixerLat,
   fixerLng,
+  bidTaskIds,
   mapRegion: _mapRegion,
   onSelectTask,
   onClearSelection,
@@ -128,6 +129,7 @@ export default function DiscoveryMap({
 }: DiscoveryMapProps) {
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
   const [markerIcon, setMarkerIcon] = useState<google.maps.Icon | null>(null);
+  const [bidMarkerIcon, setBidMarkerIcon] = useState<google.maps.Icon | null>(null);
   const [fixerIcon, setFixerIcon] = useState<google.maps.Icon | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -137,15 +139,20 @@ export default function DiscoveryMap({
     const uri = resolveLogoUri();
     if (!uri) return;
 
-    // Task marker (circle + logo)
-    buildCircleMarkerUrl(uri).then((dataUrl) => {
-      if (!dataUrl) return;
-      setMarkerIcon({
-        url: dataUrl,
-        scaledSize: new google.maps.Size(MARKER_SIZE, MARKER_SIZE),
-        anchor: new google.maps.Point(MARKER_SIZE / 2, MARKER_SIZE / 2),
+    const makeIcon = (color: string) =>
+      buildCircleMarkerUrl(uri, color).then((dataUrl) => {
+        if (!dataUrl) return null;
+        return {
+          url: dataUrl,
+          scaledSize: new google.maps.Size(MARKER_SIZE, MARKER_SIZE),
+          anchor: new google.maps.Point(MARKER_SIZE / 2, MARKER_SIZE / 2),
+        };
       });
-    });
+
+    // Blue marker (default)
+    makeIcon(brandColors.primary).then((icon) => icon && setMarkerIcon(icon));
+    // Green marker (already bid)
+    makeIcon('#4CAF50').then((icon) => icon && setBidMarkerIcon(icon));
 
     // Fixer marker (just the handyman, no background)
     buildFixerMarkerUrl(uri).then((dataUrl) => {
@@ -208,14 +215,17 @@ export default function DiscoveryMap({
           map.addListener('idle', () => handleIdle(map));
         }}
       >
-        {tasks.map((task) => (
-          <MarkerF
-            key={task.id}
-            position={{ lat: task.lat, lng: task.lng }}
-            icon={markerIcon ?? undefined}
-            onClick={() => onSelectTask(task.id)}
-          />
-        ))}
+        {tasks.map((task) => {
+          const hasBid = bidTaskIds?.has(task.id);
+          return (
+            <MarkerF
+              key={task.id}
+              position={{ lat: task.lat, lng: task.lng }}
+              icon={(hasBid ? bidMarkerIcon : markerIcon) ?? undefined}
+              onClick={() => onSelectTask(task.id)}
+            />
+          );
+        })}
 
         {/* Fixer's own location — handyman icon without background */}
         {fixerLat != null && fixerLng != null && fixerIcon && (
