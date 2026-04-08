@@ -332,6 +332,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             pendingBids.map((bid) => (
               <FCard key={bid.id} style={styles.bidCard}>
                 <View style={styles.bidTop}>
+                  <Pressable
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.md }}
+                    onPress={() => navigation.navigate('PublicProfile', { userId: bid.fixer_id })}
+                  >
                   <Avatar.Icon size={44} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
                   <View style={styles.bidInfo}>
                     <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
@@ -351,6 +355,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                       <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
                     )}
                   </View>
+                  </Pressable>
                   <View style={styles.bidPriceTag}>
                     <Text style={[typography.h2, { color: brandColors.primary }]}>₪{bid.offered_price}</Text>
                   </View>
@@ -386,6 +391,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
           <FCard style={styles.fixerCard}>
             <View style={styles.bidTop}>
+              <Pressable
+                style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.md }}
+                onPress={() => navigation.navigate('PublicProfile', { userId: acceptedBid.fixer_id })}
+              >
               <Avatar.Icon size={52} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
               <View style={styles.bidInfo}>
                 <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
@@ -416,6 +425,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   </Pressable>
                 )}
               </View>
+              </Pressable>
               <Text style={[typography.h2, { color: brandColors.primary }]}>₪{acceptedBid.offered_price}</Text>
             </View>
           </FCard>

@@ -16,8 +16,11 @@ import CreateTask from '../screens/CreateTask';
 import TaskDetails from '../screens/TaskDetails';
 import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
+import PublicProfileScreen from '../screens/PublicProfileScreen';
+import NotificationCenterScreen from '../screens/NotificationCenterScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
+import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 type Mode = 'requester' | 'fixer';
@@ -27,10 +30,22 @@ const DESKTOP_BREAKPOINT = 768;
 const Stack = createNativeStackNavigator();
 const ModeTabs = createBottomTabNavigator();
 
+// ─── Shared notification badge ───────────────────────────────────────────────
+function NotifBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>{count > 9 ? '9+' : String(count)}</Text>
+    </View>
+  );
+}
+
 // ─── Desktop header (wide screens / web) ─────────────────────────────────────
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+  const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
+  const { unreadCount } = useNotificationContext();
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -93,8 +108,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
       </View>
 
       {/* Bell */}
-      <Pressable style={styles.desktopIconBtn} hitSlop={8}>
+      <Pressable
+        style={styles.desktopIconBtn}
+        hitSlop={8}
+        onPress={() => navigation.navigate('NotificationCenter' as never)}
+      >
         <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.primary} />
+        <NotifBadge count={unreadCount(typeFilter)} />
       </Pressable>
     </View>
   );
@@ -105,6 +125,8 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+  const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
+  const { unreadCount } = useNotificationContext();
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -130,8 +152,13 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         </View>
 
         {/* bell — right */}
-        <Pressable style={styles.iconBtn} hitSlop={8}>
+        <Pressable
+          style={styles.iconBtn}
+          hitSlop={8}
+          onPress={() => navigation.navigate('NotificationCenter' as never)}
+        >
           <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.textOnDark} />
+          <NotifBadge count={unreadCount(typeFilter)} />
         </Pressable>
       </LinearGradient>
 
@@ -189,6 +216,8 @@ export default function AppNavigator() {
       <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: 'Task Details' }} />
       <Stack.Screen name="TaskDetailsFixer" component={TaskDetailsFixer} options={{ title: 'Job Details' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
+      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
     </Stack.Navigator>
   );
 }
@@ -266,5 +295,25 @@ const styles = StyleSheet.create({
   },
   modeToggleLabelActive: {
     color: brandColors.textOnDark,
+  },
+
+  // Notification badge
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: brandColors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
   },
 });

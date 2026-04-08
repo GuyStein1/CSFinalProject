@@ -21,6 +21,8 @@ interface Task {
   general_location_name: string;
   bid_count?: number;
   assigned_fixer_name?: string;
+  has_review?: boolean;
+  completed_at?: string;
   created_at: string;
 }
 
@@ -174,7 +176,13 @@ export default function MyTasksScreen({ navigation }: Props) {
       return (b.bid_count || 0) - (a.bid_count || 0);
     });
 
-  const pastTasks = tasks.filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED');
+  const pastTasks = tasks
+    .filter((t) => t.status === 'COMPLETED' || t.status === 'CANCELED')
+    .sort((a, b) => {
+      const aNeeds = a.status === 'COMPLETED' && !a.has_review ? 1 : 0;
+      const bNeeds = b.status === 'COMPLETED' && !b.has_review ? 1 : 0;
+      return bNeeds - aNeeds;
+    });
 
   if (loading) return <LoadingScreen label="Loading your tasks..." />;
 
@@ -230,29 +238,41 @@ export default function MyTasksScreen({ navigation }: Props) {
         {pastTasks.length > 0 && (
           <View style={styles.section}>
             <FSectionHeader title="Past Tasks" count={pastTasks.length} muted />
-            {pastTasks.map((task) => (
-              <View key={task.id} style={styles.taskRow}>
-                <View style={styles.taskCardWrap}>
-                  <TaskCard
-                    title={task.title}
-                    category={task.category}
-                    status={task.status}
-                    suggestedPrice={task.suggested_price}
-                    locationName={task.general_location_name}
-                    onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
-                    onReactivate={task.status === 'CANCELED' ? () => reactivateTask(task.id) : undefined}
-                    muted
-                  />
+            {pastTasks.map((task) => {
+              const canReview = task.status === 'COMPLETED' && !task.has_review;
+              return (
+                <View key={task.id} style={styles.taskRow}>
+                  <View style={styles.taskCardWrap}>
+                    <TaskCard
+                      title={task.title}
+                      category={task.category}
+                      status={task.status}
+                      suggestedPrice={task.suggested_price}
+                      locationName={task.general_location_name}
+                      onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                      onReactivate={task.status === 'CANCELED' ? () => reactivateTask(task.id) : undefined}
+                      muted
+                    />
+                  </View>
+                  {canReview && (
+                    <Pressable
+                      style={styles.reviewBtn}
+                      hitSlop={8}
+                      onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
+                    >
+                      <MaterialCommunityIcons name="star-outline" size={22} color={brandColors.secondary} />
+                    </Pressable>
+                  )}
+                  <Pressable
+                    style={styles.trashBtn}
+                    hitSlop={8}
+                    onPress={() => deleteTask(task.id)}
+                  >
+                    <MaterialCommunityIcons name="delete-outline" size={22} color={brandColors.danger} />
+                  </Pressable>
                 </View>
-                <Pressable
-                  style={styles.trashBtn}
-                  hitSlop={8}
-                  onPress={() => deleteTask(task.id)}
-                >
-                  <MaterialCommunityIcons name="delete-outline" size={22} color={brandColors.danger} />
-                </Pressable>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -285,6 +305,14 @@ const styles = StyleSheet.create({
   },
   taskCardWrap: {
     flex: 1,
+  },
+  reviewBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.xs,
   },
   trashBtn: {
     width: 36,

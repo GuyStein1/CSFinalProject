@@ -335,7 +335,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         await sendNotification(
           bid.fixer_id,
           'Task Canceled',
-          'A task you bid on was canceled.',
+          `The task "${task.title}" you bid on has been canceled.`,
           'TASK_CANCELED',
           task.id,
           'Task',
@@ -351,7 +351,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         await sendNotification(
           task.assigned_fixer_id,
           'Task Completed',
-          'The requester has marked the task as completed.',
+          `The task "${task.title}" has been marked as completed.`,
           'TASK_COMPLETED',
           task.id,
           'Task',
@@ -367,7 +367,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         await sendNotification(
           task.assigned_fixer_id,
           'Task Canceled',
-          'The requester has canceled the task.',
+          `The task "${task.title}" has been canceled by the requester.`,
           'TASK_CANCELED',
           task.id,
           'Task',
@@ -447,10 +447,10 @@ router.post('/:id/bids', validate(createBidSchema), async (req: Request, res: Re
     await sendNotification(
       task.requester_id,
       'New Bid',
-      'Someone submitted a bid on your task.',
+      `You received a new bid of ₪${offered_price} on "${task.title}".`,
       'NEW_BID',
-      bid.id,
-      'Bid',
+      task.id,
+      'Task',
     );
 
     res.status(201).json({ bid, has_existing_bid: false });

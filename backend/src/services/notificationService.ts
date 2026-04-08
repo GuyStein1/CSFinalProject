@@ -1,19 +1,30 @@
 import { NotificationType } from '@prisma/client';
+import { prisma } from '../config/prisma';
 
 /**
- * Stub implementation — no-op until Zilber implements the real notification service (B2).
- * Signature matches what Zilber's implementation will use — do not change the signature.
- * Replace the body of this function with the real implementation when B2 is merged.
+ * Create a notification record in the database.
  */
 export async function sendNotification(
-  _userId: string,
-  _title: string,
-  _body: string,
-  _type: NotificationType,
-  _relatedEntityId: string,
-  _relatedEntityType: string,
+  userId: string,
+  title: string,
+  body: string,
+  type: NotificationType,
+  relatedEntityId: string,
+  relatedEntityType: string,
 ): Promise<void> {
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn('[notificationService] STUB — notification not sent');
+  try {
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title,
+        body,
+        type,
+        related_entity_id: relatedEntityId,
+        related_entity_type: relatedEntityType,
+      },
+    });
+  } catch (err) {
+    // Log but don't throw — notification failure shouldn't break the main operation
+    console.error('[notificationService] Failed to create notification:', err);
   }
 }
