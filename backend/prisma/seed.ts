@@ -100,7 +100,7 @@ const taskSeedData = [
 
   // ══════════ OPEN — NETANYA / SHARON (4) ══════════
   { title: 'תליית מנורות בכניסה', description: 'שתי מנורות קיר לתלייה בכניסה לבית. חיבור חשמלי קיים.', category: Category.MOUNTING, suggested_price: 150, general_location_name: 'מרכז, נתניה', exact_address: 'רחוב הרצל 80, נתניה', lon: 34.8570, lat: 32.3215 },
-  { title: 'שטיפת חצר ומדרגות בלחץ', description: 'חצר ומדרגות חיצוניות מלוכלכות. צריך שטיפה בלחץ מים גבוה.', category: Category.OUTDOORS, suggested_price: 250, general_location_name: 'הרצליה פיתוח', exact_address: 'רחוב המדע 5, הרצליה פיתוח', lon: 34.7880, lat: 32.1620 },
+  { title: 'שטיפת חצר ומדרגות בלחץ', description: 'חצר ומדרגות חיצוניות מלוכלכות. צריך שטיפה בלחץ מים גבוה.', category: Category.OUTDOORS, suggested_price: 250, general_location_name: 'הרצליה פיתוח', exact_address: 'רחוב המדע 5, הרצליה פיתוח', lon: 34.8050, lat: 32.1620 },
   { title: 'הרכבת מיטת קומותיים לילדים', description: 'מיטת קומותיים מאיקאה MYDAL. כל החלקים קיימים. צריך הרכבה בטוחה.', category: Category.ASSEMBLY, suggested_price: 250, general_location_name: 'כפר סבא', exact_address: 'רחוב ויצמן 30, כפר סבא', lon: 34.9060, lat: 32.1780 },
   { title: 'תיקון נזילה מהתקרה', description: 'כתם רטוב בתקרה של חדר האמבטיה. כנראה צנרת מהשכן למעלה.', category: Category.PLUMBING, suggested_price: 300, general_location_name: 'רעננה', exact_address: 'רחוב אחוזה 50, רעננה', lon: 34.8700, lat: 32.1840 },
 

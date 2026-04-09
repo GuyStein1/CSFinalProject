@@ -56,6 +56,13 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Fetch current user ID once on mount to filter out own tasks
+  useEffect(() => {
+    api.get('/api/users/me')
+      .then((res) => setCurrentUserId(res.data.user?.id ?? null))
+      .catch(() => { /* ignore */ });
+  }, []);
   const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -174,10 +181,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       evaluatePermissionState();
-      // Fetch current user ID to hide own tasks + fixer's bids for green markers
-      api.get('/api/users/me')
-        .then((res) => setCurrentUserId(res.data.user?.id ?? null))
-        .catch(() => { /* ignore */ });
+      // Fetch fixer's bids for green markers
       api.get('/api/users/me/bids', { params: { limit: 50 } })
         .then((res) => {
           const ids = new Set<string>(
