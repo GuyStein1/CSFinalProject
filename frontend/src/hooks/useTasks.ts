@@ -60,6 +60,34 @@ type ApiTask = {
   bid_count: number;
 };
 
+// --- Israel coastline approximation (minimum longitude per latitude) ---
+// Used to prevent privacy offsets from landing in the sea.
+const COASTLINE: [number, number][] = [
+  [29.50, 34.94], // Eilat
+  [31.20, 34.56], // South (Ashkelon)
+  [31.70, 34.62], // Ashdod
+  [32.00, 34.75], // Tel Aviv south
+  [32.10, 34.77], // Tel Aviv / Herzliya
+  [32.30, 34.84], // Netanya
+  [32.50, 34.87], // Hadera
+  [32.80, 34.96], // Haifa
+  [33.10, 35.08], // Nahariya
+];
+
+function minLngForLat(lat: number): number {
+  if (lat <= COASTLINE[0][0]) return COASTLINE[0][1];
+  if (lat >= COASTLINE[COASTLINE.length - 1][0]) return COASTLINE[COASTLINE.length - 1][1];
+  for (let i = 0; i < COASTLINE.length - 1; i++) {
+    const [lat0, lng0] = COASTLINE[i];
+    const [lat1, lng1] = COASTLINE[i + 1];
+    if (lat >= lat0 && lat <= lat1) {
+      const t = (lat - lat0) / (lat1 - lat0);
+      return lng0 + t * (lng1 - lng0);
+    }
+  }
+  return COASTLINE[0][1];
+}
+
 // --- Privacy offset: shift task markers by up to 50 m so the exact address is hidden ---
 // Uses a simple hash of the task ID to produce a deterministic angle + distance.
 const OFFSET_MAX_METERS = 50;
@@ -75,7 +103,6 @@ function hashCode(s: string): number {
 
 function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: number; lng: number } {
   const h = hashCode(taskId);
-  // Derive angle (0–2π) and distance (10–50 m) from the hash
   const angle = ((h & 0xffff) / 0xffff) * Math.PI * 2;
   const distance = 10 + ((h >>> 16) / 0xffff) * (OFFSET_MAX_METERS - 10);
 
@@ -83,7 +110,14 @@ function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: nu
   const dLat = (Math.sin(angle) * distance) / METERS_PER_DEG_LAT;
   const dLng = (Math.cos(angle) * distance) / metersPerDegLng;
 
-  return { lat: lat + dLat, lng: lng + dLng };
+  let newLng = lng + dLng;
+  const coastMin = minLngForLat(lat + dLat);
+  // If offset pushed the point into the sea, clamp to coastline + small buffer
+  if (newLng < coastMin) {
+    newLng = coastMin + 0.001; // ~100m inland from coastline
+  }
+
+  return { lat: lat + dLat, lng: newLng };
 }
 
 

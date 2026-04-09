@@ -20,6 +20,27 @@ import {
 
 const router = Router();
 
+// Israel coastline approximation — minimum longitude per latitude band
+const COASTLINE: [number, number][] = [
+  [29.50, 34.94], [31.20, 34.56], [31.70, 34.62],
+  [32.00, 34.75], [32.10, 34.77], [32.30, 34.84],
+  [32.50, 34.87], [32.80, 34.96], [33.10, 35.08],
+];
+
+function isInSea(lat: number, lng: number): boolean {
+  if (lat < COASTLINE[0][0] || lat > COASTLINE[COASTLINE.length - 1][0]) return false;
+  for (let i = 0; i < COASTLINE.length - 1; i++) {
+    const [lat0, lng0] = COASTLINE[i];
+    const [lat1, lng1] = COASTLINE[i + 1];
+    if (lat >= lat0 && lat <= lat1) {
+      const t = (lat - lat0) / (lat1 - lat0);
+      const minLng = lng0 + t * (lng1 - lng0);
+      return lng < minLng;
+    }
+  }
+  return false;
+}
+
 // All task routes require authentication
 router.use(authMiddleware);
 
@@ -47,6 +68,11 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
       lat: number;
       lng: number;
     };
+
+    // Validate coordinates are on land (not in the sea)
+    if (isInSea(lat, lng)) {
+      throw new ValidationError('Location appears to be in the sea. Please pick a valid address on land.');
+    }
 
     // Insert with PostGIS point — must use raw SQL for the geometry column.
     // ST_MakePoint takes (longitude, latitude) — longitude first.
