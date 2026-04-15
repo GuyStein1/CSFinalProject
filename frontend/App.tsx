@@ -7,6 +7,8 @@ import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { AccessibilityProvider } from './src/context/AccessibilityContext';
+import AccessibilityWidget from './src/components/AccessibilityWidget';
 
 function RootContent() {
   const authState = useAuthBootstrap();
@@ -39,7 +41,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <RootContent />
+        <AccessibilityProvider>
+          <RootContent />
+          <AccessibilityWidget />
+        </AccessibilityProvider>
         <StatusBar style="light" />
       </PaperProvider>
     </SafeAreaProvider>
