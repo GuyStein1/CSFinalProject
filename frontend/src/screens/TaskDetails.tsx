@@ -10,6 +10,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
+import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 
@@ -91,6 +92,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [editPrice, setEditPrice] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const showReviewsForFixer = async (fixerId: string) => {
     try {
@@ -126,6 +128,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const acceptBid = async (bidId: string) => {
     try {
       await api.put(`/api/bids/${bidId}/accept`);
+      setShowCelebration(true);
       fetchData();
     } catch {
       Alert.alert('Error', 'Failed to accept bid.');
@@ -176,6 +179,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const confirmPayment = async () => {
     try {
       await api.put(`/api/tasks/${taskId}/confirm-payment`);
+      setShowCelebration(true);
       fetchData();
     } catch {
       Alert.alert('Error', 'Failed to confirm payment.');
@@ -259,6 +263,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
+      <CelebrationOverlay fire={showCelebration} onComplete={() => setShowCelebration(false)} />
+
       {/* Status Banner + Edit button */}
       <View style={styles.statusRow}>
         <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -19,12 +19,31 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Location from 'expo-location';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
+
+/* ------------------------------------------------------------------ */
+/*  Haversine distance (km) + rough drive-time estimate               */
+/* ------------------------------------------------------------------ */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function estimateDriveMinutes(km: number): number {
+  // ~40 km/h average city driving in Israel
+  return Math.round((km / 40) * 60);
+}
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -48,6 +67,8 @@ interface Task {
   requester_id: string;
   requester?: TaskRequester;
   bid_count?: number;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 interface ExistingBid {
@@ -92,6 +113,33 @@ export default function TaskDetailsFixer({ route }: Props) {
   const [bidError, setBidError] = useState<string | null>(null);
 
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Get user's location for distance calculation
+  useEffect(() => {
+    (async () => {
+      try {
+        if (Platform.OS === 'web') {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 120_000,
+            });
+          });
+          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        } else {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          }
+        }
+      } catch {
+        // Location unavailable — distance card simply won't show
+      }
+    })();
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!taskId) return;
@@ -314,6 +362,28 @@ export default function TaskDetailsFixer({ route }: Props) {
             label="Bids"
             value={`${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} submitted`}
           />
+
+          {/* Distance & travel time */}
+          {userCoords && task.lat != null && task.lng != null && (() => {
+            const km = haversineKm(userCoords.lat, userCoords.lng, task.lat, task.lng);
+            const mins = estimateDriveMinutes(km);
+            return (
+              <View style={styles.distanceCard}>
+                <View style={styles.distanceIconShell}>
+                  <MaterialCommunityIcons name="map-marker-distance" size={20} color={brandColors.primary} />
+                </View>
+                <View style={styles.distanceInfo}>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                    {km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)} km`} away
+                  </Text>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                    ~{mins < 1 ? '1' : mins} min drive
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="car-outline" size={20} color={brandColors.textMuted} />
+              </View>
+            );
+          })()}
 
           <Divider style={styles.divider} />
 
@@ -583,6 +653,27 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   requesterInfo: {
+    flex: 1,
+    gap: 2,
+  },
+
+  distanceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.infoSoft,
+  },
+  distanceIconShell: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: brandColors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  distanceInfo: {
     flex: 1,
     gap: 2,
   },
