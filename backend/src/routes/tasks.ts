@@ -275,6 +275,13 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
     if (!task) throw new NotFoundError('Task not found');
 
+    // Extract lat/lng from PostGIS coordinates
+    const coordsRow = await prisma.$queryRaw<{ lat: number; lng: number }[]>`
+      SELECT ST_Y(coordinates::geometry) AS lat, ST_X(coordinates::geometry) AS lng
+      FROM "Task" WHERE id = ${req.params.id}
+    `;
+    const coords = coordsRow[0] ?? { lat: null, lng: null };
+
     const isRequester = req.user.id === task.requester_id;
     const isFixer = req.user.id === task.assigned_fixer_id;
 
@@ -284,7 +291,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       ? task
       : taskWithoutAddress;
 
-    res.json({ task: { ...response, bid_count: bidCount } });
+    res.json({ task: { ...response, bid_count: bidCount, lat: coords.lat, lng: coords.lng } });
   } catch (err) {
     next(err);
   }
