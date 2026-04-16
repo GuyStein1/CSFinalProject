@@ -1,8 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { TaskStatus, BidStatus } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema } from '../schemas';
 
 const router = Router();
 
@@ -93,6 +95,60 @@ router.get('/me/bids', async (req: Request, res: Response, next: NextFunction) =
     ]);
 
     res.json({ bids, total, page: pageNum, limit: limitNum });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/users/me — update authenticated user profile
+router.put('/me', validate(updateUserSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: req.body,
+    });
+    res.json({ user });
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === 'P2002') {
+      return next(new ConflictError('Phone number is already in use'));
+    }
+    next(err);
+  }
+});
+
+// POST /api/users/me/push-token — register or update Expo push token
+router.post('/me/push-token', validate(pushTokenSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { push_token: req.body.token },
+    });
+    res.json({ message: 'Push token registered' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/users/me/portfolio — add a portfolio item
+router.post('/me/portfolio', validate(createPortfolioItemSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const item = await prisma.portfolioItem.create({
+      data: { fixer_id: req.user.id, ...req.body },
+    });
+    res.status(201).json({ item });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/users/me/portfolio/:id — remove a portfolio item
+router.delete('/me/portfolio/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const item = await prisma.portfolioItem.findUnique({ where: { id: req.params.id } });
+    if (!item) throw new NotFoundError('Portfolio item not found');
+    if (item.fixer_id !== req.user.id) throw new ForbiddenError('You do not own this portfolio item');
+    await prisma.portfolioItem.delete({ where: { id: req.params.id } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

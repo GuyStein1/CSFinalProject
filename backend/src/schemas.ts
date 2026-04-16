@@ -39,3 +39,23 @@ export const createReviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().trim().max(2000).optional(),
 });
+
+export const updateUserSchema = z.object({
+  full_name: z.string().trim().min(1).max(100).optional(),
+  bio: z.string().trim().max(2000).optional(),
+  avatar_url: z.url().optional(),
+  payment_link: z.url().optional(),
+  phone_number: z.string().trim().optional(),
+  specializations: z
+    .array(z.enum(['ASSEMBLY', 'MOUNTING', 'MOVING', 'PAINTING', 'PLUMBING', 'ELECTRICITY', 'OUTDOORS', 'CLEANING']))
+    .optional(),
+});
+
+export const pushTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const createPortfolioItemSchema = z.object({
+  image_url: z.url(),
+  description: z.string().trim().max(500).optional(),
+});
