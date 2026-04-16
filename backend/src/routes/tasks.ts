@@ -263,13 +263,21 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/tasks/:id — task details
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const [task, bidCount] = await prisma.$transaction([
+    const [task, bidCount, myReview] = await prisma.$transaction([
       prisma.task.findUnique({
         where: { id: req.params.id },
         include: { requester: true, fixer: true },
       }),
       prisma.bid.count({
         where: { task_id: req.params.id, status: { in: ['PENDING', 'ACCEPTED'] } },
+      }),
+      prisma.review.findUnique({
+        where: {
+          task_id_reviewer_id: {
+            task_id: req.params.id,
+            reviewer_id: req.user.id,
+          },
+        },
       }),
     ]);
 
@@ -291,7 +299,15 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       ? task
       : taskWithoutAddress;
 
-    res.json({ task: { ...response, bid_count: bidCount, lat: coords.lat, lng: coords.lng } });
+    res.json({
+      task: {
+        ...response,
+        bid_count: bidCount,
+        lat: coords.lat,
+        lng: coords.lng,
+        my_review: myReview,
+      },
+    });
   } catch (err) {
     next(err);
   }

@@ -30,6 +30,13 @@ interface Bid {
   };
 }
 
+interface MyReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 interface Task {
   id: string;
   title: string;
@@ -43,6 +50,7 @@ interface Task {
   is_payment_confirmed: boolean;
   created_at: string;
   completed_at: string | null;
+  my_review: MyReview | null;
 }
 
 const STATUS_BANNER: Record<TaskStatus, { bg: string; color: string; icon: string }> = {
@@ -110,8 +118,15 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         api.get(`/api/tasks/${taskId}`),
         api.get(`/api/tasks/${taskId}/bids`),
       ]);
-      setTask(taskRes.data.task);
+      const fetchedTask: Task = taskRes.data.task;
+      setTask(fetchedTask);
       setBids(bidsRes.data.bids || []);
+      // Sync review-submitted state with server (survives refresh / re-mount)
+      if (fetchedTask.my_review) {
+        setReviewSubmitted(true);
+        setReviewRating(fetchedTask.my_review.rating);
+        setReviewComment(fetchedTask.my_review.comment ?? '');
+      }
     } catch {
       // handle error
     } finally {
@@ -194,8 +209,26 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         comment: reviewComment.trim() || undefined,
       });
       setReviewSubmitted(true);
-    } catch {
-      Alert.alert('Error', 'Failed to submit review.');
+    } catch (err: unknown) {
+      const axiosErr = err as {
+        response?: { data?: { error?: { message?: string } }; status?: number };
+      };
+      // 409 → review already exists. Refresh from server so the UI reflects it.
+      if (axiosErr.response?.status === 409) {
+        setReviewSubmitted(true);
+        fetchData();
+        return;
+      }
+      const message =
+        axiosErr.response?.data?.error?.message ?? 'Failed to submit review.';
+      // Alert.alert on react-native-web only shows the title — combine so the
+      // server-side error is actually visible.
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(`Error: ${message}`);
+      } else {
+        Alert.alert('Error', message);
+      }
     }
   };
 
