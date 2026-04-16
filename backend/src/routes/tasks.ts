@@ -297,6 +297,66 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// GET /api/tasks/:id/directions?originLat=...&originLng=... — driving directions via Google
+router.get('/:id/directions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { originLat, originLng } = req.query;
+    if (!originLat || !originLng) throw new ValidationError('originLat and originLng are required');
+
+    const coordsRow = await prisma.$queryRaw<{ lat: number; lng: number }[]>`
+      SELECT ST_Y(coordinates::geometry) AS lat, ST_X(coordinates::geometry) AS lng
+      FROM "Task" WHERE id = ${req.params.id}
+    `;
+    const dest = coordsRow[0];
+    if (!dest) throw new NotFoundError('Task not found');
+
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
+    if (!apiKey) {
+      res.json({ directions: null });
+      return;
+    }
+
+    const url =
+      `https://maps.googleapis.com/maps/api/directions/json` +
+      `?origin=${originLat},${originLng}` +
+      `&destination=${dest.lat},${dest.lng}` +
+      `&mode=driving` +
+      `&departure_time=now` +
+      `&language=he` +
+      `&key=${apiKey}`;
+
+    const gRes = await fetch(url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await gRes.json();
+
+    if (data.status !== 'OK' || !data.routes?.length) {
+      res.json({ directions: null });
+      return;
+    }
+
+    const leg = data.routes[0].legs[0];
+
+    // Google returns English units even with language=he — localise to Hebrew
+    const toHe = (text: string) =>
+      text
+        .replace(/\bkm\b/g, 'ק״מ')
+        .replace(/\bm\b/g, 'מ׳')
+        .replace(/\bmins?\b/g, 'דקות')
+        .replace(/\bhours?\b/g, 'שעות')
+        .replace(/\bdays?\b/g, 'ימים');
+
+    res.json({
+      directions: {
+        distanceText: toHe(leg.distance.text),
+        durationText: toHe(leg.duration.text),
+        durationInTraffic: leg.duration_in_traffic?.text ? toHe(leg.duration_in_traffic.text) : null,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PUT /api/tasks/:id — edit an OPEN task
 router.put('/:id', validate(updateTaskSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {

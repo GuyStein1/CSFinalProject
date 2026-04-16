@@ -27,22 +27,10 @@ import EmptyState from '../components/EmptyState';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
-/* ------------------------------------------------------------------ */
-/*  Haversine distance (km) + rough drive-time estimate               */
-/* ------------------------------------------------------------------ */
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function estimateDriveMinutes(km: number): number {
-  // ~40 km/h average city driving in Israel
-  return Math.round((km / 40) * 60);
+interface DirectionsResult {
+  distanceText: string;   // e.g. "12.3 ק״מ"
+  durationText: string;   // e.g. "18 דקות"
+  durationInTraffic?: string | null; // real-time with traffic
 }
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -114,6 +102,7 @@ export default function TaskDetailsFixer({ route }: Props) {
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [directions, setDirections] = useState<DirectionsResult | null>(null);
 
   // Get user's location for distance calculation
   useEffect(() => {
@@ -140,6 +129,21 @@ export default function TaskDetailsFixer({ route }: Props) {
       }
     })();
   }, []);
+
+  // Fetch real driving directions via backend proxy (Google Directions API)
+  useEffect(() => {
+    if (!userCoords || !task?.lat || !task?.lng || !taskId) return;
+    (async () => {
+      try {
+        const res = await api.get(`/api/tasks/${taskId}/directions`, {
+          params: { originLat: userCoords.lat, originLng: userCoords.lng },
+        });
+        if (res.data.directions) setDirections(res.data.directions);
+      } catch {
+        // Directions unavailable — card simply won't show
+      }
+    })();
+  }, [userCoords, task?.lat, task?.lng, taskId]);
 
   const fetchData = useCallback(async () => {
     if (!taskId) return;
@@ -363,27 +367,23 @@ export default function TaskDetailsFixer({ route }: Props) {
             value={`${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} submitted`}
           />
 
-          {/* Distance & travel time */}
-          {userCoords && task.lat != null && task.lng != null && (() => {
-            const km = haversineKm(userCoords.lat, userCoords.lng, task.lat, task.lng);
-            const mins = estimateDriveMinutes(km);
-            return (
-              <View style={styles.distanceCard}>
-                <View style={styles.distanceIconShell}>
-                  <MaterialCommunityIcons name="map-marker-distance" size={20} color={brandColors.primary} />
-                </View>
-                <View style={styles.distanceInfo}>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
-                    {km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)} km`} away
-                  </Text>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
-                    ~{mins < 1 ? '1' : mins} min drive
-                  </Text>
-                </View>
-                <MaterialCommunityIcons name="car-outline" size={20} color={brandColors.textMuted} />
+          {/* Distance & travel time (Google Directions API) */}
+          {directions && (
+            <View style={styles.distanceCard}>
+              <View style={styles.distanceIconShell}>
+                <MaterialCommunityIcons name="map-marker-distance" size={20} color={brandColors.primary} />
               </View>
-            );
-          })()}
+              <View style={styles.distanceInfo}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                  {directions.distanceText}
+                </Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                  {directions.durationInTraffic ?? directions.durationText}
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="car-outline" size={20} color={brandColors.textMuted} />
+            </View>
+          )}
 
           <Divider style={styles.divider} />
 
