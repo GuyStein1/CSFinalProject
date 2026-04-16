@@ -95,6 +95,7 @@ router.put('/:id/withdraw', async (req: Request, res: Response, next: NextFuncti
   try {
     const bid = await prisma.bid.findUnique({
       where: { id: req.params.id },
+      include: { task: true },
     });
 
     if (!bid) throw new NotFoundError('Bid not found');
@@ -106,8 +107,14 @@ router.put('/:id/withdraw', async (req: Request, res: Response, next: NextFuncti
       data: { status: 'WITHDRAWN' },
     });
 
-    // BID_WITHDRAWN does not exist in the NotificationType enum — skipping notification.
-    // Flagged in plan: needs to be added to the schema or confirmed as intentional omission.
+    await sendNotification(
+      bid.task.requester_id,
+      'Bid Withdrawn',
+      `A fixer withdrew their bid of ₪${bid.offered_price} on "${bid.task.title}".`,
+      'BID_WITHDRAWN',
+      bid.task_id,
+      'Task',
+    );
 
     res.json({ bid: updated });
   } catch (err) {
