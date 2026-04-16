@@ -9,6 +9,7 @@ import AuthScreen from './src/screens/AuthScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
+import GlobalCelebration from './src/components/GlobalCelebration';
 
 function RootContent() {
   const authState = useAuthBootstrap();
@@ -33,6 +34,7 @@ function RootContent() {
       <NavigationContainer theme={navigationTheme}>
         <AppNavigator />
       </NavigationContainer>
+      <GlobalCelebration />
     </NotificationProvider>
   );
 }
