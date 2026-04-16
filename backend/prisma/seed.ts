@@ -256,6 +256,16 @@ async function main() {
       });
       totalBids++;
 
+      // When a bid is accepted, the task must have assigned_fixer_id set —
+      // otherwise later flows (e.g. review submission) will reject the task
+      // with "Task has no assigned fixer".
+      if (bidStatus === BidStatus.ACCEPTED) {
+        await prisma.task.update({
+          where: { id: taskIds[t] },
+          data: { assigned_fixer_id: fixerIds[fixerIndex] },
+        });
+      }
+
       // Create review for completed tasks (requester reviews the accepted fixer)
       if (status === 'COMPLETED' && bidStatus === BidStatus.ACCEPTED) {
         const reviewData = reviewTexts[t % reviewTexts.length];
