@@ -24,5 +24,8 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }

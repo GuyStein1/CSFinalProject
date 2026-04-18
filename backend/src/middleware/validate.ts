@@ -7,7 +7,7 @@ export function validate(schema: ZodSchema) {
     try {
       schema.parse(req.body);
       next();
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof ZodError) {
         next(new ValidationError('Validation error', err.issues));
         return;
