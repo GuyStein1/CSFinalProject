@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixIt — CS Final Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:    #1C3C56;
+  --gold:    #F1B545;
+  --beige:   #F5F1E8;
+  --surface: #FFFCF6;
+  --success: #517A58;
+  --text:    #1A1A2E;
+  --muted:   #6B7280;
+  --border:  #E5E0D6;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--navy); color: var(--text); }
+
+/* ── SLIDE ENGINE ── */
+.deck { width: 100%; height: 100%; position: relative; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 52px 80px;
+  opacity: 0; transform: translateX(50px);
+  transition: opacity .3s ease, transform .3s ease;
+  pointer-events: none;
+  background: var(--surface);
+}
+.slide.active  { opacity: 1; transform: translateX(0); pointer-events: all; }
+.slide.exit    { opacity: 0; transform: translateX(-50px); }
+.slide-dark    { background: var(--navy) !important; }
+.slide-dark h2, .slide-dark p { color: #fff; }
+.slide-demo    { background: linear-gradient(135deg, #0a1e2e 0%, var(--navy) 100%) !important; }
+
+/* ── CHROME ── */
+.progress { position: fixed; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,.08); z-index: 100; }
+.progress-bar { height: 100%; background: var(--gold); transition: width .3s ease; }
+.counter { position: fixed; bottom: 14px; right: 22px; font-size: 12px; color: rgba(255,255,255,.4); z-index: 100; font-weight: 500; }
+.hint    { position: fixed; bottom: 14px; left: 22px;  font-size: 11px; color: rgba(255,255,255,.25); z-index: 100; }
+.notes-btn { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,.25); z-index: 100; cursor: pointer; letter-spacing: .05em; user-select: none; }
+.notes-btn:hover { color: rgba(255,255,255,.5); }
+
+/* ── SPEAKER NOTES ── */
+.notes {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(8,16,24,.96); color: #dce8f0;
+  padding: 14px 24px 20px; font-size: 13px; line-height: 1.65;
+  max-height: 28%; overflow-y: auto; z-index: 200;
+  border-top: 2px solid var(--gold);
+}
+.notes.on { display: block; }
+.notes b { color: var(--gold); }
+
+/* ── TYPOGRAPHY ── */
+.label { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
+h2 { font-size: 34px; font-weight: 800; color: var(--navy); line-height: 1.1; letter-spacing: -.01em; margin-bottom: 28px; }
+h3 { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+p  { font-size: 15px; line-height: 1.6; color: var(--text); }
+code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28,60,86,.08); padding: 1px 5px; border-radius: 3px; }
+
+/* ── BADGES ── */
+.badges { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+.b { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 5px; font-size: 12.5px; font-weight: 600; }
+.ts   { background:#3178c6; color:#fff; }
+.rn   { background:#20232a; color:#61DAFB; }
+.expo { background:#000; color:#fff; }
+.maps { background:#4285F4; color:#fff; }
+.fb   { background:#FFCA28; color:#1a1a1a; }
+.node { background:#3C873A; color:#fff; }
+.pg   { background:#336791; color:#fff; }
+.pgis { background:#1A73A7; color:#fff; }
+.prism{ background:#0C344B; color:#d6e4f0; }
+.sio  { background:#111; color:#fff; }
+.dock { background:#0db7ed; color:#fff; }
+.ci   { background:#2088FF; color:#fff; }
+.zod  { background:#3068B7; color:#fff; }
+.push { background:#4630EB; color:#fff; }
+.stor { background:#FFCA28; color:#1a1a1a; }
+
+/* ── LAYOUT ── */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; width: 100%; }
+.three { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; width: 100%; }
+.card { background: var(--beige); border-radius: 12px; padding: 22px; border: 1px solid var(--border); }
+.hl-card { background: var(--beige); border-radius: 12px; padding: 22px; border: 1.5px solid var(--border); border-left: 4px solid var(--gold); }
+
+/* ── FLOW STEPS ── */
+.flow { display: flex; gap: 0; width: 100%; margin: 20px 0; }
+.step { flex: 1; background: var(--beige); border: 1.5px solid var(--border); border-radius: 10px; padding: 18px 14px; text-align: center; }
+.step + .step { margin-left: 6px; }
+.step-n { width: 26px; height: 26px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.step h4 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+.step p  { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+/* ── ARCH DIAGRAM ── */
+.arch-box { background: var(--beige); border: 1.5px solid var(--border); border-radius: 9px; padding: 10px 18px; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--navy); }
+.arch-box.dk { background: var(--navy); color: #fff; border-color: var(--navy); }
+.arch-box.gd { background: var(--gold); color: var(--navy); border-color: #d9a030; }
+.arch-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.arr { font-size: 16px; color: var(--muted); }
+
+/* ── PHASES ── */
+.ph { display: grid; grid-template-columns: 90px 1fr 28px; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.ph:last-child { border-bottom: none; }
+.ph-lbl { font-weight: 700; font-size: 13px; color: var(--navy); }
+.ph-desc { font-size: 13px; color: var(--muted); }
+
+/* ── CODE SNIPPET ── */
+.code { background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 10px 14px; font-family: 'Fira Code','Courier New',monospace; font-size: 11.5px; line-height: 1.55; margin-top: 10px; }
+.kw { color: #ff7b72; }
+.fn { color: #d2a8ff; }
+.cm { color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ─────────────────────────────────────────────
+     S1 · TITLE
+───────────────────────────────────────────────── -->
+<div class="slide slide-dark active" id="s1">
+  <div style="text-align:center">
+    <div style="font-size:76px;font-weight:900;color:var(--gold);letter-spacing:-.03em;line-height:1">FixIt</div>
+    <div style="font-size:19px;color:rgba(255,255,255,.6);margin-top:12px;font-weight:400">A Location-Aware Task Marketplace</div>
+    <div style="margin-top:52px;display:flex;align-items:center;justify-content:center;gap:28px">
+      <span style="font-size:14px;color:rgba(255,255,255,.45)">Guy Stein</span>
+      <span style="color:rgba(255,255,255,.18)">·</span>
+      <span style="font-size:14px;color:rgba(255,255,255,.45)">Guy Zilberstein</span>
+      <span style="color:rgba(255,255,255,.18)">·</span>
+      <span style="font-size:14px;color:rgba(255,255,255,.45)">Guy Shick</span>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.2);letter-spacing:.1em;text-transform:uppercase">CS Final Project · Spring 2026</div>
+  </div>
+  <div class="notes" id="n1"><b>Opening:</b> One sentence intro — "FixIt is a task marketplace connecting people who need small jobs done with local professionals who bid on them." Then move straight to the problem slide.</div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S2 · PROBLEM
+───────────────────────────────────────────────── -->
+<div class="slide" id="s2">
+  <div style="max-width:740px;width:100%">
+    <div class="label">The Problem</div>
+    <h2>Finding local help is broken.</h2>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <span style="font-size:24px;flex-shrink:0">🔨</span>
+        <div><strong style="font-size:15px;color:var(--navy)">Contractors won't take small jobs.</strong>
+        <p style="font-size:14px;color:var(--muted);margin-top:2px">Licensed tradespeople ignore micro-gigs — mounting a TV, assembling IKEA furniture, fixing a leaky tap.</p></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <span style="font-size:24px;flex-shrink:0">💸</span>
+        <div><strong style="font-size:15px;color:var(--navy)">Prices are opaque.</strong>
+        <p style="font-size:14px;color:var(--muted);margin-top:2px">You pay whatever they quote — no transparency, no comparison, no market rate.</p></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <span style="font-size:24px;flex-shrink:0">🤷</span>
+        <div><strong style="font-size:15px;color:var(--navy)">No accountability.</strong>
+        <p style="font-size:14px;color:var(--muted);margin-top:2px">The current solution is a WhatsApp neighborhood group — unstructured, unreliable, no trust signals.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="notes" id="n2"><b>Context:</b> Name the Israeli reality — WhatsApp groups like "שכונת X – עזרה הדדית" are the actual incumbent. This is a real, everyday friction point in Israel. The market exists; it just has no infrastructure.</div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S3 · SOLUTION
+───────────────────────────────────────────────── -->
+<div class="slide" id="s3">
+  <div style="max-width:860px;width:100%">
+    <div class="label">The Solution</div>
+    <h2>A transparent, competitive bidding marketplace.</h2>
+    <div class="flow">
+      <div class="step"><div class="step-n">1</div><h4>Post a Task</h4><p>Title · photos · category · budget · location pin</p></div>
+      <div class="step"><div class="step-n">2</div><h4>Fixers Bid</h4><p>Local professionals submit price + pitch (max 15 bids)</p></div>
+      <div class="step"><div class="step-n">3</div><h4>Accept &amp; Chat</h4><p>Pick the best offer — real-time chat opens instantly</p></div>
+      <div class="step"><div class="step-n">4</div><h4>Complete &amp; Review</h4><p>Mark done · pay via Bit/Paybox · leave a star rating</p></div>
+    </div>
+    <div style="display:flex;gap:20px">
+      <div class="card" style="flex:1;padding:16px 20px">
+        <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:4px">🔄 One account, two roles</div>
+        <div style="font-size:13px;color:var(--muted)">Users switch between Requester and Fixer mode in the top nav — same account, no re-registration.</div>
+      </div>
+      <div class="card" style="flex:1;padding:16px 20px">
+        <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:4px">📱 Mobile + Web, one codebase</div>
+        <div style="font-size:13px;color:var(--muted)">React Native + Expo — same TypeScript runs natively on iOS, Android, and browser with full feature parity.</div>
+      </div>
+    </div>
+  </div>
+  <div class="notes" id="n3"><b>Key angle:</b> The Requester sets terms, Fixers compete — inverts the usual power dynamic. Highlight the 15-bid cap as a deliberate UX constraint: creates urgency for Fixers, prevents notification overload for Requesters. Mention the unified account design — many users are both a Requester for their home and a Fixer professionally.</div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S4 · TECH STACK
+───────────────────────────────────────────────── -->
+<div class="slide" id="s4">
+  <div style="max-width:900px;width:100%">
+    <div class="label">Stack</div>
+    <h2>Tech Stack</h2>
+    <div class="two" style="gap:40px">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Frontend</div>
+        <div class="badges">
+          <span class="b rn">⚛ React Native</span>
+          <span class="b expo">📱 Expo SDK 54</span>
+          <span class="b ts">🟦 TypeScript</span>
+          <span class="b maps">🗺 Google Maps</span>
+          <span class="b fb">🔥 Firebase Auth</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Same codebase → iOS · Android · Web. Firebase client handles the full auth lifecycle — no custom session logic.</p>
+
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Infrastructure</div>
+        <div class="badges">
+          <span class="b dock">🐳 Docker</span>
+          <span class="b ci">⚙️ GitHub Actions CI</span>
+          <span class="b push">🔔 Expo Push</span>
+          <span class="b stor">☁️ Firebase Storage</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted)">Lint + typecheck on every PR (separate backend &amp; frontend CI workflows).</p>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Backend</div>
+        <div class="badges">
+          <span class="b node">🟢 Node.js</span>
+          <span class="b ts">🟦 TypeScript</span>
+          <span class="b pg">🐘 PostgreSQL</span>
+          <span class="b pgis">📍 PostGIS</span>
+          <span class="b prism">▲ Prisma ORM</span>
+          <span class="b sio">⚡ Socket.io</span>
+          <span class="b zod">✅ Zod</span>
+          <span class="b fb">🔥 Firebase Admin</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-top:10px">PostGIS extends PostgreSQL with spatial types and a GiST index — enables radius-based discovery in a single SQL predicate instead of app-level coordinate math.<br><br>Firebase Admin verifies ID tokens server-side. <strong style="color:var(--navy)">Passwords never touch our backend.</strong></p>
+      </div>
+    </div>
+  </div>
+  <div class="notes" id="n4">
+    <b>Points to stress:</b><br>
+    (1) PostGIS was a deliberate choice — not just storing lat/lng as floats. You get a proper spatial index (GiST), OGC-standard functions, and correct geodetic distance. Mention you could have done bounding-box filtering in application code, but ST_DWithin with a spatial index is the correct CS answer.<br>
+    (2) Firebase Admin = zero password handling on the backend. A security win by design, not just convenience.<br>
+    (3) TypeScript end-to-end — both frontend and backend share the same type discipline despite being separate packages in a monorepo with npm workspaces.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S5 · ARCHITECTURE
+───────────────────────────────────────────────── -->
+<div class="slide" id="s5">
+  <div style="max-width:860px;width:100%">
+    <div class="label">Architecture</div>
+    <h2>System Overview</h2>
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <!-- Client -->
+      <div style="display:flex;justify-content:center">
+        <div class="arch-box gd" style="min-width:200px;font-size:14px;padding:12px 24px">
+          📱 Expo Client<br><span style="font-size:11px;opacity:.7">iOS · Android · Web</span>
+        </div>
+      </div>
+
+      <!-- Three paths -->
+      <div style="display:flex;justify-content:center;gap:60px">
+        <div style="text-align:center;font-size:12px;color:var(--muted)">🔑 Firebase Auth SDK<br><span style="font-size:11px">↓ ID Token</span></div>
+        <div style="text-align:center;font-size:12px;color:var(--muted)">🌐 Axios REST<br><span style="font-size:11px">↓ Bearer Token</span></div>
+        <div style="text-align:center;font-size:12px;color:var(--muted)">⚡ Socket.io<br><span style="font-size:11px">↓ WS + same token</span></div>
+      </div>
+
+      <!-- Backend row -->
+      <div class="arch-row">
+        <div class="arch-box" style="font-size:12px">authMiddleware<br><span style="color:var(--muted);font-size:11px">verify → req.user</span></div>
+        <span class="arr">→</span>
+        <div class="arch-box dk" style="min-width:160px;font-size:14px;padding:12px 20px">🚀 Express API<br><span style="font-size:11px;opacity:.6">30+ endpoints</span></div>
+        <span class="arr">→</span>
+        <div class="arch-box" style="font-size:12px">▲ Prisma ORM<br><span style="color:var(--muted);font-size:11px">type-safe queries</span></div>
+      </div>
+
+      <!-- DB + services -->
+      <div style="display:flex;gap:20px;justify-content:center">
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">↓</div>
+          <div class="arch-box" style="background:#336791;color:#fff;border-color:#336791;font-size:12px">🐘 PostgreSQL + PostGIS<br><span style="opacity:.75;font-size:11px">ST_DWithin · GiST index</span></div>
+        </div>
+        <div style="text-align:center;margin-top:17px">
+          <div class="arch-box" style="font-size:12px">🔔 notificationService<br><span style="color:var(--muted);font-size:11px">DB write → Expo Push</span></div>
+        </div>
+        <div style="text-align:center;margin-top:17px">
+          <div class="arch-box" style="font-size:12px">⚡ Socket.io server<br><span style="color:var(--muted);font-size:11px">task_chat_{id} rooms</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="notes" id="n5">
+    <b>Walk through three request paths:</b><br>
+    (1) REST: Axios with Bearer token → authMiddleware verifies via Firebase Admin SDK → route handler → Prisma → PostgreSQL.<br>
+    (2) Real-time: Socket.io handshake carries the same Firebase ID token — same trust boundary, no second auth system.<br>
+    (3) Push: notificationService always writes a Notification row to DB first (so in-app Notification Center always works), then sends Expo push only if the user has a registered token. Non-blocking — a missing token doesn't throw.<br><br>
+    <b>Key design point:</b> Firebase Admin is the single identity source. We never issue our own tokens — we piggyback on Google's token infrastructure.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S6 · WHAT WE'VE BUILT
+───────────────────────────────────────────────── -->
+<div class="slide" id="s6">
+  <div style="max-width:880px;width:100%">
+    <div class="label">Progress</div>
+    <h2>What We've Built</h2>
+    <div style="display:flex;gap:44px">
+      <div style="flex:1">
+        <div class="ph"><div class="ph-lbl">Phase 1</div><div class="ph-desc">Monorepo · PostgreSQL+PostGIS · Firebase project · Expo scaffold · GitHub Actions CI</div><div>✅</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 2</div><div class="ph-desc">All 30+ API endpoints · Auth middleware · Push notification service · Zod validation</div><div>✅</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 3</div><div class="ph-desc">All screens · Google Maps integration · Navigation · Design system · API integration</div><div>✅</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 4</div><div class="ph-desc">Push delivery ✅ &nbsp;·&nbsp; Socket.io server ✅ &nbsp;·&nbsp; Chat UI 🔄 &nbsp;·&nbsp; Reviews ✅</div><div>🔶</div></div>
+      </div>
+      <div style="flex:0 0 230px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Features Working</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px">
+          <div>✅ &nbsp;Authentication (Firebase)</div>
+          <div>✅ &nbsp;Task creation wizard</div>
+          <div>✅ &nbsp;Location-aware discovery</div>
+          <div>✅ &nbsp;Bidding system (full state machine)</div>
+          <div>✅ &nbsp;Push notifications</div>
+          <div>✅ &nbsp;Review system</div>
+          <div>✅ &nbsp;Fixer profiles &amp; portfolio</div>
+          <div>✅ &nbsp;Accessibility (WCAG 2.0 AA)</div>
+          <div style="color:var(--muted)">🔄 &nbsp;Real-time chat (in progress)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes" id="n6">
+    <b>Emphasize:</b> All core flows are working end-to-end. The only major pending item is the chat frontend screen — the Socket.io server implementation is complete, the REST chat endpoints exist, just the UI screen is pending.<br><br>
+    The accessibility widget is worth mentioning briefly — it's a bonus feature (WCAG 2.0 AA) with 10+ options: font scale, high contrast, monochrome, stop animations, etc. Injected as CSS on web, applied via StyleSheet overrides on native.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S7 · LIVE DEMO
+───────────────────────────────────────────────── -->
+<div class="slide slide-demo" id="s7">
+  <div style="text-align:center">
+    <div style="font-size:52px;margin-bottom:14px">🎬</div>
+    <div style="font-size:54px;font-weight:900;color:#fff;letter-spacing:-.02em">Live Demo</div>
+    <div style="font-size:16px;color:rgba(255,255,255,.4);margin-top:10px">~10 minutes</div>
+  </div>
+  <div class="notes" id="n7">
+    <b>Demo script (~10 min)</b><br><br>
+    <b>1. Requester flow (4 min)</b><br>
+    → Open app in browser → show auth screen → log in as stein@example.com (pw: guyguyguy)<br>
+    → Requester Dashboard: active tasks, bid counts, FAB "+" button<br>
+    → Tap "+" → Task Creation Wizard: title/description → upload photo → pick category → set fixed price → drop map pin over Haifa → enter exact address → review modal → Publish<br>
+    → New task appears in My Tasks<br><br>
+    <b>2. Fixer discovery (3 min)</b><br>
+    → Open second tab, log in as shick@example.com<br>
+    → Switch to Fixer mode → Discovery Map — task pins color-coded by category<br>
+    → Toggle to List View — sorted by distance<br>
+    → Tap a task → Task Details Fixer → Submit a bid (price + pitch)<br><br>
+    <b>3. Accept &amp; notify (2 min)</b><br>
+    → Back as stein → open task → see incoming bid → tap Accept<br>
+    → Other bids auto-rejected → task moves to IN_PROGRESS<br>
+    → Notification Center (bell icon) → BID_ACCEPTED notification visible<br><br>
+    <b>4. Completion (1 min)</b><br>
+    → Mark task Completed → review prompt → submit 5-star review<br>
+    → Navigate to shick's Public Profile → updated rating visible
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S8 · CS HIGHLIGHTS
+───────────────────────────────────────────────── -->
+<div class="slide" id="s8">
+  <div style="max-width:940px;width:100%">
+    <div class="label">Under the Hood</div>
+    <h2>CS-Interesting Decisions</h2>
+    <div class="three">
+
+      <div class="hl-card">
+        <div style="font-size:28px;margin-bottom:10px">📍</div>
+        <h3>Geospatial Queries</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:0">PostGIS <code>ST_DWithin</code> on a GiST-indexed geometry column — radius discovery in a single SQL predicate. Privacy: markers offset 10–50m via deterministic hash of task ID.</p>
+        <div class="code">
+          <span class="cm">-- radius discovery</span><br>
+          <span class="kw">WHERE</span> ST_DWithin(<br>
+          &nbsp;&nbsp;coordinates,<br>
+          &nbsp;&nbsp;ST_SetSRID(ST_MakePoint(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;:lng, :lat), 4326),<br>
+          &nbsp;&nbsp;:radiusMeters<br>
+          )
+        </div>
+      </div>
+
+      <div class="hl-card">
+        <div style="font-size:28px;margin-bottom:10px">⚖️</div>
+        <h3>Atomic Bid Acceptance</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:0">Accepting one bid runs a Prisma transaction: task → <code>IN_PROGRESS</code>, winner → <code>ACCEPTED</code>, all other pending → <code>REJECTED</code> in one atomic DB write. Race-condition safe.</p>
+        <div class="code">
+          <span class="fn">prisma.$transaction</span>([<br>
+          &nbsp;&nbsp;task.update(IN_PROGRESS),<br>
+          &nbsp;&nbsp;bid.update(ACCEPTED),<br>
+          &nbsp;&nbsp;bid.updateMany(REJECTED)<br>
+          ])
+        </div>
+      </div>
+
+      <div class="hl-card">
+        <div style="font-size:28px;margin-bottom:10px">⚡</div>
+        <h3>Real-Time + Offline Fallback</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:0">Socket.io rooms scoped per task — both parties join <code>task_chat_{id}</code>. If recipient is offline, <code>notificationService</code> sends an Expo push. Same Firebase token authenticates the WS handshake.</p>
+        <div class="code">
+          <span class="cm">// offline fallback</span><br>
+          <span class="kw">if</span> (!recipientInRoom) {<br>
+          &nbsp;&nbsp;<span class="fn">sendNotification</span>(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;userId, NEW_MESSAGE<br>
+          &nbsp;&nbsp;)<br>
+          }
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="notes" id="n8">
+    <b>Per card:</b><br>
+    (1) PostGIS — you could store lat/lng as two floats and do bounding-box math in app code. The correct CS answer is a spatial index. Also: location masking is a product privacy requirement solved with deterministic pseudorandomness — same offset every render (hash of task ID), but not recoverable to the real address.<br>
+    (2) Transaction — without it, two concurrent Accept requests could both read "PENDING" and both commit, leaving two accepted bids. The Prisma transaction makes the accept atomic at the DB level — whichever request commits first wins, the second gets a conflict error.<br>
+    (3) Real-time — same Firebase ID token works for both REST (Authorization header) and WebSocket (handshake auth object). No second auth system.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S9 · ROADMAP
+───────────────────────────────────────────────── -->
+<div class="slide" id="s9">
+  <div style="max-width:900px;width:100%">
+    <div class="label">What's Next</div>
+    <h2>Roadmap</h2>
+    <div class="two" style="align-items:start;gap:32px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Near-term</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">⚡</span>
+            <div><strong style="font-size:14px">Chat UI</strong><br><span style="font-size:13px;color:var(--muted)">Socket.io frontend — server already complete</span></div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">🌐</span>
+            <div><strong style="font-size:14px">Hebrew / RTL</strong><br><span style="font-size:13px;color:var(--muted)">i18next + full layout direction flip</span></div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">🚀</span>
+            <div><strong style="font-size:14px">Deployment</strong><br><span style="font-size:13px;color:var(--muted)">Backend: Render · DB: Supabase · Frontend: Vercel</span></div>
+          </div>
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">🧪</span>
+            <div><strong style="font-size:14px">Tests</strong><br><span style="font-size:13px;color:var(--muted)">Jest + Supertest (backend) · RNTL (frontend)</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">CS-Driven Features</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="hl-card" style="padding:16px 18px">
+            <strong style="font-size:14px">Fixer Recommendation Engine</strong>
+            <p style="font-size:13px;color:var(--muted);margin-top:5px">Weighted score: specialization match · proximity (PostGIS) · rating · completion rate · response time. Optional TF-IDF similarity between task description and fixer bio.</p>
+          </div>
+          <div class="hl-card" style="padding:16px 18px">
+            <strong style="font-size:14px">Dynamic Price Suggestions</strong>
+            <p style="font-size:13px;color:var(--muted);margin-top:5px">"Similar tasks nearby received bids of ₪150–300." Aggregates historical bid data filtered by PostGIS radius + category — entirely from data we already collect.</p>
+          </div>
+          <div class="hl-card" style="padding:16px 18px">
+            <strong style="font-size:14px">NLP Review Tag Extraction</strong>
+            <p style="font-size:13px;color:var(--muted);margin-top:5px">Token-frequency analysis over a fixer's review corpus → auto-generate trust tags ("punctual", "professional") without requiring manual self-labeling.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes" id="n9">
+    <b>Frame the CS features correctly:</b> These aren't added for show — they solve real product problems using data the system already collects. The recommendation engine uses specializations, ratings, bid timestamps, and completion outcomes — all already in the DB schema. Dynamic pricing uses historical bids + PostGIS — no new infrastructure. NLP tags require only the review text we already store.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S10 · Q&A
+───────────────────────────────────────────────── -->
+<div class="slide slide-dark" id="s10">
+  <div style="text-align:center">
+    <div style="font-size:68px;font-weight:900;color:var(--gold);letter-spacing:-.03em">FixIt</div>
+    <div style="font-size:21px;color:rgba(255,255,255,.75);margin-top:10px;font-weight:500">Thank you.</div>
+    <div style="margin-top:36px;font-size:15px;color:rgba(255,255,255,.35)">Questions?</div>
+    <div style="margin-top:28px;font-size:12px;color:rgba(255,255,255,.2);letter-spacing:.04em">github.com/GuyStein1/CSFinalProject</div>
+  </div>
+  <div class="notes" id="n10">
+    <b>Likely questions:</b><br>
+    • <b>"Why Firebase Auth instead of your own JWT?"</b> — Security best practice: delegate auth to a proven provider, verify tokens server-side with Admin SDK. We never handle passwords.<br>
+    • <b>"Why PostGIS instead of storing lat/lng?"</b> — Spatial index (GiST), proper geodetic distance, OGC-standard functions. Scales correctly as the dataset grows.<br>
+    • <b>"How does the transaction prevent race conditions?"</b> — Two concurrent Accept requests compete at the DB commit. Only one can win; the second gets a constraint violation. Without the transaction, both could read "PENDING" and both commit.<br>
+    • <b>"Biggest technical challenge?"</b> — Dual-platform maps: Google Maps JS API (web) vs react-native-maps (mobile) have different APIs entirely, requiring two map implementations sharing the same data layer and filter state.<br>
+    • <b>"Why Expo over bare React Native?"</b> — Unified dev tooling, OTA updates, built-in wrappers for location/camera/push. We can eject to bare if we ever need a fully custom native module.
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- CHROME -->
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="counter" id="ctr">1 / 10</div>
+<div class="hint">← → navigate</div>
+<div class="notes-btn" id="nbtn" onclick="toggleNotes()">[S] Speaker Notes</div>
+
+<script>
+const N = 10;
+let cur = 1, notesOn = false;
+
+function go(n) {
+  const prev = document.getElementById('s' + cur);
+  cur = Math.max(1, Math.min(N, n));
+  const next = document.getElementById('s' + cur);
+  if (prev !== next) {
+    prev.classList.remove('active');
+    prev.classList.add('exit');
+    setTimeout(() => prev.classList.remove('exit'), 350);
+  }
+  next.classList.add('active');
+  document.getElementById('bar').style.width = (cur / N * 100) + '%';
+  document.getElementById('ctr').textContent = cur + ' / ' + N;
+  document.querySelectorAll('.notes').forEach(el => el.classList.remove('on'));
+  if (notesOn) {
+    const n = document.getElementById('n' + cur);
+    if (n) n.classList.add('on');
+  }
+}
+
+function toggleNotes() {
+  notesOn = !notesOn;
+  document.getElementById('nbtn').textContent = notesOn ? '[S] Hide Notes' : '[S] Speaker Notes';
+  document.querySelectorAll('.notes').forEach(el => el.classList.remove('on'));
+  if (notesOn) { const n = document.getElementById('n' + cur); if (n) n.classList.add('on'); }
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight','ArrowDown',' '].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  if (['ArrowLeft','ArrowUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  if (e.key === 's' || e.key === 'S') toggleNotes();
+  if (e.key === 'Home') go(1);
+  if (e.key === 'End') go(N);
+});
+
+let tx = 0;
+document.addEventListener('touchstart', e => tx = e.touches[0].clientX);
+document.addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) go(d < 0 ? cur+1 : cur-1); });
+
+document.getElementById('bar').style.width = (1/N*100) + '%';
+</script>
+</body>
+</html>
