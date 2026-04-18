@@ -19,6 +19,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import api from '../api/axiosInstance';
+import { auth } from '../config/firebase';
+import { uploadImage } from '../utils/uploadImage';
 import LocationMap from '../components/LocationMap';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
@@ -326,10 +328,17 @@ export default function CreateTask({ navigation, route }: Props) {
   const handlePublish = async () => {
     setSubmitting(true);
     try {
+      const userId = auth.currentUser?.uid ?? 'unknown';
+      const mediaUrls = await Promise.all(
+        photos.map((uri, i) =>
+          uploadImage(uri, `tasks/${userId}/${Date.now()}_${i}.jpg`)
+        )
+      );
+
       await api.post('/api/tasks', {
         title: title.trim(),
         description: description.trim(),
-        media_urls: [],
+        media_urls: mediaUrls,
         category,
         suggested_price: budgetType === 'fixed' ? parseFloat(price) : null,
         general_location_name: generalLocationName || address.trim(),
