@@ -51,6 +51,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', 
   padding: 14px 24px 20px; font-size: 13px; line-height: 1.65;
   max-height: 28%; overflow-y: auto; z-index: 200;
   border-top: 2px solid var(--gold);
+  direction: rtl; text-align: right;
 }
 .notes.on { display: block; }
 .notes b { color: var(--gold); }
@@ -108,11 +109,20 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
 .ph-lbl { font-weight: 700; font-size: 13px; color: var(--navy); }
 .ph-desc { font-size: 13px; color: var(--muted); }
 
-/* ── CODE SNIPPET ── */
-.code { background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 10px 14px; font-family: 'Fira Code','Courier New',monospace; font-size: 11.5px; line-height: 1.55; margin-top: 10px; }
-.kw { color: #ff7b72; }
-.fn { color: #d2a8ff; }
-.cm { color: #8b949e; }
+/* ── FEATURE LIST ── */
+.feat-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+.feat-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.feat-text { font-size: 13.5px; color: var(--text); line-height: 1.4; }
+.feat-text strong { color: var(--navy); }
+.feat-text span { color: var(--muted); font-size: 12px; }
+
+/* ── REQUEST FLOW ── */
+.flow-arrow { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.fa-row { display: flex; align-items: center; gap: 10px; }
+.fa-n { width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fa-box { background: var(--beige); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--navy); flex: 1; }
+.fa-box.hi { border-left: 3px solid var(--gold); }
+.fa-connector { width: 24px; display: flex; justify-content: center; flex-shrink: 0; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -134,7 +144,7 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
     </div>
     <div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.2);letter-spacing:.1em;text-transform:uppercase">CS Final Project · Spring 2026</div>
   </div>
-  <div class="notes" id="n1"><b>Opening:</b> One sentence intro — "FixIt is a task marketplace connecting people who need small jobs done with local professionals who bid on them." Then move straight to the problem slide.</div>
+  <div class="notes" id="n1"><b>פתיחה:</b> משפט אחד — "FixIt הוא שוק משימות עם מודעות מיקום שמחבר בין אנשים שצריכים עזרה לבין אנשי מקצוע מקומיים שמתמחרים על הביצוע." עוברים מיד לשקף הבא.</div>
 </div>
 
 <!-- ─────────────────────────────────────────────
@@ -162,7 +172,7 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
       </div>
     </div>
   </div>
-  <div class="notes" id="n2"><b>Context:</b> Name the Israeli reality — WhatsApp groups like "שכונת X – עזרה הדדית" are the actual incumbent. This is a real, everyday friction point in Israel. The market exists; it just has no infrastructure.</div>
+  <div class="notes" id="n2"><b>הקשר:</b> תזכירו את המציאות הישראלית — קבוצות וואטסאפ כמו "שכונת X – עזרה הדדית" הן הפתרון הנוכחי בפועל. אין מחירים שקופים, אין ביקורות, אין מבנה. הדגישו: אנחנו לא ממציאים שוק חדש — אנחנו נותנים לשוק שכבר קיים תשתית מסודרת.</div>
 </div>
 
 <!-- ─────────────────────────────────────────────
@@ -185,17 +195,58 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
       </div>
       <div class="card" style="flex:1;padding:16px 20px">
         <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:4px">📱 Mobile + Web, one codebase</div>
-        <div style="font-size:13px;color:var(--muted)">React Native + Expo — same TypeScript runs natively on iOS, Android, and browser with full feature parity.</div>
+        <div style="font-size:13px;color:var(--muted)">React Native + Expo — same TypeScript runs natively on iOS, Android, and browser.</div>
       </div>
     </div>
   </div>
-  <div class="notes" id="n3"><b>Key angle:</b> The Requester sets terms, Fixers compete — inverts the usual power dynamic. Highlight the 15-bid cap as a deliberate UX constraint: creates urgency for Fixers, prevents notification overload for Requesters. Mention the unified account design — many users are both a Requester for their home and a Fixer professionally.</div>
+  <div class="notes" id="n3"><b>זווית מרכזית:</b> הדורש מפרסם ומקבל הצעות — כוח השוק עובד לטובתו. מגבלת 15 ההצעות היא החלטת UX מכוונת: יוצרת לחץ על המתקנים לבוא עם הצעה רצינית, ומונעת הצפת התראות לדורש. חשבון אחד לשני תפקידים — הרבה אנשים הם גם דורשים בבית וגם מתקנים במקצועם.</div>
 </div>
 
 <!-- ─────────────────────────────────────────────
-     S4 · TECH STACK
+     S4 · FEATURES
 ───────────────────────────────────────────────── -->
 <div class="slide" id="s4">
+  <div style="max-width:900px;width:100%">
+    <div class="label">Features</div>
+    <h2>What FixIt Does</h2>
+    <div class="two" style="gap:40px;align-items:start">
+
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--success);margin-bottom:12px">Built ✅</div>
+        <div class="feat-item"><div class="feat-icon">🗺</div><div class="feat-text"><strong>Location-based discovery</strong><br><span>Map view + list view, radius filter, category filter</span></div></div>
+        <div class="feat-item"><div class="feat-icon">📋</div><div class="feat-text"><strong>Task creation wizard</strong><br><span>Photos, category, fixed price or quote, map pin</span></div></div>
+        <div class="feat-item"><div class="feat-icon">💰</div><div class="feat-text"><strong>Competitive bidding</strong><br><span>Submit, accept, reject, withdraw — full state machine</span></div></div>
+        <div class="feat-item"><div class="feat-icon">🔔</div><div class="feat-text"><strong>Push notifications</strong><br><span>New bid, bid accepted/rejected, task updates</span></div></div>
+        <div class="feat-item"><div class="feat-icon">📸</div><div class="feat-text"><strong>Photo uploads</strong><br><span>Tasks and profiles — direct to Firebase Storage</span></div></div>
+        <div class="feat-item"><div class="feat-icon">🧭</div><div class="feat-text"><strong>Real-time directions</strong><br><span>Live navigation to the task location</span></div></div>
+        <div class="feat-item"><div class="feat-icon">🔐</div><div class="feat-text"><strong>Authentication</strong><br><span>Firebase — register, login, password reset</span></div></div>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Coming 📋</div>
+        <div class="feat-item"><div class="feat-icon">💬</div><div class="feat-text"><strong>Real-time chat</strong><br><span>In-app messaging between Requester &amp; Fixer</span></div></div>
+        <div class="feat-item"><div class="feat-icon">⭐</div><div class="feat-text"><strong>Reviews &amp; ratings</strong><br><span>Star rating + comment after task completion</span></div></div>
+        <div class="feat-item"><div class="feat-icon">👤</div><div class="feat-text"><strong>Fixer profiles &amp; portfolio</strong><br><span>Bio, specializations, past work gallery</span></div></div>
+        <div class="feat-item"><div class="feat-icon">🤖</div><div class="feat-text"><strong>Personalized recommendations</strong><br><span>Fixers matched to tasks by specialization + proximity + rating · Requesters shown top local Fixers</span></div></div>
+        <div class="feat-item"><div class="feat-icon">💡</div><div class="feat-text"><strong>Dynamic price suggestions</strong><br><span>"Similar tasks nearby received bids of ₪150–300"</span></div></div>
+        <div class="feat-item"><div class="feat-icon">🌐</div><div class="feat-text"><strong>Hebrew / RTL</strong><br><span>Full bilingual support with layout direction flip</span></div></div>
+      </div>
+
+    </div>
+  </div>
+  <div class="notes" id="n4">
+    <b>הסבר רשימת הפיצ'רים:</b><br><br>
+    <b>מה שבנינו:</b> הדגישו שכל הזרימה המרכזית עובדת end-to-end — דורש מפרסם משימה עם תמונות ומיקום, מתקן מגלה אותה במפה, מגיש הצעת מחיר, הדורש מקבל, ויש ניווט בזמן אמת לכתובת.<br><br>
+    <b>Push Notifications</b> — עובד: הדורש מקבל התראה כשמגיעה הצעה, המתקן מקבל התראה כשההצעה התקבלה/נדחתה.<br><br>
+    <b>המלצות אישיות:</b> שני סוגים — (1) לדורש: כשמפרסם משימה, המערכת תוכל להציע מתקנים מומלצים לפי קטגוריה + קרבה + דירוג. (2) למתקן: משימות מומלצות בדף הגילוי לפי ההתמחויות שהגדיר. הנתונים שנצטרך כבר נמצאים ב-DB — specializations, ratings, locations.<br><br>
+    <b>Dynamic pricing</b> — אגרגציה על הצעות מחיר היסטוריות מאותה קטגוריה ואזור. הנתונים כבר נאספים — רק צריך לחשב.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S5 · TECH STACK
+───────────────────────────────────────────────── -->
+<div class="slide" id="s5">
   <div style="max-width:900px;width:100%">
     <div class="label">Stack</div>
     <h2>Tech Stack</h2>
@@ -223,7 +274,7 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
       <div>
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Backend</div>
         <div class="badges">
-          <span class="b node">🟢 Node.js</span>
+          <span class="b node">🟢 Node.js + Express</span>
           <span class="b ts">🟦 TypeScript</span>
           <span class="b pg">🐘 PostgreSQL</span>
           <span class="b pgis">📍 PostGIS</span>
@@ -232,286 +283,200 @@ code { font-family: 'Fira Code', monospace; font-size: .9em; background: rgba(28
           <span class="b zod">✅ Zod</span>
           <span class="b fb">🔥 Firebase Admin</span>
         </div>
-        <p style="font-size:13px;color:var(--muted);margin-top:10px">PostGIS extends PostgreSQL with spatial types and a GiST index — enables radius-based discovery in a single SQL predicate instead of app-level coordinate math.<br><br>Firebase Admin verifies ID tokens server-side. <strong style="color:var(--navy)">Passwords never touch our backend.</strong></p>
+        <p style="font-size:13px;color:var(--muted);margin-top:10px">PostGIS extends PostgreSQL with spatial types and a GiST index — enables radius-based discovery in a single SQL predicate.<br><br>Firebase Admin verifies ID tokens server-side. <strong style="color:var(--navy)">Passwords never touch our backend.</strong></p>
       </div>
     </div>
   </div>
-  <div class="notes" id="n4">
-    <b>Points to stress:</b><br>
-    (1) PostGIS was a deliberate choice — not just storing lat/lng as floats. You get a proper spatial index (GiST), OGC-standard functions, and correct geodetic distance. Mention you could have done bounding-box filtering in application code, but ST_DWithin with a spatial index is the correct CS answer.<br>
-    (2) Firebase Admin = zero password handling on the backend. A security win by design, not just convenience.<br>
-    (3) TypeScript end-to-end — both frontend and backend share the same type discipline despite being separate packages in a monorepo with npm workspaces.
+  <div class="notes" id="n5" style="font-size:12px">
+    <b>הסבר כל טכנולוגיה — צד הלקוח:</b><br>
+    • <b>React Native</b> — ספרייה של מטא לפיתוח אפליקציות מובייל. כותבים TypeScript אחד שמתרגם לרכיבים מקומיים של iOS ו-Android.<br>
+    • <b>Expo SDK</b> — מסגרת עבודה מעל React Native. מוסיפה OTA updates (עדכונים ללא פרסום חדש בחנות), ו-SDK מוכן למצלמה, מיקום ו-Push Notifications.<br>
+    • <b>TypeScript</b> — JavaScript עם טיפוסים סטטיים. כמו Java אבל לווב. מקטין באגים בזמן כתיבת הקוד.<br>
+    • <b>Google Maps API</b> — שירות מפות של גוגל. Geocoding (כתובת לקואורדינטות), תצוגת מפה ומרחקים.<br>
+    • <b>Firebase Auth</b> — שירות אימות משתמשים של גוגל. מטפל בהרשמה, התחברות ושחזור סיסמה. מחזיר JWT Token — מחרוזת מוצפנת שמוכיחה זהות המשתמש.<br><br>
+    <b>צד השרת:</b><br>
+    • <b>Node.js + Express</b> — Node.js היא סביבת ריצה ל-JavaScript בצד השרת. Express היא פריימוורק HTTP שמאפשרת להגדיר Routes ו-Middleware בקלות.<br>
+    • <b>PostgreSQL</b> — בסיס נתונים רלציוני חזק ופופולרי. בחרנו אותו בגלל תמיכת PostGIS.<br>
+    • <b>PostGIS</b> — הרחבה ל-PostgreSQL שמוסיפה סוגי נתונים גיאוגרפיים ו-Spatial Index (GiST). מאפשרת שאילתה כמו "תחזיר כל משימות ברדיוס 10 ק"מ ממני" בשורת SQL אחת.<br>
+    • <b>Prisma ORM</b> — כלי שמגשר בין TypeScript לבין PostgreSQL. מגדירים Schema בסינטקס מיוחד, Prisma מייצר טיפוסי TypeScript אוטומטית — אין צורך בכתיבת SQL ידנית.<br>
+    • <b>Socket.io</b> — ספרייה לתקשורת דו-כיוונית בזמן אמת (WebSocket). תשמש לצ'אט בין דורש למתקן.<br>
+    • <b>Zod</b> — ספרייה לוולידציה של קלט. מוודאת שמה שהמשתמש שולח ל-API תואם את המבנה הצפוי.<br>
+    • <b>Firebase Admin SDK</b> — גרסת השרת של Firebase. מאפשרת לוודא שה-JWT Token שהלקוח שלח אמיתי ולא מזויף.<br><br>
+    <b>תשתית:</b><br>
+    • <b>Docker</b> — כלי Containerization שמארז את הסביבה כך שכל מפתח עובד באותה סביבה בדיוק.<br>
+    • <b>GitHub Actions CI</b> — אוטומציה שרצה על כל PR — בודקת Lint ו-TypeCheck ומונעת קוד שבור מלהתמזג.<br>
+    • <b>Expo Push Notifications</b> — שירות של Expo לשליחת התראות Push למכשיר נייד ברקע.<br>
+    • <b>Firebase Storage</b> — שירות אחסון קבצים של גוגל. המשתמש מעלה תמונות ישירות מהמכשיר — אנחנו שומרים רק את ה-URL.
   </div>
 </div>
 
 <!-- ─────────────────────────────────────────────
-     S5 · ARCHITECTURE
-───────────────────────────────────────────────── -->
-<div class="slide" id="s5">
-  <div style="max-width:860px;width:100%">
-    <div class="label">Architecture</div>
-    <h2>System Overview</h2>
-    <div style="display:flex;flex-direction:column;gap:18px">
-
-      <!-- Client -->
-      <div style="display:flex;justify-content:center">
-        <div class="arch-box gd" style="min-width:200px;font-size:14px;padding:12px 24px">
-          📱 Expo Client<br><span style="font-size:11px;opacity:.7">iOS · Android · Web</span>
-        </div>
-      </div>
-
-      <!-- Three paths -->
-      <div style="display:flex;justify-content:center;gap:60px">
-        <div style="text-align:center;font-size:12px;color:var(--muted)">🔑 Firebase Auth SDK<br><span style="font-size:11px">↓ ID Token</span></div>
-        <div style="text-align:center;font-size:12px;color:var(--muted)">🌐 Axios REST<br><span style="font-size:11px">↓ Bearer Token</span></div>
-        <div style="text-align:center;font-size:12px;color:var(--muted)">⚡ Socket.io<br><span style="font-size:11px">↓ WS + same token</span></div>
-      </div>
-
-      <!-- Backend row -->
-      <div class="arch-row">
-        <div class="arch-box" style="font-size:12px">authMiddleware<br><span style="color:var(--muted);font-size:11px">verify → req.user</span></div>
-        <span class="arr">→</span>
-        <div class="arch-box dk" style="min-width:160px;font-size:14px;padding:12px 20px">🚀 Express API<br><span style="font-size:11px;opacity:.6">30+ endpoints</span></div>
-        <span class="arr">→</span>
-        <div class="arch-box" style="font-size:12px">▲ Prisma ORM<br><span style="color:var(--muted);font-size:11px">type-safe queries</span></div>
-      </div>
-
-      <!-- DB + services -->
-      <div style="display:flex;gap:20px;justify-content:center">
-        <div style="text-align:center">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">↓</div>
-          <div class="arch-box" style="background:#336791;color:#fff;border-color:#336791;font-size:12px">🐘 PostgreSQL + PostGIS<br><span style="opacity:.75;font-size:11px">ST_DWithin · GiST index</span></div>
-        </div>
-        <div style="text-align:center;margin-top:17px">
-          <div class="arch-box" style="font-size:12px">🔔 notificationService<br><span style="color:var(--muted);font-size:11px">DB write → Expo Push</span></div>
-        </div>
-        <div style="text-align:center;margin-top:17px">
-          <div class="arch-box" style="font-size:12px">⚡ Socket.io server<br><span style="color:var(--muted);font-size:11px">task_chat_{id} rooms</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-  <div class="notes" id="n5">
-    <b>Walk through three request paths:</b><br>
-    (1) REST: Axios with Bearer token → authMiddleware verifies via Firebase Admin SDK → route handler → Prisma → PostgreSQL.<br>
-    (2) Real-time: Socket.io handshake carries the same Firebase ID token — same trust boundary, no second auth system.<br>
-    (3) Push: notificationService always writes a Notification row to DB first (so in-app Notification Center always works), then sends Expo push only if the user has a registered token. Non-blocking — a missing token doesn't throw.<br><br>
-    <b>Key design point:</b> Firebase Admin is the single identity source. We never issue our own tokens — we piggyback on Google's token infrastructure.
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────────────
-     S6 · WHAT WE'VE BUILT
+     S6 · ARCHITECTURE — COMPONENTS
 ───────────────────────────────────────────────── -->
 <div class="slide" id="s6">
   <div style="max-width:880px;width:100%">
+    <div class="label">Architecture — 1 of 2</div>
+    <h2>System Components</h2>
+    <div class="three" style="gap:24px;align-items:start">
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;text-align:center">Client</div>
+        <div class="arch-box gd" style="font-size:14px;padding:14px 18px">
+          📱 Expo App<br><span style="font-size:11px;opacity:.75">iOS · Android · Web</span>
+        </div>
+        <div class="arch-box" style="font-size:12.5px">🔥 Firebase Auth SDK<br><span style="font-size:11px;color:var(--muted)">Login · JWT Token</span></div>
+        <div class="arch-box" style="font-size:12.5px">☁️ Firebase Storage<br><span style="font-size:11px;color:var(--muted)">Direct photo uploads</span></div>
+        <div class="arch-box" style="font-size:12.5px">🗺 Google Maps<br><span style="font-size:11px;color:var(--muted)">Task pins · discovery</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;text-align:center">Backend</div>
+        <div class="arch-box dk" style="font-size:14px;padding:14px 18px">
+          🚀 Express Server<br><span style="font-size:11px;opacity:.6">30+ REST endpoints</span>
+        </div>
+        <div class="arch-box" style="font-size:12.5px">🔐 Auth Middleware<br><span style="font-size:11px;color:var(--muted)">Verifies every request</span></div>
+        <div class="arch-box" style="font-size:12.5px">⚡ Socket.io<br><span style="font-size:11px;color:var(--muted)">Real-time chat rooms</span></div>
+        <div class="arch-box" style="font-size:12.5px">🔔 Notification Service<br><span style="font-size:11px;color:var(--muted)">DB write + Expo Push</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;text-align:center">Data</div>
+        <div class="arch-box" style="background:#336791;color:#fff;border-color:#336791;font-size:14px;padding:14px 18px">
+          🐘 PostgreSQL<br><span style="font-size:11px;opacity:.75">+ PostGIS extension</span>
+        </div>
+        <div class="arch-box" style="font-size:12.5px">▲ Prisma ORM<br><span style="font-size:11px;color:var(--muted)">Type-safe queries</span></div>
+        <div class="arch-box" style="font-size:12.5px">📍 Spatial Index (GiST)<br><span style="font-size:11px;color:var(--muted)">Radius discovery queries</span></div>
+        <div class="arch-box" style="font-size:12.5px">🗄 8 Core Tables<br><span style="font-size:11px;color:var(--muted)">User · Task · Bid · Review…</span></div>
+      </div>
+
+    </div>
+  </div>
+  <div class="notes" id="n6">
+    <b>הסבר שלוש השכבות:</b><br><br>
+    • <b>Client (לקוח)</b> — אפליקציית Expo שרצה על iOS, Android ובדפדפן מאותו קוד. כאן המשתמש מתחבר דרך Firebase, מעלה תמונות ישירות ל-Firebase Storage (בלי לעבור דרך השרת שלנו), ושולח בקשות API לשרת.<br><br>
+    • <b>Backend (שרת)</b> — שרת Express שמקבל בקשות, מאמת זהות, מריץ לוגיקה עסקית ומחזיר נתונים. כאן יושב גם Socket.io לצ'אט בזמן אמת, ושירות ההתראות שכותב ל-DB ושולח Push Notification.<br><br>
+    • <b>Data (נתונים)</b> — PostgreSQL עם PostGIS לכל נתוני האפליקציה. Prisma מתרגם TypeScript לשאילתות SQL. ה-GiST Index מאפשר שאילתות גיאוגרפיות מהירות.<br><br>
+    Firebase הוא שירות חיצוני של גוגל שמטפל לנו בשתי בעיות — Auth ו-Storage — בלי שנצטרך לבנות את זה מאפס.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S7 · ARCHITECTURE — REQUEST FLOW
+───────────────────────────────────────────────── -->
+<div class="slide" id="s7">
+  <div style="max-width:800px;width:100%">
+    <div class="label">Architecture — 2 of 2</div>
+    <h2>How a Request Flows</h2>
+    <div class="flow-arrow">
+
+      <div class="fa-row">
+        <div class="fa-n">1</div>
+        <div class="fa-box">User logs in → <strong>Firebase Auth</strong> returns a signed JWT Token (valid 1 hour)</div>
+      </div>
+      <div class="fa-row"><div class="fa-connector">↓</div><div style="flex:1"></div></div>
+
+      <div class="fa-row">
+        <div class="fa-n">2</div>
+        <div class="fa-box">App makes API call — <strong>Axios Interceptor</strong> automatically attaches the token to every request header</div>
+      </div>
+      <div class="fa-row"><div class="fa-connector">↓</div><div style="flex:1"></div></div>
+
+      <div class="fa-row">
+        <div class="fa-n">3</div>
+        <div class="fa-box hi"><strong>authMiddleware</strong> on the server verifies the token via Firebase Admin SDK — confirms identity without storing any password</div>
+      </div>
+      <div class="fa-row"><div class="fa-connector">↓</div><div style="flex:1"></div></div>
+
+      <div class="fa-row">
+        <div class="fa-n">4</div>
+        <div class="fa-box">Route handler runs business logic — <strong>Zod</strong> validates input, authorization rules are checked</div>
+      </div>
+      <div class="fa-row"><div class="fa-connector">↓</div><div style="flex:1"></div></div>
+
+      <div class="fa-row">
+        <div class="fa-n">5</div>
+        <div class="fa-box hi"><strong>Prisma ORM</strong> translates to SQL → <strong>PostgreSQL + PostGIS</strong> executes (spatial index used for location queries)</div>
+      </div>
+      <div class="fa-row"><div class="fa-connector">↓</div><div style="flex:1"></div></div>
+
+      <div class="fa-row">
+        <div class="fa-n">6</div>
+        <div class="fa-box">Response returns to client — if the action triggers a notification, <strong>notificationService</strong> writes to DB and fires Expo Push</div>
+      </div>
+
+    </div>
+  </div>
+  <div class="notes" id="n7">
+    <b>עברו שלב-שלב על הזרימה:</b><br><br>
+    1. המשתמש מתחבר → Firebase מחזיר JWT Token — מחרוזת מוצפנת עם פרטי הזהות, תקפה לשעה.<br>
+    2. כל בקשת API שיוצאת מהאפליקציה — Axios Interceptor מוסיף אוטומטית את ה-Token כ-Authorization Header. אף מסך לא צריך לטפל בזה ידנית.<br>
+    3. authMiddleware בשרת מקבל את ה-Token, שולח אותו ל-Firebase Admin לאימות, ומוסיף את פרטי המשתמש ל-Request Object. אם ה-Token לא תקין — 401.<br>
+    4. ה-Route Handler מריץ לוגיקה — Zod בודק שגוף הבקשה תקין, ומבצעים בדיקות הרשאה (למשל: רק הדורש שיצר משימה יכול לקבל הצעות עליה).<br>
+    5. Prisma מתרגם ל-SQL. בשאילתות גיאוגרפיות — PostGIS ו-GiST Index נכנסים לפעולה.<br>
+    6. תשובה חוזרת. אם האירוע מחייב התראה — notificationService כותב שורה ל-DB וגם שולח Push Notification למכשיר.<br><br>
+    <b>נקודה חשובה:</b> הסיסמאות של המשתמשים לא נוגעות בשרת שלנו בכלל.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     S8 · WHERE WE ARE
+───────────────────────────────────────────────── -->
+<div class="slide" id="s8">
+  <div style="max-width:880px;width:100%">
     <div class="label">Progress</div>
-    <h2>What We've Built</h2>
+    <h2>Where We Are</h2>
     <div style="display:flex;gap:44px">
       <div style="flex:1">
-        <div class="ph"><div class="ph-lbl">Phase 1</div><div class="ph-desc">Monorepo · PostgreSQL+PostGIS · Firebase project · Expo scaffold · GitHub Actions CI</div><div>✅</div></div>
-        <div class="ph"><div class="ph-lbl">Phase 2</div><div class="ph-desc">All 30+ API endpoints · Auth middleware · Push notification service · Zod validation</div><div>✅</div></div>
-        <div class="ph"><div class="ph-lbl">Phase 3</div><div class="ph-desc">All screens · Google Maps integration · Navigation · Design system · API integration</div><div>✅</div></div>
-        <div class="ph"><div class="ph-lbl">Phase 4</div><div class="ph-desc">Push delivery ✅ &nbsp;·&nbsp; Socket.io server ✅ &nbsp;·&nbsp; Chat UI 🔄 &nbsp;·&nbsp; Reviews ✅</div><div>🔶</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 1</div><div class="ph-desc">Monorepo · PostgreSQL+PostGIS · Docker · Firebase project · Expo scaffold · GitHub Actions CI</div><div>✅</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 2</div><div class="ph-desc">All 30+ API endpoints · Auth middleware · Zod validation · Push notification service · Firebase Storage</div><div>✅</div></div>
+        <div class="ph" style="background:rgba(241,181,69,.08);border-radius:8px;padding:11px 10px;margin:4px -10px">
+          <div class="ph-lbl" style="color:var(--gold)">Phase 3 →</div>
+          <div class="ph-desc">Frontend screens · Navigation · Google Maps integration · API wiring <em style="color:var(--gold)">(in progress)</em></div>
+          <div>🔄</div>
+        </div>
+        <div class="ph"><div class="ph-lbl">Phase 4</div><div class="ph-desc">Socket.io chat UI · Full review &amp; profile screens · Notification center</div><div style="color:var(--muted)">📋</div></div>
+        <div class="ph"><div class="ph-lbl">Phase 5–6</div><div class="ph-desc">Hebrew/RTL · Testing · Deployment (Render + Supabase + Vercel)</div><div style="color:var(--muted)">📋</div></div>
       </div>
-      <div style="flex:0 0 230px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Features Working</div>
+      <div style="flex:0 0 220px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Working End-to-End</div>
         <div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px">
           <div>✅ &nbsp;Authentication (Firebase)</div>
           <div>✅ &nbsp;Task creation wizard</div>
-          <div>✅ &nbsp;Location-aware discovery</div>
-          <div>✅ &nbsp;Bidding system (full state machine)</div>
+          <div>✅ &nbsp;Location-based discovery</div>
+          <div>✅ &nbsp;Bidding (full state machine)</div>
           <div>✅ &nbsp;Push notifications</div>
-          <div>✅ &nbsp;Review system</div>
-          <div>✅ &nbsp;Fixer profiles &amp; portfolio</div>
-          <div>✅ &nbsp;Accessibility (WCAG 2.0 AA)</div>
-          <div style="color:var(--muted)">🔄 &nbsp;Real-time chat (in progress)</div>
+          <div>✅ &nbsp;Image upload (Firebase Storage)</div>
+          <div>✅ &nbsp;30+ backend API endpoints</div>
+          <div style="color:var(--muted)">🔄 &nbsp;Review submission UI</div>
+          <div style="color:var(--muted)">🔄 &nbsp;Fixer profile screens</div>
+          <div style="color:var(--muted)">📋 &nbsp;Real-time chat</div>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="notes" id="n6">
-    <b>Emphasize:</b> All core flows are working end-to-end. The only major pending item is the chat frontend screen — the Socket.io server implementation is complete, the REST chat endpoints exist, just the UI screen is pending.<br><br>
-    The accessibility widget is worth mentioning briefly — it's a bonus feature (WCAG 2.0 AA) with 10+ options: font scale, high contrast, monochrome, stop animations, etc. Injected as CSS on web, applied via StyleSheet overrides on native.
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────────────
-     S7 · LIVE DEMO
-───────────────────────────────────────────────── -->
-<div class="slide slide-demo" id="s7">
-  <div style="text-align:center">
-    <div style="font-size:52px;margin-bottom:14px">🎬</div>
-    <div style="font-size:54px;font-weight:900;color:#fff;letter-spacing:-.02em">Live Demo</div>
-    <div style="font-size:16px;color:rgba(255,255,255,.4);margin-top:10px">~10 minutes</div>
-  </div>
-  <div class="notes" id="n7">
-    <b>Demo script (~10 min)</b><br><br>
-    <b>1. Requester flow (4 min)</b><br>
-    → Open app in browser → show auth screen → log in as stein@example.com (pw: guyguyguy)<br>
-    → Requester Dashboard: active tasks, bid counts, FAB "+" button<br>
-    → Tap "+" → Task Creation Wizard: title/description → upload photo → pick category → set fixed price → drop map pin over Haifa → enter exact address → review modal → Publish<br>
-    → New task appears in My Tasks<br><br>
-    <b>2. Fixer discovery (3 min)</b><br>
-    → Open second tab, log in as shick@example.com<br>
-    → Switch to Fixer mode → Discovery Map — task pins color-coded by category<br>
-    → Toggle to List View — sorted by distance<br>
-    → Tap a task → Task Details Fixer → Submit a bid (price + pitch)<br><br>
-    <b>3. Accept &amp; notify (2 min)</b><br>
-    → Back as stein → open task → see incoming bid → tap Accept<br>
-    → Other bids auto-rejected → task moves to IN_PROGRESS<br>
-    → Notification Center (bell icon) → BID_ACCEPTED notification visible<br><br>
-    <b>4. Completion (1 min)</b><br>
-    → Mark task Completed → review prompt → submit 5-star review<br>
-    → Navigate to shick's Public Profile → updated rating visible
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────────────
-     S8 · CS HIGHLIGHTS
-───────────────────────────────────────────────── -->
-<div class="slide" id="s8">
-  <div style="max-width:940px;width:100%">
-    <div class="label">Under the Hood</div>
-    <h2>CS-Interesting Decisions</h2>
-    <div class="three">
-
-      <div class="hl-card">
-        <div style="font-size:28px;margin-bottom:10px">📍</div>
-        <h3>Geospatial Queries</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:0">PostGIS <code>ST_DWithin</code> on a GiST-indexed geometry column — radius discovery in a single SQL predicate. Privacy: markers offset 10–50m via deterministic hash of task ID.</p>
-        <div class="code">
-          <span class="cm">-- radius discovery</span><br>
-          <span class="kw">WHERE</span> ST_DWithin(<br>
-          &nbsp;&nbsp;coordinates,<br>
-          &nbsp;&nbsp;ST_SetSRID(ST_MakePoint(<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;:lng, :lat), 4326),<br>
-          &nbsp;&nbsp;:radiusMeters<br>
-          )
-        </div>
-      </div>
-
-      <div class="hl-card">
-        <div style="font-size:28px;margin-bottom:10px">⚖️</div>
-        <h3>Atomic Bid Acceptance</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:0">Accepting one bid runs a Prisma transaction: task → <code>IN_PROGRESS</code>, winner → <code>ACCEPTED</code>, all other pending → <code>REJECTED</code> in one atomic DB write. Race-condition safe.</p>
-        <div class="code">
-          <span class="fn">prisma.$transaction</span>([<br>
-          &nbsp;&nbsp;task.update(IN_PROGRESS),<br>
-          &nbsp;&nbsp;bid.update(ACCEPTED),<br>
-          &nbsp;&nbsp;bid.updateMany(REJECTED)<br>
-          ])
-        </div>
-      </div>
-
-      <div class="hl-card">
-        <div style="font-size:28px;margin-bottom:10px">⚡</div>
-        <h3>Real-Time + Offline Fallback</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:0">Socket.io rooms scoped per task — both parties join <code>task_chat_{id}</code>. If recipient is offline, <code>notificationService</code> sends an Expo push. Same Firebase token authenticates the WS handshake.</p>
-        <div class="code">
-          <span class="cm">// offline fallback</span><br>
-          <span class="kw">if</span> (!recipientInRoom) {<br>
-          &nbsp;&nbsp;<span class="fn">sendNotification</span>(<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;userId, NEW_MESSAGE<br>
-          &nbsp;&nbsp;)<br>
-          }
-        </div>
-      </div>
-
     </div>
   </div>
   <div class="notes" id="n8">
-    <b>Per card:</b><br>
-    (1) PostGIS — you could store lat/lng as two floats and do bounding-box math in app code. The correct CS answer is a spatial index. Also: location masking is a product privacy requirement solved with deterministic pseudorandomness — same offset every render (hash of task ID), but not recoverable to the real address.<br>
-    (2) Transaction — without it, two concurrent Accept requests could both read "PENDING" and both commit, leaving two accepted bids. The Prisma transaction makes the accept atomic at the DB level — whichever request commits first wins, the second gets a conflict error.<br>
-    (3) Real-time — same Firebase ID token works for both REST (Authorization header) and WebSocket (handshake auth object). No second auth system.
+    <b>היו כנים לגבי הסטטוס:</b><br><br>
+    שלבים 1 ו-2 הושלמו לחלוטין — כל ה-Backend, Auth, Validation, Push Notifications ו-Firebase Storage מוכנים ועובדים.<br><br>
+    שלב 3 בעיצומו — יש לנו מסכים רבים שעובדים end-to-end: Auth, יצירת משימה, מפת גילוי, מערכת הצעות המחיר, העלאת תמונות, ניווט בזמן אמת. מה שעדיין בעבודה: ממשק הביקורות, עמודי פרופיל המתקן, מרכז ההתראות.<br><br>
+    שלבים 4-6 הם הלאה — צ'אט בזמן אמת, עברית/RTL, טסטים ופריסה לפרודקשן.<br><br>
+    הדגישו: המטרה של הפגישה הזו היא להראות שאנחנו על המסלול הנכון — לא שסיימנו.
   </div>
 </div>
 
-<!-- ─────────────────────────────────────────────
-     S9 · ROADMAP
-───────────────────────────────────────────────── -->
-<div class="slide" id="s9">
-  <div style="max-width:900px;width:100%">
-    <div class="label">What's Next</div>
-    <h2>Roadmap</h2>
-    <div class="two" style="align-items:start;gap:32px">
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Near-term</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">⚡</span>
-            <div><strong style="font-size:14px">Chat UI</strong><br><span style="font-size:13px;color:var(--muted)">Socket.io frontend — server already complete</span></div>
-          </div>
-          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">🌐</span>
-            <div><strong style="font-size:14px">Hebrew / RTL</strong><br><span style="font-size:13px;color:var(--muted)">i18next + full layout direction flip</span></div>
-          </div>
-          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">🚀</span>
-            <div><strong style="font-size:14px">Deployment</strong><br><span style="font-size:13px;color:var(--muted)">Backend: Render · DB: Supabase · Frontend: Vercel</span></div>
-          </div>
-          <div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:20px">🧪</span>
-            <div><strong style="font-size:14px">Tests</strong><br><span style="font-size:13px;color:var(--muted)">Jest + Supertest (backend) · RNTL (frontend)</span></div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">CS-Driven Features</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="hl-card" style="padding:16px 18px">
-            <strong style="font-size:14px">Fixer Recommendation Engine</strong>
-            <p style="font-size:13px;color:var(--muted);margin-top:5px">Weighted score: specialization match · proximity (PostGIS) · rating · completion rate · response time. Optional TF-IDF similarity between task description and fixer bio.</p>
-          </div>
-          <div class="hl-card" style="padding:16px 18px">
-            <strong style="font-size:14px">Dynamic Price Suggestions</strong>
-            <p style="font-size:13px;color:var(--muted);margin-top:5px">"Similar tasks nearby received bids of ₪150–300." Aggregates historical bid data filtered by PostGIS radius + category — entirely from data we already collect.</p>
-          </div>
-          <div class="hl-card" style="padding:16px 18px">
-            <strong style="font-size:14px">NLP Review Tag Extraction</strong>
-            <p style="font-size:13px;color:var(--muted);margin-top:5px">Token-frequency analysis over a fixer's review corpus → auto-generate trust tags ("punctual", "professional") without requiring manual self-labeling.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="notes" id="n9">
-    <b>Frame the CS features correctly:</b> These aren't added for show — they solve real product problems using data the system already collects. The recommendation engine uses specializations, ratings, bid timestamps, and completion outcomes — all already in the DB schema. Dynamic pricing uses historical bids + PostGIS — no new infrastructure. NLP tags require only the review text we already store.
-  </div>
-</div>
 
-<!-- ─────────────────────────────────────────────
-     S10 · Q&A
-───────────────────────────────────────────────── -->
-<div class="slide slide-dark" id="s10">
-  <div style="text-align:center">
-    <div style="font-size:68px;font-weight:900;color:var(--gold);letter-spacing:-.03em">FixIt</div>
-    <div style="font-size:21px;color:rgba(255,255,255,.75);margin-top:10px;font-weight:500">Thank you.</div>
-    <div style="margin-top:36px;font-size:15px;color:rgba(255,255,255,.35)">Questions?</div>
-    <div style="margin-top:28px;font-size:12px;color:rgba(255,255,255,.2);letter-spacing:.04em">github.com/GuyStein1/CSFinalProject</div>
-  </div>
-  <div class="notes" id="n10">
-    <b>Likely questions:</b><br>
-    • <b>"Why Firebase Auth instead of your own JWT?"</b> — Security best practice: delegate auth to a proven provider, verify tokens server-side with Admin SDK. We never handle passwords.<br>
-    • <b>"Why PostGIS instead of storing lat/lng?"</b> — Spatial index (GiST), proper geodetic distance, OGC-standard functions. Scales correctly as the dataset grows.<br>
-    • <b>"How does the transaction prevent race conditions?"</b> — Two concurrent Accept requests compete at the DB commit. Only one can win; the second gets a constraint violation. Without the transaction, both could read "PENDING" and both commit.<br>
-    • <b>"Biggest technical challenge?"</b> — Dual-platform maps: Google Maps JS API (web) vs react-native-maps (mobile) have different APIs entirely, requiring two map implementations sharing the same data layer and filter state.<br>
-    • <b>"Why Expo over bare React Native?"</b> — Unified dev tooling, OTA updates, built-in wrappers for location/camera/push. We can eject to bare if we ever need a fully custom native module.
-  </div>
-</div>
+
+
 
 </div><!-- /deck -->
 
 <!-- CHROME -->
 <div class="progress"><div class="progress-bar" id="bar"></div></div>
-<div class="counter" id="ctr">1 / 10</div>
+<div class="counter" id="ctr">1 / 8</div>
 <div class="hint">← → navigate</div>
 <div class="notes-btn" id="nbtn" onclick="toggleNotes()">[S] Speaker Notes</div>
 
 <script>
-const N = 10;
+const N = 8;
 let cur = 1, notesOn = false;
 
 function go(n) {
