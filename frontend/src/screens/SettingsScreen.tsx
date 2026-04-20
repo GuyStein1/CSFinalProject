@@ -3,7 +3,10 @@ import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-
 import { Text, Switch, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { auth } from '../config/firebase';
+import api from '../api/axiosInstance';
 import { FButton, FCard, FInput } from '../components/ui';
 import { brandColors, spacing, typography } from '../theme';
 
@@ -11,7 +14,8 @@ export default function SettingsScreen() {
   const user = auth.currentUser;
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
@@ -20,6 +24,36 @@ export default function SettingsScreen() {
       Alert.alert('Success', 'Check your inbox for a password reset link.');
     } catch {
       Alert.alert('Error', 'Failed to send password reset email.');
+    }
+  };
+
+  const handlePushToggle = async (value: boolean) => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not supported', 'Push notifications are only available on mobile devices.');
+      return;
+    }
+    if (!value) {
+      setPushEnabled(false);
+      return;
+    }
+    setPushLoading(true);
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Enable notifications in your iPhone Settings to receive updates.');
+        setPushLoading(false);
+        return;
+      }
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string;
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      await api.post('/api/users/me/push-token', { token: tokenData.data });
+      setPushEnabled(true);
+      Alert.alert('Notifications enabled', 'You will now receive push notifications.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      Alert.alert('Error', msg);
+    } finally {
+      setPushLoading(false);
     }
   };
 
@@ -103,7 +137,8 @@ export default function SettingsScreen() {
           </View>
           <Switch
             value={pushEnabled}
-            onValueChange={setPushEnabled}
+            onValueChange={handlePushToggle}
+            disabled={pushLoading}
             trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
             thumbColor={brandColors.white}
           />
