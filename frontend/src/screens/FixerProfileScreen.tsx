@@ -108,17 +108,6 @@ export default function FixerProfileScreen() {
     }
   };
 
-  const handleAvatarPress = () => {
-    if (profile?.avatar_url) {
-      Alert.alert('Profile Photo', undefined, [
-        { text: 'View Photo', onPress: () => setViewingAvatar(true) },
-        { text: 'Change Photo', onPress: () => void pickNewAvatar() },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    } else {
-      void pickNewAvatar();
-    }
-  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -192,24 +181,26 @@ export default function FixerProfileScreen() {
     >
       {/* ── Avatar ─────────────────────────────────────────────────── */}
       <View style={styles.avatarSection}>
-        <Pressable onPress={() => void handleAvatarPress()} style={styles.avatarWrapper}>
-          {profile?.avatar_url ? (
-            <Avatar.Image size={96} source={{ uri: profile.avatar_url }} />
-          ) : (
-            <Avatar.Icon
-              size={96}
-              icon="account"
-              style={{ backgroundColor: brandColors.primaryMuted }}
-            />
-          )}
-          <View style={styles.cameraBadge}>
+        <View style={styles.avatarWrapper}>
+          <Pressable onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}>
+            {profile?.avatar_url ? (
+              <Avatar.Image size={96} source={{ uri: profile.avatar_url }} />
+            ) : (
+              <Avatar.Icon
+                size={96}
+                icon="account"
+                style={{ backgroundColor: brandColors.primaryMuted }}
+              />
+            )}
+          </Pressable>
+          <Pressable style={styles.cameraBadge} onPress={() => void pickNewAvatar()}>
             {uploadingAvatar ? (
               <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
             ) : (
               <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
             )}
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
 
         <Text style={[typography.h2, { color: brandColors.textPrimary, marginTop: spacing.md }]}>
           {profile?.full_name}
