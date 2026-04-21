@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -61,6 +62,7 @@ export default function FixerProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
+  const [viewingAvatar, setViewingAvatar] = useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -86,7 +88,7 @@ export default function FixerProfileScreen() {
     }, [fetchProfile]),
   );
 
-  const handleAvatarPress = async () => {
+  const pickNewAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.8,
@@ -103,6 +105,18 @@ export default function FixerProfileScreen() {
       Alert.alert('Error', 'Failed to update avatar.');
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    if (profile?.avatar_url) {
+      Alert.alert('Profile Photo', undefined, [
+        { text: 'View Photo', onPress: () => setViewingAvatar(true) },
+        { text: 'Change Photo', onPress: () => void pickNewAvatar() },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    } else {
+      void pickNewAvatar();
     }
   };
 
@@ -322,6 +336,17 @@ export default function FixerProfileScreen() {
           Long-press a photo to delete it.
         </Text>
       </FCard>
+
+      {/* Avatar viewer modal */}
+      <Modal visible={viewingAvatar} transparent animationType="fade" onRequestClose={() => setViewingAvatar(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setViewingAvatar(false)}>
+          <Image
+            source={{ uri: profile?.avatar_url ?? '' }}
+            style={styles.modalImage}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -417,5 +442,16 @@ const styles = StyleSheet.create({
   portfolioImage: {
     width: '100%',
     height: '100%',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalImage: {
+    width: '90%',
+    height: '70%',
+    borderRadius: radii.xl,
   },
 });
