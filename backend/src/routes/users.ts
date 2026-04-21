@@ -11,9 +11,17 @@ const router = Router();
 // All user routes require authentication
 router.use(authMiddleware);
 
-// GET /api/users/me — current authenticated user profile
-router.get('/me', (req: Request, res: Response) => {
-  res.json({ user: req.user });
+// GET /api/users/me — current authenticated user profile (includes portfolio_items)
+router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { portfolio_items: { orderBy: { created_at: 'desc' } } },
+    });
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /api/users/me/tasks — requester's own tasks
@@ -163,9 +171,11 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         id: true,
         full_name: true,
         avatar_url: true,
+        bio: true,
         average_rating_as_fixer: true,
         specializations: true,
         created_at: true,
+        portfolio_items: { orderBy: { created_at: 'desc' } },
       },
     });
     if (!user) throw new NotFoundError('User not found');
