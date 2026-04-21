@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -88,10 +87,6 @@ export default function FixerProfileScreen() {
   );
 
   const handleAvatarPress = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Not supported', 'Avatar upload is only available on mobile.');
-      return;
-    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.8,
@@ -136,10 +131,6 @@ export default function FixerProfileScreen() {
   };
 
   const handleAddPortfolio = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Not supported', 'Portfolio upload is only available on mobile.');
-      return;
-    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.8,
