@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   FlatList,
+  Image,
   StyleSheet,
   View,
 } from 'react-native';
@@ -14,15 +15,23 @@ import EmptyState from '../components/EmptyState';
 import { FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 
+interface PortfolioItem {
+  id: string;
+  image_url: string;
+  description: string | null;
+}
+
 interface UserProfile {
   id: string;
   full_name: string;
   email: string;
   phone_number: string | null;
   avatar_url: string | null;
+  bio: string | null;
   average_rating_as_fixer: number | null;
   specializations: string[];
   created_at: string;
+  portfolio_items: PortfolioItem[];
 }
 
 function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
@@ -186,6 +195,24 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             </View>
           )}
 
+          {/* Portfolio */}
+          {(profile?.portfolio_items?.length ?? 0) > 0 && (
+            <>
+              <Divider style={styles.divider} />
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primaryMuted} />
+                <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm }]}>
+                  Portfolio ({profile!.portfolio_items.length})
+                </Text>
+              </View>
+              <View style={styles.portfolioGrid}>
+                {profile!.portfolio_items.map(item => (
+                  <Image key={item.id} source={{ uri: item.image_url }} style={styles.portfolioThumb} />
+                ))}
+              </View>
+            </>
+          )}
+
           <Divider style={styles.divider} />
 
           {/* Reviews section header */}
@@ -256,6 +283,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     marginBottom: spacing.sm,
+  },
+  portfolioGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: spacing.sm,
+    alignSelf: 'stretch',
+  },
+  portfolioThumb: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 6,
   },
   reviewCard: {
     marginBottom: 0,

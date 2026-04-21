@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
+import FixerProfileScreen from '../screens/FixerProfileScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { brandColors, shadows, spacing } from '../theme';
 
@@ -12,10 +13,6 @@ const Tab = createBottomTabNavigator();
 
 function MessagesScreen() {
   return <PlaceholderScreen title="Messages" />;
-}
-
-function FixerProfileScreen() {
-  return <PlaceholderScreen title="Fixer Profile" />;
 }
 
 function TabIcon({ name, color, size, focused }: { name: string; color: string; size: number; focused: boolean }) {
