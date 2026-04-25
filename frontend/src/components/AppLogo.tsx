@@ -72,8 +72,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm + 2,
   },
   fullLogo: {
-    width: 188,
+    width: 220,
     aspectRatio: FULL_LOGO_ASPECT_RATIO,
+    alignSelf: 'center',
   },
   // Outer container — sized to contain the badge even when rotated
   markOuter: {
