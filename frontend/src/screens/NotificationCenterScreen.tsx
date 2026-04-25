@@ -15,12 +15,13 @@ import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 
 const NOTIFICATION_ICONS: Record<string, string> = {
-  BID_RECEIVED: 'gavel',
+  NEW_BID: 'gavel',
   BID_ACCEPTED: 'check-circle-outline',
   BID_REJECTED: 'close-circle-outline',
+  BID_WITHDRAWN: 'undo-variant',
   TASK_COMPLETED: 'flag-checkered',
-  REVIEW_RECEIVED: 'star-outline',
-  MESSAGE: 'message-text-outline',
+  TASK_CANCELED: 'close-circle-outline',
+  NEW_MESSAGE: 'message-text-outline',
 };
 
 function getIcon(type: string): string {
@@ -143,10 +144,15 @@ export default function NotificationCenterScreen() {
       markAsRead(notification.id);
     }
 
-    // Navigate to the relevant task screen
-    if (notification.related_entity_id && notification.related_entity_type === 'Task') {
-      const nav = navigation as never as { navigate: (s: string, p: object) => void };
-      // Fixer notifications → fixer task view; requester notifications → requester task view
+    if (!notification.related_entity_id) return;
+    const nav = navigation as never as { navigate: (s: string, p: object) => void };
+
+    if (notification.type === 'NEW_MESSAGE') {
+      nav.navigate('Chat', { taskId: notification.related_entity_id });
+      return;
+    }
+
+    if (notification.related_entity_type === 'Task') {
       const isFixerNotif = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED'].includes(notification.type);
       nav.navigate(
         isFixerNotif ? 'TaskDetailsFixer' : 'TaskDetails',
