@@ -8,6 +8,7 @@ import userRoutes from './routes/users';
 import taskRoutes from './routes/tasks';
 import bidRoutes from './routes/bids';
 import notificationRoutes from './routes/notifications';
+import messageRoutes from './routes/messages';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/bids', bidRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api', messageRoutes);
 
 app.use(errorHandler);
 
