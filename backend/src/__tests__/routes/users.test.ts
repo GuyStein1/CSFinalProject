@@ -74,7 +74,7 @@ describe('POST /api/users/me/portfolio', () => {
       .send({ image_url: 'https://example.com/photo.jpg' });
 
     expect(res.status).toBe(201);
-    expect(res.body.portfolioItem).toMatchObject({ image_url: 'https://example.com/photo.jpg' });
+    expect(res.body.item).toMatchObject({ image_url: 'https://example.com/photo.jpg' });
   });
 });
 
@@ -88,7 +88,7 @@ describe('DELETE /api/users/me/portfolio/:id', () => {
       .delete(`/api/users/me/portfolio/${item.id}`)
       .set('Authorization', AUTH);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(204);
     expect(await prisma.portfolioItem.findUnique({ where: { id: item.id } })).toBeNull();
   });
 
@@ -102,6 +102,82 @@ describe('DELETE /api/users/me/portfolio/:id', () => {
       .delete(`/api/users/me/portfolio/${item.id}`)
       .set('Authorization', AUTH);
 
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/users/me/tasks', () => {
+  it('returns the authenticated user\'s posted tasks', async () => {
+    // Create a task via the API so coordinates are valid
+    await request(app)
+      .post('/api/tasks')
+      .set('Authorization', AUTH)
+      .send({
+        title: 'My task',
+        description: 'A task I need done.',
+        category: 'PLUMBING',
+        general_location_name: 'Tel Aviv',
+        exact_address: '1 Test St',
+        lat: 32.08,
+        lng: 34.78,
+      });
+
+    const res = await request(app).get('/api/users/me/tasks').set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.tasks.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.tasks[0].title).toBe('My task');
+    expect(typeof res.body.total).toBe('number');
+  });
+
+  it('filters by status', async () => {
+    const res = await request(app)
+      .get('/api/users/me/tasks')
+      .set('Authorization', AUTH)
+      .query({ status: 'OPEN' });
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('GET /api/users/me/bids', () => {
+  it('returns the authenticated user\'s submitted bids', async () => {
+    const res = await request(app).get('/api/users/me/bids').set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.bids)).toBe(true);
+    expect(typeof res.body.total).toBe('number');
+  });
+});
+
+describe('POST /api/users/me/push-token', () => {
+  it('registers a push token and returns 200', async () => {
+    const res = await request(app)
+      .post('/api/users/me/push-token')
+      .set('Authorization', AUTH)
+      .send({ token: 'ExponentPushToken[test123]' });
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findFirst({ where: { firebase_uid: 'test-uid' } });
+    expect(user?.push_token).toBe('ExponentPushToken[test123]');
+  });
+
+  it('returns 400 for an empty token', async () => {
+    const res = await request(app)
+      .post('/api/users/me/push-token')
+      .set('Authorization', AUTH)
+      .send({ token: '' });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /api/users/:id/reviews', () => {
+  it('returns an empty list when user has no reviews', async () => {
+    const res = await request(app).get(`/api/users/${userId}/reviews`);
+    expect(res.status).toBe(200);
+    expect(res.body.reviews).toHaveLength(0);
+    expect(res.body.total).toBe(0);
+  });
+
+  it('returns 404 for a non-existent user', async () => {
+    const res = await request(app).get('/api/users/non-existent-id/reviews');
     expect(res.status).toBe(404);
   });
 });

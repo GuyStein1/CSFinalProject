@@ -118,4 +118,29 @@ describe('useNotifications', () => {
       expect(result.current.notifications.every((n) => n.is_read)).toBe(true);
     });
   });
+
+  describe('error handling', () => {
+    it('sets error state when fetch fails', async () => {
+      mockApi.get.mockRejectedValue(new Error('Network failure'));
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toBe('Network failure');
+      expect(result.current.notifications).toHaveLength(0);
+    });
+
+    it('re-fetches (rollback) when markAsRead API call fails', async () => {
+      const notifs = [makeNotification({ id: 'n1', is_read: false })];
+      mockApi.get.mockResolvedValue({ data: { notifications: notifs, total: 1 } });
+      mockApi.put.mockRejectedValue(new Error('API error'));
+
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      act(() => { void result.current.markAsRead('n1'); });
+      // Optimistic update fires immediately
+      expect(result.current.notifications.find((n) => n.id === 'n1')?.is_read).toBe(true);
+      // On failure, refetch is triggered (get called again)
+      await waitFor(() => expect(mockApi.get).toHaveBeenCalledTimes(2));
+    });
+  });
 });

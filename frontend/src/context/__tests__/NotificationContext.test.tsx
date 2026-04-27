@@ -115,6 +115,54 @@ describe('NotificationContext', () => {
     await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
   });
 
+  it('deleteAll removes all notifications and calls DELETE /api/notifications', async () => {
+    const notifs = [makeNotif({ id: 'n1' }), makeNotif({ id: 'n2' })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.deleteAll(); });
+    expect(mockApi.delete).toHaveBeenCalledWith('/api/notifications');
+    expect(result.current.notifications).toHaveLength(0);
+  });
+
+  it('getFiltered returns only notifications matching the typeFilter', async () => {
+    const notifs = [
+      makeNotif({ id: 'n1', type: 'NEW_BID' }),
+      makeNotif({ id: 'n2', type: 'BID_ACCEPTED' }),
+      makeNotif({ id: 'n3', type: 'NEW_BID' }),
+    ];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const filtered = result.current.getFiltered(['NEW_BID']);
+    expect(filtered).toHaveLength(2);
+    expect(filtered.every((n) => n.type === 'NEW_BID')).toBe(true);
+  });
+
+  it('getFiltered with no filter returns all notifications', async () => {
+    const notifs = [makeNotif({ id: 'n1' }), makeNotif({ id: 'n2' })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.getFiltered()).toHaveLength(2);
+  });
+
+  it('sets error state when fetch fails', async () => {
+    mockApi.get.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBe('Network error');
+    expect(result.current.notifications).toHaveLength(0);
+  });
+
   it('throws when used outside NotificationProvider', () => {
     // Suppress console.error for this test
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
