@@ -1,4 +1,5 @@
 jest.mock('../../config/firebaseAdmin', () => ({
+  __esModule: true,
   default: {
     auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'new-uid' }) }),
     apps: [{}],

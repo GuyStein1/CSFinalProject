@@ -1,4 +1,5 @@
 jest.mock('../../config/firebaseAdmin', () => ({
+  __esModule: true,
   default: {
     auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'test-uid' }) }),
     apps: [{}],
@@ -77,6 +78,35 @@ describe('PUT /api/notifications/read-all', () => {
   });
 });
 
+describe('PUT /api/notifications/:id/read (forbidden)', () => {
+  it('returns 403 when marking another user\'s notification as read', async () => {
+    const otherUser = await prisma.user.create({
+      data: { firebase_uid: 'other-uid', email: 'other@example.com', full_name: 'Other User' },
+    });
+    const otherNotif = await prisma.notification.create({
+      data: {
+        user_id: otherUser.id, title: 'Test', body: 'Body',
+        type: 'NEW_BID' as never, related_entity_id: 'task-1', related_entity_type: 'Task', is_read: false,
+      },
+    });
+    const res = await request(app)
+      .put(`/api/notifications/${otherNotif.id}/read`)
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('DELETE /api/notifications', () => {
+  it('deletes all notifications for the current user', async () => {
+    await createNotif();
+    await createNotif();
+    const res = await request(app).delete('/api/notifications').set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    const remaining = await prisma.notification.count({ where: { user_id: userId } });
+    expect(remaining).toBe(0);
+  });
+});
+
 describe('DELETE /api/notifications/:id', () => {
   it('deletes a notification', async () => {
     const notif = await createNotif();
@@ -86,5 +116,28 @@ describe('DELETE /api/notifications/:id', () => {
     expect(res.status).toBe(200);
     const deleted = await prisma.notification.findUnique({ where: { id: notif.id } });
     expect(deleted).toBeNull();
+  });
+
+  it('returns 404 for a non-existent notification', async () => {
+    const res = await request(app)
+      .delete('/api/notifications/non-existent-id')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 403 when deleting another user\'s notification', async () => {
+    const otherUser = await prisma.user.create({
+      data: { firebase_uid: 'other-uid-2', email: 'other2@example.com', full_name: 'Other User 2' },
+    });
+    const otherNotif = await prisma.notification.create({
+      data: {
+        user_id: otherUser.id, title: 'Test', body: 'Body',
+        type: 'NEW_BID' as never, related_entity_id: 'task-1', related_entity_type: 'Task', is_read: false,
+      },
+    });
+    const res = await request(app)
+      .delete(`/api/notifications/${otherNotif.id}`)
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(403);
   });
 });

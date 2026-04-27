@@ -142,5 +142,41 @@ describe('useNotifications', () => {
       // On failure, refetch is triggered (get called again)
       await waitFor(() => expect(mockApi.get).toHaveBeenCalledTimes(2));
     });
+
+    it('re-fetches (rollback) when markAllAsRead API call fails', async () => {
+      const notifs = [makeNotification({ id: 'n1', is_read: false })];
+      mockApi.get.mockResolvedValue({ data: { notifications: notifs, total: 1 } });
+      mockApi.put.mockRejectedValue(new Error('API error'));
+
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const callsBefore = mockApi.get.mock.calls.length;
+      act(() => { void result.current.markAllAsRead(); });
+      await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+    });
+  });
+
+  describe('polling', () => {
+    beforeEach(() => { jest.useFakeTimers(); });
+    afterEach(() => { jest.useRealTimers(); });
+
+    it('polls at the given interval when pollInterval > 0', async () => {
+      const { result } = renderHook(() => useNotifications({ pollInterval: 5_000 }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const callsBefore = mockApi.get.mock.calls.length;
+      act(() => { jest.advanceTimersByTime(5_000); });
+      await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+    });
+
+    it('does not poll when pollInterval is 0 (default)', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const callsBefore = mockApi.get.mock.calls.length;
+      act(() => { jest.advanceTimersByTime(60_000); });
+      expect(mockApi.get.mock.calls.length).toBe(callsBefore);
+    });
   });
 });

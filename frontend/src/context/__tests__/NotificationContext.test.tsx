@@ -169,4 +169,56 @@ describe('NotificationContext', () => {
     expect(() => renderHook(() => useNotificationContext())).toThrow();
     spy.mockRestore();
   });
+
+  it('refetches (rollback) when markAsRead API call fails', async () => {
+    const notifs = [makeNotif({ id: 'n1', is_read: false })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+    mockApi.put.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const callsBefore = mockApi.get.mock.calls.length;
+    await act(async () => { await result.current.markAsRead('n1'); });
+    await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('refetches (rollback) when markAllAsRead API call fails', async () => {
+    const notifs = [makeNotif({ id: 'n1', is_read: false })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+    mockApi.put.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const callsBefore = mockApi.get.mock.calls.length;
+    await act(async () => { await result.current.markAllAsRead(); });
+    await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('refetches (rollback) when deleteOne API call fails', async () => {
+    const notifs = [makeNotif({ id: 'n1' })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+    mockApi.delete.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const callsBefore = mockApi.get.mock.calls.length;
+    await act(async () => { await result.current.deleteOne('n1'); });
+    await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('refetches (rollback) when deleteAll API call fails', async () => {
+    const notifs = [makeNotif({ id: 'n1' }), makeNotif({ id: 'n2' })];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+    mockApi.delete.mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const callsBefore = mockApi.get.mock.calls.length;
+    await act(async () => { await result.current.deleteAll(); });
+    await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
 });

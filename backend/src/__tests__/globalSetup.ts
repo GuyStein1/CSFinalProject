@@ -5,7 +5,7 @@ import { Client } from 'pg';
 
 export default async function globalSetup() {
   // Load test env vars
-  config({ path: resolve(__dirname, '../../../../.env.test'), override: true });
+  config({ path: resolve(__dirname, '../../../.env.test'), override: true });
 
   const testDbUrl = process.env.TEST_DATABASE_URL;
   if (!testDbUrl) throw new Error('TEST_DATABASE_URL is not set in .env.test');
@@ -28,7 +28,7 @@ export default async function globalSetup() {
 
   // Run Prisma migrations against the test database
   execSync('npx prisma migrate deploy', {
-    cwd: resolve(__dirname, '../../..'),
+    cwd: resolve(__dirname, '../..'), // backend/ dir, where prisma/schema.prisma lives
     env: { ...process.env, DATABASE_URL: testDbUrl },
     stdio: 'inherit',
   });

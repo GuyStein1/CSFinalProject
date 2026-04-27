@@ -2,6 +2,7 @@
 jest.mock('../../config/firebaseAdmin', () => {
   let currentUid = 'test-uid';
   return {
+    __esModule: true,
     default: {
       auth: () => ({
         verifyIdToken: jest.fn().mockImplementation(() => Promise.resolve({ uid: currentUid })),
@@ -285,6 +286,36 @@ describe('PUT /api/bids/:id', () => {
       .put(`/api/bids/${bid.id}`)
       .set('Authorization', FIXER_AUTH)
       .send({ offered_price: 100 });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when offered_price is not a positive number', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: -50 });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when description is an empty string', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ description: '   ' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when no update fields are provided', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}`)
+      .set('Authorization', FIXER_AUTH)
+      .send({});
     expect(res.status).toBe(400);
   });
 });

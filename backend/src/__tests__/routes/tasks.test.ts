@@ -2,6 +2,7 @@
 jest.mock('../../config/firebaseAdmin', () => {
   let currentUid = 'test-uid';
   return {
+    __esModule: true,
     default: {
       auth: () => ({
         verifyIdToken: jest.fn().mockImplementation(() => Promise.resolve({ uid: currentUid })),
@@ -90,6 +91,15 @@ describe('POST /api/tasks', () => {
   it('returns 401 without auth header', async () => {
     const res = await request(app).post('/api/tasks').send(validTask);
     expect(res.status).toBe(401);
+  });
+
+  it('returns 400 when coordinates are in the sea', async () => {
+    // lat=31.5, lng=33.0 is west of the Israeli coastline (in the Mediterranean)
+    const res = await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ ...validTask, lat: 31.5, lng: 33.0 });
+    expect(res.status).toBe(400);
   });
 });
 
@@ -432,5 +442,202 @@ describe('DELETE /api/tasks/:id', () => {
       .delete(`/api/tasks/${task.id}`)
       .set('Authorization', FIXER_AUTH);
     expect(res.status).toBe(403);
+  });
+});
+
+// ── PUT /api/tasks/:id/status (CANCELED → OPEN) ───────────────────────────────
+
+describe('PUT /api/tasks/:id/status (reopen canceled task)', () => {
+  it('requester can reopen a CANCELED task back to OPEN', async () => {
+    const task = await createTask();
+    // Cancel it first
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+
+    // Now reopen it
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'OPEN' });
+    expect(res.status).toBe(200);
+    expect(res.body.task.status).toBe('OPEN');
+  });
+});
+
+// ── POST /api/tasks/:id/reviews (edge cases) ──────────────────────────────────
+
+describe('POST /api/tasks/:id/reviews (forbidden)', () => {
+  it('returns 403 when a non-requester tries to submit a review', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'COMPLETED' });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/reviews`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ rating: 5 });
+    expect(res.status).toBe(403);
+    __setUid('test-uid');
+  });
+});
+
+// ── GET /api/tasks (price filter) ────────────────────────────────────────────
+
+describe('GET /api/tasks (price filter)', () => {
+  it('returns tasks within the price range', async () => {
+    __setUid('test-uid');
+    await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ ...validTask, suggested_price: 150 });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .get('/api/tasks')
+      .set('Authorization', FIXER_AUTH)
+      .query({ lat: 32.08, lng: 34.78, minPrice: 100, maxPrice: 200 });
+    expect(res.status).toBe(200);
+    expect(res.body.tasks.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.tasks[0].suggested_price).toBe(150);
+  });
+});
+
+// ── GET /api/tasks/:id/directions ─────────────────────────────────────────────
+
+describe('GET /api/tasks/:id/directions', () => {
+  it('returns 400 when originLat or originLng is missing', async () => {
+    const task = await createTask();
+    const res = await request(app)
+      .get(`/api/tasks/${task.id}/directions`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns directions: null when no Google Maps API key is configured', async () => {
+    const task = await createTask();
+    // GOOGLE_MAPS_API_KEY is not set in .env.test → server returns null
+    const res = await request(app)
+      .get(`/api/tasks/${task.id}/directions?originLat=32.08&originLng=34.78`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.directions).toBeNull();
+  });
+
+  it('returns 404 when task does not exist', async () => {
+    const res = await request(app)
+      .get('/api/tasks/non-existent-id/directions?originLat=32.08&originLng=34.78')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns directions when Google Maps API responds with OK', async () => {
+    const task = await createTask();
+    const savedKey = process.env.GOOGLE_MAPS_API_KEY;
+    process.env.GOOGLE_MAPS_API_KEY = 'test-api-key';
+
+    const savedFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          status: 'OK',
+          routes: [
+            {
+              legs: [
+                {
+                  distance: { text: '5 km' },
+                  duration: { text: '10 mins' },
+                  duration_in_traffic: { text: '12 mins' },
+                },
+              ],
+            },
+          ],
+        }),
+    }) as unknown as typeof global.fetch;
+
+    const res = await request(app)
+      .get(`/api/tasks/${task.id}/directions?originLat=32.08&originLng=34.78`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    global.fetch = savedFetch;
+    process.env.GOOGLE_MAPS_API_KEY = savedKey;
+
+    expect(res.status).toBe(200);
+    expect(res.body.directions).not.toBeNull();
+    expect(res.body.directions.distanceText).toBe('5 ק״מ');
+    expect(res.body.directions.durationText).toBe('10 דקות');
+    expect(res.body.directions.durationInTraffic).toBe('12 דקות');
+  });
+
+  it('returns null when Google Maps returns a non-OK status', async () => {
+    const task = await createTask();
+    const savedKey = process.env.GOOGLE_MAPS_API_KEY;
+    process.env.GOOGLE_MAPS_API_KEY = 'test-api-key';
+
+    const savedFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve({ status: 'ZERO_RESULTS', routes: [] }),
+    }) as unknown as typeof global.fetch;
+
+    const res = await request(app)
+      .get(`/api/tasks/${task.id}/directions?originLat=32.08&originLng=34.78`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    global.fetch = savedFetch;
+    process.env.GOOGLE_MAPS_API_KEY = savedKey;
+
+    expect(res.status).toBe(200);
+    expect(res.body.directions).toBeNull();
+  });
+});
+
+// ── POST /api/tasks/:id/reviews (review window + no fixer) ───────────────────
+
+describe('POST /api/tasks/:id/reviews (edge cases)', () => {
+  async function completeTask() {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'COMPLETED' });
+    return task;
+  }
+
+  it('returns 403 when the 14-day review window has expired', async () => {
+    const task = await completeTask();
+    // Back-date completed_at to 15 days ago to trigger the expiry branch
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { completed_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
+    });
+
+    __setUid('test-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/reviews`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ rating: 5 });
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 400 when a COMPLETED task has no assigned fixer', async () => {
+    // Create a completed task directly — bypass the accept-bid flow so assigned_fixer_id stays null
+    const task = await createTask();
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { status: 'COMPLETED', completed_at: new Date(), assigned_fixer_id: null },
+    });
+
+    __setUid('test-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/reviews`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ rating: 5 });
+    expect(res.status).toBe(400);
   });
 });

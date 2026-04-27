@@ -1,21 +1,6 @@
 import { io, mockSocket } from '../../__mocks__/socket.io-client';
+import { getSocket, disconnectSocket } from '../socket';
 import { auth } from '../../config/firebase';
-
-// Reset module between tests to clear the singleton
-let getSocket: () => Promise<unknown>;
-let disconnectSocket: () => void;
-
-beforeEach(() => {
-  jest.resetModules();
-  (io as jest.Mock).mockClear();
-  mockSocket.connected = true;
-  mockSocket.disconnect.mockClear();
-
-  // Re-import to get a fresh module (clears the _socket singleton)
-  const socketModule = jest.requireActual('../socket') as typeof import('../socket');
-  getSocket = socketModule.getSocket;
-  disconnectSocket = socketModule.disconnectSocket;
-});
 
 jest.mock('../../config/firebase', () => ({
   auth: {
@@ -25,9 +10,18 @@ jest.mock('../../config/firebase', () => ({
   },
 }));
 
+beforeEach(() => {
+  // Reset singleton between tests: disconnectSocket() sets _socket = null
+  // so the next getSocket() call creates a fresh socket
+  disconnectSocket();
+  (io as jest.Mock).mockClear();
+  mockSocket.connected = false;
+  mockSocket.disconnect.mockClear();
+  (auth.currentUser!.getIdToken as jest.Mock).mockClear();
+});
+
 describe('getSocket', () => {
-  it('creates a socket with the Firebase token', async () => {
-    mockSocket.connected = false;
+  it('creates a socket using the Firebase token when no socket exists', async () => {
     await getSocket();
     expect(auth.currentUser?.getIdToken).toHaveBeenCalled();
     expect(io).toHaveBeenCalledWith(
@@ -35,12 +29,34 @@ describe('getSocket', () => {
       expect.objectContaining({ auth: { token: 'mock-token' } }),
     );
   });
+
+  it('reuses an existing connected socket without creating a new one', async () => {
+    mockSocket.connected = true;
+    await getSocket(); // creates socket
+    (io as jest.Mock).mockClear();
+    await getSocket(); // should reuse
+    expect(io).not.toHaveBeenCalled();
+  });
+
+  it('reconnects when the existing socket is disconnected', async () => {
+    mockSocket.connected = true;
+    await getSocket();
+    mockSocket.connected = false;
+    (io as jest.Mock).mockClear();
+    await getSocket(); // stale socket → create new
+    expect(io).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('disconnectSocket', () => {
-  it('disconnects and clears the socket', async () => {
-    await getSocket();
+  it('disconnects the active socket and clears the singleton', async () => {
+    await getSocket(); // ensure a socket exists
     disconnectSocket();
     expect(mockSocket.disconnect).toHaveBeenCalled();
+  });
+
+  it('is a no-op when no socket exists', () => {
+    // _socket is null after beforeEach → should not throw
+    expect(() => disconnectSocket()).not.toThrow();
   });
 });

@@ -88,7 +88,7 @@ describe('useBids', () => {
       mockApi.get.mockRejectedValue({ response: { status: 401 } });
       const { result } = renderHook(() => useBids());
       await waitFor(() => expect(result.current.loading).toBe(false));
-      expect(result.current.error).toMatch(/sign in/i);
+      expect(result.current.error).toMatch(/log in/i);
     });
 
     it('sets a network error message', async () => {

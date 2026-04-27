@@ -1,4 +1,8 @@
-import { minLngForLat, hashCode, applyPrivacyOffset } from '../useTasks';
+import { renderHook, waitFor } from '@testing-library/react-native';
+import useTasks, { minLngForLat, hashCode, applyPrivacyOffset } from '../useTasks';
+import api from '../../api/axiosInstance';
+
+const mockApi = api as jest.Mocked<typeof api>;
 
 // Haversine distance in meters (for verifying offset magnitude)
 function haversineMeters(
@@ -111,5 +115,134 @@ describe('applyPrivacyOffset', () => {
     const result = applyPrivacyOffset(lat, lng, id);
     const coastMin = minLngForLat(result.lat);
     expect(result.lng).toBeGreaterThanOrEqual(coastMin);
+  });
+
+  it('clamps to coastline when offset would push marker into sea', () => {
+    // Force a specific hash that produces a westward offset (angle ≈ 0, pointing west)
+    // We can test indirectly: use a location right on the coast with a known westward-pushing id
+    // If clamping works, lng >= coastMin regardless of the offset direction
+    const COASTAL_LAT = 32.0;
+    const COASTAL_LNG = 34.76; // right at the coast
+    const result = applyPrivacyOffset(COASTAL_LAT, COASTAL_LNG, 'coastal-clamp-test');
+    expect(result.lng).toBeGreaterThanOrEqual(minLngForLat(result.lat));
+  });
+});
+
+// ── useTasks hook ─────────────────────────────────────────────────────────────
+const makeApiTask = (overrides: Record<string, unknown> = {}) => ({
+  id: 'task-1',
+  requester_id: 'user-1',
+  title: 'Fix my sink',
+  description: 'It leaks',
+  media_urls: [],
+  category: 'PLUMBING',
+  suggested_price: 100,
+  status: 'OPEN',
+  general_location_name: 'Tel Aviv',
+  is_payment_confirmed: false,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  lat: 32.08,
+  lng: 34.78,
+  distance_km: 1.5,
+  bid_count: 2,
+  ...overrides,
+});
+
+describe('useTasks hook', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockApi.get.mockResolvedValue({ data: { tasks: [] } });
+  });
+
+  it('does not fetch when lat/lng are absent', async () => {
+    const { result } = renderHook(() => useTasks({}));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockApi.get).not.toHaveBeenCalled();
+    expect(result.current.tasks).toHaveLength(0);
+  });
+
+  it('does not fetch when enabled=false', async () => {
+    const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78, enabled: false }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockApi.get).not.toHaveBeenCalled();
+  });
+
+  it('fetches tasks when lat and lng are provided', async () => {
+    mockApi.get.mockResolvedValue({ data: { tasks: [makeApiTask()] } });
+    const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockApi.get).toHaveBeenCalledWith('/api/tasks', expect.objectContaining({
+      params: expect.objectContaining({ lat: 32.08, lng: 34.78 }),
+    }));
+    expect(result.current.tasks).toHaveLength(1);
+  });
+
+  it('maps API task fields from snake_case to camelCase', async () => {
+    mockApi.get.mockResolvedValue({ data: { tasks: [makeApiTask()] } });
+    const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const task = result.current.tasks[0];
+    expect(task.requesterId).toBe('user-1');
+    expect(task.suggestedPrice).toBe(100);
+    expect(task.generalLocationName).toBe('Tel Aviv');
+    expect(task.distanceKm).toBe(1.5);
+    expect(task.bidCount).toBe(2);
+    expect(task.isPaymentConfirmed).toBe(false);
+    expect(task.mediaUrls).toEqual([]);
+  });
+
+  it('applies privacy offset so returned coords differ from API coords', async () => {
+    mockApi.get.mockResolvedValue({ data: { tasks: [makeApiTask({ lat: 32.08, lng: 34.78 })] } });
+    const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const task = result.current.tasks[0];
+    // offset is deterministic but non-zero, so coords must differ
+    expect(task.lat !== 32.08 || task.lng !== 34.78).toBe(true);
+  });
+
+  it('passes category and price filters in query params', async () => {
+    const { result } = renderHook(() => useTasks({
+      lat: 32.08, lng: 34.78, category: 'PLUMBING', minPrice: 50, maxPrice: 200,
+    }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockApi.get).toHaveBeenCalledWith('/api/tasks', expect.objectContaining({
+      params: expect.objectContaining({ category: 'PLUMBING', minPrice: 50, maxPrice: 200 }),
+    }));
+  });
+
+  describe('error handling', () => {
+    test.each([
+      ['401 requires sign-in', { response: { status: 401 } }, /sign in/i],
+      ['network error', new Error('Network Error'), /backend/i],
+    ])('%s', async (_label, rejection, pattern) => {
+      mockApi.get.mockRejectedValue(rejection);
+      const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toMatch(pattern);
+      expect(result.current.tasks).toHaveLength(0);
+    });
+
+    it('uses error.message for generic errors', async () => {
+      mockApi.get.mockRejectedValue(new Error('Something broke'));
+      const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toBe('Something broke');
+    });
+
+    it('uses API response message when available', async () => {
+      mockApi.get.mockRejectedValue({ response: { status: 500, data: { error: { message: 'DB down' } } } });
+      const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toBe('DB down');
+    });
+
+    it('falls back to generic message when no error details', async () => {
+      mockApi.get.mockRejectedValue({ unknown: 'error' });
+      const { result } = renderHook(() => useTasks({ lat: 32.08, lng: 34.78 }));
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).toMatch(/failed to load/i);
+    });
   });
 });

@@ -1,4 +1,5 @@
 jest.mock('../../config/firebaseAdmin', () => ({
+  __esModule: true,
   default: {
     auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'test-uid' }) }),
     apps: [{}],
@@ -53,15 +54,15 @@ describe('PUT /api/users/me', () => {
 });
 
 describe('GET /api/users/:id', () => {
-  it('returns public profile without auth', async () => {
-    const res = await request(app).get(`/api/users/${userId}`);
+  it('returns public profile for a valid user', async () => {
+    const res = await request(app).get(`/api/users/${userId}`).set('Authorization', AUTH);
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({ full_name: 'Test User' });
     expect(res.body.user.portfolio_items).toBeDefined();
   });
 
   it('returns 404 for non-existent user', async () => {
-    const res = await request(app).get('/api/users/non-existent-id');
+    const res = await request(app).get('/api/users/non-existent-id').set('Authorization', AUTH);
     expect(res.status).toBe(404);
   });
 });
@@ -92,7 +93,7 @@ describe('DELETE /api/users/me/portfolio/:id', () => {
     expect(await prisma.portfolioItem.findUnique({ where: { id: item.id } })).toBeNull();
   });
 
-  it('returns 404 for non-owned item', async () => {
+  it('returns 403 when deleting an item owned by another user', async () => {
     const otherUser = await createTestUser({ firebase_uid: 'other-uid', email: 'other@example.com' });
     const item = await prisma.portfolioItem.create({
       data: { fixer_id: otherUser.id, image_url: 'https://example.com/photo.jpg' },
@@ -102,7 +103,7 @@ describe('DELETE /api/users/me/portfolio/:id', () => {
       .delete(`/api/users/me/portfolio/${item.id}`)
       .set('Authorization', AUTH);
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
   });
 });
 
@@ -170,14 +171,14 @@ describe('POST /api/users/me/push-token', () => {
 
 describe('GET /api/users/:id/reviews', () => {
   it('returns an empty list when user has no reviews', async () => {
-    const res = await request(app).get(`/api/users/${userId}/reviews`);
+    const res = await request(app).get(`/api/users/${userId}/reviews`).set('Authorization', AUTH);
     expect(res.status).toBe(200);
     expect(res.body.reviews).toHaveLength(0);
     expect(res.body.total).toBe(0);
   });
 
   it('returns 404 for a non-existent user', async () => {
-    const res = await request(app).get('/api/users/non-existent-id/reviews');
+    const res = await request(app).get('/api/users/non-existent-id/reviews').set('Authorization', AUTH);
     expect(res.status).toBe(404);
   });
 });

@@ -2,6 +2,10 @@ import type { Config } from 'jest';
 
 const config: Config = {
   preset: 'jest-expo',
+  // Runs after jest-expo's preset setupFiles (which install __ExpoImportMetaRegistry
+  // as a lazy getter), replacing it with a concrete object so tests don't trigger
+  // native module resolution.
+  setupFiles: ['<rootDir>/src/__mocks__/setup-globals.ts'],
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   testMatch: ['<rootDir>/src/**/__tests__/**/*.test.{ts,tsx}'],
   moduleNameMapper: {
@@ -25,6 +29,8 @@ const config: Config = {
     'src/context/**/*.tsx',
     '!src/**/__tests__/**',
     '!src/**/__mocks__/**',
+    // Web-platform DOM code (CSS injection, classList, TreeWalker) is untestable in RN Jest
+    '!src/context/AccessibilityContext.tsx',
   ],
 };
 
