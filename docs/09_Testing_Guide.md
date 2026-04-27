@@ -20,6 +20,8 @@ This project uses **Jest** throughout. There are two independent test suites:
 - Screen components (too much nav/Firebase mocking overhead)
 - `backend/src/index.ts` (just calls `app.listen()`)
 - `backend/src/config/**` (environment bootstrapping)
+- `backend/src/**/*.d.ts` (TypeScript declaration files)
+- `frontend/src/context/AccessibilityContext.tsx` (uses DOM APIs not available in the React Native Jest environment)
 - Theme constants (`frontend/src/theme.ts`)
 
 ---
@@ -43,17 +45,7 @@ npm run test --workspace frontend
 
 Make sure PostgreSQL is running (e.g., via Docker or a local install). The test database is **created automatically** on the first run.
 
-```bash
-# Run all backend tests (auto-creates fixit_test DB if needed)
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fixit_test \
-  npm run test --workspace backend
-
-# With coverage report
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fixit_test \
-  npm run test:coverage --workspace backend
-```
-
-Or create a `.env.test` file at the repo root (already included — see `.env.test`), then just run:
+A `.env.test` file at the repo root is already included with the correct `TEST_DATABASE_URL`. Just run:
 
 ```bash
 npm run test --workspace backend
@@ -83,8 +75,11 @@ backend/src/__tests__/
   schemas.test.ts
   services/
     notificationService.test.ts
+  middleware/
+    auth.test.ts          ← Tests authMiddleware directly (invalid token, user not in DB)
   routes/
     auth.test.ts
+    auth.firebase-error.test.ts  ← Firebase errorInfo.code branch
     users.test.ts
     tasks.test.ts
     bids.test.ts
@@ -92,13 +87,16 @@ backend/src/__tests__/
 
 frontend/src/
   __mocks__/              ← Mock modules (firebase, api, socket.io-client, etc.)
+    setup-globals.ts      ← Polyfills for expo winter runtime globals (structuredClone, etc.)
   hooks/__tests__/
     useTasks.test.ts
+    useAuthBootstrap.test.ts
     useNotifications.test.ts
     useBids.test.ts
     useReviews.test.ts
   utils/__tests__/
     socket.test.ts
+    uploadImage.test.ts
   context/__tests__/
     NotificationContext.test.tsx
 ```
@@ -117,7 +115,9 @@ frontend/src/
 
 ```typescript
 // 1. Mock Firebase Admin at the top (before any imports that trigger it)
+// __esModule: true is required — ts-jest uses it to decide whether to use .default
 jest.mock('../../config/firebaseAdmin', () => ({
+  __esModule: true,
   default: {
     auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'test-uid' }) }),
     apps: [{}],
@@ -145,6 +145,37 @@ it('does something', async () => {
 });
 ```
 
+### Multi-user backend test pattern
+
+When a test needs to act as different users (e.g., requester accepts fixer's bid), use the dynamic UID factory pattern instead of a static mock:
+
+```typescript
+jest.mock('../../config/firebaseAdmin', () => {
+  let currentUid = 'test-uid';
+  return {
+    __esModule: true,
+    default: {
+      auth: () => ({
+        verifyIdToken: jest.fn().mockImplementation(() => Promise.resolve({ uid: currentUid })),
+      }),
+      apps: [{}],
+    },
+    __setUid: (uid: string) => { currentUid = uid; },
+  };
+});
+
+// In tests — switch identity before each request:
+const { __setUid } = jest.requireMock('../../config/firebaseAdmin') as { __setUid: (uid: string) => void };
+__setUid('fixer-uid');
+await request(app).post(`/api/tasks/${taskId}/bids`)...
+__setUid('test-uid');
+await request(app).put(`/api/bids/${bidId}/accept`)...
+```
+
+### Note: tests run serially
+
+Backend tests share a single PostgreSQL test database and run with `maxWorkers: 1`. This prevents unique-constraint violations that occur when multiple test files run cleanup + create in parallel. Do not change `maxWorkers` without also implementing per-test transaction rollback or separate DB schemas.
+
 ### Frontend hook test pattern
 
 ```typescript
@@ -170,11 +201,13 @@ it('loads items', async () => {
 
 | Mock file | What it mocks | When to update |
 |-----------|--------------|----------------|
-| `src/__mocks__/firebase.ts` | `auth.currentUser`, `getIdToken`, `storage` | If new Firebase methods are used |
-| `src/__mocks__/api.ts` | `api.get/post/put/delete` | Rarely — the mock covers all methods |
-| `src/__mocks__/socket.io-client.ts` | `io()`, socket `on/off/emit/disconnect` | If new socket events are added |
-| `src/__mocks__/expo-notifications.ts` | Permission + token APIs | If new Expo Notifications methods are called |
-| `src/__mocks__/expo-constants.ts` | `expoConfig.extra.eas.projectId` | If projectId changes |
+| `frontend/src/__mocks__/firebase.ts` | `auth.currentUser`, `getIdToken`, `storage` | If new Firebase methods are used |
+| `frontend/src/__mocks__/api.ts` | `api.get/post/put/delete` | Rarely — the mock covers all methods |
+| `frontend/src/__mocks__/socket.io-client.ts` | `io()`, socket `on/off/emit/disconnect` | If new socket events are added |
+| `frontend/src/__mocks__/expo-notifications.ts` | Permission + token APIs | If new Expo Notifications methods are called |
+| `frontend/src/__mocks__/expo-constants.ts` | `expoConfig.extra.eas.projectId` | If projectId changes |
+| `frontend/src/__mocks__/setup-globals.ts` | Polyfills `__ExpoImportMetaRegistry` and `structuredClone` for the expo winter runtime | Only if new lazy globals cause "cannot be used outside a module" errors |
+| `backend/src/__tests__/__mocks__/expo-server-sdk.ts` | CJS stub for the pure-ESM `expo-server-sdk` package | If `Expo.sendPushNotificationsAsync` API changes |
 
 ---
 
