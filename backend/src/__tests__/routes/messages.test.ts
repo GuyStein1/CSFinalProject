@@ -78,13 +78,11 @@ async function createTaskInProgress(): Promise<{ id: string }> {
 }
 
 async function seedMessages(taskId: string) {
-  await prisma.message.createMany({
-    data: [
-      { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'Hello fixer!' },
-      { task_id: taskId, sender_id: fixerId, recipient_id: requesterId, content: 'Hello requester!' },
-      { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'When can you come?' },
-    ],
-  });
+  // Explicit timestamps so orderBy created_at is deterministic even in fast tests
+  const base = Date.now();
+  await prisma.message.create({ data: { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'Hello fixer!', created_at: new Date(base) } });
+  await prisma.message.create({ data: { task_id: taskId, sender_id: fixerId, recipient_id: requesterId, content: 'Hello requester!', created_at: new Date(base + 1) } });
+  await prisma.message.create({ data: { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'When can you come?', created_at: new Date(base + 2) } });
 }
 
 // ── GET /api/tasks/:id/messages ───────────────────────────────────────────────

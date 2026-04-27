@@ -24,6 +24,8 @@ const config: Config = {
     '!src/config/**',
     '!src/__tests__/**',
     '!src/**/*.d.ts',
+    // Socket.io event handlers require a live WS connection — covered by manual/E2E testing
+    '!src/socket/**',
   ],
 };
 
