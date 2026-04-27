@@ -5,7 +5,8 @@ import { Client } from 'pg';
 
 export default async function globalSetup() {
   // Load test env vars
-  config({ path: resolve(__dirname, '../../../.env.test'), override: true });
+  // override: false — lets CI environment variables take precedence over .env.test
+  config({ path: resolve(__dirname, '../../../.env.test'), override: false });
 
   const testDbUrl = process.env.TEST_DATABASE_URL;
   if (!testDbUrl) throw new Error('TEST_DATABASE_URL is not set in .env.test');
