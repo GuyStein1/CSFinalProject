@@ -4,6 +4,8 @@ import { CATEGORY_METADATA, type Category } from '../constants/categories';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const imgLogo = require('../../assets/fixit-logo-mark-transparent.png') as { uri?: string } | number;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const imgWorker = require('../../assets/landing-worker-cut.png') as { uri?: string } | number;
 
 interface Props {
   isSignedIn?: boolean;
@@ -60,6 +62,12 @@ const LANDING_CSS = `
 @keyframes float1 { 0%,100% { transform: rotate(3deg) translateY(0); } 50% { transform: rotate(3deg) translateY(-12px); } }
 @keyframes float2 { 0%,100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(-4deg) translateY(-16px); } }
 @keyframes float3 { 0%,100% { transform: rotate(2deg) translateY(0); } 50% { transform: rotate(2deg) translateY(-10px); } }
+@keyframes workerBob { from { transform: translateY(0) rotate(-1.2deg); } to { transform: translateY(-14px) rotate(1.4deg); } }
+@keyframes workerShadow { from { transform: translateX(-50%) scale(1); opacity: 0.52; } to { transform: translateX(-50%) scale(0.72); opacity: 0.28; } }
+@keyframes workerLine { 0% { opacity: 0; transform: translateX(120px) scaleX(0.45); } 20% { opacity: 0.9; } 100% { opacity: 0; transform: translateX(-360px) scaleX(1.25); } }
+@keyframes workerTick { from { transform: translateX(440px); opacity: 0; } 10%,90% { opacity: 0.58; } to { transform: translateX(-560px); opacity: 0; } }
+@keyframes workerSpark { from { transform: translate(0,0) scale(1); opacity: 0.95; } to { transform: translate(-80px,-30px) scale(0); opacity: 0; } }
+@keyframes workerPow { 0% { opacity: 0; transform: scale(0.45) rotate(-18deg); } 30% { opacity: 1; transform: scale(1.12) rotate(-8deg); } 100% { opacity: 0; transform: scale(1.32) rotate(0deg); } }
 
 /* ── Nav ────────────────────────────────────────────── */
 .fi-nav {
@@ -181,26 +189,131 @@ const LANDING_CSS = `
 .fi-hero-trust .meta { font-size: 13px; color: var(--text-muted); }
 .fi-hero-trust .meta strong { color: var(--text-primary); font-weight: 700; }
 
-/* ── Hero stage (floating cards) ───────────────────── */
-.fi-hero-stage { position: relative; height: 600px; z-index: 1; }
-.fi-card { position: absolute; background: var(--surface); border: none; border-radius: 20px; padding: 16px; box-shadow: var(--shadow-md); transition: transform 500ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 400ms; cursor: pointer; color: inherit; text-align: left; font-family: var(--font-body); }
-.fi-card:hover { transform: translateY(-8px) rotate(0deg) scale(1.03) !important; box-shadow: 0 24px 48px -12px rgba(28,60,86,0.25); z-index: 10; }
-.fi-card:focus-visible { outline: 3px solid var(--secondary); outline-offset: 4px; }
-.fi-card.t1 { top: 20px; right: 0; width: 320px; transform: rotate(3deg); animation: float1 8s ease-in-out infinite; }
-.fi-card.t2 { top: 200px; right: 280px; width: 280px; transform: rotate(-4deg); animation: float2 10s ease-in-out infinite; }
-.fi-card.t3 { top: 380px; right: 60px; width: 300px; transform: rotate(2deg); animation: float3 9s ease-in-out infinite; }
-.fi-card .card-row { display: flex; gap: 12px; align-items: center; }
-.fi-card .cat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex: none; }
-.fi-card .card-title { display: block; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text-primary); }
-.fi-card .card-meta { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.fi-card .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--outline-light); }
-.fi-card .card-price { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--primary); }
-.fi-card .card-bid { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--secondary); color: var(--primary-dark); }
-.fi-pill { position: absolute; background: var(--surface); border-radius: 999px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; white-space: nowrap; box-shadow: var(--shadow-md); font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.fi-pill .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--success); position: relative; flex: none; }
-.fi-pill .dot::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; background: var(--success); opacity: 0.4; animation: ping 2s cubic-bezier(0,0,0.2,1) infinite; }
-.fi-pill.p1 { top: 0; right: 200px; animation: float1 7s ease-in-out infinite; }
-.fi-pill.p2 { bottom: 80px; right: 300px; animation: float2 8s ease-in-out infinite; }
+/* ── Hero worker animation ─────────────────────────── */
+.fi-hero-stage {
+  position: relative; z-index: 1; min-height: 520px;
+  display: flex; align-items: center; justify-content: center;
+}
+.fi-worker {
+  position: relative; width: min(100%, 560px); aspect-ratio: 1.42;
+  border-radius: 32px; overflow: hidden; cursor: pointer;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(251,133,0,0.10), transparent 60%),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(26,58,107,0.06), transparent 60%),
+    linear-gradient(180deg, #faf3e2 0%, #f1e6c8 100%);
+  border: 1px solid rgba(255,252,246,0.6);
+  box-shadow: 0 28px 70px -24px rgba(15,36,56,0.45);
+  transition: transform 260ms cubic-bezier(0.34,1.56,0.64,1), border-color 260ms, box-shadow 260ms;
+}
+.fi-worker::before {
+  content: ""; position: absolute; inset: -2px;
+  background-image:
+    linear-gradient(to right, rgba(20,33,61,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20,33,61,0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 80%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 80%);
+  pointer-events: none;
+}
+.fi-worker:hover {
+  transform: translateY(-6px);
+  border-color: rgba(241,181,69,0.76);
+  box-shadow: 0 34px 80px -22px rgba(15,36,56,0.54);
+}
+.fi-worker:active .runner-wrap { transform: translateX(-30px) rotate(-3deg); }
+.fi-worker-label {
+  position: absolute; top: 26px; left: 0; right: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase;
+  color: rgba(20,33,61,0.54); pointer-events: none;
+}
+.fi-worker-label::before,
+.fi-worker-label::after {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: #fb8500; box-shadow: 0 0 0 4px rgba(251,133,0,0.15);
+}
+.frame-corner {
+  position: absolute; width: 18px; height: 18px; z-index: 5;
+  border-color: rgba(20,33,61,0.34);
+}
+.frame-corner.tl { top: 18px; left: 18px; border-left: 1.5px solid; border-top: 1.5px solid; }
+.frame-corner.tr { top: 18px; right: 18px; border-right: 1.5px solid; border-top: 1.5px solid; }
+.frame-corner.bl { bottom: 18px; left: 18px; border-left: 1.5px solid; border-bottom: 1.5px solid; }
+.frame-corner.br { bottom: 18px; right: 18px; border-right: 1.5px solid; border-bottom: 1.5px solid; }
+.worker-scene { position: absolute; inset: 50px 0 48px; overflow: hidden; }
+.worker-ground {
+  position: absolute; left: 7%; right: 7%; bottom: 21%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(20,33,61,0.20) 20%, rgba(20,33,61,0.20) 80%, transparent);
+}
+.worker-ground::after {
+  content: ""; position: absolute; left: 10%; right: 10%; top: 6px; height: 14px;
+  background: radial-gradient(ellipse 50% 100% at 50% 0%, rgba(20,33,61,0.15), transparent 70%);
+}
+.worker-ticks { position: absolute; left: 7%; right: 7%; bottom: 18%; height: 24px; overflow: hidden; }
+.worker-ticks i {
+  position: absolute; bottom: 0; width: 28px; height: 1px; background: rgba(20,33,61,0.22);
+  animation: workerTick 1.35s linear infinite;
+}
+.fi-worker:hover .worker-ticks i { animation-duration: 0.52s; }
+.worker-lines { position: absolute; inset: 0; pointer-events: none; }
+.worker-lines i {
+  position: absolute; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #fb8500 20%, #ffb703 50%, transparent);
+  animation: workerLine 1.45s linear infinite;
+}
+.fi-worker:hover .worker-lines i { animation-duration: 0.58s; }
+.worker-shadow {
+  position: absolute; bottom: 18%; left: 50%; width: 46%; height: 22px; z-index: 1;
+  border-radius: 999px; background: radial-gradient(ellipse 50% 100% at 50% 50%, rgba(20,33,61,0.34), transparent 70%);
+  filter: blur(2px); animation: workerShadow 0.56s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+}
+.fi-worker:hover .worker-shadow { animation-duration: 0.28s; }
+.runner-wrap {
+  position: absolute; inset: 2% 5% 0; z-index: 3;
+  transition: transform 0.4s cubic-bezier(.2,.8,.2,1);
+  animation: workerBob 0.56s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+  transform-origin: 50% 80%;
+}
+.fi-worker:hover .runner-wrap {
+  transform: translateX(20px) scale(1.02);
+  animation-duration: 0.28s;
+}
+.runner-wrap img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 18px 12px rgba(20,33,61,0.18)) drop-shadow(0 4px 0 rgba(20,33,61,0.05));
+  transition: filter 0.3s;
+}
+.fi-worker:hover .runner-wrap img {
+  filter: drop-shadow(0 14px 10px rgba(251,133,0,0.45)) drop-shadow(0 0 24px rgba(255,183,3,0.4));
+}
+.worker-sparks { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 240ms; }
+.fi-worker:hover .worker-sparks { opacity: 1; }
+.worker-sparks span {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle, #ffb703 0%, #fb8500 60%, transparent 70%);
+  animation: workerSpark 0.7s ease-out infinite;
+}
+.worker-pow {
+  position: absolute; top: 19%; right: 15%; z-index: 6; pointer-events: none;
+  padding: 8px 14px; border-radius: 12px; background: var(--secondary);
+  border: 2px solid var(--primary-dark); color: var(--primary-dark);
+  font-family: var(--font-display); font-weight: 900; letter-spacing: 2px; font-size: 22px;
+  opacity: 0; transform: scale(0.45) rotate(-18deg);
+}
+.fi-worker:active .worker-pow { animation: workerPow 0.7s cubic-bezier(.2,1.4,.4,1) forwards; }
+.worker-speedo {
+  position: absolute; bottom: 22px; left: 40px; right: 40px; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(20,33,61,0.48);
+}
+.worker-speedo .track { flex: 1; height: 3px; border-radius: 3px; background: rgba(20,33,61,0.12); overflow: hidden; }
+.worker-speedo .fill { display: block; width: 20%; height: 100%; background: linear-gradient(90deg, #ffb703, #fb8500); transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
+.fi-worker:hover .worker-speedo .fill { width: 92%; }
+.worker-speedo .slow { display: inline; }
+.worker-speedo .fast { display: none; }
+.fi-worker:hover .worker-speedo .slow { display: none; }
+.fi-worker:hover .worker-speedo .fast { display: inline; }
 @media (max-width: 960px) { .fi-hero { grid-template-columns: 1fr; padding: 110px 20px 60px; gap: 40px; } .fi-hero-stage { display: none; } }
 
 /* ── Stats ───────────────────────────────────────────── */
@@ -260,10 +373,6 @@ const LANDING_CSS = `
 .fi-cat:hover .examples, .fi-cat.active .examples { max-height: 80px; }
 .fi-cat .glyph { position: absolute; top: 16px; left: 16px; width: 44px; height: 44px; border-radius: 12px; background: rgba(255,252,246,0.92); display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 400ms cubic-bezier(0.34,1.56,0.64,1); }
 .fi-cat:hover .glyph { transform: rotate(-8deg) scale(1.1); }
-.fi-cat .arrow { position: absolute; top: 16px; right: 16px; min-height: 36px; border-radius: 999px; padding: 0 12px; background: var(--secondary); display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--primary-dark); font-size: 12px; font-weight: 800; opacity: 1; transform: translateY(0); transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), background 200ms, color 200ms; }
-.fi-cat:hover .arrow, .fi-cat.active .arrow { transform: translateY(-1px); }
-.fi-cat.active .arrow { background: var(--success-soft); color: var(--success); }
-.fi-cat .arrow .cat-action-label { line-height: 1; }
 .fi-cat-expanded {
   position: absolute; z-index: 4; left: 20px; right: 20px; bottom: 20px;
   display: flex; flex-direction: column; gap: 14px; color: rgba(255,252,246,0.9);
@@ -399,7 +508,7 @@ export default function LandingScreen({
 }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('MOVING');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const closeMenus = () => {
     setMobileMenuOpen(false);
   };
@@ -449,30 +558,6 @@ export default function LandingScreen({
   }, []);
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleMouseMove = (e: MouseEvent) => {
-      if (reduceMotion.matches) return;
-      const stage = document.querySelector<HTMLElement>('.fi-hero-stage');
-      if (!stage) return;
-      const rect = stage.getBoundingClientRect();
-      const dx = (e.clientX - (rect.left + rect.width / 2)) / rect.width;
-      const dy = (e.clientY - (rect.top + rect.height / 2)) / rect.height;
-      document.querySelectorAll<HTMLElement>('.fi-card').forEach((card, i) => {
-        const factor = (i + 1) * 5;
-        card.style.setProperty('translate', `${dx * factor}px ${dy * factor}px`);
-      });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      document.querySelectorAll<HTMLElement>('.fi-card').forEach((card) => {
-        card.style.removeProperty('translate');
-      });
-    };
-  }, []);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMenus();
     };
@@ -481,6 +566,7 @@ export default function LandingScreen({
   }, []);
 
   const logoSrc = assetSrc(imgLogo);
+  const workerSrc = assetSrc(imgWorker);
 
   return (
     <div id="fixit-landing">
@@ -603,62 +689,67 @@ export default function LandingScreen({
           </div>
         </div>
 
-        {/* Right: floating cards */}
+        {/* Right: animated worker */}
         <div className="fi-hero-stage">
-          <div className="fi-pill p1">
-            <span className="dot" />3 new bids
-          </div>
-
-          <button type="button" className="fi-card t1" aria-label="Post a plumbing task for a leaking kitchen sink" onClick={() => handlePostTaskCta('PLUMBING')}>
-            <span className="card-row">
-              <span className="cat-icon" style={{ background: '#E4F2FB', color: '#2E86C1' }}>
-                <LandingIcon name="water-pump" />
-              </span>
-              <span>
-                <span className="card-title">Fix leaking kitchen sink</span>
-                <span className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Florentin · posted 2h ago</span>
-              </span>
-            </span>
-            <span className="card-foot">
-              <span className="card-price">₪320</span>
-              <span className="card-bid">3 new offers</span>
-            </span>
-          </button>
-
-          <button type="button" className="fi-card t2" aria-label="Post an assembly task for an IKEA wardrobe" onClick={() => handlePostTaskCta('ASSEMBLY')}>
-            <span className="card-row">
-              <span className="cat-icon" style={{ background: '#EFECFF', color: '#7B61FF' }}>
-                <LandingIcon name="hammer-screwdriver" />
-              </span>
-              <span>
-                <span className="card-title">Assemble IKEA wardrobe</span>
-                <span className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Hadar, Haifa</span>
-              </span>
-            </span>
-            <span className="card-foot">
-              <span className="card-price">₪450</span>
-              <span className="card-bid" style={{ background: '#E5EFE6', color: '#517A58' }}><LandingIcon name="check" size={12} /> Hired Yossi</span>
-            </span>
-          </button>
-
-          <button type="button" className="fi-card t3" aria-label="Post an electricity task for ceiling lights" onClick={() => handlePostTaskCta('ELECTRICITY')}>
-            <span className="card-row">
-              <span className="cat-icon" style={{ background: '#FEF3D7', color: '#D4900A' }}>
-                <LandingIcon name="lightning-bolt" />
-              </span>
-              <span>
-                <span className="card-title">Install 3 ceiling lights</span>
-                <span className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Ramat Gan · posted 30m ago</span>
-              </span>
-            </span>
-            <span className="card-foot">
-              <span className="card-price">₪680</span>
-              <span className="card-bid">5 new offers</span>
-            </span>
-          </button>
-
-          <div className="fi-pill p2">
-            <LandingIcon name="lightning-bolt" size={16} /> Avg. response in <strong style={{ color: '#1C3C56' }}>12 min</strong>
+          <div className="fi-worker" role="img" aria-label="Animated FixIt worker running to a job">
+            <span className="frame-corner tl" />
+            <span className="frame-corner tr" />
+            <span className="frame-corner bl" />
+            <span className="frame-corner br" />
+            <div className="fi-worker-label">Fixer on duty</div>
+            <div className="worker-scene">
+              <div className="worker-ground" />
+              <div className="worker-ticks" aria-hidden="true">
+                {Array.from({ length: 8 }, (_, index) => (
+                  <i key={index} style={{ left: `${8 + index * 13}%`, animationDelay: `${-index * 0.15}s` }} />
+                ))}
+              </div>
+              <div className="worker-lines" aria-hidden="true">
+                {[
+                  { top: '18%', left: '58%', width: 130 },
+                  { top: '28%', left: '64%', width: 190 },
+                  { top: '42%', left: '60%', width: 150 },
+                  { top: '57%', left: '67%', width: 210 },
+                  { top: '69%', left: '56%', width: 120 },
+                  { top: '78%', left: '62%', width: 170 },
+                ].map((line, index) => (
+                  <i
+                    key={`${line.top}-${line.left}`}
+                    style={{
+                      top: line.top,
+                      left: line.left,
+                      width: line.width,
+                      animationDelay: `${-index * 0.22}s`,
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="worker-shadow" />
+              <div className="runner-wrap">
+                <img src={workerSrc} alt="" />
+              </div>
+              <div className="worker-sparks" aria-hidden="true">
+                {[
+                  { left: '45%', top: '68%' },
+                  { left: '50%', top: '74%' },
+                  { left: '55%', top: '70%' },
+                  { left: '60%', top: '77%' },
+                  { left: '52%', top: '82%' },
+                ].map((spark, index) => (
+                  <span
+                    key={`${spark.left}-${spark.top}`}
+                    style={{ left: spark.left, top: spark.top, animationDelay: `${-index * 0.12}s` }}
+                  />
+                ))}
+              </div>
+              <div className="worker-pow">GO!</div>
+            </div>
+            <div className="worker-speedo" aria-hidden="true">
+              <span className="slow">02 mph</span>
+              <span className="fast">48 mph</span>
+              <span className="track"><span className="fill" /></span>
+              <span>max</span>
+            </div>
           </div>
         </div>
       </section>
@@ -737,17 +828,13 @@ export default function LandingScreen({
                     type="button"
                     className="fi-cat-select"
                     aria-pressed={selected}
-                    aria-label={selected ? `${cat.label} selected` : `View details for ${cat.label}`}
-                    onClick={() => setSelectedCategory((current) => current === cat.value ? current : cat.value)}
+                    aria-label={selected ? `Collapse ${cat.label}` : `Expand ${cat.label}`}
+                    onClick={() => setSelectedCategory((current) => current === cat.value ? null : cat.value)}
                   >
                     <span className="img" style={{ backgroundImage: `url(${src})` }} />
                     <span className="overlay" />
                     <span className="glyph" style={{ color: cat.color }}>
                       <LandingIcon name={cat.icon} />
-                    </span>
-                    <span className="arrow">
-                      <span className="cat-action-label">{selected ? 'Selected' : 'View details'}</span>
-                      <LandingIcon name={selected ? 'check' : 'plus'} size={16} />
                     </span>
                     <span className="body">
                       <span className="name">{cat.label}</span>
