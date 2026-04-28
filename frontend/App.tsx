@@ -3,6 +3,7 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -23,11 +24,14 @@ import {
 
 type SignedOutSurface = 'landing' | 'auth';
 
+const USE_SIGNED_OUT_LANDING = Platform.OS === 'web';
+const DEFAULT_SIGNED_OUT_SURFACE: SignedOutSurface = USE_SIGNED_OUT_LANDING ? 'landing' : 'auth';
+
 const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
 
 function RootContent() {
   const authState = useAuthBootstrap();
-  const [signedOutSurface, setSignedOutSurface] = useState<SignedOutSurface>('landing');
+  const [signedOutSurface, setSignedOutSurface] = useState<SignedOutSurface>(DEFAULT_SIGNED_OUT_SURFACE);
   const [authMode, setAuthMode] = useState<LandingAuthMode>('login');
   const [pendingLandingIntent, setPendingLandingIntent] = useState<LandingIntent | null>(null);
   const [navigationReady, setNavigationReady] = useState(false);
@@ -51,7 +55,7 @@ function RootContent() {
 
     applyLandingIntent(navigationRef, pendingLandingIntent);
     setPendingLandingIntent(null);
-    setSignedOutSurface('landing');
+    setSignedOutSurface(DEFAULT_SIGNED_OUT_SURFACE);
   }, [authState.status, navigationReady, navigationRef, pendingLandingIntent]);
 
   const requireAuth = useCallback((mode: LandingAuthMode, intent: LandingIntent = { kind: 'dashboard' }) => {
@@ -62,11 +66,12 @@ function RootContent() {
 
   const handleAuthLogOut = useCallback(async () => {
     setPendingLandingIntent(null);
-    setSignedOutSurface('landing');
+    setAuthMode('login');
+    setSignedOutSurface(DEFAULT_SIGNED_OUT_SURFACE);
     await authState.logOut();
   }, [authState.logOut]);
 
-  if (authState.status === 'signed_out' && signedOutSurface === 'landing') {
+  if (USE_SIGNED_OUT_LANDING && authState.status === 'signed_out' && signedOutSurface === 'landing') {
     return (
       <LandingScreenWithNavigationProps
         isSignedIn={false}
@@ -89,6 +94,10 @@ function RootContent() {
     );
   }
 
+  const authInitialMode: LandingAuthMode | 'welcome' = USE_SIGNED_OUT_LANDING
+    ? signedOutSurface === 'auth' ? authMode : 'welcome'
+    : 'login';
+
   if (authState.status !== 'ready') {
     return (
       <AuthScreen
@@ -100,7 +109,7 @@ function RootContent() {
         onSyncLocalAccount={authState.syncLocalAccount}
         onRetry={authState.retry}
         onLogOut={handleAuthLogOut}
-        initialMode={signedOutSurface === 'auth' ? authMode : 'welcome'}
+        initialMode={authInitialMode}
       />
     );
   }
