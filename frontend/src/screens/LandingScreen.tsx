@@ -98,7 +98,7 @@ export default function LandingScreen({
   onBecomeFixer,
   onFixerHome,
   onFixerBids,
-  onFixerProfile,
+  onFixerProfile: _onFixerProfile,
 }: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 860;
@@ -504,7 +504,7 @@ export default function LandingScreen({
               Start with the category selected, then add the task details that will help Fixers bid.
             </Text>
             <FButton onPress={() => handleCategoryTask(selectedCategoryMeta.value)} icon="plus" fullWidth>
-              Post a {selectedCategoryMeta.label} Task
+              {`Post a ${selectedCategoryMeta.label} Task`}
             </FButton>
           </View>
         </View>

@@ -109,7 +109,8 @@ export function applyLandingIntent(
 ) {
   routeLandingIntent(
     {
-      navigate: (screen, params) => navigation.navigate(screen as never, params as never),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      navigate: (screen, params) => (navigation.navigate as any)(screen, params),
     },
     intent,
   );

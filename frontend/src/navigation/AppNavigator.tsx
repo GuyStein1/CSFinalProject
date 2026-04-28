@@ -85,30 +85,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('CreateTask');
   };
 
-  const openRequesterHome = () => {
-    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
-  };
-
-  const openRequesterTasks = () => {
-    navigation.navigate('RequesterMode', { screen: 'MyTasks' });
-  };
-
-  const openFixerHome = () => {
-    navigation.navigate('FixerMode', { screen: 'FindJobs' });
-  };
-
-  const openFixerBids = () => {
-    navigation.navigate('FixerMode', { screen: 'MyBids' });
-  };
-
-  const openFixerProfile = () => {
-    navigation.navigate('FixerMode', { screen: 'FixerProfile' });
-  };
-
-  const openCreateTask = () => {
-    openStackScreen('CreateTask');
-  };
-
   const openRequesterDashboard = () => {
     navigation.navigate('RequesterMode', { screen: 'Dashboard' });
   };
@@ -278,6 +254,30 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
 
   const openSettings = () => {
     openStackScreen('Settings');
+  };
+
+  const openRequesterHome = () => {
+    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
+  };
+
+  const openRequesterTasks = () => {
+    navigation.navigate('RequesterMode', { screen: 'MyTasks' });
+  };
+
+  const openCreateTask = () => {
+    openStackScreen('CreateTask');
+  };
+
+  const openFixerHome = () => {
+    navigation.navigate('FixerMode', { screen: 'FindJobs' });
+  };
+
+  const openFixerBids = () => {
+    navigation.navigate('FixerMode', { screen: 'MyBids' });
+  };
+
+  const openFixerProfile = () => {
+    navigation.navigate('FixerMode', { screen: 'FixerProfile' });
   };
 
   const openAccount = () => {

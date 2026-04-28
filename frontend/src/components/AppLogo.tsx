@@ -11,7 +11,8 @@ import { Text } from 'react-native-paper';
 import { brandColors, spacing } from '../theme';
 
 const MARK_ASPECT_RATIO = 436 / 291;
-const transparentMark = require('../../assets/fixit-logo-mark-transparent.png');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const transparentMark = require('../../assets/fixit-logo-mark-transparent.png') as number;
 
 type AppLogoVariant = 'mark' | 'lockup' | 'wordmark' | 'heroSilhouette';
 
