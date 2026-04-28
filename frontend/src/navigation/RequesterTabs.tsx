@@ -15,6 +15,14 @@ function MessagesScreen() {
   return <PlaceholderScreen title="Messages" />;
 }
 
+function TabBarBackground() {
+  return (
+    <>
+      <View style={[styles.modeStrip, { backgroundColor: brandColors.primary }]} />
+    </>
+  );
+}
+
 function TabIcon({ name, color, size, focused }: { name: string; color: string; size: number; focused: boolean }) {
   return (
     <View style={styles.tabIconWrapper}>
@@ -37,6 +45,7 @@ export default function RequesterTabs() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
+        tabBarBackground: () => <TabBarBackground />,
       }}
     >
       <Tab.Screen
@@ -84,9 +93,16 @@ export default function RequesterTabs() {
 }
 
 const styles = StyleSheet.create({
+  modeStrip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+  },
   tabBar: {
     height: 68,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.sm + 3,
     paddingBottom: spacing.sm + 2,
     borderTopWidth: 0,
     backgroundColor: brandColors.surface,

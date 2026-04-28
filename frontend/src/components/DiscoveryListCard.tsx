@@ -51,6 +51,7 @@ export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardPr
         { opacity: pressed ? 0.92 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
       ]}
     >
+      <View style={[styles.accentBar, { backgroundColor: catMeta.color }]} />
       <View style={styles.topRow}>
         <View style={[styles.iconCircle, { backgroundColor: catMeta.bg }]}>
           <MaterialCommunityIcons name={catMeta.icon as never} size={20} color={catMeta.color} />
@@ -97,7 +98,16 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     backgroundColor: brandColors.surface,
     padding: spacing.lg,
+    paddingLeft: spacing.lg + 4,
     gap: spacing.md,
+    overflow: 'hidden',
+  },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   topRow: {
     flexDirection: 'row',

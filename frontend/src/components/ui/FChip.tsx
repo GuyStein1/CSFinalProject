@@ -36,14 +36,14 @@ export default function FChip({
         <MaterialCommunityIcons
           name={icon as never}
           size={compact ? 14 : 16}
-          color={selected ? brandColors.primary : brandColors.textMuted}
+          color={selected ? brandColors.textOnDark : brandColors.textMuted}
           style={styles.icon}
         />
       )}
       <Text
         style={[
           compact ? typography.caption : typography.label,
-          { color: selected ? brandColors.primary : brandColors.textMuted },
+          { color: selected ? brandColors.textOnDark : brandColors.textMuted },
         ]}
       >
         {label}
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
   },
   selected: {
-    backgroundColor: brandColors.infoSoft,
-    borderColor: brandColors.primaryMuted,
+    backgroundColor: brandColors.primary,
+    borderColor: brandColors.primary,
   },
   unselected: {
     backgroundColor: brandColors.surfaceAlt,
