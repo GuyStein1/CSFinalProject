@@ -569,6 +569,8 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.primaryDark,
     borderRadius: radii.xl,
     padding: spacing.lg,
+    flexGrow: 0,
+    flexShrink: 0,
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,

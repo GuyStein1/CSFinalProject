@@ -671,6 +671,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,

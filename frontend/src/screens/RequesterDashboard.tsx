@@ -432,8 +432,10 @@ const styles = StyleSheet.create({
     paddingBottom: 88,
   },
   hero: {
-    paddingTop: spacing.xxxl,
-    paddingBottom: spacing.huge,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    flexGrow: 0,
+    flexShrink: 0,
     overflow: 'hidden',
   },
   heroInner: {
@@ -443,7 +445,7 @@ const styles = StyleSheet.create({
     gap: spacing.xxl,
   },
   heroCopy: {
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   heroCopyWide: {
     maxWidth: 610,

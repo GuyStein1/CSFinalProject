@@ -619,6 +619,8 @@ const styles = StyleSheet.create({
   headerCard: {
     borderRadius: radii.xl,
     padding: spacing.xl,
+    flexGrow: 0,
+    flexShrink: 0,
     overflow: 'hidden',
     ...shadows.md,
   },

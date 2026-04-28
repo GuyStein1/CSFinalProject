@@ -66,6 +66,7 @@ function NotifBadge({ count }: { count: number }) {
 // ─── Desktop header (wide screens / web) ─────────────────────────────────────
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
+  const topInset = insets.top > 0 ? insets.top : spacing.sm;
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
@@ -113,7 +114,10 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     <View
       style={[
         styles.desktopBar,
-        { paddingTop: insets.top > 0 ? insets.top : spacing.sm },
+        {
+          height: topInset + 64,
+          paddingTop: topInset,
+        },
       ]}
     >
       <View style={styles.desktopBarInner}>
@@ -236,6 +240,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 // ─── Mobile header (narrow screens / native) ──────────────────────────────────
 function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
+  const topInset = insets.top + spacing.sm;
   const [menuOpen, setMenuOpen] = useState(false);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
@@ -298,7 +303,13 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         colors={['#050D18', '#0C1E33']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}
+        style={[
+          styles.topBar,
+          {
+            height: topInset + 56,
+            paddingTop: topInset,
+          },
+        ]}
       >
         {/* hamburger — left */}
         <Pressable
@@ -492,6 +503,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   logoCenter: {
     position: 'absolute',
@@ -516,6 +529,9 @@ const styles = StyleSheet.create({
 
   // ── Desktop header ────────────────────────────────────────────
   desktopBar: {
+    flexGrow: 0,
+    flexShrink: 0,
+    justifyContent: 'center',
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.sm,
     backgroundColor: brandColors.surface,
