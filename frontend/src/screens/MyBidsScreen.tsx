@@ -18,6 +18,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
 import useBids, { type BidStatus, type UserBid } from '../hooks/useBids';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { getCategoryMeta } from '../utils/categoryMetadata';
 
 type TabFilter = 'ALL' | BidStatus | 'COMPLETED';
 
@@ -29,18 +30,6 @@ const TABS: { value: TabFilter; label: string }[] = [
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'WITHDRAWN', label: 'Withdrawn' },
 ];
-
-const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
-  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
-  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
-  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
-  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
-  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
-  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
-  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
-  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
-};
-const DEFAULT_CAT_META = { icon: 'wrench', color: '#7A8B96', bg: brandColors.surfaceAlt };
 
 const SWIPE_THRESHOLD = -80;
 const WITHDRAW_BUTTON_WIDTH = 90;
@@ -65,7 +54,7 @@ interface BidCardProps {
 function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted }: BidCardProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isPending = bid.status === 'PENDING';
-  const catMeta = CATEGORY_META[bid.task.category] ?? DEFAULT_CAT_META;
+  const catMeta = getCategoryMeta(bid.task.category);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -138,7 +127,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             <View style={styles.priceRow}>
               <Text style={[typography.caption, { color: brandColors.textMuted }]}>Your offer</Text>
               <View style={styles.priceTag}>
-                <Text style={[typography.h3, { color: brandColors.primary }]}>₪{bid.offered_price}</Text>
+                <Text style={[typography.h3, { color: brandColors.secondaryDark }]}>₪{bid.offered_price}</Text>
               </View>
             </View>
             <Text style={[typography.bodySm, styles.pitch]} numberOfLines={1}>
@@ -607,8 +596,8 @@ const styles = StyleSheet.create({
   priceTag: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
-    backgroundColor: brandColors.infoSoft,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
   },
   pitch: {
     color: brandColors.textMuted,
@@ -634,17 +623,20 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
   defaultActionBtn: {
     borderColor: brandColors.outline,
+    backgroundColor: brandColors.surfaceAlt,
   },
   dangerActionBtn: {
     borderColor: brandColors.danger,
+    backgroundColor: brandColors.dangerSoft,
   },
   successActionBtn: {
     borderColor: brandColors.success,
+    backgroundColor: brandColors.successSoft,
   },
   monthRow: {
     paddingHorizontal: spacing.lg,

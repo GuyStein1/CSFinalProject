@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Platform } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -14,12 +14,26 @@ import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
 import GlobalCelebration from './src/components/GlobalCelebration';
 
+type SignedOutSurface = 'landing' | 'login';
+
 function RootContent() {
   const authState = useAuthBootstrap();
-  const [showAuth, setShowAuth] = useState(false);
+  const [signedOutSurface, setSignedOutSurface] = useState<SignedOutSurface>('landing');
 
-  if (Platform.OS === 'web' && authState.status === 'signed_out' && !showAuth) {
-    return <LandingScreen onGetStarted={() => setShowAuth(true)} />;
+  useEffect(() => {
+    if (authState.status === 'ready' && signedOutSurface !== 'landing') {
+      setSignedOutSurface('landing');
+    }
+  }, [authState.status, signedOutSurface]);
+
+  if (Platform.OS === 'web' && authState.status === 'signed_out' && signedOutSurface === 'landing') {
+    return (
+      <LandingScreen
+        isSignedIn={false}
+        onLogin={() => setSignedOutSurface('login')}
+        onPostTask={() => setSignedOutSurface('login')}
+      />
+    );
   }
 
   if (authState.status !== 'ready') {
@@ -33,6 +47,7 @@ function RootContent() {
         onSyncLocalAccount={authState.syncLocalAccount}
         onRetry={authState.retry}
         onLogOut={authState.logOut}
+        initialMode={signedOutSurface === 'login' ? 'login' : 'welcome'}
       />
     );
   }

@@ -9,8 +9,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
 import { FSectionHeader } from '../components/ui';
 import { brandColors, spacing, shadows, radii } from '../theme';
-
-type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
+import type { Category } from '../utils/categoryMetadata';
 
 interface Task {
   id: string;

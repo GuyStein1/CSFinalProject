@@ -17,17 +17,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
-
-const SPECIALIZATIONS = [
-  { value: 'ASSEMBLY', label: 'Assembly', icon: 'tools' },
-  { value: 'MOUNTING', label: 'Mounting', icon: 'wall' },
-  { value: 'MOVING', label: 'Moving', icon: 'truck-outline' },
-  { value: 'PAINTING', label: 'Painting', icon: 'brush-outline' },
-  { value: 'PLUMBING', label: 'Plumbing', icon: 'pipe-wrench' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt-outline' },
-  { value: 'OUTDOORS', label: 'Outdoors', icon: 'tree-outline' },
-  { value: 'CLEANING', label: 'Cleaning', icon: 'broom' },
-] as const;
+import { CATEGORY_LIST } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
   id: string;
@@ -266,7 +256,7 @@ export default function FixerProfileScreen() {
           What do you work on?
         </Text>
         <View style={styles.chipsWrap}>
-          {SPECIALIZATIONS.map(s => (
+          {CATEGORY_LIST.map(s => (
             <FChip
               key={s.value}
               label={s.label}

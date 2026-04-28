@@ -24,19 +24,7 @@ import { uploadImage } from '../utils/uploadImage';
 import LocationMap from '../components/LocationMap';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-
-type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
-
-const CATEGORIES: { value: Category; label: string; icon: string; color: string; bg: string }[] = [
-  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
-  { value: 'MOUNTING',    label: 'Mounting',    icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
-  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
-  { value: 'CLEANING',    label: 'Cleaning',    icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
-];
+import { CATEGORY_LIST, type Category } from '../utils/categoryMetadata';
 
 const STEP_ICONS = ['text-box-outline', 'camera-outline', 'shape-outline', 'cash-multiple', 'map-marker-outline'];
 const STEP_LABELS = ['Details', 'Photos', 'Category', 'Budget', 'Location'];
@@ -464,7 +452,7 @@ export default function CreateTask({ navigation, route }: Props) {
             <Text style={[typography.h2, styles.stepTitle]}>Choose a category</Text>
             <Text style={[typography.bodySm, styles.stepSubtitle]}>Helps fixers find your task</Text>
             <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => {
+              {CATEGORY_LIST.map((cat) => {
                 const isSelected = category === cat.value;
                 return (
                   <Pressable
@@ -709,7 +697,7 @@ export default function CreateTask({ navigation, route }: Props) {
 
           <View style={styles.reviewRows}>
             <ReviewRow icon="text-box-outline" label="Title" value={title} />
-            <ReviewRow icon="shape-outline" label="Category" value={CATEGORIES.find((c) => c.value === category)?.label ?? ''} />
+            <ReviewRow icon="shape-outline" label="Category" value={CATEGORY_LIST.find((c) => c.value === category)?.label ?? ''} />
             <ReviewRow icon="cash-multiple" label="Budget" value={budgetType === 'fixed' ? `₪${price}` : 'Quote Required'} />
             <ReviewRow icon="map-marker-outline" label="Location" value={address} />
             <ReviewRow icon="camera-outline" label="Photos" value={`${photos.length} photo(s)`} />

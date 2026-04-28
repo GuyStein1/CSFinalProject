@@ -3,21 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import StatusBadge from './StatusBadge';
+import { getCategoryMetadata, type Category } from '../constants/categories';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
-type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
-
-const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
-  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
-  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
-  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
-  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
-  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
-  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
-  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
-  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
-};
 
 interface TaskCardProps {
   title: string;
@@ -52,7 +41,7 @@ export default function TaskCard({
   onEdit,
   muted = false,
 }: TaskCardProps) {
-  const meta = CATEGORY_META[category] ?? { icon: 'wrench', color: '#7A8B96', bg: '#E9E2D5' };
+  const meta = getCategoryMetadata(category);
   const hasActions = onDelete || onReactivate || onCancel || onMarkCompleted || onEdit;
 
   return (
@@ -74,7 +63,7 @@ export default function TaskCard({
 
       <View style={styles.topRow}>
         <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
-          <MaterialCommunityIcons name={meta.icon as never} size={22} color={meta.color} />
+          <MaterialCommunityIcons name={meta.icon} size={22} color={meta.color} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>

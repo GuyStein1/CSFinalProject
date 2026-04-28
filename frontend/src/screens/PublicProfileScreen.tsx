@@ -14,6 +14,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
+import { getCategoryMeta } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
   id: string;
@@ -48,17 +49,6 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
     </View>
   );
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  ASSEMBLY: 'Assembly',
-  MOUNTING: 'Mounting',
-  MOVING: 'Moving',
-  PAINTING: 'Painting',
-  PLUMBING: 'Plumbing',
-  ELECTRICITY: 'Electricity',
-  OUTDOORS: 'Outdoors',
-  CLEANING: 'Cleaning',
-};
 
 function ReviewCard({ review }: { review: Review }) {
   const date = new Date(review.created_at).toLocaleDateString(undefined, {
@@ -185,13 +175,17 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {/* Specializations */}
           {profile?.specializations && profile.specializations.length > 0 && (
             <View style={styles.specRow}>
-              {profile.specializations.map((s) => (
-                <View key={s} style={styles.specChip}>
-                  <Text style={[typography.caption, { color: brandColors.primary }]}>
-                    {CATEGORY_LABELS[s] ?? s}
-                  </Text>
-                </View>
-              ))}
+              {profile.specializations.map((s) => {
+                const meta = getCategoryMeta(s);
+                return (
+                  <View key={s} style={[styles.specChip, { backgroundColor: meta.bg }]}>
+                    <MaterialCommunityIcons name={meta.icon as never} size={14} color={meta.color} />
+                    <Text style={[typography.caption, { color: meta.color }]}>
+                      {meta.label}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           )}
 
@@ -268,10 +262,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   specChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: brandColors.infoSoft,
   },
   divider: {
     width: '100%',

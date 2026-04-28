@@ -6,7 +6,6 @@ import {
   Pressable,
   Image,
   useWindowDimensions,
-  ImageSourcePropType,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,50 +14,19 @@ import { sendEmailVerification } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-
-type Category =
-  | 'ASSEMBLY'
-  | 'MOUNTING'
-  | 'MOVING'
-  | 'PAINTING'
-  | 'PLUMBING'
-  | 'ELECTRICITY'
-  | 'OUTDOORS'
-  | 'CLEANING';
+import {
+  CATEGORY_LIST,
+  CATEGORY_METADATA,
+  type Category,
+} from '../utils/categoryMetadata';
 
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
 
-interface CategoryInfo {
-  value: Category;
-  label: string;
-  icon: string;
-  image: ImageSourcePropType;
-  desc: string;
-  color: string;
-  soft: string;
-}
+const HERO_CATEGORY = CATEGORY_METADATA.MOVING;
 
-const HERO_CATEGORY: CategoryInfo = {
-  value: 'MOVING',
-  label: 'Moving',
-  icon: 'truck-delivery',
-  image: require('../../assets/Moving.jpg'),
-  desc: 'Apartment, office, or single piece',
-  color: '#1E8449',
-  soft: '#E6F4EC',
-};
-
-const GRID_CATEGORIES: CategoryInfo[] = [
-  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'hammer-screwdriver', image: require('../../assets/Assembly.jpg'),    desc: '', color: '#7B61FF', soft: '#EFECFF' },
-  { value: 'MOUNTING',    label: 'Mounting',    icon: 'television',         image: require('../../assets/Mounting.jpg'),    desc: '', color: '#0D7C6E', soft: '#E0F5F3' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'brush',              image: require('../../assets/Painting.jpg'),    desc: '', color: '#C0392B', soft: '#FCECEA' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water-pump',         image: require('../../assets/Plumbing.jpg'),    desc: '', color: '#2E86C1', soft: '#E4F2FB' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt',     image: require('../../assets/Electricity.jpg'), desc: '', color: '#D4900A', soft: '#FEF3D7' },
-  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'tree-outline',       image: require('../../assets/Outdoors.jpg'),    desc: '', color: '#27AE60', soft: '#E8F8EF' },
-  { value: 'CLEANING',    label: 'Cleaning',    icon: 'broom',              image: require('../../assets/Cleaning.jpg'),    desc: '', color: '#8E44AD', soft: '#F4ECF7' },
-];
+const GRID_CATEGORIES = CATEGORY_LIST.filter((cat) => cat.value !== HERO_CATEGORY.value);
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -179,12 +147,12 @@ export default function RequesterDashboard({ navigation }: Props) {
           >
             <View style={styles.heroCardFooter}>
               <View style={[styles.catIconBadge, { backgroundColor: HERO_CATEGORY.color }]}>
-                <MaterialCommunityIcons name={HERO_CATEGORY.icon as never} size={18} color="#fff" />
+                <MaterialCommunityIcons name={HERO_CATEGORY.icon as never} size={18} color={brandColors.white} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.heroCardEyebrow}>FEATURED</Text>
                 <Text style={styles.heroCardTitle}>{HERO_CATEGORY.label}</Text>
-                <Text style={styles.heroCardDesc}>{HERO_CATEGORY.desc}</Text>
+                <Text style={styles.heroCardDesc}>{HERO_CATEGORY.description}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -200,14 +168,14 @@ export default function RequesterDashboard({ navigation }: Props) {
                 styles.gridCell,
                 {
                   width: cellWidth,
-                  backgroundColor: cat.soft,
+                  backgroundColor: cat.bg,
                   opacity: pressed ? 0.9 : 1,
                   transform: [{ scale: pressed ? 0.97 : 1 }],
                 },
               ]}
             >
               <View style={[styles.gridIconCircle, { backgroundColor: cat.color }]}>
-                <MaterialCommunityIcons name={cat.icon as never} size={20} color="#fff" />
+                <MaterialCommunityIcons name={cat.icon as never} size={20} color={brandColors.white} />
               </View>
               <Text style={[styles.gridCellLabel, { color: cat.color }]}>{cat.label}</Text>
             </Pressable>
@@ -267,7 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     lineHeight: 34,
-    letterSpacing: -0.3,
+    letterSpacing: 0,
     color: brandColors.textOnDark,
     marginTop: 2,
   },
@@ -373,7 +341,7 @@ const styles = StyleSheet.create({
   heroCardTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#fff',
+    color: brandColors.white,
     marginTop: 2,
   },
   heroCardDesc: {

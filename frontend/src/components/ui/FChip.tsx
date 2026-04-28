@@ -4,6 +4,8 @@ import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { brandColors, radii, spacing, typography } from '../../theme';
 
+type MaterialCommunityIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
 interface FChipProps {
   label: string;
   selected?: boolean;
@@ -34,7 +36,7 @@ export default function FChip({
     >
       {icon && (
         <MaterialCommunityIcons
-          name={icon as never}
+          name={icon as MaterialCommunityIconName}
           size={compact ? 14 : 16}
           color={selected ? brandColors.textOnDark : brandColors.textMuted}
           style={styles.icon}

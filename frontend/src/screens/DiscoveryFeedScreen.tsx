@@ -389,7 +389,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               Share your location?
             </Text>
             <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.md }]}>
-              Fixlt needs your location to show you tasks nearby. You can change this in Settings.
+              FixIt needs your location to show you tasks nearby. You can change this in Settings.
             </Text>
             <View style={styles.modalActions}>
               <FButton variant="outline" onPress={handleSkipLocation} style={{ flex: 1 }}>
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs + 1,
-    backgroundColor: brandColors.successSoft ?? brandColors.surfaceAlt,
+    backgroundColor: brandColors.successSoft,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
   },
@@ -680,14 +680,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs + 1,
-    backgroundColor: brandColors.dangerSoft ?? '#fff0f0',
+    backgroundColor: brandColors.dangerSoft,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
   },
   searchGoBtn: {
     width: 32,
     height: 32,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     backgroundColor: brandColors.primary,
     alignItems: 'center',
     justifyContent: 'center',

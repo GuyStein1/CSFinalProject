@@ -8,7 +8,6 @@ import {
   Animated,
   useWindowDimensions,
   Platform,
-  ImageSourcePropType,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,35 +15,21 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { CATEGORY_LIST, CATEGORY_METADATA } from '../constants/categories';
 
 interface Props {
-  onGetStarted: () => void;
+  isSignedIn?: boolean;
+  onLogin?: () => void;
+  onPostTask: () => void;
 }
 
-interface CategoryInfo {
-  label: string;
-  icon: string;
-  image: ImageSourcePropType;
-  color: string;
-  soft: string;
-}
-
-const CATEGORIES: CategoryInfo[] = [
-  { label: 'Assembly',    icon: 'hammer-screwdriver', image: require('../../assets/Assembly.jpg'),    color: '#7B61FF', soft: '#EFECFF' },
-  { label: 'Mounting',    icon: 'television',          image: require('../../assets/Mounting.jpg'),    color: '#0D7C6E', soft: '#E0F5F3' },
-  { label: 'Moving',      icon: 'truck-delivery',      image: require('../../assets/Moving.jpg'),      color: '#1E8449', soft: '#E6F4EC' },
-  { label: 'Painting',    icon: 'brush',               image: require('../../assets/Painting.jpg'),    color: '#C0392B', soft: '#FCECEA' },
-  { label: 'Plumbing',    icon: 'water-pump',          image: require('../../assets/Plumbing.jpg'),    color: '#2E86C1', soft: '#E4F2FB' },
-  { label: 'Electricity', icon: 'lightning-bolt',      image: require('../../assets/Electricity.jpg'), color: '#D4900A', soft: '#FEF3D7' },
-  { label: 'Outdoors',    icon: 'tree-outline',        image: require('../../assets/Outdoors.jpg'),    color: '#27AE60', soft: '#E8F8EF' },
-  { label: 'Cleaning',    icon: 'broom',               image: require('../../assets/Cleaning.jpg'),    color: '#8E44AD', soft: '#F4ECF7' },
-];
+const CATEGORIES = CATEGORY_LIST;
 
 const SAMPLE_TASKS = [
-  { label: 'IKEA bed frame', category: 'Assembly',    icon: 'hammer-screwdriver', color: '#7B61FF', soft: '#EFECFF', price: '₪120' },
-  { label: 'TV mounting',    category: 'Mounting',    icon: 'television',          color: '#0D7C6E', soft: '#E0F5F3', price: '₪90'  },
-  { label: 'Office move',    category: 'Moving',      icon: 'truck-delivery',      color: '#1E8449', soft: '#E6F4EC', price: '₪350' },
-  { label: 'Leaky faucet',   category: 'Plumbing',    icon: 'water-pump',          color: '#2E86C1', soft: '#E4F2FB', price: '₪200' },
+  { label: 'IKEA bed frame', category: CATEGORY_METADATA.ASSEMBLY, price: '₪120' },
+  { label: 'TV mounting', category: CATEGORY_METADATA.MOUNTING, price: '₪90' },
+  { label: 'Office move', category: CATEGORY_METADATA.MOVING, price: '₪350' },
+  { label: 'Leaky faucet', category: CATEGORY_METADATA.PLUMBING, price: '₪200' },
 ];
 
 const STATS = [
@@ -82,7 +67,7 @@ function useFloat(delay = 0) {
   return anim;
 }
 
-export default function LandingScreen({ onGetStarted }: Props) {
+export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask }: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 860;
   const mid  = width >= 600;
@@ -116,7 +101,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
         <View style={[styles.navInner, wide && styles.navInnerWide]}>
           <View style={styles.navBrand}>
             <AppLogo iconOnly />
-            <Text style={styles.navWordmark}>FIXIT</Text>
+            <Text style={styles.navWordmark}>FixIt</Text>
           </View>
 
           {wide && (
@@ -128,7 +113,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
           )}
 
           <Pressable
-            onPress={onGetStarted}
+            onPress={onPostTask}
             style={({ pressed }) => [
               styles.navCta,
               { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
@@ -159,11 +144,11 @@ export default function LandingScreen({ onGetStarted }: Props) {
               Post any home task and get bids from skilled fixers near you — fast, transparent, and trusted.
             </Text>
             <View style={styles.heroActions}>
-              <FButton onPress={onGetStarted} variant="secondary" size="lg" icon="plus">
+              <FButton onPress={onPostTask} variant="secondary" size="lg" icon="plus">
                 Post a Task
               </FButton>
               <Pressable
-                onPress={onGetStarted}
+                onPress={onPostTask}
                 style={({ pressed }) => [styles.heroGhostBtn, { opacity: pressed ? 0.8 : 1 }]}
               >
                 <Text style={styles.heroGhostText}>Become a Fixer →</Text>
@@ -183,14 +168,14 @@ export default function LandingScreen({ onGetStarted }: Props) {
                     { transform: [{ translateY: floats[i] }] },
                   ]}
                 >
-                  <View style={[styles.taskCardIcon, { backgroundColor: task.soft }]}>
-                    <MaterialCommunityIcons name={task.icon as never} size={20} color={task.color} />
+                  <View style={[styles.taskCardIcon, { backgroundColor: task.category.soft }]}>
+                    <MaterialCommunityIcons name={task.category.icon} size={20} color={task.category.color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.taskCardLabel}>{task.label}</Text>
-                    <Text style={styles.taskCardCat}>{task.category}</Text>
+                    <Text style={styles.taskCardCat}>{task.category.label}</Text>
                   </View>
-                  <Text style={[styles.taskCardPrice, { color: task.color }]}>{task.price}</Text>
+                  <Text style={[styles.taskCardPrice, { color: task.category.color }]}>{task.price}</Text>
                 </Animated.View>
               ))}
             </View>
@@ -255,7 +240,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
           {CATEGORIES.map((cat) => (
             <Pressable
               key={cat.label}
-              onPress={onGetStarted}
+              onPress={onPostTask}
               style={({ pressed }) => [
                 styles.catCell,
                 { width: catCellW, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
@@ -290,7 +275,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <Text style={styles.fixerSub}>
               Join 1,800+ fixers already earning from tasks near them.
             </Text>
-            <FButton onPress={onGetStarted} variant="secondary" size="lg" icon="account-hard-hat">
+            <FButton onPress={isSignedIn ? onPostTask : (onLogin ?? onPostTask)} variant="secondary" size="lg" icon="account-hard-hat">
               Join as a Fixer
             </FButton>
           </View>
@@ -314,10 +299,10 @@ export default function LandingScreen({ onGetStarted }: Props) {
         <View style={[styles.footerInner, wide && styles.footerInnerWide]}>
           <View style={styles.footerBrand}>
             <AppLogo iconOnly />
-            <Text style={styles.footerWordmark}>FIXIT</Text>
+            <Text style={styles.footerWordmark}>FixIt</Text>
             <Text style={styles.footerTagline}>Your neighborhood. Fixed.</Text>
           </View>
-          <Text style={styles.footerCopy}>© 2025 Fixit · Built for CS Final Project</Text>
+          <Text style={styles.footerCopy}>© 2026 FixIt · Tel Aviv, Israel</Text>
         </View>
       </View>
     </ScrollView>

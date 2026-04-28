@@ -18,6 +18,7 @@ import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
+import LandingScreen from '../screens/LandingScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
@@ -52,6 +53,10 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     if (route.name !== nextRoute) navigation.navigate(nextRoute);
   };
 
+  const openLanding = () => {
+    navigation.getParent()?.navigate('Landing' as never);
+  };
+
   return (
     <View
       style={[
@@ -60,7 +65,14 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
       ]}
     >
       {/* Logo */}
-      <AppLogo compact />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go to FixIt home"
+        onPress={openLanding}
+        style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
+      >
+        <AppLogo compact />
+      </Pressable>
 
       {/* Spacer */}
       <View style={{ flex: 1 }} />
@@ -133,6 +145,10 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     if (route.name !== nextRoute) navigation.navigate(nextRoute);
   };
 
+  const openLanding = () => {
+    navigation.getParent()?.navigate('Landing' as never);
+  };
+
   return (
     <>
       <LinearGradient
@@ -147,8 +163,16 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         </Pressable>
 
         {/* logo — absolutely centered */}
-        <View style={styles.logoCenter} pointerEvents="none">
-          <AppLogo compact onDark />
+        <View style={styles.logoCenter} pointerEvents="box-none">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go to FixIt home"
+            onPress={openLanding}
+            hitSlop={8}
+            style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
+          >
+            <AppLogo compact onDark />
+          </Pressable>
         </View>
 
         {/* bell — right */}
@@ -198,11 +222,26 @@ function MainNavigator() {
   );
 }
 
+function SignedInLanding({
+  navigation,
+}: {
+  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
+}) {
+  return (
+    <LandingScreen
+      isSignedIn
+      onLogin={() => navigation.navigate('Main')}
+      onPostTask={() => navigation.navigate('CreateTask')}
+    />
+  );
+}
+
 export default function AppNavigator() {
   const theme = useTheme();
 
   return (
     <Stack.Navigator
+      initialRouteName="Main"
       screenOptions={{
         headerTintColor: theme.colors.primary,
         headerStyle: { backgroundColor: theme.colors.surface },
@@ -211,6 +250,7 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
+      <Stack.Screen name="Landing" component={SignedInLanding} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: 'Create Task' }} />
       <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: 'Task Details' }} />
@@ -247,6 +287,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,252,246,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoPressable: {
+    borderRadius: radii.md,
   },
 
   // ── Desktop header ────────────────────────────────────────────

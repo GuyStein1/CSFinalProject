@@ -56,9 +56,9 @@ export default function AppLogo({
     <View style={styles.row}>
       {iconShell}
       <View>
-        <Text style={[styles.wordmark, { color: wordmarkColor }]}>FIXIT</Text>
+        <Text style={[styles.wordmark, { color: wordmarkColor }]}>FixIt</Text>
         {showTagline && (
-          <Text style={[styles.tagline, { color: taglineColor }]}>YOUR HOME HERO</Text>
+          <Text style={[styles.tagline, { color: taglineColor }]}>YOUR NEIGHBORHOOD. FIXED.</Text>
         )}
       </View>
     </View>
@@ -103,13 +103,13 @@ const styles = StyleSheet.create({
   wordmark: {
     fontSize: 17,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    letterSpacing: -0.2,
     lineHeight: 20,
   },
   tagline: {
     marginTop: 1,
     fontSize: 7,
     fontWeight: '600',
-    letterSpacing: 1.8,
+    letterSpacing: 0.9,
   },
 });

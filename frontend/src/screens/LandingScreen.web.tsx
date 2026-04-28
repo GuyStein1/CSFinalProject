@@ -1,26 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { CATEGORY_METADATA, type Category } from '../constants/categories';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgLogo     = require('../../assets/fixit-logo.png') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgMoving      = require('../../assets/Moving.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgPlumbing    = require('../../assets/Plumbing.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgElectricity = require('../../assets/Electricity.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgAssembly    = require('../../assets/Assembly.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgMounting    = require('../../assets/Mounting.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgPainting    = require('../../assets/Painting.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgCleaning    = require('../../assets/Cleaning.jpg') as { uri?: string } | number;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgOutdoors    = require('../../assets/Outdoors.jpg') as { uri?: string } | number;
+const imgLogo     = require('../../assets/logo-without-text.png') as { uri?: string } | number;
 
 interface Props {
-  onGetStarted: () => void;
+  isSignedIn?: boolean;
+  onLogin?: () => void;
+  onPostTask: () => void;
 }
 
 // ── Full landing CSS ───────────────────────────────────────────────────────
@@ -45,7 +33,10 @@ const LANDING_CSS = `
 }
 
 * { box-sizing: border-box; }
-#fixit-landing { overflow-x: hidden; background: var(--background); color: var(--text-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+#fixit-landing { overflow-x: hidden; background: var(--background); color: var(--text-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+#fixit-landing ::selection { background: var(--secondary); color: var(--primary-dark); }
+.fi-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex: none; }
+.fi-inline-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 
 /* ── Keyframes ─────────────────────────────────────── */
 @keyframes ping { 75%,100% { transform: scale(2); opacity: 0; } }
@@ -251,11 +242,63 @@ const LANDING_CSS = `
 .fi-footer ul a:hover { color: var(--primary); }
 .fi-footer-bottom { max-width: 1200px; margin: 48px auto 0; padding-top: 24px; border-top: 1px solid var(--outline-light); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
 @media (max-width: 960px) { .fi-footer { padding: 40px 20px 24px; } .fi-footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; } }
+@media (max-width: 520px) {
+  .fi-hero-title { font-size: clamp(42px, 18vw, 64px); letter-spacing: -1.5px; }
+  .fi-hero-actions, .fi-dual-actions { align-items: stretch; }
+  .btn-hero, .btn-dual { width: 100%; justify-content: center; }
+  .fi-proof-inner { grid-template-columns: 1fr; }
+  .fi-cats-grid { grid-template-columns: 1fr; grid-auto-rows: 190px; }
+  .fi-dual-inner { padding: 32px 22px; border-radius: 24px; }
+  .fi-dual-visual { grid-template-columns: 1fr; }
+  .fi-footer-inner { grid-template-columns: 1fr; }
+  .fi-footer-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fixit-landing *, #fixit-landing *::before, #fixit-landing *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
 `;
 
+function LandingIcon({ name, size = 22 }: { name: string; size?: number }) {
+  return (
+    <span className="fi-icon" aria-hidden="true">
+      <MaterialCommunityIcons name={name as never} size={size} color="currentColor" />
+    </span>
+  );
+}
+
+function assetSrc(asset: { uri?: string } | number) {
+  return typeof asset === 'object' && asset.uri ? asset.uri : asset as unknown as string;
+}
+
+const LANDING_CATEGORY_ORDER: Category[] = [
+  'MOVING',
+  'PLUMBING',
+  'ELECTRICITY',
+  'ASSEMBLY',
+  'MOUNTING',
+  'PAINTING',
+  'CLEANING',
+  'OUTDOORS',
+];
+
+const CATEGORY_CARDS = LANDING_CATEGORY_ORDER.map((value) => CATEGORY_METADATA[value]);
+
+const FIXER_TILES = [
+  { icon: 'cash-multiple', title: 'Set your rate', desc: 'Bid your price on each job. No race-to-the-bottom.' },
+  { icon: 'map-marker-radius-outline', title: 'Work nearby', desc: 'Filter by distance — keep your commute short.' },
+  { icon: 'star-circle-outline', title: 'Build trust', desc: 'Reviews stack up. Top-rated Fixers earn a badge.' },
+  { icon: 'bank-transfer', title: 'Get paid fast', desc: 'Bit or Paybox direct. No 30-day waits.' },
+] as const;
+
 // ── Component ─────────────────────────────────────────────────────────────
-export default function LandingScreen({ onGetStarted }: Props) {
+export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask }: Props) {
   const [scrolled, setScrolled] = useState(false);
+  const handleLogin = onLogin ?? onPostTask;
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -273,7 +316,31 @@ export default function LandingScreen({ onGetStarted }: Props) {
     };
   }, []);
 
-  const logoSrc = typeof imgLogo === 'object' && imgLogo.uri ? imgLogo.uri : '';
+  useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleMouseMove = (e: MouseEvent) => {
+      if (reduceMotion.matches) return;
+      const stage = document.querySelector<HTMLElement>('.fi-hero-stage');
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      const dx = (e.clientX - (rect.left + rect.width / 2)) / rect.width;
+      const dy = (e.clientY - (rect.top + rect.height / 2)) / rect.height;
+      document.querySelectorAll<HTMLElement>('.fi-card').forEach((card, i) => {
+        const factor = (i + 1) * 5;
+        card.style.setProperty('translate', `${dx * factor}px ${dy * factor}px`);
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.querySelectorAll<HTMLElement>('.fi-card').forEach((card) => {
+        card.style.removeProperty('translate');
+      });
+    };
+  }, []);
+
+  const logoSrc = assetSrc(imgLogo);
 
   return (
     <div id="fixit-landing">
@@ -281,7 +348,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
       <nav className={`fi-nav${scrolled ? ' scrolled' : ''}`}>
         <a href="#top" className="logo">
           {logoSrc ? <img src={logoSrc} alt="" /> : null}
-          <span>Fix<span className="l">l</span>t</span>
+          <span>Fix<span className="l">I</span>t</span>
         </a>
         <div className="links">
           <a href="#how">How it works</a>
@@ -290,8 +357,10 @@ export default function LandingScreen({ onGetStarted }: Props) {
           <a href="#help">Help</a>
         </div>
         <div className="actions">
-          <a href="#" className="login" onClick={(e) => { e.preventDefault(); onGetStarted(); }}>Log in</a>
-          <button className="cta" onClick={onGetStarted}>
+          {!isSignedIn && (
+            <a href="#" className="login" onClick={(e) => { e.preventDefault(); handleLogin(); }}>Log in</a>
+          )}
+          <button className="cta" onClick={onPostTask}>
             Post a Task <span className="arr">→</span>
           </button>
         </div>
@@ -305,12 +374,12 @@ export default function LandingScreen({ onGetStarted }: Props) {
         <div className="fi-hero-content">
           <div className="fi-hero-eyebrow">
             <span className="pulse" />
-            Trusted by 12,000+ neighborhoods in Israel
+            Trusted by 12,000+ neighbors in Israel
           </div>
 
           <h1 className="fi-hero-title">
             <span className="line">
-              <span>Let&rsquo;&nbsp;
+              <span>Let&rsquo;s&nbsp;
                 <span className="scribble">Fix
                   <svg viewBox="0 0 200 30" preserveAspectRatio="none">
                     <path d="M5 22 Q 50 4, 100 18 T 195 14" />
@@ -328,7 +397,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
           </p>
 
           <div className="fi-hero-actions">
-            <button className="btn-hero primary" onClick={onGetStarted}>
+            <button className="btn-hero primary" onClick={onPostTask}>
               Post a Task — it&apos;s free <span className="arr">→</span>
             </button>
             <a href="#how" className="btn-hero ghost">See how it works</a>
@@ -355,12 +424,14 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <span className="dot" />3 new bids
           </div>
 
-          <div className="fi-card t1" onClick={onGetStarted}>
+          <div className="fi-card t1" onClick={onPostTask}>
             <div className="card-row">
-              <div className="cat-icon" style={{ background: '#E4F2FB', color: '#2E86C1' }}>🚿</div>
+              <div className="cat-icon" style={{ background: '#E4F2FB', color: '#2E86C1' }}>
+                <LandingIcon name="water-pump" />
+              </div>
               <div>
                 <div className="card-title">Fix leaking kitchen sink</div>
-                <div className="card-meta">📍 Florentin · posted 2h ago</div>
+                <div className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Florentin · posted 2h ago</div>
               </div>
             </div>
             <div className="card-foot">
@@ -369,26 +440,30 @@ export default function LandingScreen({ onGetStarted }: Props) {
             </div>
           </div>
 
-          <div className="fi-card t2" onClick={onGetStarted}>
+          <div className="fi-card t2" onClick={onPostTask}>
             <div className="card-row">
-              <div className="cat-icon" style={{ background: '#EFECFF', color: '#7B61FF' }}>🛠</div>
+              <div className="cat-icon" style={{ background: '#EFECFF', color: '#7B61FF' }}>
+                <LandingIcon name="hammer-screwdriver" />
+              </div>
               <div>
                 <div className="card-title">Assemble IKEA wardrobe</div>
-                <div className="card-meta">📍 Hadar, Haifa</div>
+                <div className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Hadar, Haifa</div>
               </div>
             </div>
             <div className="card-foot">
               <span className="card-price">₪450</span>
-              <span className="card-bid" style={{ background: '#E5EFE6', color: '#517A58' }}>✓ Hired Yossi</span>
+              <span className="card-bid" style={{ background: '#E5EFE6', color: '#517A58' }}><LandingIcon name="check" size={12} /> Hired Yossi</span>
             </div>
           </div>
 
-          <div className="fi-card t3" onClick={onGetStarted}>
+          <div className="fi-card t3" onClick={onPostTask}>
             <div className="card-row">
-              <div className="cat-icon" style={{ background: '#FEF3D7', color: '#D4900A' }}>⚡</div>
+              <div className="cat-icon" style={{ background: '#FEF3D7', color: '#D4900A' }}>
+                <LandingIcon name="lightning-bolt" />
+              </div>
               <div>
                 <div className="card-title">Install 3 ceiling lights</div>
-                <div className="card-meta">📍 Ramat Gan · posted 30m ago</div>
+                <div className="card-meta"><LandingIcon name="map-marker-outline" size={13} /> Ramat Gan · posted 30m ago</div>
               </div>
             </div>
             <div className="card-foot">
@@ -398,7 +473,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
           </div>
 
           <div className="fi-pill p2">
-            ⚡ Avg. response in <strong style={{ color: '#1C3C56' }}>12 min</strong>
+            <LandingIcon name="lightning-bolt" size={16} /> Avg. response in <strong style={{ color: '#1C3C56' }}>12 min</strong>
           </div>
         </div>
       </section>
@@ -423,7 +498,9 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <div className="fi-step">
               <div className="fi-step-num">01</div>
               <div className="fi-step-icon">
-                <div className="fi-step-tile" style={{ background: '#E4F2FB', color: '#2E86C1' }}>📝</div>
+                <div className="fi-step-tile" style={{ background: '#E4F2FB', color: '#2E86C1' }}>
+                  <LandingIcon name="clipboard-edit-outline" size={28} />
+                </div>
               </div>
               <h3>Describe your task</h3>
               <p>Snap a photo, set your budget, pick a category. Takes 90 seconds — no account needed to start.</p>
@@ -431,7 +508,9 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <div className="fi-step">
               <div className="fi-step-num">02</div>
               <div className="fi-step-icon">
-                <div className="fi-step-tile" style={{ background: '#F1B545', color: '#0F2438' }}>💬</div>
+                <div className="fi-step-tile" style={{ background: '#F1B545', color: '#0F2438' }}>
+                  <LandingIcon name="message-text-outline" size={28} />
+                </div>
               </div>
               <h3>Compare bids</h3>
               <p>Local Fixers send you their price, ETA, and a short pitch. Read profiles, check ratings, message anyone.</p>
@@ -439,7 +518,9 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <div className="fi-step">
               <div className="fi-step-num">03</div>
               <div className="fi-step-icon">
-                <div className="fi-step-tile" style={{ background: '#E0F5F3', color: '#0D7C6E' }}>✓</div>
+                <div className="fi-step-tile" style={{ background: '#E0F5F3', color: '#0D7C6E' }}>
+                  <LandingIcon name="check-circle-outline" size={28} />
+                </div>
               </div>
               <h3>Hire &amp; pay when done</h3>
               <p>Pick your Fixer, get the job done, then pay through Bit or Paybox. Rate your experience to help the next neighbor.</p>
@@ -456,33 +537,24 @@ export default function LandingScreen({ onGetStarted }: Props) {
               <div className="sec-eyebrow">Categories</div>
               <h2 className="sec-title" style={{ fontSize: 'clamp(32px,4vw,52px)', margin: 0 }}>Whatever you need fixed.</h2>
             </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); onGetStarted(); }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); onPostTask(); }}>
               Browse all 8 categories <span className="arr" style={{ display: 'inline-block', transition: 'transform 250ms' }}>→</span>
             </a>
           </div>
           <div className="fi-cats-grid">
-            {([
-              { img: imgMoving,      name: 'Moving',      ex: 'Apartment moves · Single piece transport · Office relocations', g: '📦' },
-              { img: imgPlumbing,    name: 'Plumbing',    ex: 'Leaks · Boilers · Toilets', g: '🚿' },
-              { img: imgElectricity, name: 'Electricity', ex: 'Lights · Outlets · Wiring', g: '⚡' },
-              { img: imgAssembly,    name: 'Assembly',    ex: 'IKEA furniture · Cribs · Bookshelves · Desks', g: '🛠' },
-              { img: imgMounting,    name: 'Mounting',    ex: 'TVs · Shelves · Mirrors', g: '📺' },
-              { img: imgPainting,    name: 'Painting',    ex: 'Walls · Trim · Touch-ups', g: '🖌' },
-              { img: imgCleaning,    name: 'Cleaning',    ex: 'Deep clean · Move-out · Post-renovation', g: '🧽' },
-              { img: imgOutdoors,    name: 'Outdoors',    ex: 'Hedges · Yards · Decks', g: '🌿' },
-            ]).map((cat) => {
-              const src = typeof cat.img === 'object' && (cat.img as { uri?: string }).uri
-                ? (cat.img as { uri: string }).uri
-                : cat.img as unknown as string;
+            {CATEGORY_CARDS.map((cat) => {
+              const src = assetSrc(cat.image as { uri?: string } | number);
               return (
-                <a key={cat.name} className="fi-cat" href="#" onClick={(e) => { e.preventDefault(); onGetStarted(); }}>
+                <a key={cat.value} className="fi-cat" href="#" onClick={(e) => { e.preventDefault(); onPostTask(); }}>
                   <div className="img" style={{ backgroundImage: `url(${src})` }} />
                   <div className="overlay" />
-                  <div className="glyph">{cat.g}</div>
+                  <div className="glyph" style={{ color: cat.color }}>
+                    <LandingIcon name={cat.icon} />
+                  </div>
                   <div className="arrow">→</div>
                   <div className="body">
-                    <div className="name">{cat.name}</div>
-                    <div className="examples">{cat.ex}</div>
+                    <div className="name">{cat.label}</div>
+                    <div className="examples">{cat.examples.join(' · ')}</div>
                   </div>
                 </a>
               );
@@ -499,19 +571,16 @@ export default function LandingScreen({ onGetStarted }: Props) {
             <h2>Are you the one who <em>fixes things</em>?</h2>
             <p>Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees — we take a small cut only when you're hired.</p>
             <div className="fi-dual-actions">
-              <button className="btn-dual amber" onClick={onGetStarted}>Become a Fixer <span className="arr">→</span></button>
+              <button className="btn-dual amber" onClick={isSignedIn ? onPostTask : handleLogin}>Become a Fixer <span className="arr">→</span></button>
               <a href="#how" className="btn-dual outline">Learn more</a>
             </div>
           </div>
           <div className="fi-dual-visual">
-            {([
-              { g: '₪', title: 'Set your rate',  desc: 'Bid your price on each job. No race-to-the-bottom.' },
-              { g: '📍', title: 'Work nearby',    desc: 'Filter by distance — keep your commute short.' },
-              { g: '⭐', title: 'Build trust',    desc: 'Reviews stack up. Top-rated Fixers earn a badge.' },
-              { g: '💸', title: 'Get paid fast',  desc: 'Bit or Paybox direct. No 30-day waits.' },
-            ] as const).map((t) => (
+            {FIXER_TILES.map((t) => (
               <div key={t.title} className="fi-tile">
-                <div className="glyph">{t.g}</div>
+                <div className="glyph">
+                  <LandingIcon name={t.icon} size={22} />
+                </div>
                 <h4>{t.title}</h4>
                 <p>{t.desc}</p>
               </div>
@@ -526,7 +595,7 @@ export default function LandingScreen({ onGetStarted }: Props) {
           <div>
             <div className="logo">
               {logoSrc ? <img src={logoSrc} alt="" style={{ filter: 'none' }} /> : null}
-              <span>Fix<span style={{ color: '#D49A2A' }}>l</span>t</span>
+              <span>Fix<span style={{ color: '#D49A2A' }}>I</span>t</span>
             </div>
             <p className="tag">Your neighborhood. Fixed. A task marketplace built for the people who actually fix things — and the people who need them.</p>
           </div>

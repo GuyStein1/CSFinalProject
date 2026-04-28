@@ -20,6 +20,7 @@ interface AuthScreenProps {
   onSyncLocalAccount: (fullName: string, phoneNumber: string) => Promise<void>;
   onRetry: () => Promise<void>;
   onLogOut: () => Promise<void>;
+  initialMode?: Mode;
 }
 
 type Mode = 'welcome' | 'login' | 'register' | 'forgot';
@@ -33,8 +34,9 @@ export default function AuthScreen({
   onSyncLocalAccount,
   onRetry,
   onLogOut,
+  initialMode = 'welcome',
 }: AuthScreenProps) {
-  const [mode, setMode] = useState<Mode>('welcome');
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -151,7 +153,7 @@ export default function AuthScreen({
         <AppLogo compact showTagline />
         <Text style={[typography.h1, styles.title]}>Finish your account setup</Text>
         <Text style={[typography.body, styles.body]}>
-          You are signed in with Firebase, but this account does not exist in the Fixlt
+          You are signed in with Firebase, but this account does not exist in the FixIt
           database yet.
         </Text>
 
@@ -222,7 +224,7 @@ export default function AuthScreen({
       >
         <View style={styles.welcomeCenter}>
           <AppLogo iconOnly />
-          <Text style={styles.welcomeWordmark}>FIXIT</Text>
+          <Text style={styles.welcomeWordmark}>FixIt</Text>
           <Text style={styles.welcomeTagline}>Your neighborhood. Fixed.</Text>
         </View>
         <View style={styles.welcomeActions}>
@@ -251,7 +253,7 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>Sign in to Fixlt</Text>
+        <Text style={[typography.h1, styles.title]}>Sign in to FixIt</Text>
 
         <FInput
           label="Email"
@@ -294,7 +296,7 @@ export default function AuthScreen({
         </FButton>
 
         <FButton variant="ghost" onPress={() => goTo('welcome')} fullWidth>
-          ← Back
+          Back
         </FButton>
       </View>
     );
@@ -399,7 +401,7 @@ export default function AuthScreen({
             Send Reset Link
           </FButton>
           <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
-            ← Back to Sign In
+            Back to Sign In
           </FButton>
         </>
       )}

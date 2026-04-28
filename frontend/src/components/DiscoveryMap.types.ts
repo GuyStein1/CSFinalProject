@@ -1,4 +1,5 @@
 import type { DiscoveryTask } from '../hooks/useTasks';
+import { CATEGORY_COLORS } from '../constants/categories';
 
 export interface DiscoveryMapRegion {
   latitude: number;
@@ -21,13 +22,4 @@ export interface DiscoveryMapProps {
   onRegionChangeComplete: (region: DiscoveryMapRegion) => void;
 }
 
-export const CATEGORY_MARKER_COLORS: Record<DiscoveryTask['category'], string> = {
-  ASSEMBLY:    '#7B61FF',
-  MOUNTING:    '#0D7C6E',
-  MOVING:      '#1E8449',
-  PAINTING:    '#C0392B',
-  PLUMBING:    '#2E86C1',
-  ELECTRICITY: '#D4900A',
-  OUTDOORS:    '#27AE60',
-  CLEANING:    '#8E44AD',
-};
+export const CATEGORY_MARKER_COLORS: Record<DiscoveryTask['category'], string> = CATEGORY_COLORS;

@@ -10,22 +10,10 @@ import {
 import { Text } from 'react-native-paper';
 import Feather from '@expo/vector-icons/Feather';
 import { FChip } from './ui';
-import type { Category } from '../hooks/useTasks';
+import { CATEGORY_LIST, type Category } from '../constants/categories';
 import { brandColors, radii, spacing, shadows, typography } from '../theme';
 
 export type ViewMode = 'map' | 'list';
-
-// Icons must be valid MaterialCommunityIcons names (used by FChip internally)
-const CATEGORY_OPTIONS: { value: Category; label: string; icon: string }[] = [
-  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'wrench' },
-  { value: 'MOUNTING',    label: 'Mounting',    icon: 'monitor' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'pencil' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
-  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'weather-sunny' },
-  { value: 'CLEANING',    label: 'Cleaning',    icon: 'weather-windy' },
-];
 
 // --- Distance slider ---
 const DISTANCE_MIN = 1;
@@ -298,7 +286,7 @@ export default function FilterBar({
 
         <View style={styles.divider} />
 
-        {CATEGORY_OPTIONS.map(({ value, label, icon }) => (
+        {CATEGORY_LIST.map(({ value, label, icon }) => (
           <FChip
             key={value}
             label={label}

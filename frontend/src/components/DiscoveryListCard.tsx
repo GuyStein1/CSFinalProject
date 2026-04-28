@@ -3,18 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { DiscoveryTask } from '../hooks/useTasks';
+import { getCategoryMetadata } from '../constants/categories';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-
-const CATEGORY_META: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-  ASSEMBLY:    { icon: 'hammer-screwdriver', label: 'Assembly',    color: '#7B61FF', bg: '#EFECFF' },
-  MOUNTING:    { icon: 'television',         label: 'Mounting',    color: '#0D7C6E', bg: '#E0F5F3' },
-  MOVING:      { icon: 'truck-delivery',     label: 'Moving',      color: '#1E8449', bg: '#E6F4EC' },
-  PAINTING:    { icon: 'brush',              label: 'Painting',    color: '#C0392B', bg: '#FCECEA' },
-  PLUMBING:    { icon: 'water-pump',         label: 'Plumbing',    color: '#2E86C1', bg: '#E4F2FB' },
-  ELECTRICITY: { icon: 'lightning-bolt',     label: 'Electricity', color: '#D4900A', bg: '#FEF3D7' },
-  OUTDOORS:    { icon: 'tree-outline',       label: 'Outdoors',    color: '#27AE60', bg: '#E8F8EF' },
-  CLEANING:    { icon: 'broom',             label: 'Cleaning',    color: '#8E44AD', bg: '#F4ECF7' },
-};
 
 function formatTimeAgo(dateString: string): string {
   const diffMs = Date.now() - new Date(dateString).getTime();
@@ -40,7 +30,7 @@ interface DiscoveryListCardProps {
 
 export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardProps) {
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
-  const catMeta = CATEGORY_META[task.category] ?? { icon: 'wrench', label: 'Other', color: '#7A8B96', bg: '#E9E2D5' };
+  const catMeta = getCategoryMetadata(task.category);
 
   return (
     <Pressable
@@ -54,7 +44,7 @@ export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardPr
       <View style={[styles.accentBar, { backgroundColor: catMeta.color }]} />
       <View style={styles.topRow}>
         <View style={[styles.iconCircle, { backgroundColor: catMeta.bg }]}>
-          <MaterialCommunityIcons name={catMeta.icon as never} size={20} color={catMeta.color} />
+          <MaterialCommunityIcons name={catMeta.icon} size={20} color={catMeta.color} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>
