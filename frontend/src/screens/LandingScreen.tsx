@@ -6,6 +6,7 @@ import {
   Pressable,
   Image,
   Animated,
+  Easing,
   useWindowDimensions,
   Platform,
 } from 'react-native';
@@ -15,7 +16,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import { CATEGORY_LIST, CATEGORY_METADATA, type Category } from '../constants/categories';
+import { CATEGORY_LIST, type Category } from '../constants/categories';
 
 interface Props {
   isSignedIn?: boolean;
@@ -38,13 +39,26 @@ interface Props {
 }
 
 const CATEGORIES = CATEGORY_LIST;
+const WORKER_IMAGE = require('../../assets/landing-worker-cut.png');
 
-const SAMPLE_TASKS = [
-  { label: 'IKEA bed frame', category: CATEGORY_METADATA.ASSEMBLY, price: '₪120' },
-  { label: 'TV mounting', category: CATEGORY_METADATA.MOUNTING, price: '₪90' },
-  { label: 'Office move', category: CATEGORY_METADATA.MOVING, price: '₪350' },
-  { label: 'Leaky faucet', category: CATEGORY_METADATA.PLUMBING, price: '₪200' },
-];
+const SPEED_LINES = [
+  { top: '18%', left: '58%', width: 130 },
+  { top: '28%', left: '64%', width: 190 },
+  { top: '42%', left: '60%', width: 150 },
+  { top: '57%', left: '67%', width: 210 },
+  { top: '69%', left: '56%', width: 120 },
+  { top: '78%', left: '62%', width: 170 },
+] as const;
+
+const SPARKS = [
+  { left: '45%', top: '68%' },
+  { left: '50%', top: '74%' },
+  { left: '55%', top: '70%' },
+  { left: '60%', top: '77%' },
+  { left: '52%', top: '82%' },
+] as const;
+
+const TICKS = Array.from({ length: 8 }, (_, index) => index);
 
 const STATS = [
   { value: '2,400+', label: 'Tasks posted' },
@@ -66,19 +80,253 @@ const FIXER_BENEFITS = [
   { icon: 'star-circle',      title: 'Build reputation',    desc: 'Reviews boost your profile.' },
 ];
 
-function useFloat(delay = 0) {
+function useLoopProgress(duration: number) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    anim.setValue(0);
     const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: -8,  duration: 1800, useNativeDriver: true, delay }),
-        Animated.timing(anim, { toValue: 0,   duration: 1800, useNativeDriver: true }),
-      ])
+      Animated.timing(anim, {
+        toValue: 1,
+        duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
     );
     loop.start();
     return () => loop.stop();
-  }, [anim, delay]);
+  }, [anim, duration]);
   return anim;
+}
+
+function WorkerHeroAnimation() {
+  const [hovered, setHovered] = useState(false);
+  const [launched, setLaunched] = useState(false);
+  const isBoosted = hovered || launched;
+  const bob = useRef(new Animated.Value(0)).current;
+  const pow = useRef(new Animated.Value(0)).current;
+  const launchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lineProgress = useLoopProgress(isBoosted ? 560 : 1500);
+  const tickProgress = useLoopProgress(isBoosted ? 520 : 1400);
+  const sparkProgress = useLoopProgress(720);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bob, {
+          toValue: 1,
+          duration: isBoosted ? 280 : 560,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bob, {
+          toValue: 0,
+          duration: isBoosted ? 280 : 560,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bob, isBoosted]);
+
+  useEffect(() => () => {
+    if (launchTimeout.current) clearTimeout(launchTimeout.current);
+  }, []);
+
+  const triggerLaunch = () => {
+    if (launchTimeout.current) clearTimeout(launchTimeout.current);
+    setLaunched(true);
+    pow.setValue(0);
+    Animated.sequence([
+      Animated.timing(pow, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.back(1.6)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(pow, {
+        toValue: 0,
+        duration: 520,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
+    launchTimeout.current = setTimeout(() => setLaunched(false), 900);
+  };
+
+  const bobTranslateY = bob.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, isBoosted ? -14 : -8],
+  });
+  const bobRotate = bob.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-1.2deg', '1.4deg'],
+  });
+  const workerTranslateX = launched ? -16 : isBoosted ? 18 : 0;
+  const shadowScale = bob.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.72],
+  });
+  const lineTranslateX = lineProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [130, -360],
+  });
+  const lineOpacity = lineProgress.interpolate({
+    inputRange: [0, 0.18, 1],
+    outputRange: [0, isBoosted ? 0.95 : 0.38, 0],
+  });
+  const tickTranslateX = tickProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [360, -520],
+  });
+  const sparkTranslateX = sparkProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -80],
+  });
+  const sparkTranslateY = sparkProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -30],
+  });
+  const sparkScale = sparkProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+  const powScale = pow.interpolate({
+    inputRange: [0, 0.35, 1],
+    outputRange: [0.45, 1.12, 1.3],
+  });
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Animated FixIt worker"
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      onPress={triggerLaunch}
+      style={({ pressed }) => [
+        styles.workerStage,
+        isBoosted && styles.workerStageBoosted,
+        pressed && styles.workerStagePressed,
+      ]}
+    >
+      <View style={[styles.workerFrameCorner, styles.workerFrameCornerTopLeft]} />
+      <View style={[styles.workerFrameCorner, styles.workerFrameCornerTopRight]} />
+      <View style={[styles.workerFrameCorner, styles.workerFrameCornerBottomLeft]} />
+      <View style={[styles.workerFrameCorner, styles.workerFrameCornerBottomRight]} />
+
+      <Text style={styles.workerLabel}>Fixer on duty</Text>
+
+      <View style={styles.workerScene}>
+        <View style={styles.workerGround} />
+        <Animated.View style={styles.workerTicks}>
+          {TICKS.map((tick) => (
+            <Animated.View
+              key={tick}
+              style={[
+                styles.workerTick,
+                {
+                  left: `${8 + tick * 13}%`,
+                  transform: [{ translateX: tickTranslateX }],
+                  opacity: isBoosted ? 0.7 : 0.42,
+                },
+              ]}
+            />
+          ))}
+        </Animated.View>
+
+        <View style={styles.workerLines} pointerEvents="none">
+          {SPEED_LINES.map((line, index) => (
+            <Animated.View
+              key={`${line.top}-${line.left}`}
+              style={[
+                styles.workerSpeedLine,
+                {
+                  top: line.top,
+                  left: line.left,
+                  width: line.width,
+                  opacity: lineOpacity,
+                  transform: [
+                    { translateX: lineTranslateX },
+                    { scaleX: index % 2 === 0 ? 1 : 0.8 },
+                  ],
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        <Animated.View
+          style={[
+            styles.workerFloorShadow,
+            {
+              opacity: isBoosted ? 0.62 : 0.44,
+              transform: [{ scaleX: shadowScale }],
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            styles.workerWrap,
+            {
+              transform: [
+                { translateX: workerTranslateX },
+                { translateY: bobTranslateY },
+                { rotate: bobRotate },
+                { scale: isBoosted ? 1.03 : 1 },
+              ],
+            },
+          ]}
+        >
+          <Image source={WORKER_IMAGE} style={styles.workerImage} resizeMode="contain" />
+        </Animated.View>
+
+        {isBoosted && (
+          <View style={styles.workerSparks} pointerEvents="none">
+            {SPARKS.map((spark) => (
+              <Animated.View
+                key={`${spark.left}-${spark.top}`}
+                style={[
+                  styles.workerSpark,
+                  {
+                    left: spark.left,
+                    top: spark.top,
+                    transform: [
+                      { translateX: sparkTranslateX },
+                      { translateY: sparkTranslateY },
+                      { scale: sparkScale },
+                    ],
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.workerPow,
+            {
+              opacity: pow,
+              transform: [{ scale: powScale }, { rotate: '-10deg' }],
+            },
+          ]}
+        >
+          <Text style={styles.workerPowText}>GO!</Text>
+        </Animated.View>
+      </View>
+
+      <View style={styles.workerSpeedRow}>
+        <Text style={styles.workerSpeedText}>{isBoosted ? '48 mph' : '02 mph'}</Text>
+        <View style={styles.workerSpeedTrack}>
+          <View style={[styles.workerSpeedFill, { width: isBoosted ? '92%' : '20%' }]} />
+        </View>
+        <Text style={styles.workerSpeedText}>MAX</Text>
+      </View>
+    </Pressable>
+  );
 }
 
 export default function LandingScreen({
@@ -104,12 +352,6 @@ export default function LandingScreen({
     categories: 0,
     fixers: 0,
   });
-
-  const f0 = useFloat(0);
-  const f1 = useFloat(400);
-  const f2 = useFloat(800);
-  const f3 = useFloat(200);
-  const floats = [f0, f1, f2, f3];
 
   const catCols = wide ? (width >= 1120 ? 4 : 3) : mid ? 2 : 1;
   const categoryGridWidth = width - (wide ? 160 : spacing.xxl * 2);
@@ -423,29 +665,9 @@ export default function LandingScreen({
             </View>
           </View>
 
-          {/* Right column — floating task cards */}
+          {/* Right column — animated worker scene */}
           {wide && (
-            <View style={styles.heroCards}>
-              {SAMPLE_TASKS.map((task, i) => (
-                <Animated.View
-                  key={task.label}
-                  style={[
-                    styles.taskCard,
-                    i % 2 === 1 && { marginTop: spacing.xxxl },
-                    { transform: [{ translateY: floats[i] }] },
-                  ]}
-                >
-                  <View style={[styles.taskCardIcon, { backgroundColor: task.category.soft }]}>
-                    <MaterialCommunityIcons name={task.category.icon} size={20} color={task.category.color} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.taskCardLabel}>{task.label}</Text>
-                    <Text style={styles.taskCardCat}>{task.category.label}</Text>
-                  </View>
-                  <Text style={[styles.taskCardPrice, { color: task.category.color }]}>{task.price}</Text>
-                </Animated.View>
-              ))}
-            </View>
+            <WorkerHeroAnimation />
           )}
         </View>
 
@@ -533,7 +755,7 @@ export default function LandingScreen({
                     onPress={() => handleCategoryPress(cat.value)}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={selected ? `${cat.label} selected` : `View details for ${cat.label} tasks`}
+                    accessibilityLabel={selected ? `Collapse ${cat.label} tasks` : `Expand ${cat.label} tasks`}
                     style={({ pressed }) => [
                       styles.catSummaryPressable,
                       selected && styles.catSummaryPressableExpanded,
@@ -807,7 +1029,7 @@ const styles = StyleSheet.create({
   heroContentWide: {
     flexDirection: 'row',
     paddingHorizontal: 80 - spacing.xxl,
-    gap: spacing.huge,
+    gap: spacing.xxl,
     alignItems: 'center',
     minHeight: 480,
   },
@@ -874,47 +1096,188 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
 
-  // ── Floating task cards ────────────────────────────────────────
-  heroCards: {
+  // ── Animated worker scene ──────────────────────────────────────
+  workerStage: {
     flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    alignContent: 'flex-start',
-    paddingBottom: spacing.xxl,
+    flexShrink: 1,
+    minWidth: 320,
+    maxWidth: 540,
+    aspectRatio: 1.42,
+    borderRadius: radii.xxxl,
+    backgroundColor: '#F6EFDF',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.34)',
+    overflow: 'hidden',
+    ...shadows.lg,
   },
-  taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: brandColors.surface,
-    padding: spacing.lg,
-    borderRadius: radii.xl,
-    width: 220,
-    ...shadows.md,
+  workerStageBoosted: {
+    borderColor: 'rgba(241,181,69,0.72)',
   },
-  taskCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+  workerStagePressed: {
+    transform: [{ scale: 0.992 }],
   },
-  taskCardLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: brandColors.textPrimary,
+  workerFrameCorner: {
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    borderColor: 'rgba(15,36,56,0.30)',
+    zIndex: 5,
   },
-  taskCardCat: {
-    fontSize: 11,
-    color: brandColors.textMuted,
-    marginTop: 2,
+  workerFrameCornerTopLeft: {
+    top: 18,
+    left: 18,
+    borderLeftWidth: 1.5,
+    borderTopWidth: 1.5,
   },
-  taskCardPrice: {
-    fontSize: 15,
+  workerFrameCornerTopRight: {
+    top: 18,
+    right: 18,
+    borderRightWidth: 1.5,
+    borderTopWidth: 1.5,
+  },
+  workerFrameCornerBottomLeft: {
+    bottom: 18,
+    left: 18,
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+  },
+  workerFrameCornerBottomRight: {
+    bottom: 18,
+    right: 18,
+    borderRightWidth: 1.5,
+    borderBottomWidth: 1.5,
+  },
+  workerLabel: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 10,
     fontWeight: '800',
-    flexShrink: 0,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: 'rgba(20,33,61,0.54)',
+    zIndex: 4,
+  },
+  workerScene: {
+    flex: 1,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+    overflow: 'hidden',
+  },
+  workerGround: {
+    position: 'absolute',
+    left: '7%',
+    right: '7%',
+    bottom: '22%',
+    height: 1,
+    backgroundColor: 'rgba(20,33,61,0.20)',
+  },
+  workerTicks: {
+    position: 'absolute',
+    left: '7%',
+    right: '7%',
+    bottom: '19%',
+    height: 24,
+    overflow: 'hidden',
+  },
+  workerTick: {
+    position: 'absolute',
+    bottom: 3,
+    width: 28,
+    height: 1,
+    backgroundColor: 'rgba(20,33,61,0.24)',
+  },
+  workerLines: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  workerSpeedLine: {
+    position: 'absolute',
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: brandColors.secondary,
+  },
+  workerFloorShadow: {
+    position: 'absolute',
+    left: '28%',
+    bottom: '18%',
+    width: '44%',
+    height: 18,
+    borderRadius: 18,
+    backgroundColor: 'rgba(20,33,61,0.28)',
+  },
+  workerWrap: {
+    position: 'absolute',
+    left: '9%',
+    top: '12%',
+    width: '82%',
+    height: '74%',
+    zIndex: 3,
+  },
+  workerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  workerSparks: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
+  },
+  workerSpark: {
+    position: 'absolute',
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: brandColors.secondary,
+  },
+  workerPow: {
+    position: 'absolute',
+    top: '18%',
+    right: '15%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.secondary,
+    borderWidth: 2,
+    borderColor: brandColors.primaryDark,
+    zIndex: 6,
+  },
+  workerPowText: {
+    color: brandColors.primaryDark,
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  workerSpeedRow: {
+    position: 'absolute',
+    left: spacing.xxl,
+    right: spacing.xxl,
+    bottom: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  workerSpeedText: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    fontWeight: '800',
+    color: 'rgba(20,33,61,0.48)',
+  },
+  workerSpeedTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(20,33,61,0.12)',
+    overflow: 'hidden',
+  },
+  workerSpeedFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: brandColors.secondary,
   },
 
   // ── Stats ──────────────────────────────────────────────────────
