@@ -2,10 +2,13 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
+import React, { useState } from 'react';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
@@ -13,6 +16,11 @@ import GlobalCelebration from './src/components/GlobalCelebration';
 
 function RootContent() {
   const authState = useAuthBootstrap();
+  const [showAuth, setShowAuth] = useState(false);
+
+  if (Platform.OS === 'web' && authState.status === 'signed_out' && !showAuth) {
+    return <LandingScreen onGetStarted={() => setShowAuth(true)} />;
+  }
 
   if (authState.status !== 'ready') {
     return (
