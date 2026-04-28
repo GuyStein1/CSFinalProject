@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -15,12 +15,26 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AppLogo from '../components/AppLogo';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import { CATEGORY_LIST, CATEGORY_METADATA } from '../constants/categories';
+import { CATEGORY_LIST, CATEGORY_METADATA, type Category } from '../constants/categories';
 
 interface Props {
   isSignedIn?: boolean;
   onLogin?: () => void;
-  onPostTask: () => void;
+  onCreateAccount?: () => void;
+  onPostTask: (category?: Category) => void;
+  onCategoryPress?: (category: Category) => void;
+  onCategorySelect?: (category: Category) => void;
+  onDashboard?: () => void;
+  onRequesterHome?: () => void;
+  onRequesterTasks?: () => void;
+  onMyTasks?: () => void;
+  onNotifications?: () => void;
+  onProfile?: () => void;
+  onSettings?: () => void;
+  onBecomeFixer?: () => void;
+  onFixerHome?: () => void;
+  onFixerBids?: () => void;
+  onFixerProfile?: () => void;
 }
 
 const CATEGORIES = CATEGORY_LIST;
@@ -67,10 +81,36 @@ function useFloat(delay = 0) {
   return anim;
 }
 
-export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask }: Props) {
+export default function LandingScreen({
+  isSignedIn = false,
+  onLogin,
+  onCreateAccount,
+  onPostTask,
+  onCategoryPress,
+  onCategorySelect,
+  onDashboard,
+  onRequesterHome,
+  onRequesterTasks,
+  onMyTasks,
+  onNotifications,
+  onProfile,
+  onSettings,
+  onBecomeFixer,
+  onFixerHome,
+  onFixerBids,
+  onFixerProfile,
+}: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 860;
   const mid  = width >= 600;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category>('MOVING');
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionOffsets = useRef<Record<'how' | 'categories' | 'fixers', number>>({
+    how: 0,
+    categories: 0,
+    fixers: 0,
+  });
 
   const f0 = useFloat(0);
   const f1 = useFloat(400);
@@ -78,11 +118,92 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
   const f3 = useFloat(200);
   const floats = [f0, f1, f2, f3];
 
-  const catCols = wide ? 4 : mid ? 4 : 2;
+  const catCols = wide ? 4 : mid ? 2 : 1;
   const catCellW = (width - (wide ? 160 : spacing.xxl * 2) - spacing.md * (catCols - 1)) / catCols;
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    setMenuOpen(false);
+  };
+
+  const scrollToSection = (section: 'how' | 'categories' | 'fixers') => {
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, sectionOffsets.current[section] - 76),
+      animated: true,
+    });
+    setMenuOpen(false);
+  };
+
+  const runAndClose = (action?: () => void) => {
+    setMenuOpen(false);
+    action?.();
+  };
+
+  const handlePostTask = (category?: Category) => {
+    setMenuOpen(false);
+    onPostTask(category);
+  };
+
+  const handleCategoryPress = (category: Category) => {
+    setMenuOpen(false);
+    setSelectedCategory(category);
+  };
+
+  const handleLogin = () => {
+    runAndClose(onLogin ?? (() => onPostTask()));
+  };
+
+  const handleCreateAccount = () => {
+    runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()));
+  };
+
+  const handleFixerCta = () => {
+    if (isSignedIn) {
+      runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? onDashboard ?? (() => onPostTask()));
+      return;
+    }
+    runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? (() => onPostTask()));
+  };
+
+  const handleCategoryTask = (category: Category) => {
+    setMenuOpen(false);
+    (onCategoryPress ?? onCategorySelect ?? onPostTask)(category);
+  };
+
+  const handleRequesterHome = () => {
+    runAndClose(onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
+  };
+  const handleRequesterTasks = () => {
+    runAndClose(onRequesterTasks ?? onMyTasks ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
+  };
+  const handleNotifications = () => {
+    runAndClose(onNotifications ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
+  };
+  const handleProfile = () => {
+    runAndClose(onProfile ?? onSettings ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
+  };
+  const handleFixerBids = () => {
+    runAndClose(onFixerBids ?? onFixerHome ?? onBecomeFixer ?? onLogin ?? onRequesterHome ?? onDashboard ?? (() => onPostTask()));
+  };
+  const selectedCategoryMeta = CATEGORY_METADATA[selectedCategory];
+  const signedInNavItems = [
+    { label: 'Dashboard', icon: 'view-dashboard-outline', onPress: handleRequesterHome },
+    { label: 'My Tasks', icon: 'clipboard-list-outline', onPress: handleRequesterTasks },
+    { label: 'Find Jobs', icon: 'map-search-outline', onPress: handleFixerCta },
+    { label: 'My Bids', icon: 'format-list-bulleted', onPress: handleFixerBids },
+    { label: 'Notifications', icon: 'bell-outline', onPress: handleNotifications },
+    { label: 'Profile & Settings', icon: 'account-outline', onPress: handleProfile },
+  ];
+  const signedOutNavItems = [
+    { label: 'How it works', icon: 'progress-check', onPress: () => scrollToSection('how') },
+    { label: 'Categories', icon: 'shape-outline', onPress: () => scrollToSection('categories') },
+    { label: 'For Fixers', icon: 'account-hard-hat-outline', onPress: () => scrollToSection('fixers') },
+  ];
+  const navItems = isSignedIn ? signedInNavItems : signedOutNavItems;
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.root}
       contentContainerStyle={styles.scroll}
       showsVerticalScrollIndicator={false}
@@ -99,29 +220,103 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
         ]}
       >
         <View style={[styles.navInner, wide && styles.navInnerWide]}>
-          <View style={styles.navBrand}>
+          <Pressable
+            style={styles.navBrand}
+            onPress={scrollToTop}
+            accessibilityRole="button"
+            accessibilityLabel="Back to landing top"
+          >
             <AppLogo iconOnly />
             <Text style={styles.navWordmark}>FixIt</Text>
-          </View>
+          </Pressable>
 
           {wide && (
             <View style={styles.navLinks}>
-              <Text style={styles.navLink}>How it works</Text>
-              <Text style={styles.navLink}>Categories</Text>
-              <Text style={styles.navLink}>For Fixers</Text>
+              {navItems.map((item) => (
+                <Pressable
+                  key={item.label}
+                  onPress={item.onPress}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}
+                >
+                  <Text style={styles.navLink}>{item.label}</Text>
+                </Pressable>
+              ))}
             </View>
           )}
 
-          <Pressable
-            onPress={onPostTask}
-            style={({ pressed }) => [
-              styles.navCta,
-              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
-            ]}
-          >
-            <Text style={styles.navCtaText}>Get Started</Text>
-          </Pressable>
+          <View style={styles.navActions}>
+            {!isSignedIn && wide && (
+              <Pressable onPress={handleLogin} style={styles.navLogin}>
+                <Text style={styles.navLoginText}>Log In</Text>
+              </Pressable>
+            )}
+            <Pressable
+              onPress={() => handlePostTask()}
+              style={({ pressed }) => [
+                styles.navCta,
+                { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
+              ]}
+            >
+              <Text style={styles.navCtaText}>{isSignedIn ? 'Post a Task' : 'Get Started'}</Text>
+            </Pressable>
+            {!wide && (
+              <Pressable
+                onPress={() => setMenuOpen((open) => !open)}
+                style={styles.menuButton}
+                accessibilityRole="button"
+                accessibilityLabel={menuOpen ? 'Close landing menu' : 'Open landing menu'}
+              >
+                <MaterialCommunityIcons
+                  name={menuOpen ? 'close' : 'menu'}
+                  size={22}
+                  color={brandColors.textOnDark}
+                />
+              </Pressable>
+            )}
+          </View>
         </View>
+
+        {!wide && menuOpen && (
+          <View style={styles.mobileMenu}>
+            {navItems.map((item) => (
+              <Pressable
+                key={item.label}
+                onPress={item.onPress}
+                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
+              >
+                <MaterialCommunityIcons name={item.icon as never} size={18} color={brandColors.textOnDark} />
+                <Text style={styles.mobileMenuText}>{item.label}</Text>
+              </Pressable>
+            ))}
+            {!isSignedIn && (
+              <Pressable
+                onPress={handleLogin}
+                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
+              >
+                <MaterialCommunityIcons name="login" size={18} color={brandColors.textOnDark} />
+                <Text style={styles.mobileMenuText}>Log In</Text>
+              </Pressable>
+            )}
+            {!isSignedIn && onCreateAccount && (
+              <Pressable
+                onPress={handleCreateAccount}
+                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
+              >
+                <MaterialCommunityIcons name="account-plus-outline" size={18} color={brandColors.textOnDark} />
+                <Text style={styles.mobileMenuText}>Create Account</Text>
+              </Pressable>
+            )}
+            {!isSignedIn && (
+              <Pressable
+                onPress={handleFixerCta}
+                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
+              >
+                <MaterialCommunityIcons name="account-hard-hat-outline" size={18} color={brandColors.textOnDark} />
+                <Text style={styles.mobileMenuText}>Become a Fixer</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
@@ -129,6 +324,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
         colors={[brandColors.primary, brandColors.primaryDark]}
         style={[styles.hero, Platform.OS === 'web' && { paddingTop: 88 }]}
       >
+        <AppLogo variant="heroSilhouette" style={styles.heroSilhouette} />
         <View style={[styles.heroContent, wide && styles.heroContentWide]}>
           {/* Left column */}
           <View style={[styles.heroLeft, wide && { flex: 1, maxWidth: 540 }]}>
@@ -137,21 +333,25 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
               <Text style={styles.heroBadgeText}>Available across Israel</Text>
             </View>
             <Text style={styles.heroHeadline}>
-              Your neighborhood,{'\n'}
-              <Text style={{ color: brandColors.secondary }}>fixed.</Text>
+              Home help,{'\n'}
+              <Text style={{ color: brandColors.secondary }}>without the runaround.</Text>
             </Text>
             <Text style={styles.heroSub}>
-              Post any home task and get bids from skilled fixers near you — fast, transparent, and trusted.
+              {isSignedIn
+                ? 'Post a clear task, compare local bids, and manage the job from your requester workspace.'
+                : 'Sign in to post a home task, compare bids from local fixers, and choose who gets the job.'}
             </Text>
             <View style={styles.heroActions}>
-              <FButton onPress={onPostTask} variant="secondary" size="lg" icon="plus">
+              <FButton onPress={() => handlePostTask()} variant="secondary" size="lg" icon="plus">
                 Post a Task
               </FButton>
               <Pressable
-                onPress={onPostTask}
+                onPress={handleFixerCta}
                 style={({ pressed }) => [styles.heroGhostBtn, { opacity: pressed ? 0.8 : 1 }]}
               >
-                <Text style={styles.heroGhostText}>Become a Fixer →</Text>
+                <Text style={styles.heroGhostText}>
+                  {isSignedIn ? 'Find Jobs ->' : 'Become a Fixer ->'}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -200,7 +400,10 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
       </View>
 
       {/* ── How it works ─────────────────────────────────────────── */}
-      <View style={[styles.section, wide && styles.sectionWide]}>
+      <View
+        style={[styles.section, wide && styles.sectionWide]}
+        onLayout={(event) => { sectionOffsets.current.how = event.nativeEvent.layout.y; }}
+      >
         <View style={styles.sectionHead}>
           <Text style={styles.sectionEyebrow}>THE PROCESS</Text>
           <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
@@ -229,7 +432,10 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
       </View>
 
       {/* ── Category grid ────────────────────────────────────────── */}
-      <View style={[styles.section, wide && styles.sectionWide]}>
+      <View
+        style={[styles.section, wide && styles.sectionWide]}
+        onLayout={(event) => { sectionOffsets.current.categories = event.nativeEvent.layout.y; }}
+      >
         <View style={styles.sectionHead}>
           <Text style={styles.sectionEyebrow}>SERVICES</Text>
           <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
@@ -240,9 +446,12 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
           {CATEGORIES.map((cat) => (
             <Pressable
               key={cat.label}
-              onPress={onPostTask}
+              onPress={() => handleCategoryPress(cat.value)}
+              accessibilityRole="button"
+              accessibilityLabel={`Explore ${cat.label} tasks`}
               style={({ pressed }) => [
                 styles.catCell,
+                selectedCategory === cat.value && styles.catCellSelected,
                 { width: catCellW, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
               ]}
             >
@@ -255,14 +464,57 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
                   <MaterialCommunityIcons name={cat.icon as never} size={14} color="#fff" />
                 </View>
                 <Text style={styles.catLabel}>{cat.label}</Text>
+                <Text style={styles.catDescription} numberOfLines={2}>{cat.description}</Text>
+                <View style={styles.catExamples}>
+                  {cat.examples.slice(0, 2).map((example) => (
+                    <View key={example} style={styles.catExamplePill}>
+                      <Text style={styles.catExampleText} numberOfLines={1}>{example}</Text>
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.catActionRow}>
+                  <Text style={styles.catActionText}>{selectedCategory === cat.value ? 'Selected' : 'Explore'}</Text>
+                  <MaterialCommunityIcons name={selectedCategory === cat.value ? 'chevron-down' : 'plus'} size={14} color="#fff" />
+                </View>
               </LinearGradient>
             </Pressable>
           ))}
         </View>
+        <View style={styles.categoryDetailCard}>
+          <Image source={selectedCategoryMeta.image} style={styles.categoryDetailImage} resizeMode="cover" />
+          <View style={styles.categoryDetailBody}>
+            <View style={styles.categoryDetailKicker}>
+              <MaterialCommunityIcons name={selectedCategoryMeta.icon as never} size={18} color={selectedCategoryMeta.color} />
+              <Text style={[styles.categoryDetailKickerText, { color: selectedCategoryMeta.color }]}>
+                {selectedCategoryMeta.label}
+              </Text>
+            </View>
+            <Text style={styles.categoryDetailTitle}>{selectedCategoryMeta.description}</Text>
+            <Text style={styles.categoryDetailCopy}>
+              Use photos, a clear budget, and a precise address so nearby Fixers can price the job accurately.
+            </Text>
+            <View style={styles.categoryDetailChips}>
+              {selectedCategoryMeta.examples.map((task) => (
+                <View key={task} style={[styles.categoryDetailChip, { backgroundColor: selectedCategoryMeta.soft }]}>
+                  <Text style={[styles.categoryDetailChipText, { color: selectedCategoryMeta.color }]}>{task}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.categoryDetailPrompt}>
+              Start with the category selected, then add the task details that will help Fixers bid.
+            </Text>
+            <FButton onPress={() => handleCategoryTask(selectedCategoryMeta.value)} icon="plus" fullWidth>
+              Post a {selectedCategoryMeta.label} Task
+            </FButton>
+          </View>
+        </View>
       </View>
 
       {/* ── Fixer CTA ────────────────────────────────────────────── */}
-      <View style={[styles.fixerCta, wide && styles.fixerCtaWide]}>
+      <View
+        style={[styles.fixerCta, wide && styles.fixerCtaWide]}
+        onLayout={(event) => { sectionOffsets.current.fixers = event.nativeEvent.layout.y; }}
+      >
         <LinearGradient
           colors={[brandColors.primary, brandColors.primaryDark]}
           style={[styles.fixerCtaInner, wide && styles.fixerCtaInnerWide]}
@@ -275,8 +527,8 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
             <Text style={styles.fixerSub}>
               Join 1,800+ fixers already earning from tasks near them.
             </Text>
-            <FButton onPress={isSignedIn ? onPostTask : (onLogin ?? onPostTask)} variant="secondary" size="lg" icon="account-hard-hat">
-              Join as a Fixer
+            <FButton onPress={handleFixerCta} variant="secondary" size="lg" icon="account-hard-hat">
+              {isSignedIn ? 'Open Fixer Workspace' : 'Join as a Fixer'}
             </FButton>
           </View>
 
@@ -362,6 +614,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: brandColors.textOnDarkMuted,
   },
+  navActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  navLogin: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  navLoginText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: brandColors.textOnDark,
+  },
   navCta: {
     backgroundColor: brandColors.secondary,
     paddingHorizontal: spacing.lg,
@@ -373,6 +640,42 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: brandColors.primaryDark,
   },
+  menuButton: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,252,246,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mobileMenu: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: 'rgba(15,36,56,0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.12)',
+    gap: spacing.xs,
+  },
+  mobileMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+  },
+  mobileMenuItemPressed: {
+    backgroundColor: 'rgba(255,252,246,0.10)',
+  },
+  mobileMenuText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: brandColors.textOnDark,
+  },
 
   // ── Hero ───────────────────────────────────────────────────────
   hero: {
@@ -380,6 +683,14 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     paddingHorizontal: spacing.xxl,
     overflow: 'hidden',
+  },
+  heroSilhouette: {
+    position: 'absolute',
+    right: -70,
+    top: 80,
+    width: 340,
+    height: 340,
+    opacity: 0.06,
   },
   heroContent: {
     gap: spacing.xxl,
@@ -609,10 +920,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   catCell: {
-    height: 140,
+    height: 196,
     borderRadius: radii.xl,
     overflow: 'hidden',
     ...shadows.sm,
+  },
+  catCellSelected: {
+    borderWidth: 3,
+    borderColor: brandColors.secondary,
+    ...shadows.md,
   },
   catImage: {
     position: 'absolute',
@@ -637,6 +953,98 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#fff',
+  },
+  catDescription: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: 'rgba(255,255,255,0.86)',
+  },
+  catExamples: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  catExamplePill: {
+    maxWidth: '100%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  catExampleText: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+  },
+  catActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  catActionText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '800',
+  },
+  categoryDetailCard: {
+    marginTop: spacing.lg,
+    borderRadius: radii.xxl,
+    overflow: 'hidden',
+    backgroundColor: brandColors.surface,
+    ...shadows.md,
+  },
+  categoryDetailImage: {
+    width: '100%',
+    height: 190,
+  },
+  categoryDetailBody: {
+    padding: spacing.xxl,
+    gap: spacing.md,
+  },
+  categoryDetailKicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  categoryDetailKickerText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  categoryDetailTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+    color: brandColors.primary,
+  },
+  categoryDetailCopy: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: brandColors.textSecondary,
+  },
+  categoryDetailChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  categoryDetailChip: {
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  categoryDetailChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  categoryDetailPrompt: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: brandColors.textMuted,
+    backgroundColor: brandColors.background,
+    borderRadius: radii.md,
+    padding: spacing.md,
   },
 
   // ── Fixer CTA ─────────────────────────────────────────────────

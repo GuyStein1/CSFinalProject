@@ -4,7 +4,7 @@ import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,13 +23,19 @@ import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import type { Category } from '../constants/categories';
+import {
+  asLandingScreenWithNavigationProps,
+  type RootStackParamList,
+} from './landingIntent';
 
 type Mode = 'requester' | 'fixer';
 
 const DESKTOP_BREAKPOINT = 768;
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
+const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
 
 // ─── Shared notification badge ───────────────────────────────────────────────
 function NotifBadge({ count }: { count: number }) {
@@ -47,14 +53,76 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
+  const notificationCount = unreadCount(typeFilter);
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
     if (route.name !== nextRoute) navigation.navigate(nextRoute);
   };
 
+  const openStackScreen = (screen: keyof RootStackParamList) => {
+    const parentNavigation = navigation.getParent();
+    if (parentNavigation) {
+      parentNavigation.navigate(screen as never);
+      return;
+    }
+    navigation.navigate(screen as never);
+  };
+
   const openLanding = () => {
-    navigation.getParent()?.navigate('Landing' as never);
+    openStackScreen('Landing');
+  };
+
+  const openNotifications = () => {
+    openStackScreen('NotificationCenter');
+  };
+
+  const openSettings = () => {
+    openStackScreen('Settings');
+  };
+
+  const openCreateTask = () => {
+    openStackScreen('CreateTask');
+  };
+
+  const openRequesterHome = () => {
+    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
+  };
+
+  const openRequesterTasks = () => {
+    navigation.navigate('RequesterMode', { screen: 'MyTasks' });
+  };
+
+  const openFixerHome = () => {
+    navigation.navigate('FixerMode', { screen: 'FindJobs' });
+  };
+
+  const openFixerBids = () => {
+    navigation.navigate('FixerMode', { screen: 'MyBids' });
+  };
+
+  const openFixerProfile = () => {
+    navigation.navigate('FixerMode', { screen: 'FixerProfile' });
+  };
+
+  const openCreateTask = () => {
+    openStackScreen('CreateTask');
+  };
+
+  const openRequesterDashboard = () => {
+    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
+  };
+
+  const openFixerWorkspace = () => {
+    navigation.navigate('FixerMode', { screen: 'FindJobs' });
+  };
+
+  const openAccount = () => {
+    if (mode === 'fixer') {
+      navigation.navigate('FixerMode', { screen: 'FixerProfile' });
+      return;
+    }
+    navigation.navigate('RequesterMode', { screen: 'Profile' });
   };
 
   return (
@@ -76,6 +144,15 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
       {/* Spacer */}
       <View style={{ flex: 1 }} />
+
+      <View style={styles.desktopQuickLinks}>
+        <Pressable style={styles.desktopQuickLink} onPress={openRequesterDashboard}>
+          <Text style={styles.desktopQuickLinkText}>Requester Space</Text>
+        </Pressable>
+        <Pressable style={styles.desktopQuickLink} onPress={openFixerWorkspace}>
+          <Text style={styles.desktopQuickLinkText}>Find Jobs</Text>
+        </Pressable>
+      </View>
 
       {/* Mode toggle */}
       <View style={styles.modeToggleWrap}>
@@ -123,10 +200,46 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
       <Pressable
         style={styles.desktopIconBtn}
         hitSlop={8}
-        onPress={() => navigation.navigate('NotificationCenter' as never)}
+        onPress={openNotifications}
       >
         <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.primary} />
-        <NotifBadge count={unreadCount(typeFilter)} />
+        <NotifBadge count={notificationCount} />
+      </Pressable>
+
+      <Pressable
+        style={[styles.desktopIconBtn, styles.desktopPostTaskBtn]}
+        hitSlop={8}
+        onPress={openCreateTask}
+      >
+        <MaterialCommunityIcons name="plus" size={22} color={brandColors.primaryDark} />
+      </Pressable>
+
+      <Pressable
+        style={styles.desktopIconBtn}
+        hitSlop={8}
+        onPress={openSettings}
+      >
+        <MaterialCommunityIcons name="cog-outline" size={22} color={brandColors.primary} />
+      </Pressable>
+
+      {/* Account */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={mode === 'fixer' ? 'Open fixer profile' : 'Open account'}
+        style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
+        onPress={openAccount}
+      >
+        <View style={styles.accountIcon}>
+          <MaterialCommunityIcons
+            name={mode === 'fixer' ? 'account-hard-hat' : 'account-circle-outline'}
+            size={20}
+            color={brandColors.primary}
+          />
+        </View>
+        <View style={styles.accountTextBlock}>
+          <Text style={styles.accountLabel}>{mode === 'fixer' ? 'Fixer profile' : 'Account'}</Text>
+          <Text style={styles.accountSub}>Workspace</Text>
+        </View>
       </Pressable>
     </View>
   );
@@ -139,14 +252,40 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
+  const notificationCount = unreadCount(typeFilter);
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
     if (route.name !== nextRoute) navigation.navigate(nextRoute);
   };
 
+  const openStackScreen = (screen: keyof RootStackParamList) => {
+    const parentNavigation = navigation.getParent();
+    if (parentNavigation) {
+      parentNavigation.navigate(screen as never);
+      return;
+    }
+    navigation.navigate(screen as never);
+  };
+
   const openLanding = () => {
-    navigation.getParent()?.navigate('Landing' as never);
+    openStackScreen('Landing');
+  };
+
+  const openNotifications = () => {
+    openStackScreen('NotificationCenter');
+  };
+
+  const openSettings = () => {
+    openStackScreen('Settings');
+  };
+
+  const openAccount = () => {
+    if (mode === 'fixer') {
+      navigation.navigate('FixerMode', { screen: 'FixerProfile' });
+      return;
+    }
+    navigation.navigate('RequesterMode', { screen: 'Profile' });
   };
 
   return (
@@ -179,10 +318,10 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         <Pressable
           style={styles.iconBtn}
           hitSlop={8}
-          onPress={() => navigation.navigate('NotificationCenter' as never)}
+          onPress={openNotifications}
         >
           <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.textOnDark} />
-          <NotifBadge count={unreadCount(typeFilter)} />
+          <NotifBadge count={notificationCount} />
         </Pressable>
       </LinearGradient>
 
@@ -191,7 +330,17 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onClose={() => setMenuOpen(false)}
         currentMode={mode}
         onModeChange={handleModeChange}
-        onSettingsPress={() => navigation.navigate('Settings' as never)}
+        onRequesterHomePress={openRequesterHome}
+        onRequesterTasksPress={openRequesterTasks}
+        onPostTaskPress={openCreateTask}
+        onFixerHomePress={openFixerHome}
+        onFixerBidsPress={openFixerBids}
+        onFixerProfilePress={openFixerProfile}
+        onAccountPress={openAccount}
+        onNotificationsPress={openNotifications}
+        onSettingsPress={openSettings}
+        onLandingPress={openLanding}
+        notificationCount={notificationCount}
       />
     </>
   );
@@ -224,14 +373,71 @@ function MainNavigator() {
 
 function SignedInLanding({
   navigation,
-}: {
-  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
-}) {
+}: NativeStackScreenProps<RootStackParamList, 'Landing'>) {
+  const openRequesterDashboard = () => {
+    navigation.navigate('Main', {
+      screen: 'RequesterMode',
+      params: { screen: 'Dashboard' },
+    });
+  };
+
+  const openRequesterTasks = () => {
+    navigation.navigate('Main', {
+      screen: 'RequesterMode',
+      params: { screen: 'MyTasks' },
+    });
+  };
+
+  const openFixerWorkspace = () => {
+    navigation.navigate('Main', {
+      screen: 'FixerMode',
+      params: { screen: 'FindJobs' },
+    });
+  };
+
+  const openFixerBids = () => {
+    navigation.navigate('Main', {
+      screen: 'FixerMode',
+      params: { screen: 'MyBids' },
+    });
+  };
+
+  const openFixerProfile = () => {
+    navigation.navigate('Main', {
+      screen: 'FixerMode',
+      params: { screen: 'FixerProfile' },
+    });
+  };
+
+  const openPostTask = (category?: Category) => {
+    navigation.navigate('CreateTask', category ? { category } : undefined);
+  };
+
+  const openSettings = () => {
+    navigation.navigate('Settings');
+  };
+
+  const openNotifications = () => {
+    navigation.navigate('NotificationCenter');
+  };
+
   return (
-    <LandingScreen
+    <LandingScreenWithNavigationProps
       isSignedIn
-      onLogin={() => navigation.navigate('Main')}
-      onPostTask={() => navigation.navigate('CreateTask')}
+      onLogin={openRequesterDashboard}
+      onDashboard={openRequesterDashboard}
+      onRequesterHome={openRequesterDashboard}
+      onRequesterTasks={openRequesterTasks}
+      onPostTask={openPostTask}
+      onCategoryPress={openPostTask}
+      onCategorySelect={openPostTask}
+      onBecomeFixer={openFixerWorkspace}
+      onFixerHome={openFixerWorkspace}
+      onFixerBids={openFixerBids}
+      onFixerProfile={openFixerProfile}
+      onNotifications={openNotifications}
+      onProfile={openSettings}
+      onSettings={openSettings}
     />
   );
 }
@@ -310,6 +516,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,
+  },
+  desktopPostTaskBtn: {
+    backgroundColor: brandColors.secondary,
+    ...shadows.sm,
+  },
+  desktopQuickLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginRight: spacing.md,
+  },
+  desktopQuickLink: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  desktopQuickLinkText: {
+    color: brandColors.primary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  accountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginLeft: spacing.sm,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.md,
+    height: 42,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+  },
+  accountButtonPressed: {
+    opacity: 0.82,
+  },
+  accountIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: brandColors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountTextBlock: {
+    gap: 1,
+  },
+  accountLabel: {
+    color: brandColors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  accountSub: {
+    color: brandColors.textMuted,
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 12,
   },
 
   // Mode toggle (desktop)

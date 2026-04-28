@@ -82,7 +82,7 @@ export default function RequesterTabs() {
         name="Profile"
         component={SettingsScreen}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Account',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'account' : 'account-outline'} color={color} size={size} focused={focused} />
           ),

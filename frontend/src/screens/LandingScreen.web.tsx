@@ -3,12 +3,26 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { CATEGORY_METADATA, type Category } from '../constants/categories';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const imgLogo     = require('../../assets/logo-without-text.png') as { uri?: string } | number;
+const imgLogo = require('../../assets/fixit-logo-mark-transparent.png') as { uri?: string } | number;
 
 interface Props {
   isSignedIn?: boolean;
   onLogin?: () => void;
-  onPostTask: () => void;
+  onCreateAccount?: () => void;
+  onPostTask: (category?: Category) => void;
+  onCategoryPress?: (category: Category) => void;
+  onCategorySelect?: (category: Category) => void;
+  onDashboard?: () => void;
+  onRequesterHome?: () => void;
+  onRequesterTasks?: () => void;
+  onMyTasks?: () => void;
+  onNotifications?: () => void;
+  onProfile?: () => void;
+  onSettings?: () => void;
+  onBecomeFixer?: () => void;
+  onFixerHome?: () => void;
+  onFixerBids?: () => void;
+  onFixerProfile?: () => void;
 }
 
 // ── Full landing CSS ───────────────────────────────────────────────────────
@@ -62,24 +76,68 @@ const LANDING_CSS = `
 .fi-nav .logo img { width: 32px; height: 32px; object-fit: contain; }
 .fi-nav .logo .l { color: var(--secondary-dark); }
 .fi-nav .links { display: flex; gap: 28px; margin-left: 32px; }
-.fi-nav .links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.2px; position: relative; padding: 4px 0; transition: color 200ms; }
-.fi-nav .links a::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--secondary); transform: scaleX(0); transform-origin: left; transition: transform 280ms cubic-bezier(0.65,0,0.35,1); }
-.fi-nav .links a:hover { color: var(--primary); }
-.fi-nav .links a:hover::after { transform: scaleX(1); }
+.fi-nav .links a,
+.fi-nav .links button {
+  color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.2px; position: relative; padding: 4px 0; transition: color 200ms;
+  border: none; background: transparent; cursor: pointer; font-family: var(--font-body);
+}
+.fi-nav .links a::after,
+.fi-nav .links button::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--secondary); transform: scaleX(0); transform-origin: left; transition: transform 280ms cubic-bezier(0.65,0,0.35,1); }
+.fi-nav .links a:hover,
+.fi-nav .links button:hover { color: var(--primary); }
+.fi-nav .links a:hover::after,
+.fi-nav .links button:hover::after { transform: scaleX(1); }
 .fi-nav .actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
-.fi-nav .login { font-size: 14px; font-weight: 700; color: var(--primary); text-decoration: none; padding: 9px 16px; border-radius: 999px; transition: background 200ms; }
+.fi-nav .login { font-size: 14px; font-weight: 700; color: var(--primary); text-decoration: none; padding: 9px 16px; border-radius: 999px; transition: background 200ms; border: none; background: transparent; cursor: pointer; font-family: var(--font-body); }
 .fi-nav .login:hover { background: rgba(28,60,86,0.08); }
 .fi-nav .cta { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: var(--text-on-dark); font-family: var(--font-display); font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 999px; border: none; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms; }
 .fi-nav .cta:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .fi-nav .cta .arr { transition: transform 200ms; display: inline-block; }
 .fi-nav .cta:hover .arr { transform: translateX(3px); }
-@media (max-width: 960px) { .fi-nav { padding: 14px 20px; } .fi-nav .links { display: none; } .fi-nav .login { display: none; } }
+.fi-nav .nav-icon-btn {
+  width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(28,60,86,0.12);
+  background: rgba(255,252,246,0.74); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.account-wrap { position: relative; }
+.account-menu {
+  position: absolute; top: calc(100% + 10px); right: 0; min-width: 220px; padding: 8px;
+  background: rgba(255,252,246,0.98); border: 1px solid rgba(201,190,175,0.6); border-radius: 16px; box-shadow: var(--shadow-md);
+}
+.account-menu button {
+  display: flex; width: 100%; border: none; background: transparent; border-radius: 10px; padding: 10px 12px;
+  color: var(--primary); font-family: var(--font-display); font-weight: 700; cursor: pointer; text-align: left;
+}
+.account-menu button:hover { background: rgba(28,60,86,0.08); }
+.fi-nav .menu-toggle {
+  display: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(28,60,86,0.14);
+  background: rgba(255,252,246,0.72); color: var(--primary); align-items: center; justify-content: center; cursor: pointer;
+}
+.fi-mobile-menu {
+  position: absolute; top: calc(100% + 8px); left: 20px; right: 20px; display: none; flex-direction: column; gap: 6px;
+  padding: 10px; background: rgba(255,252,246,0.98); border: 1px solid rgba(201,190,175,0.6); border-radius: 18px; box-shadow: var(--shadow-md);
+}
+.fi-mobile-menu.open { display: flex; }
+.fi-mobile-menu a,
+.fi-mobile-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; border: none; border-radius: 12px; background: transparent;
+  color: var(--primary); font-family: var(--font-display); font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 14px; cursor: pointer;
+}
+.fi-mobile-menu a:hover,
+.fi-mobile-menu button:hover { background: rgba(28,60,86,0.08); }
+@media (max-width: 960px) {
+  .fi-nav { padding: 14px 20px; }
+  .fi-nav .links { display: none; }
+  .fi-nav .login { display: none; }
+  .fi-nav .nav-icon-btn, .fi-nav .account-wrap { display: none; }
+  .fi-nav .menu-toggle { display: inline-flex; }
+}
 
 /* ── Hero ────────────────────────────────────────────── */
 .fi-hero {
   position: relative; min-height: 100vh; padding: 140px 48px 80px;
   display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; overflow: hidden;
 }
+.fi-hero-mark { position: absolute; right: min(8vw, 120px); bottom: 40px; width: min(42vw, 520px); height: min(42vw, 520px); object-fit: contain; opacity: 0.055; pointer-events: none; z-index: 0; }
 .fi-hero-bg {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(ellipse 800px 600px at 80% 30%, rgba(241,181,69,0.18) 0%, transparent 50%), radial-gradient(ellipse 700px 500px at 10% 90%, rgba(28,60,86,0.08) 0%, transparent 50%);
@@ -120,6 +178,8 @@ const LANDING_CSS = `
 .btn-hero.primary:hover { transform: translateY(-3px); box-shadow: 0 14px 32px -8px rgba(28,60,86,0.6), inset 0 1px 0 rgba(255,255,255,0.15); }
 .btn-hero.ghost { background: transparent; color: var(--primary); border: 1.5px solid rgba(28,60,86,0.25); }
 .btn-hero.ghost:hover { background: var(--primary); color: var(--text-on-dark); transform: translateY(-3px); border-color: var(--primary); }
+.btn-hero.quiet { padding-left: 12px; padding-right: 12px; color: var(--primary); background: transparent; }
+.btn-hero.quiet:hover { transform: translateY(-3px); color: var(--secondary-dark); }
 .btn-hero .arr { transition: transform 250ms cubic-bezier(0.34,1.56,0.64,1); }
 .btn-hero:hover .arr { transform: translateX(5px); }
 .fi-hero-trust { display: flex; align-items: center; gap: 20px; margin-top: 56px; opacity: 0; animation: rise 800ms cubic-bezier(0.16,1,0.3,1) 1000ms forwards; }
@@ -189,21 +249,44 @@ const LANDING_CSS = `
 .fi-cats-head a { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
 .fi-cats-head a:hover .arr { transform: translateX(4px); }
 .fi-cats-grid { display: grid; grid-template-columns: repeat(4,1fr); grid-auto-rows: 220px; gap: 14px; }
-.fi-cat { position: relative; border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 400ms cubic-bezier(0.34,1.56,0.64,1); text-decoration: none; }
+.fi-cat { position: relative; border: none; padding: 0; text-align: left; border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 400ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 300ms; text-decoration: none; }
 .fi-cat:hover { transform: translateY(-6px); }
+.fi-cat.active { box-shadow: 0 0 0 4px rgba(241,181,69,0.45), var(--shadow-md); transform: translateY(-4px); }
 .fi-cat .img { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform 700ms cubic-bezier(0.65,0,0.35,1); }
 .fi-cat:hover .img { transform: scale(1.08); }
 .fi-cat .overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15,36,56,0) 35%, rgba(15,36,56,0.85) 100%); transition: background 400ms; }
 .fi-cat:hover .overlay { background: linear-gradient(180deg, rgba(15,36,56,0.1) 0%, rgba(15,36,56,0.92) 100%); }
 .fi-cat .body { position: absolute; bottom: 0; left: 0; right: 0; padding: 18px 20px; color: #fff; }
 .fi-cat .name { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-.fi-cat .examples { font-size: 12px; color: rgba(255,252,246,0.75); margin-top: 4px; max-height: 0; overflow: hidden; transition: max-height 400ms cubic-bezier(0.65,0,0.35,1); }
-.fi-cat:hover .examples { max-height: 60px; }
+.fi-cat .desc { font-size: 12px; color: rgba(255,252,246,0.84); margin-top: 4px; line-height: 1.35; max-width: 92%; }
+.fi-cat .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 0; overflow: hidden; transition: max-height 400ms cubic-bezier(0.65,0,0.35,1); }
+.fi-cat .examples span { font-size: 11px; font-weight: 700; color: rgba(255,252,246,0.9); background: rgba(255,252,246,0.16); border-radius: 999px; padding: 4px 8px; }
+.fi-cat:hover .examples { max-height: 70px; }
 .fi-cat .glyph { position: absolute; top: 16px; left: 16px; width: 44px; height: 44px; border-radius: 12px; background: rgba(255,252,246,0.92); display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 400ms cubic-bezier(0.34,1.56,0.64,1); }
 .fi-cat:hover .glyph { transform: rotate(-8deg) scale(1.1); }
 .fi-cat .arrow { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; background: var(--secondary); display: flex; align-items: center; justify-content: center; color: var(--primary-dark); font-size: 16px; font-weight: 800; opacity: 0; transform: scale(0.6) rotate(-45deg); transition: opacity 300ms, transform 300ms cubic-bezier(0.34,1.56,0.64,1); }
-.fi-cat:hover .arrow { opacity: 1; transform: scale(1) rotate(0); }
-@media (max-width: 960px) { .fi-cats { padding: 60px 20px 80px; } .fi-cats-grid { grid-template-columns: repeat(2,1fr); grid-auto-rows: 180px; } }
+.fi-cat:hover .arrow, .fi-cat.active .arrow { opacity: 1; transform: scale(1) rotate(0); }
+.fi-cat-detail {
+  margin-top: 20px; display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 28px; align-items: stretch;
+  background: var(--surface); border: 1px solid var(--outline-light); border-radius: 28px; padding: 18px; box-shadow: var(--shadow-md);
+}
+.fi-cat-detail .detail-media { min-height: 320px; border-radius: 20px; background-size: cover; background-position: center; }
+.fi-cat-detail .detail-copy { padding: 18px 14px; display: flex; flex-direction: column; justify-content: center; }
+.fi-cat-detail .detail-kicker { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px; }
+.fi-cat-detail h3 { margin: 0 0 12px; color: var(--primary); font-family: var(--font-display); font-size: clamp(26px,3vw,40px); line-height: 1.08; }
+.fi-cat-detail p { margin: 0; color: var(--text-secondary); font-size: 16px; line-height: 1.55; max-width: 620px; }
+.detail-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0; }
+.detail-chips span { border: 1.5px solid; border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--primary); }
+.detail-example { display: flex; align-items: flex-start; gap: 10px; color: var(--text-secondary); background: var(--background); border-radius: 16px; padding: 14px 16px; margin-bottom: 22px; }
+.detail-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 960px) {
+  .fi-cats { padding: 60px 20px 80px; }
+  .fi-cats-grid { grid-template-columns: repeat(2,1fr); grid-auto-rows: 180px; }
+  .fi-cat-detail { grid-template-columns: 1fr; padding: 12px; }
+  .fi-cat-detail .detail-media { min-height: 190px; }
+  .fi-cat-detail .detail-copy { padding: 16px 8px; }
+  .fi-hero-mark { width: 360px; height: 360px; right: -120px; bottom: auto; top: 90px; opacity: 0.04; }
+}
 
 /* ── Dual CTA (Fixers) ───────────────────────────────── */
 .fi-dual { padding: 0 48px 140px; }
@@ -296,9 +379,52 @@ const FIXER_TILES = [
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────
-export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask }: Props) {
+export default function LandingScreen({
+  isSignedIn = false,
+  onLogin,
+  onCreateAccount,
+  onPostTask,
+  onCategoryPress,
+  onCategorySelect,
+  onDashboard,
+  onRequesterHome,
+  onRequesterTasks,
+  onMyTasks,
+  onNotifications,
+  onProfile,
+  onSettings,
+  onBecomeFixer,
+  onFixerHome,
+  onFixerBids,
+  onFixerProfile,
+}: Props) {
   const [scrolled, setScrolled] = useState(false);
-  const handleLogin = onLogin ?? onPostTask;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category>('MOVING');
+  const selectedCategoryMeta = CATEGORY_METADATA[selectedCategory];
+  const selectedCategoryImage = assetSrc(selectedCategoryMeta.image as { uri?: string } | number);
+  const closeMenus = () => {
+    setMobileMenuOpen(false);
+    setAccountOpen(false);
+  };
+  const runAndClose = (action?: () => void) => {
+    action?.();
+    closeMenus();
+  };
+  const handleLogin = () => runAndClose(onLogin ?? (() => onPostTask()));
+  const handlePostTask = (category?: Category) => {
+    onPostTask(category);
+    closeMenus();
+  };
+  const handleCategoryTask = (category: Category) => {
+    (onCategoryPress ?? onCategorySelect ?? onPostTask)(category);
+    closeMenus();
+  };
+  const handleRequesterHome = onRequesterHome ?? onDashboard ?? handleLogin;
+  const handleRequesterTasks = onRequesterTasks ?? onMyTasks ?? handleRequesterHome;
+  const handleFixerHome = onFixerHome ?? onBecomeFixer ?? handleLogin;
+  const handleFixerCta = () => runAndClose(handleFixerHome);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -340,29 +466,111 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenus();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const logoSrc = assetSrc(imgLogo);
 
   return (
     <div id="fixit-landing">
       {/* ── Nav ─────────────────────────────────────────── */}
       <nav className={`fi-nav${scrolled ? ' scrolled' : ''}`}>
-        <a href="#top" className="logo">
+        <a href="#top" className="logo" onClick={closeMenus}>
           {logoSrc ? <img src={logoSrc} alt="" /> : null}
           <span>Fix<span className="l">I</span>t</span>
         </a>
         <div className="links">
-          <a href="#how">How it works</a>
-          <a href="#categories">Categories</a>
-          <a href="#fixers">For Fixers</a>
-          <a href="#help">Help</a>
+          {isSignedIn ? (
+            <>
+              <button type="button" onClick={() => runAndClose(handleRequesterHome)}>Dashboard</button>
+              <button type="button" onClick={() => runAndClose(handleRequesterTasks)}>My Tasks</button>
+              <button type="button" onClick={() => runAndClose(onNotifications)}>Notifications</button>
+              <button type="button" onClick={() => runAndClose(onProfile ?? onSettings)}>Profile</button>
+              <button type="button" onClick={handleFixerCta}>Find Jobs</button>
+            </>
+          ) : (
+            <>
+              <a href="#how" onClick={closeMenus}>How it works</a>
+              <a href="#categories" onClick={closeMenus}>Categories</a>
+              <a href="#fixers" onClick={closeMenus}>For Fixers</a>
+              <a href="#help" onClick={closeMenus}>Help</a>
+            </>
+          )}
         </div>
         <div className="actions">
-          {!isSignedIn && (
-            <a href="#" className="login" onClick={(e) => { e.preventDefault(); handleLogin(); }}>Log in</a>
+          {isSignedIn ? (
+            <>
+              <button type="button" className="login" onClick={() => runAndClose(handleRequesterTasks)}>My Tasks</button>
+              <button type="button" className="nav-icon-btn" aria-label="Notifications" onClick={() => runAndClose(onNotifications)}>
+                <LandingIcon name="bell-outline" size={18} />
+              </button>
+              <div className="account-wrap">
+                <button
+                  type="button"
+                  className="nav-icon-btn"
+                  aria-label="Account menu"
+                  aria-expanded={accountOpen}
+                  onClick={() => setAccountOpen((open) => !open)}
+                >
+                  <LandingIcon name="account-circle-outline" size={20} />
+                </button>
+                {accountOpen && (
+                  <div className="account-menu">
+                    <button type="button" onClick={() => runAndClose(handleRequesterHome)}>Requester Dashboard</button>
+                    <button type="button" onClick={() => runAndClose(handleRequesterTasks)}>My Tasks</button>
+                    <button type="button" onClick={handleFixerCta}>Find Jobs</button>
+                    <button type="button" onClick={() => runAndClose(onFixerBids)}>My Bids</button>
+                    <button type="button" onClick={() => runAndClose(onFixerProfile)}>Fixer Profile</button>
+                    <button type="button" onClick={() => runAndClose(onNotifications)}>Notifications</button>
+                    <button type="button" onClick={() => runAndClose(onProfile ?? onSettings)}>Profile &amp; Settings</button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <button type="button" className="login" onClick={handleLogin}>Log in</button>
           )}
-          <button className="cta" onClick={onPostTask}>
+          <button className="cta" onClick={() => handlePostTask()}>
             Post a Task <span className="arr">→</span>
           </button>
+          <button
+            type="button"
+            className="menu-toggle"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            <LandingIcon name={mobileMenuOpen ? 'close' : 'menu'} size={22} />
+          </button>
+        </div>
+        <div className={`fi-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
+          <a href="#how" onClick={closeMenus}>How it works</a>
+          <a href="#categories" onClick={closeMenus}>Categories</a>
+          <a href="#fixers" onClick={closeMenus}>For Fixers</a>
+          <a href="#help" onClick={closeMenus}>Help</a>
+          {isSignedIn ? (
+            <>
+              <button type="button" onClick={() => runAndClose(handleRequesterHome)}><LandingIcon name="view-dashboard-outline" size={18} />Dashboard</button>
+              <button type="button" onClick={() => runAndClose(handleRequesterTasks)}><LandingIcon name="clipboard-list-outline" size={18} />My Tasks</button>
+              <button type="button" onClick={() => handlePostTask()}><LandingIcon name="plus-circle-outline" size={18} />Post a Task</button>
+              <button type="button" onClick={handleFixerCta}><LandingIcon name="map-search-outline" size={18} />Find Jobs</button>
+              <button type="button" onClick={() => runAndClose(onFixerBids)}><LandingIcon name="format-list-bulleted" size={18} />My Bids</button>
+              <button type="button" onClick={() => runAndClose(onNotifications)}><LandingIcon name="bell-outline" size={18} />Notifications</button>
+              <button type="button" onClick={() => runAndClose(onProfile ?? onSettings)}><LandingIcon name="account-outline" size={18} />Profile &amp; Settings</button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={handleLogin}><LandingIcon name="login" size={18} />Log in</button>
+              {onCreateAccount && <button type="button" onClick={() => runAndClose(onCreateAccount)}><LandingIcon name="account-plus-outline" size={18} />Create Account</button>}
+              <button type="button" onClick={() => handlePostTask()}><LandingIcon name="plus-circle-outline" size={18} />Post a Task</button>
+              <button type="button" onClick={handleFixerCta}><LandingIcon name="account-hard-hat-outline" size={18} />Become a Fixer</button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -370,16 +578,17 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
       <section className="fi-hero" id="top">
         <div className="fi-hero-bg" />
         <div className="fi-hero-grid" />
+        {logoSrc ? <img className="fi-hero-mark" src={logoSrc} alt="" aria-hidden="true" /> : null}
 
         <div className="fi-hero-content">
           <div className="fi-hero-eyebrow">
             <span className="pulse" />
-            Trusted by 12,000+ neighbors in Israel
+            {isSignedIn ? 'Your requester workspace is ready' : 'Trusted by 12,000+ neighbors in Israel'}
           </div>
 
           <h1 className="fi-hero-title">
             <span className="line">
-              <span>Let&rsquo;s&nbsp;
+              <span>Home help,&nbsp;
                 <span className="scribble">Fix
                   <svg viewBox="0 0 200 30" preserveAspectRatio="none">
                     <path d="M5 22 Q 50 4, 100 18 T 195 14" />
@@ -388,19 +597,24 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
               </span>
             </span>
             <span className="line">
-              <span>Your&nbsp;<span className="accent shimmer">Problems.</span></span>
+              <span>Without&nbsp;<span className="accent shimmer">Runaround.</span></span>
             </span>
           </h1>
 
           <p className="fi-hero-sub">
-            Post any task — from a leaky tap to a wardrobe assembly — and get bids from vetted local Fixers in minutes. You pick. You pay only when it's done right.
+            {isSignedIn
+              ? 'Post a clear task, compare bids from local Fixers, and manage every step from your requester workspace.'
+              : 'Sign in to post any home task, compare bids from vetted local Fixers, and choose who gets the job.'}
           </p>
 
           <div className="fi-hero-actions">
-            <button className="btn-hero primary" onClick={onPostTask}>
-              Post a Task — it&apos;s free <span className="arr">→</span>
+            <button className="btn-hero primary" onClick={() => handlePostTask()}>
+              {isSignedIn ? 'Post a Task' : 'Post a Task - sign in'} <span className="arr">→</span>
             </button>
-            <a href="#how" className="btn-hero ghost">See how it works</a>
+            <button type="button" className="btn-hero ghost" onClick={handleFixerCta}>
+              {isSignedIn ? 'Find Jobs' : 'Become a Fixer'}
+            </button>
+            <a href="#how" className="btn-hero quiet">See how it works</a>
           </div>
 
           <div className="fi-hero-trust">
@@ -424,7 +638,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
             <span className="dot" />3 new bids
           </div>
 
-          <div className="fi-card t1" onClick={onPostTask}>
+          <div className="fi-card t1" onClick={() => handlePostTask('PLUMBING')}>
             <div className="card-row">
               <div className="cat-icon" style={{ background: '#E4F2FB', color: '#2E86C1' }}>
                 <LandingIcon name="water-pump" />
@@ -440,7 +654,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
             </div>
           </div>
 
-          <div className="fi-card t2" onClick={onPostTask}>
+          <div className="fi-card t2" onClick={() => handlePostTask('ASSEMBLY')}>
             <div className="card-row">
               <div className="cat-icon" style={{ background: '#EFECFF', color: '#7B61FF' }}>
                 <LandingIcon name="hammer-screwdriver" />
@@ -456,7 +670,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
             </div>
           </div>
 
-          <div className="fi-card t3" onClick={onPostTask}>
+          <div className="fi-card t3" onClick={() => handlePostTask('ELECTRICITY')}>
             <div className="card-row">
               <div className="cat-icon" style={{ background: '#FEF3D7', color: '#D4900A' }}>
                 <LandingIcon name="lightning-bolt" />
@@ -503,7 +717,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
                 </div>
               </div>
               <h3>Describe your task</h3>
-              <p>Snap a photo, set your budget, pick a category. Takes 90 seconds — no account needed to start.</p>
+              <p>Snap a photo, set your budget, pick a category. Sign in once, then your task is ready for local Fixers.</p>
             </div>
             <div className="fi-step">
               <div className="fi-step-num">02</div>
@@ -537,28 +751,69 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
               <div className="sec-eyebrow">Categories</div>
               <h2 className="sec-title" style={{ fontSize: 'clamp(32px,4vw,52px)', margin: 0 }}>Whatever you need fixed.</h2>
             </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); onPostTask(); }}>
+            <a href="#categories" onClick={() => setSelectedCategory('MOVING')}>
               Browse all 8 categories <span className="arr" style={{ display: 'inline-block', transition: 'transform 250ms' }}>→</span>
             </a>
           </div>
           <div className="fi-cats-grid">
             {CATEGORY_CARDS.map((cat) => {
               const src = assetSrc(cat.image as { uri?: string } | number);
+              const selected = selectedCategory === cat.value;
               return (
-                <a key={cat.value} className="fi-cat" href="#" onClick={(e) => { e.preventDefault(); onPostTask(); }}>
+                <button
+                  key={cat.value}
+                  type="button"
+                  className={`fi-cat${selected ? ' active' : ''}`}
+                  aria-expanded={selected}
+                  aria-controls="category-detail"
+                  onClick={() => setSelectedCategory((current) => current === cat.value ? current : cat.value)}
+                >
                   <div className="img" style={{ backgroundImage: `url(${src})` }} />
                   <div className="overlay" />
                   <div className="glyph" style={{ color: cat.color }}>
                     <LandingIcon name={cat.icon} />
                   </div>
-                  <div className="arrow">→</div>
+                  <div className="arrow"><LandingIcon name={selected ? 'chevron-down' : 'plus'} size={16} /></div>
                   <div className="body">
                     <div className="name">{cat.label}</div>
-                    <div className="examples">{cat.examples.join(' · ')}</div>
+                    <div className="desc">{cat.description}</div>
+                    <div className="examples">
+                      {cat.examples.slice(0, 2).map((example) => (
+                        <span key={example}>{example}</span>
+                      ))}
+                    </div>
                   </div>
-                </a>
+                </button>
               );
             })}
+          </div>
+          <div className="fi-cat-detail" id="category-detail">
+            <div className="detail-media" style={{ backgroundImage: `url(${selectedCategoryImage})` }} />
+            <div className="detail-copy">
+              <div className="detail-kicker" style={{ color: selectedCategoryMeta.color }}>
+                <LandingIcon name={selectedCategoryMeta.icon} size={18} />
+                {selectedCategoryMeta.label}
+              </div>
+              <h3>{selectedCategoryMeta.description}</h3>
+              <p>
+                Use photos, a clear budget, and a precise address so nearby Fixers can price the job accurately.
+              </p>
+              <div className="detail-chips">
+                {selectedCategoryMeta.examples.map((task) => (
+                  <span key={task} style={{ borderColor: selectedCategoryMeta.color, background: selectedCategoryMeta.soft }}>{task}</span>
+                ))}
+              </div>
+              <div className="detail-example">
+                <LandingIcon name="lightbulb-on-outline" size={18} />
+                <span>Start with the category selected, then add the task details that will help Fixers bid.</span>
+              </div>
+              <div className="detail-actions">
+                <button type="button" className="btn-hero primary" onClick={() => handleCategoryTask(selectedCategoryMeta.value)}>
+                  Post a {selectedCategoryMeta.label} Task <span className="arr">→</span>
+                </button>
+                <a href="#how" className="btn-hero ghost">See how it works</a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -571,7 +826,7 @@ export default function LandingScreen({ isSignedIn = false, onLogin, onPostTask 
             <h2>Are you the one who <em>fixes things</em>?</h2>
             <p>Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees — we take a small cut only when you're hired.</p>
             <div className="fi-dual-actions">
-              <button className="btn-dual amber" onClick={isSignedIn ? onPostTask : handleLogin}>Become a Fixer <span className="arr">→</span></button>
+              <button className="btn-dual amber" onClick={handleFixerCta}>{isSignedIn ? 'Open Fixer Workspace' : 'Become a Fixer'} <span className="arr">→</span></button>
               <a href="#how" className="btn-dual outline">Learn more</a>
             </div>
           </div>

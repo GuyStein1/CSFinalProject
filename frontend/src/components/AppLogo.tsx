@@ -1,9 +1,19 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import {
+  Image,
+  type ImageStyle,
+  StyleSheet,
+  type StyleProp,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { Text } from 'react-native-paper';
-import { brandColors, spacing, radii } from '../theme';
+import { brandColors, spacing } from '../theme';
 
-const FULL_LOGO_ASPECT_RATIO = 662 / 534;
+const MARK_ASPECT_RATIO = 436 / 291;
+const transparentMark = require('../../assets/fixit-logo-mark-transparent.png');
+
+type AppLogoVariant = 'mark' | 'lockup' | 'wordmark' | 'heroSilhouette';
 
 interface AppLogoProps {
   compact?: boolean;
@@ -11,6 +21,8 @@ interface AppLogoProps {
   showTagline?: boolean;
   /** Renders only the icon shell — no wordmark or tagline */
   iconOnly?: boolean;
+  variant?: AppLogoVariant;
+  style?: StyleProp<ViewStyle | ImageStyle>;
 }
 
 export default function AppLogo({
@@ -18,49 +30,65 @@ export default function AppLogo({
   onDark = false,
   showTagline = !compact,
   iconOnly = false,
+  variant,
+  style,
 }: AppLogoProps) {
-  if (!compact && !iconOnly) {
+  const resolvedVariant: AppLogoVariant = iconOnly ? 'mark' : variant ?? 'lockup';
+  const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
+  const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
+  const rootStyle = style as StyleProp<ViewStyle>;
+  const imageStyle = style as StyleProp<ImageStyle>;
+
+  const wordmark = (
+    <View style={[styles.textStack, !compact && styles.textStackCentered]}>
+      <Text style={[compact ? styles.wordmarkCompact : styles.wordmark, { color: wordmarkColor }]}>
+        FixIt
+      </Text>
+      {showTagline && (
+        <Text style={[compact ? styles.taglineCompact : styles.tagline, { color: taglineColor }]}>
+          YOUR NEIGHBORHOOD. FIXED.
+        </Text>
+      )}
+    </View>
+  );
+
+  if (resolvedVariant === 'heroSilhouette') {
     return (
       <Image
-        source={require('../../assets/fixit-logo.png')}
-        style={styles.fullLogo}
+        source={transparentMark}
+        style={[styles.heroSilhouette, imageStyle]}
         resizeMode="contain"
       />
     );
   }
 
-  const wordmarkColor = onDark ? brandColors.textOnDark : brandColors.primary;
-  const taglineColor = onDark ? brandColors.textOnDarkMuted : brandColors.textMuted;
+  if (resolvedVariant === 'wordmark') {
+    return <View style={rootStyle}>{wordmark}</View>;
+  }
 
-  /**
-   * Geometric brand mark — the mascot image clipped inside a tilted amber-bordered badge.
-   * overflow:hidden on the rotated badge clips the image to that diamond/sticker shape.
-   * The image tilts with the badge, giving a stamp/sticker feel.
-   */
-  const TILT = 13;
-  const iconShell = (
-    <View style={styles.markOuter}>
-      <View style={[styles.markBadge, { transform: [{ rotate: `${TILT}deg` }] }]}>
-        <Image
-          source={require('../../assets/logo-without-text.png')}
-          style={styles.markImage}
-          resizeMode="cover"
-        />
+  if (resolvedVariant === 'mark') {
+    return (
+      <Image
+        source={transparentMark}
+        style={[styles.mark, compact || iconOnly ? styles.markCompact : styles.markStandalone, imageStyle]}
+        resizeMode="contain"
+      />
+    );
+  }
+
+  if (!compact) {
+    return (
+      <View style={[styles.verticalLockup, rootStyle]}>
+        <Image source={transparentMark} style={styles.markLarge} resizeMode="contain" />
+        {wordmark}
       </View>
-    </View>
-  );
-
-  if (iconOnly) return iconShell;
+    );
+  }
 
   return (
-    <View style={styles.row}>
-      {iconShell}
-      <View>
-        <Text style={[styles.wordmark, { color: wordmarkColor }]}>FixIt</Text>
-        {showTagline && (
-          <Text style={[styles.tagline, { color: taglineColor }]}>YOUR NEIGHBORHOOD. FIXED.</Text>
-        )}
-      </View>
+    <View style={[styles.row, rootStyle]}>
+      <Image source={transparentMark} style={styles.markCompact} resizeMode="contain" />
+      {wordmark}
     </View>
   );
 }
@@ -71,45 +99,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm + 2,
   },
-  fullLogo: {
+  verticalLockup: {
     width: 220,
-    aspectRatio: FULL_LOGO_ASPECT_RATIO,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mark: {
     alignSelf: 'center',
   },
-  // Outer container — sized to contain the badge even when rotated
-  markOuter: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
+  markCompact: {
+    width: 44,
+    aspectRatio: MARK_ASPECT_RATIO,
+  },
+  markStandalone: {
+    width: 96,
+    aspectRatio: MARK_ASPECT_RATIO,
+  },
+  markLarge: {
+    width: 154,
+    aspectRatio: MARK_ASPECT_RATIO,
+    marginBottom: spacing.sm,
+  },
+  textStack: {
     justifyContent: 'center',
   },
-  // Tilted badge — amber border frames the mascot, overflow clips it to shape
-  markBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: radii.xs,
-    borderWidth: 2,
-    borderColor: brandColors.secondary,
-    overflow: 'hidden',
-    backgroundColor: '#FFFCF6',
+  textStackCentered: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Image smaller than the badge so the full mascot (hammer included) fits
-  markImage: {
-    width: 26,
-    height: 26,
   },
   wordmark: {
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: 0,
+    lineHeight: 36,
+  },
+  wordmarkCompact: {
     fontSize: 17,
     fontWeight: '800',
-    letterSpacing: -0.2,
+    letterSpacing: 0,
     lineHeight: 20,
   },
   tagline: {
+    marginTop: 2,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  taglineCompact: {
     marginTop: 1,
     fontSize: 7,
     fontWeight: '600',
     letterSpacing: 0.9,
+  },
+  heroSilhouette: {
+    width: 460,
+    aspectRatio: MARK_ASPECT_RATIO,
+    opacity: 0.08,
   },
 });

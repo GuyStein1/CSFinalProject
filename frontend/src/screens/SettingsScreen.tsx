@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 import { auth } from '../config/firebase';
 import api from '../api/axiosInstance';
 import { FButton, FCard, FInput } from '../components/ui';
-import { brandColors, spacing, typography } from '../theme';
+import { brandColors, radii, spacing, typography } from '../theme';
 
 export default function SettingsScreen() {
   const user = auth.currentUser;
@@ -16,6 +16,10 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const accountName = user?.displayName?.trim() || 'FixIt account';
+  const accountEmail = user?.email || 'Not signed in';
+  const verificationLabel = user?.emailVerified ? 'Verified email' : 'Email not verified';
+  const verificationColor = user?.emailVerified ? brandColors.success : brandColors.warning;
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
@@ -81,21 +85,47 @@ export default function SettingsScreen() {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Hero */}
       <FCard style={styles.heroCard} shadow="sm">
-        <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Settings</Text>
+        <View style={styles.heroRow}>
+          <View style={styles.heroIcon}>
+            <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondary} />
+          </View>
+          <View style={styles.heroText}>
+            <Text style={[typography.eyebrow, styles.heroEyebrow]}>Workspace</Text>
+            <Text style={[typography.h2, { color: brandColors.textOnDark }]}>{accountName}</Text>
+            <Text style={[typography.bodySm, styles.heroSub]}>{accountEmail}</Text>
+          </View>
+        </View>
+        <View style={styles.heroMetaRow}>
+          <View style={styles.heroPill}>
+            <View style={[styles.statusDot, { backgroundColor: verificationColor }]} />
+            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{verificationLabel}</Text>
+          </View>
+          <View style={styles.heroPill}>
+            <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondary} />
+            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>Secure session</Text>
+          </View>
+        </View>
       </FCard>
 
       {/* Account Section */}
       <FCard style={styles.sectionCard} shadow="sm">
-        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
-          Account
-        </Text>
+        <SectionHeader icon="account-outline" label="Account" />
 
-        <SettingRow icon="email-outline" label="Email" value={user?.email || 'Not signed in'} />
+        <SettingRow
+          icon="email-outline"
+          label="Email"
+          value={accountEmail}
+          description="Used for sign-in and password recovery"
+        />
 
         <Divider style={styles.divider} />
 
         <View style={styles.phoneSection}>
-          <SettingRow icon="phone-outline" label="Phone Number" />
+          <SettingRow
+            icon="phone-outline"
+            label="Phone Number"
+            description="Shown only when coordination is needed"
+          />
           <FInput
             value={phone}
             onChangeText={setPhone}
@@ -122,18 +152,21 @@ export default function SettingsScreen() {
 
       {/* Preferences Section */}
       <FCard style={styles.sectionCard} shadow="sm">
-        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
-          Preferences
-        </Text>
+        <SectionHeader icon="tune-variant" label="Preferences" />
 
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
             <View style={styles.settingIcon}>
               <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primaryMuted} />
             </View>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-              Push Notifications
-            </Text>
+            <View style={styles.rowText}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+                Push Notifications
+              </Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                Bids, messages, payments, and task updates
+              </Text>
+            </View>
           </View>
           <Switch
             value={pushEnabled}
@@ -150,37 +183,72 @@ export default function SettingsScreen() {
           <View style={styles.settingIcon}>
             <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
           </View>
-          <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, flex: 1 }]}>
-            Change Password
-          </Text>
+          <View style={styles.rowText}>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+              Change Password
+            </Text>
+            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              Send a reset link to your email
+            </Text>
+          </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
         </Pressable>
       </FCard>
 
       {/* Danger Zone */}
-      <FButton
-        variant="danger"
-        icon="logout"
-        onPress={handleLogout}
-        fullWidth
-        style={styles.logoutButton}
-      >
-        Log Out
-      </FButton>
+      <FCard style={styles.sectionCard} shadow="sm">
+        <SectionHeader icon="logout" label="Session" />
+        <Text style={[typography.bodySm, styles.sessionCopy]}>
+          Log out of this device. Your posted tasks, bids, and profile details stay saved.
+        </Text>
+        <FButton
+          variant="danger"
+          icon="logout"
+          onPress={handleLogout}
+          fullWidth
+          style={styles.logoutButton}
+        >
+          Log Out
+        </FButton>
+      </FCard>
     </ScrollView>
   );
 }
 
-function SettingRow({ icon, label, value }: { icon: string; label: string; value?: string }) {
+function SectionHeader({ icon, label }: { icon: string; label: string }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionHeaderIcon}>
+        <MaterialCommunityIcons name={icon as never} size={16} color={brandColors.primary} />
+      </View>
+      <Text style={[typography.eyebrow, { color: brandColors.textMuted }]}>{label}</Text>
+    </View>
+  );
+}
+
+function SettingRow({
+  icon,
+  label,
+  value,
+  description,
+}: {
+  icon: string;
+  label: string;
+  value?: string;
+  description?: string;
+}) {
   return (
     <View style={styles.settingRow}>
       <View style={styles.settingIcon}>
         <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={styles.rowText}>
         <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
         {value && (
           <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2 }]}>{value}</Text>
+        )}
+        {description && (
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: 2 }]}>{description}</Text>
         )}
       </View>
     </View>
@@ -199,11 +267,72 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     marginBottom: spacing.lg,
+    backgroundColor: brandColors.primary,
+    overflow: 'hidden',
   },
   sectionCard: {
     width: '100%',
     maxWidth: 500,
     marginBottom: spacing.lg,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.lg,
+    backgroundColor: 'rgba(255,252,246,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroText: {
+    flex: 1,
+    gap: 2,
+  },
+  heroEyebrow: {
+    color: brandColors.secondary,
+  },
+  heroSub: {
+    color: brandColors.textOnDarkMuted,
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+  },
+  heroPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255,252,246,0.10)',
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  sectionHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   divider: {
     marginVertical: spacing.lg,
@@ -225,15 +354,20 @@ const styles = StyleSheet.create({
   phoneSection: {
     gap: spacing.md,
   },
+  rowText: {
+    flex: 1,
+  },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
   toggleLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    flex: 1,
   },
   actionRow: {
     flexDirection: 'row',
@@ -241,8 +375,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.xs,
   },
+  sessionCopy: {
+    color: brandColors.textMuted,
+    marginBottom: spacing.lg,
+  },
   logoutButton: {
-    maxWidth: 500,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
 });

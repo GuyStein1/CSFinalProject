@@ -94,7 +94,7 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
         <Animated.View style={[styles.coin, { transform: [{ scale }] }]}>
           <View style={styles.coinRing} />
           <Image
-            source={require('../../assets/fixit-logo.png')}
+            source={require('../../assets/fixit-logo-mark-transparent.png')}
             style={styles.coinLogo}
             resizeMode="contain"
           />
@@ -167,8 +167,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   coinLogo: {
-    width: 104,
-    height: 84,
+    width: 108,
+    height: 72,
   },
   dotsRow: {
     flexDirection: 'row',
