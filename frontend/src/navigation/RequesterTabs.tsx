@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
@@ -29,6 +29,8 @@ function TabIcon({ name, color, size, focused }: { name: string; color: string; 
 
 export default function RequesterTabs() {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
 
   return (
     <Tab.Navigator
@@ -37,10 +39,10 @@ export default function RequesterTabs() {
         tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
         sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: useDesktopNavigation ? styles.hiddenTabBar : styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
-        tabBarBackground: () => <TabBarBackground />,
+        tabBarBackground: useDesktopNavigation ? undefined : () => <TabBarBackground />,
       }}
     >
       <Tab.Screen
@@ -78,6 +80,9 @@ export default function RequesterTabs() {
 }
 
 const styles = StyleSheet.create({
+  hiddenTabBar: {
+    display: 'none',
+  },
   modeStrip: {
     position: 'absolute',
     top: 0,

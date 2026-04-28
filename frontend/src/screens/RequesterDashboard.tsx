@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -16,21 +15,12 @@ import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import {
   CATEGORY_LIST,
-  CATEGORY_METADATA,
   type Category,
-  type CategoryMetadata,
 } from '../utils/categoryMetadata';
 
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
-
-const HERO_CATEGORY = CATEGORY_METADATA.MOVING;
-const FEATURED_CATEGORIES = [
-  CATEGORY_METADATA.MOUNTING,
-  CATEGORY_METADATA.PLUMBING,
-  CATEGORY_METADATA.ELECTRICITY,
-] as const;
 
 const WORKSPACE_STEPS = [
   {
@@ -66,7 +56,7 @@ export default function RequesterDashboard({ navigation }: Props) {
   const tablet = width >= 680;
   const horizontalPadding = wide ? spacing.xxxl : spacing.lg;
   const contentWidth = Math.min(width, 1120);
-  const categoryColumns = wide ? 4 : 2;
+  const categoryColumns = wide ? 4 : tablet ? 3 : 2;
   const categoryGap = spacing.md;
   const availableContentWidth = Math.max(0, contentWidth - horizontalPadding * 2);
   const categoryCellWidth =
@@ -281,23 +271,6 @@ export default function RequesterDashboard({ navigation }: Props) {
             </View>
           </View>
 
-          <View style={[styles.serviceLayout, wide && styles.serviceLayoutWide]}>
-            <ServiceHeroCard
-              category={HERO_CATEGORY}
-              onPress={() => navigateToCreate(HERO_CATEGORY.value)}
-              wide={wide}
-            />
-            <View style={[styles.featuredStack, wide && styles.featuredStackWide]}>
-              {FEATURED_CATEGORIES.map((category) => (
-                <ServiceMiniCard
-                  key={category.value}
-                  category={category}
-                  onPress={() => navigateToCreate(category.value)}
-                />
-              ))}
-            </View>
-          </View>
-
           <View style={styles.categoryGrid}>
             {CATEGORY_LIST.map((category) => (
               <Pressable
@@ -314,12 +287,20 @@ export default function RequesterDashboard({ navigation }: Props) {
                   },
                 ]}
               >
-                <View style={[styles.categoryIcon, { backgroundColor: category.bg }]}>
-                  <MaterialCommunityIcons name={category.icon as never} size={19} color={category.color} />
+                <View style={styles.categoryTopRow}>
+                  <View style={[styles.categoryIcon, { backgroundColor: category.bg }]}>
+                    <MaterialCommunityIcons name={category.icon as never} size={20} color={category.color} />
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={18} color={brandColors.textMuted} />
                 </View>
-                <Text style={[typography.label, styles.categoryLabel]} numberOfLines={1}>
-                  {category.label}
-                </Text>
+                <View style={styles.categoryCopy}>
+                  <Text style={[typography.label, styles.categoryLabel]} numberOfLines={1}>
+                    {category.label}
+                  </Text>
+                  <Text style={[typography.caption, styles.categoryDescription]} numberOfLines={2}>
+                    {category.description}
+                  </Text>
+                </View>
               </Pressable>
             ))}
           </View>
@@ -350,76 +331,6 @@ export default function RequesterDashboard({ navigation }: Props) {
         </View>
       </View>
     </ScrollView>
-  );
-}
-
-function ServiceHeroCard({
-  category,
-  onPress,
-  wide,
-}: {
-  category: CategoryMetadata;
-  onPress: () => void;
-  wide: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Post a ${category.label} task`}
-      style={({ pressed }) => [
-        styles.serviceHero,
-        wide && styles.serviceHeroWide,
-        {
-          opacity: pressed ? 0.94 : 1,
-          transform: [{ scale: pressed ? 0.985 : 1 }],
-        },
-      ]}
-    >
-      <Image source={category.image} style={styles.serviceHeroImage} resizeMode="cover" />
-      <LinearGradient
-        colors={['rgba(15,36,56,0.02)', 'rgba(15,36,56,0.88)']}
-        style={styles.serviceHeroOverlay}
-      >
-        <View style={[styles.serviceIcon, { backgroundColor: category.color }]}>
-          <MaterialCommunityIcons name={category.icon as never} size={21} color={brandColors.white} />
-        </View>
-        <View style={styles.serviceHeroText}>
-          <Text style={styles.serviceEyebrow}>Featured request</Text>
-          <Text style={styles.serviceTitle}>{category.label}</Text>
-          <Text style={styles.serviceCopy}>{category.description}</Text>
-        </View>
-      </LinearGradient>
-    </Pressable>
-  );
-}
-
-function ServiceMiniCard({ category, onPress }: { category: CategoryMetadata; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Post a ${category.label} task`}
-      style={({ pressed }) => [
-        styles.serviceMini,
-        {
-          opacity: pressed ? 0.9 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-        },
-      ]}
-    >
-      <Image source={category.image} style={styles.serviceMiniImage} resizeMode="cover" />
-      <View style={styles.serviceMiniShade} />
-      <View style={[styles.serviceMiniIcon, { backgroundColor: category.bg }]}>
-        <MaterialCommunityIcons name={category.icon as never} size={17} color={category.color} />
-      </View>
-      <View style={styles.serviceMiniText}>
-        <Text style={styles.serviceMiniTitle}>{category.label}</Text>
-        <Text style={styles.serviceMiniCopy} numberOfLines={1}>
-          {category.description}
-        </Text>
-      </View>
-    </Pressable>
   );
 }
 
@@ -570,7 +481,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginTop: -spacing.xl,
+    marginTop: spacing.lg,
     marginBottom: spacing.xxl,
     padding: spacing.lg,
     borderRadius: radii.lg,
@@ -657,127 +568,41 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  serviceLayout: {
-    gap: spacing.md,
-  },
-  serviceLayoutWide: {
-    flexDirection: 'row',
-  },
-  serviceHero: {
-    minHeight: 250,
-    borderRadius: radii.xl,
-    overflow: 'hidden',
-    backgroundColor: brandColors.primaryDark,
-    ...shadows.md,
-  },
-  serviceHeroWide: {
-    flex: 1,
-  },
-  serviceHeroImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  serviceHeroOverlay: {
-    flex: 1,
-    justifyContent: 'space-between',
-    padding: spacing.xl,
-  },
-  serviceIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceHeroText: {
-    gap: spacing.xs,
-  },
-  serviceEyebrow: {
-    ...typography.eyebrow,
-    color: brandColors.secondary,
-  },
-  serviceTitle: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '800',
-    letterSpacing: 0,
-    color: brandColors.white,
-  },
-  serviceCopy: {
-    ...typography.bodySm,
-    color: 'rgba(255,255,255,0.86)',
-    maxWidth: 360,
-  },
-  featuredStack: {
-    gap: spacing.md,
-  },
-  featuredStackWide: {
-    width: 330,
-  },
-  serviceMini: {
-    minHeight: 74,
-    borderRadius: radii.lg,
-    overflow: 'hidden',
-    backgroundColor: brandColors.primaryDark,
-    ...shadows.sm,
-  },
-  serviceMiniImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  serviceMiniShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,36,56,0.58)',
-  },
-  serviceMiniIcon: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    width: 34,
-    height: 34,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceMiniText: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: spacing.md,
-    paddingLeft: 58,
-  },
-  serviceMiniTitle: {
-    ...typography.label,
-    color: brandColors.white,
-  },
-  serviceMiniCopy: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.76)',
-  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
   },
   categoryTile: {
-    minHeight: 96,
-    padding: spacing.md,
+    minHeight: 124,
+    padding: spacing.lg,
     borderRadius: radii.lg,
     backgroundColor: brandColors.surface,
     borderWidth: 1,
     borderColor: brandColors.outlineLight,
     justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  categoryTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   categoryIcon: {
-    width: 38,
-    height: 38,
+    width: 42,
+    height: 42,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  categoryCopy: {
+    gap: spacing.xs,
+  },
   categoryLabel: {
     color: brandColors.textPrimary,
+  },
+  categoryDescription: {
+    color: brandColors.textMuted,
   },
   stepGrid: {
     gap: spacing.md,

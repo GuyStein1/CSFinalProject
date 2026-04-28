@@ -97,7 +97,7 @@ export default function LandingScreen({
   const wide = width >= 860;
   const mid  = width >= 600;
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('MOVING');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<'how' | 'categories' | 'fixers', number>>({
     how: 0,
@@ -145,7 +145,7 @@ export default function LandingScreen({
 
   const handleCategoryPress = (category: Category) => {
     setMenuOpen(false);
-    setSelectedCategory(category);
+    setSelectedCategory((current) => (current === category ? null : category));
   };
 
   const handleLogin = () => {
@@ -551,14 +551,6 @@ export default function LandingScreen({
                           <Text style={styles.catExampleText} numberOfLines={1}>{example}</Text>
                         </View>
                       ))}
-                    </View>
-                    <View style={styles.catActionRow}>
-                      <Text style={styles.catActionText}>{selected ? 'Selected' : 'View details'}</Text>
-                      <MaterialCommunityIcons
-                        name={selected ? 'check-circle-outline' : 'plus'}
-                        size={14}
-                        color={brandColors.textOnDark}
-                      />
                     </View>
                   </Pressable>
 
@@ -1115,17 +1107,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '600',
-  },
-  catActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  catActionText: {
-    fontSize: 11,
-    color: brandColors.textOnDark,
-    fontWeight: '800',
   },
   catInlineDetail: {
     gap: spacing.md,

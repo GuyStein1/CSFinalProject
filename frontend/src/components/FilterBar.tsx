@@ -2,10 +2,12 @@ import React, { useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import Feather from '@expo/vector-icons/Feather';
@@ -38,6 +40,7 @@ interface FilterBarProps {
   onPriceChange: (min: number, max: number) => void;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
+  compact?: boolean;
 }
 
 // --- Single-thumb slider for distance ---
@@ -233,7 +236,10 @@ export default function FilterBar({
   onPriceChange,
   hasActiveFilters = false,
   onClearFilters,
+  compact,
 }: FilterBarProps) {
+  const { width } = useWindowDimensions();
+  const isCompact = compact ?? (Platform.OS === 'web' && width >= 900);
   const [expanded, setExpanded] = useState(false);
   const budgetSummary =
     priceMin === PRICE_MIN && priceMax >= PRICE_MAX
@@ -241,17 +247,17 @@ export default function FilterBar({
       : `Budget: ₪${priceMin}–₪${priceMax >= PRICE_MAX ? '5000+' : priceMax}`;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isCompact && styles.containerCompact]}>
       {/* Top row: view toggle + category chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact]}
       >
         {/* View toggle */}
         <View style={styles.viewToggle}>
           <Pressable
-            style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, isCompact && styles.toggleBtnCompact, viewMode === 'map' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('map')}
             accessibilityRole="button"
             accessibilityLabel="Show map view"
@@ -267,7 +273,7 @@ export default function FilterBar({
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, isCompact && styles.toggleBtnCompact, viewMode === 'list' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('list')}
             accessibilityRole="button"
             accessibilityLabel="Show list view"
@@ -288,7 +294,7 @@ export default function FilterBar({
 
         {/* Expand/collapse button for sliders */}
         <Pressable
-          style={[styles.filterToggle, expanded && styles.filterToggleActive]}
+          style={[styles.filterToggle, isCompact && styles.filterToggleCompact, expanded && styles.filterToggleActive]}
           onPress={() => setExpanded((p) => !p)}
           accessibilityRole="button"
           accessibilityLabel="Adjust distance and budget filters"
@@ -303,7 +309,7 @@ export default function FilterBar({
 
         {hasActiveFilters && onClearFilters && (
           <Pressable
-            style={styles.resetButton}
+            style={[styles.resetButton, isCompact && styles.resetButtonCompact]}
             onPress={onClearFilters}
             accessibilityRole="button"
             accessibilityLabel="Clear filters"
@@ -329,7 +335,7 @@ export default function FilterBar({
 
       {/* Expandable slider panel */}
       {expanded && (
-        <View style={styles.sliderPanel}>
+        <View style={[styles.sliderPanel, isCompact && styles.sliderPanelCompact]}>
           <DistanceSlider value={radius} onChange={onRadiusChange} />
           <PriceRangeSlider minValue={priceMin} maxValue={priceMax} onChange={onPriceChange} />
         </View>
@@ -404,11 +410,19 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.surface,
     ...shadows.sm,
   },
+  containerCompact: {
+    shadowOpacity: 0.05,
+  },
   scrollContent: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  scrollContentCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
+    gap: spacing.xs,
   },
   viewToggle: {
     flexDirection: 'row',
@@ -424,6 +438,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.xs,
+  },
+  toggleBtnCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   toggleBtnActive: {
     backgroundColor: brandColors.surface,
@@ -442,6 +460,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     backgroundColor: brandColors.surfaceAlt,
   },
+  filterToggleCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
   filterToggleActive: {
     backgroundColor: brandColors.infoSoft,
   },
@@ -453,6 +475,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.sm,
     backgroundColor: brandColors.dangerSoft,
+  },
+  resetButtonCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   resetText: {
     color: brandColors.danger,
@@ -471,6 +497,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: brandColors.outlineLight,
+  },
+  sliderPanelCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
   },
   bottomAccent: {
     height: 2,

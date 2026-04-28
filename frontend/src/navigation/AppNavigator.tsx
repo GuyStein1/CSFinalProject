@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 import {
@@ -32,11 +32,17 @@ import {
 
 type Mode = 'requester' | 'fixer';
 
-const DESKTOP_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 900;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
 const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
+
+function getActiveWorkspaceScreen(route: BottomTabHeaderProps['route']): string | undefined {
+  const state = (route as { state?: { index?: number; routes?: Array<{ name?: string }> } }).state;
+  const activeRoute = state?.routes?.[state.index ?? 0];
+  return activeRoute?.name;
+}
 
 function resetToLanding(navigation: BottomTabHeaderProps['navigation']) {
   const parentNavigation = navigation.getParent();
@@ -102,13 +108,21 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('CreateTask');
   };
 
-  const openAccount = () => {
-    if (mode === 'fixer') {
-      navigation.navigate('FixerMode', { screen: 'FixerProfile' });
-      return;
-    }
-    navigation.navigate('RequesterMode', { screen: 'Profile' });
+  const openWorkspaceScreen = (screen: string) => {
+    navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', { screen });
   };
+  const activeScreen = getActiveWorkspaceScreen(route) ?? (mode === 'fixer' ? 'FindJobs' : 'Dashboard');
+  const workspaceTabs = mode === 'fixer'
+    ? [
+        { label: 'Find Jobs', screen: 'FindJobs', icon: 'map-search-outline' },
+        { label: 'My Bids', screen: 'MyBids', icon: 'format-list-checks' },
+        { label: 'Profile', screen: 'FixerProfile', icon: 'account-hard-hat-outline' },
+      ]
+    : [
+        { label: 'Home', screen: 'Dashboard', icon: 'home-outline' },
+        { label: 'My Tasks', screen: 'MyTasks', icon: 'clipboard-list-outline' },
+        { label: 'Account', screen: 'Profile', icon: 'account-circle-outline' },
+      ];
 
   return (
     <View
@@ -131,7 +145,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </Pressable>
 
         <View style={styles.desktopCenter}>
-          <Text style={styles.desktopModeEyebrow}>Workspace</Text>
           <View style={styles.modeToggleWrap}>
             <Pressable
               accessibilityRole="button"
@@ -176,6 +189,35 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               </Text>
             </Pressable>
           </View>
+
+          <View style={styles.desktopPageTabs}>
+            {workspaceTabs.map((item) => {
+              const selected = activeScreen === item.screen;
+              return (
+                <Pressable
+                  key={item.screen}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${item.label}`}
+                  accessibilityState={{ selected }}
+                  onPress={() => openWorkspaceScreen(item.screen)}
+                  style={({ pressed }) => [
+                    styles.desktopPageTab,
+                    selected && styles.desktopPageTabActive,
+                    pressed && styles.desktopActionPressed,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={item.icon as never}
+                    size={16}
+                    color={selected ? brandColors.primary : brandColors.textMuted}
+                  />
+                  <Text style={[styles.desktopPageTabText, selected && styles.desktopPageTabTextActive]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         <View style={styles.desktopActions}>
@@ -217,20 +259,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               <MaterialCommunityIcons name="cog-outline" size={20} color={brandColors.primary} />
             </Pressable>
           )}
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={mode === 'fixer' ? 'Open fixer profile' : 'Open account'}
-            style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
-            onPress={openAccount}
-          >
-            <MaterialCommunityIcons
-              name={mode === 'fixer' ? 'account-hard-hat' : 'account-circle-outline'}
-              size={19}
-              color={brandColors.primary}
-            />
-            <Text style={styles.accountLabel}>{mode === 'fixer' ? 'Profile' : 'Account'}</Text>
-          </Pressable>
         </View>
       </View>
     </View>
@@ -262,7 +290,9 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openLanding = () => {
-    resetToLanding(navigation);
+    navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', {
+      screen: mode === 'fixer' ? 'FindJobs' : 'Dashboard',
+    });
   };
 
   const openNotifications = () => {
@@ -327,7 +357,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         <View style={styles.logoCenter} pointerEvents="box-none">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Go to FixIt home"
+            accessibilityLabel="Go to workspace home"
             onPress={openLanding}
             hitSlop={8}
             style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
@@ -366,7 +396,6 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onFixerProfilePress={openFixerProfile}
         onNotificationsPress={openNotifications}
         onSettingsPress={openSettings}
-        onLandingPress={openLanding}
         notificationCount={notificationCount}
       />
     </>
@@ -401,6 +430,14 @@ function MainNavigator() {
 function SignedInLanding({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'Landing'>) {
+  const { width } = useWindowDimensions();
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
+      navigation.replace('Main');
+    }
+  }, [navigation, width]);
+
   const openRequesterDashboard = () => {
     navigation.navigate('Main', {
       screen: 'RequesterMode',
@@ -448,6 +485,10 @@ function SignedInLanding({
     navigation.navigate('NotificationCenter');
   };
 
+  if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
+    return null;
+  }
+
   return (
     <LandingScreenWithNavigationProps
       isSignedIn
@@ -474,7 +515,7 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName={Platform.OS === 'web' ? 'Landing' : 'Main'}
       screenOptions={{
         headerTintColor: theme.colors.primary,
         headerStyle: { backgroundColor: theme.colors.surface },
@@ -541,7 +582,7 @@ const styles = StyleSheet.create({
   },
   desktopBarInner: {
     width: '100%',
-    maxWidth: 1180,
+    maxWidth: 1240,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,20 +590,13 @@ const styles = StyleSheet.create({
   },
   desktopCenter: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-  },
-  desktopModeEyebrow: {
-    color: brandColors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 12,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    gap: spacing.md,
   },
   desktopActions: {
-    minWidth: 256,
+    minWidth: 168,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -598,28 +632,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  accountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    height: 38,
-    paddingLeft: spacing.md,
-    paddingRight: spacing.md,
-    borderRadius: radii.pill,
-    backgroundColor: brandColors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-  },
-  accountButtonPressed: {
-    opacity: 0.82,
-  },
-  accountLabel: {
-    color: brandColors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
-
   // Mode toggle (desktop)
   modeToggleWrap: {
     flexDirection: 'row',
@@ -649,6 +661,36 @@ const styles = StyleSheet.create({
   },
   modeToggleLabelActive: {
     color: brandColors.textOnDark,
+  },
+  desktopPageTabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    flexShrink: 1,
+  },
+  desktopPageTab: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  desktopPageTabActive: {
+    backgroundColor: brandColors.infoSoft,
+    borderColor: brandColors.outlineLight,
+  },
+  desktopPageTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 16,
+    color: brandColors.textMuted,
+  },
+  desktopPageTabTextActive: {
+    color: brandColors.primary,
   },
 
   // Notification badge

@@ -511,7 +511,7 @@ export default function MyBidsScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.value}
-          contentContainerStyle={styles.tabContent}
+          contentContainerStyle={[styles.tabContent, isWide && styles.tabContentWide]}
           renderItem={({ item }) => (
             <FChip
               label={item.label}
@@ -681,8 +681,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xxxl,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    gap: spacing.lg,
   },
   workspaceHeaderMain: {
     flex: 1,
@@ -694,9 +695,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   headerIconShell: {
-    width: 30,
-    height: 30,
-    borderRadius: radii.sm,
+    width: 26,
+    height: 26,
+    borderRadius: radii.xs,
     backgroundColor: 'rgba(241,181,69,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -709,8 +710,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   headerTitle: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.textOnDark,
@@ -728,21 +729,21 @@ const styles = StyleSheet.create({
   },
   workspaceStatsWide: {
     justifyContent: 'flex-end',
-    minWidth: 420,
+    minWidth: 320,
   },
   workspaceStat: {
-    minWidth: 112,
+    minWidth: 98,
     flexGrow: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
     borderRadius: radii.md,
     backgroundColor: 'rgba(255,252,246,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255,252,246,0.14)',
   },
   workspaceStatValue: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.secondary,
@@ -765,6 +766,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,
+  },
+  tabContentWide: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xs + 2,
+    gap: spacing.xs,
   },
   listContent: {
     paddingVertical: spacing.lg,

@@ -461,6 +461,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       </View>
 
       <FilterBar
+        compact={isWide && Platform.OS === 'web'}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         radius={radius}
@@ -476,7 +477,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
       {/* Work-area search uses Google Places on web; native keeps GPS/default centers only. */}
       {supportsWorkAreaSearch && (
-        <View style={styles.workAreaStrip}>
+        <View style={[styles.workAreaStrip, isWide && styles.workAreaStripWide]}>
           <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
           <View style={styles.workAreaInputWrapper}>
             <FInput
@@ -542,7 +543,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         </View>
       )}
       {center && centerMode === 'manual' && !searchLoading && (
-        <View style={styles.workAreaActiveBar}>
+        <View style={[styles.workAreaActiveBar, isWide && styles.workAreaActiveBarWide]}>
           <MaterialCommunityIcons name="map-marker-check" size={13} color={brandColors.success} />
           <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]} numberOfLines={1}>
             Showing tasks in: <Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
@@ -557,7 +558,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         </View>
       )}
       {searchError && (
-        <View style={styles.searchErrorBar}>
+        <View style={[styles.searchErrorBar, isWide && styles.searchErrorBarWide]}>
           <MaterialCommunityIcons name="alert-circle-outline" size={13} color={brandColors.danger} />
           <Text style={[typography.caption, { color: brandColors.danger }]}>{searchError}</Text>
         </View>
@@ -693,8 +694,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xxxl,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    gap: spacing.lg,
   },
   workspaceHeaderMain: {
     flex: 1,
@@ -706,9 +708,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   headerIconShell: {
-    width: 30,
-    height: 30,
-    borderRadius: radii.sm,
+    width: 26,
+    height: 26,
+    borderRadius: radii.xs,
     backgroundColor: 'rgba(241,181,69,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -721,8 +723,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   headerTitle: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.textOnDark,
@@ -739,21 +741,21 @@ const styles = StyleSheet.create({
   },
   workspaceStatsWide: {
     justifyContent: 'flex-end',
-    minWidth: 360,
+    minWidth: 280,
   },
   workspaceStat: {
-    minWidth: 104,
+    minWidth: 88,
     flexGrow: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
     borderRadius: radii.md,
     backgroundColor: 'rgba(255,252,246,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255,252,246,0.14)',
   },
   workspaceStatValue: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.secondary,
@@ -812,6 +814,10 @@ const styles = StyleSheet.create({
     borderBottomColor: brandColors.outlineLight,
     zIndex: 20,
   },
+  workAreaStripWide: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xs,
+  },
   workAreaInputWrapper: {
     flex: 1,
     position: 'relative',
@@ -830,6 +836,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
   },
+  workAreaActiveBarWide: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 5,
+  },
   searchErrorBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -839,6 +849,10 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.dangerSoft,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
+  },
+  searchErrorBarWide: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 5,
   },
   searchGoBtn: {
     width: 32,

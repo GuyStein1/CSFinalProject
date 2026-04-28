@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   profileHeroWide: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.xxl,
+    padding: spacing.xl,
   },
   avatarWrapper: {
     position: 'relative',
