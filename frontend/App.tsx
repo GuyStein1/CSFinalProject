@@ -2,7 +2,6 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
@@ -41,7 +40,12 @@ function RootContent() {
   }, [authState.status, navigationReady]);
 
   useEffect(() => {
-    if (authState.status !== 'ready' || !pendingLandingIntent || !navigationRef.isReady()) {
+    if (
+      authState.status !== 'ready' ||
+      !pendingLandingIntent ||
+      !navigationReady ||
+      !navigationRef.isReady()
+    ) {
       return;
     }
 
@@ -62,7 +66,7 @@ function RootContent() {
     await authState.logOut();
   }, [authState.logOut]);
 
-  if (Platform.OS === 'web' && authState.status === 'signed_out' && signedOutSurface === 'landing') {
+  if (authState.status === 'signed_out' && signedOutSurface === 'landing') {
     return (
       <LandingScreenWithNavigationProps
         isSignedIn={false}

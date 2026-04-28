@@ -25,16 +25,19 @@ function formatTimeAgo(dateString: string): string {
 
 interface DiscoveryListCardProps {
   task: DiscoveryTask;
+  hasBid?: boolean;
   onPress: () => void;
 }
 
-export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardProps) {
+export default function DiscoveryListCard({ task, hasBid = false, onPress }: DiscoveryListCardProps) {
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
   const catMeta = getCategoryMetadata(task.category);
 
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Open task ${task.title}`}
       style={({ pressed }) => [
         styles.card,
         shadows.sm,
@@ -50,24 +53,34 @@ export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardPr
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>
             {task.title}
           </Text>
-          <Text style={[typography.caption, { color: catMeta.color }]}>{catMeta.label}</Text>
+          <View style={styles.categoryLine}>
+            <Text style={[typography.caption, { color: catMeta.color }]}>{catMeta.label}</Text>
+            <View style={styles.metaDot} />
+            <Text style={[typography.caption, styles.metaText]}>{formatTimeAgo(task.createdAt)}</Text>
+          </View>
+          {hasBid && (
+            <View style={styles.bidStatusPill}>
+              <MaterialCommunityIcons name="check-circle-outline" size={12} color={brandColors.success} />
+              <Text style={[typography.caption, styles.bidStatusText]}>Bid sent</Text>
+            </View>
+          )}
         </View>
         <View style={styles.priceTag}>
           <Text style={[typography.h3, styles.price]}>{budgetLabel}</Text>
         </View>
       </View>
 
+      {!!task.description && (
+        <Text style={[typography.bodySm, styles.description]} numberOfLines={2}>
+          {task.description}
+        </Text>
+      )}
+
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
           <Text style={[typography.caption, styles.metaText]}>
-            {task.generalLocationName} — {task.distanceKm.toFixed(1)} km
-          </Text>
-        </View>
-        <View style={styles.metaItem}>
-          <MaterialCommunityIcons name="clock-outline" size={13} color={brandColors.textMuted} />
-          <Text style={[typography.caption, styles.metaText]}>
-            {formatTimeAgo(task.createdAt)}
+            {task.generalLocationName} / {task.distanceKm.toFixed(1)} km
           </Text>
         </View>
         <View style={styles.metaItem}>
@@ -75,6 +88,16 @@ export default function DiscoveryListCard({ task, onPress }: DiscoveryListCardPr
           <Text style={[typography.caption, styles.metaText]}>
             {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
           </Text>
+        </View>
+        <View style={[styles.detailsCue, hasBid && styles.bidDetailsCue]}>
+          <Text style={[typography.caption, hasBid ? styles.bidDetailsText : styles.detailsText]}>
+            {hasBid ? 'View bid' : 'Details'}
+          </Text>
+          <MaterialCommunityIcons
+            name={hasBid ? 'check-circle-outline' : 'arrow-right'}
+            size={13}
+            color={hasBid ? brandColors.success : brandColors.primary}
+          />
         </View>
       </View>
     </Pressable>
@@ -91,6 +114,8 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.lg + 4,
     gap: spacing.md,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
   accentBar: {
     position: 'absolute',
@@ -115,6 +140,33 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  categoryLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  bidStatusPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.successSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(81,122,88,0.22)',
+  },
+  bidStatusText: {
+    color: brandColors.success,
+    fontWeight: '700',
+  },
+  metaDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: brandColors.outline,
+  },
   title: {
     color: brandColors.textPrimary,
   },
@@ -122,15 +174,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.sm,
-    backgroundColor: brandColors.infoSoft,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,42,0.16)',
   },
   price: {
-    color: brandColors.primary,
+    color: brandColors.secondaryDark,
+  },
+  description: {
+    color: brandColors.textSecondary,
   },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.md,
   },
   metaItem: {
     flexDirection: 'row',
@@ -139,5 +197,26 @@ const styles = StyleSheet.create({
   },
   metaText: {
     color: brandColors.textMuted,
+  },
+  detailsCue: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.infoSoft,
+  },
+  bidDetailsCue: {
+    backgroundColor: brandColors.successSoft,
+  },
+  detailsText: {
+    color: brandColors.primary,
+    fontWeight: '700',
+  },
+  bidDetailsText: {
+    color: brandColors.success,
+    fontWeight: '700',
   },
 });

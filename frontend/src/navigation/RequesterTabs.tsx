@@ -5,15 +5,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import RequesterDashboard from '../screens/RequesterDashboard';
 import MyTasksScreen from '../screens/MyTasksScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
-
-function MessagesScreen() {
-  return <PlaceholderScreen title="Messages" />;
-}
 
 function TabBarBackground() {
   return (
@@ -65,16 +60,6 @@ export default function RequesterTabs() {
           tabBarLabel: 'My Tasks',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'clipboard-list' : 'clipboard-list-outline'} color={color} size={size} focused={focused} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Messages"
-        component={MessagesScreen}
-        options={{
-          tabBarLabel: 'Messages',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name={focused ? 'chat' : 'chat-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />

@@ -19,7 +19,7 @@ export type ViewMode = 'map' | 'list';
 const DISTANCE_MIN = 1;
 const DISTANCE_MAX = 80;
 
-// --- Price slider ---
+// --- Budget slider ---
 const PRICE_MIN = 0;
 const PRICE_MAX = 5000; // 5000 represents "5000+"
 
@@ -36,6 +36,8 @@ interface FilterBarProps {
   priceMin: number;
   priceMax: number;
   onPriceChange: (min: number, max: number) => void;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 // --- Single-thumb slider for distance ---
@@ -103,7 +105,7 @@ function DistanceSlider({ value, onChange }: { value: number; onChange: (v: numb
   );
 }
 
-// --- Dual-thumb slider for price range ---
+// --- Dual-thumb slider for budget range ---
 function PriceRangeSlider({
   minValue,
   maxValue,
@@ -182,10 +184,10 @@ function PriceRangeSlider({
     <View style={sliderStyles.container}>
       <View style={sliderStyles.labelRow}>
         <Feather name="dollar-sign" size={13} color={brandColors.textMuted} />
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Price</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Budget</Text>
         <Text style={[typography.label, { color: brandColors.primary, marginLeft: 'auto' }]}>
           {minValue === PRICE_MIN && maxValue >= PRICE_MAX
-            ? 'Any price'
+            ? 'Any budget'
             : `₪${formatPrice(minValue)} – ₪${formatPrice(maxValue)}`}
         </Text>
       </View>
@@ -229,8 +231,14 @@ export default function FilterBar({
   priceMin,
   priceMax,
   onPriceChange,
+  hasActiveFilters = false,
+  onClearFilters,
 }: FilterBarProps) {
   const [expanded, setExpanded] = useState(false);
+  const budgetSummary =
+    priceMin === PRICE_MIN && priceMax >= PRICE_MAX
+      ? 'Budget: Any'
+      : `Budget: ₪${priceMin}–₪${priceMax >= PRICE_MAX ? '5000+' : priceMax}`;
 
   return (
     <View style={styles.container}>
@@ -245,6 +253,9 @@ export default function FilterBar({
           <Pressable
             style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('map')}
+            accessibilityRole="button"
+            accessibilityLabel="Show map view"
+            accessibilityState={{ selected: viewMode === 'map' }}
           >
             <Feather
               name="map"
@@ -258,6 +269,9 @@ export default function FilterBar({
           <Pressable
             style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('list')}
+            accessibilityRole="button"
+            accessibilityLabel="Show list view"
+            accessibilityState={{ selected: viewMode === 'list' }}
           >
             <Feather
               name="list"
@@ -276,13 +290,28 @@ export default function FilterBar({
         <Pressable
           style={[styles.filterToggle, expanded && styles.filterToggleActive]}
           onPress={() => setExpanded((p) => !p)}
+          accessibilityRole="button"
+          accessibilityLabel="Adjust distance and budget filters"
+          accessibilityState={{ expanded }}
         >
           <Feather name="sliders" size={14} color={expanded ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.caption, { color: expanded ? brandColors.primary : brandColors.textMuted }]}>
-            {radius} km · ₪{priceMin === 0 && priceMax >= PRICE_MAX ? 'Any' : `${priceMin}–${priceMax >= PRICE_MAX ? '5000+' : priceMax}`}
+            {radius} km · {budgetSummary}
           </Text>
           <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={brandColors.textMuted} />
         </Pressable>
+
+        {hasActiveFilters && onClearFilters && (
+          <Pressable
+            style={styles.resetButton}
+            onPress={onClearFilters}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+          >
+            <Feather name="x-circle" size={14} color={brandColors.danger} />
+            <Text style={[typography.caption, styles.resetText]}>Clear filters</Text>
+          </Pressable>
+        )}
 
         <View style={styles.divider} />
 
@@ -415,6 +444,19 @@ const styles = StyleSheet.create({
   },
   filterToggleActive: {
     backgroundColor: brandColors.infoSoft,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.dangerSoft,
+  },
+  resetText: {
+    color: brandColors.danger,
+    fontWeight: '700',
   },
   divider: {
     width: 1,

@@ -28,7 +28,6 @@ interface HamburgerMenuProps {
   onFixerHomePress?: () => void;
   onFixerBidsPress?: () => void;
   onFixerProfilePress?: () => void;
-  onAccountPress?: () => void;
   onNotificationsPress?: () => void;
   onSettingsPress: () => void;
   onLandingPress?: () => void;
@@ -46,7 +45,6 @@ export default function HamburgerMenu({
   onFixerHomePress,
   onFixerBidsPress,
   onFixerProfilePress,
-  onAccountPress,
   onNotificationsPress,
   onSettingsPress,
   onLandingPress,
@@ -54,8 +52,6 @@ export default function HamburgerMenu({
 }: HamburgerMenuProps) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const accountLabel = currentMode === 'fixer' ? 'Fixer profile' : 'Account';
-  const accountDescription = currentMode === 'fixer' ? 'Edit skills, portfolio, and rates' : 'Review your account workspace';
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -70,10 +66,16 @@ export default function HamburgerMenu({
   return (
     <Modal transparent visible={visible} onRequestClose={onClose} animationType="none">
       {/* backdrop */}
-      <Pressable style={styles.backdrop} onPress={onClose} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close navigation menu"
+        style={styles.backdrop}
+        onPress={onClose}
+      />
 
       {/* drawer */}
       <Animated.View
+        accessibilityViewIsModal
         style={[
           styles.drawer,
           {
@@ -85,6 +87,8 @@ export default function HamburgerMenu({
       >
         {/* close button */}
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close navigation menu"
           style={[styles.closeBtn, { top: insets.top + spacing.sm }]}
           onPress={onClose}
           hitSlop={8}
@@ -105,7 +109,7 @@ export default function HamburgerMenu({
                 color={brandColors.primary}
               />
               <Text style={[typography.caption, styles.currentModeText]}>
-                {currentMode === 'fixer' ? 'Fixer workspace' : 'Requester workspace'}
+                {currentMode === 'fixer' ? 'Fixer Workspace' : 'Requester Workspace'}
               </Text>
             </View>
           </View>
@@ -113,6 +117,9 @@ export default function HamburgerMenu({
           <Text style={[typography.eyebrow, styles.sectionLabel]}>Switch workspace</Text>
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Switch to requester workspace"
+            accessibilityState={{ selected: currentMode === 'requester' }}
             style={[styles.modeCard, currentMode === 'requester' && styles.modeCardActive]}
             onPress={() => { onModeChange('requester'); onClose(); }}
           >
@@ -135,6 +142,9 @@ export default function HamburgerMenu({
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Switch to fixer workspace"
+            accessibilityState={{ selected: currentMode === 'fixer' }}
             style={[styles.modeCard, currentMode === 'fixer' && styles.modeCardActive]}
             onPress={() => { onModeChange('fixer'); onClose(); }}
           >
@@ -162,7 +172,7 @@ export default function HamburgerMenu({
 
           <MenuRow
             icon="view-dashboard-outline"
-            label="Requester Space"
+            label="Requester Workspace"
             description="Dashboard, task shortcuts, and active work"
             onPress={() => { (onRequesterHomePress ?? (() => onModeChange('requester')))(); onClose(); }}
           />
@@ -201,7 +211,7 @@ export default function HamburgerMenu({
             icon="account-hard-hat"
             label="Fixer Profile"
             description="Skills, portfolio, and payment details"
-            onPress={() => { (onFixerProfilePress ?? onAccountPress ?? (() => onModeChange('fixer')))(); onClose(); }}
+            onPress={() => { (onFixerProfilePress ?? (() => onModeChange('fixer')))(); onClose(); }}
           />
 
           {onNotificationsPress && (
@@ -214,18 +224,9 @@ export default function HamburgerMenu({
             />
           )}
 
-          {onAccountPress && (
-            <MenuRow
-              icon={currentMode === 'fixer' ? 'account-hard-hat' : 'account-circle-outline'}
-              label={accountLabel}
-              description={accountDescription}
-              onPress={() => { onAccountPress(); onClose(); }}
-            />
-          )}
-
           <MenuRow
             icon="cog-outline"
-            label="Profile & Settings"
+            label="Settings"
             description="Password, phone, and notification controls"
             onPress={() => { onSettingsPress(); onClose(); }}
           />
@@ -266,6 +267,8 @@ function MenuRow({
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={badge ? `${label}, ${badge}. ${description}` : `${label}. ${description}`}
       style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
       onPress={onPress}
     >

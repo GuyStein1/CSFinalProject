@@ -13,6 +13,7 @@ interface FChipProps {
   icon?: string;
   style?: ViewStyle;
   compact?: boolean;
+  accessibilityLabel?: string;
 }
 
 export default function FChip({
@@ -22,10 +23,14 @@ export default function FChip({
   icon,
   style,
   compact = false,
+  accessibilityLabel,
 }: FChipProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={onPress ? { selected } : undefined}
       style={({ pressed }) => [
         styles.base,
         compact && styles.compact,

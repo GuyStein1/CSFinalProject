@@ -1,5 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   FlatList,
   PanResponder,
@@ -7,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Portal, Modal, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -23,7 +25,7 @@ import { getCategoryMeta } from '../utils/categoryMetadata';
 type TabFilter = 'ALL' | BidStatus | 'COMPLETED';
 
 const TABS: { value: TabFilter; label: string }[] = [
-  { value: 'ALL', label: 'All' },
+  { value: 'ALL', label: 'Active' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'ACCEPTED', label: 'Accepted' },
   { value: 'COMPLETED', label: 'Completed' },
@@ -40,6 +42,14 @@ function formatDate(dateString: string): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function getBidAccentColor(bid: UserBid): string {
+  if (bid.status === 'ACCEPTED' && bid.task.status === 'COMPLETED') return brandColors.success;
+  if (bid.status === 'ACCEPTED') return brandColors.secondaryDark;
+  if (bid.status === 'PENDING') return brandColors.primary;
+  if (bid.status === 'WITHDRAWN') return brandColors.textMuted;
+  return brandColors.danger;
 }
 
 interface BidCardProps {
@@ -82,6 +92,8 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
       {isPending && (
         <Pressable
           style={styles.withdrawAction}
+          accessibilityRole="button"
+          accessibilityLabel={`Withdraw bid for ${bid.task.title}`}
           onPress={() => {
             Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
             onWithdraw(bid.id);
@@ -100,11 +112,14 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
       >
         <Pressable
           onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Open task ${bid.task.title}`}
           style={({ pressed }) => [
             styles.bidCard,
             { opacity: pressed ? 0.92 : 1 },
           ]}
         >
+          <View style={[styles.bidAccent, { backgroundColor: getBidAccentColor(bid) }]} />
           <View style={styles.topRow}>
             <View style={[styles.iconCircle, { backgroundColor: catMeta.bg }]}>
               <MaterialCommunityIcons name={catMeta.icon as never} size={18} color={catMeta.color} />
@@ -125,12 +140,15 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
 
           <View style={styles.bidDetails}>
             <View style={styles.priceRow}>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>Your offer</Text>
+              <View>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>Your offer</Text>
+                <Text style={styles.offerValue}>₪{bid.offered_price}</Text>
+              </View>
               <View style={styles.priceTag}>
-                <Text style={[typography.h3, { color: brandColors.secondaryDark }]}>₪{bid.offered_price}</Text>
+                <Text style={[typography.caption, styles.priceTagText]}>Budget {budgetLabel}</Text>
               </View>
             </View>
-            <Text style={[typography.bodySm, styles.pitch]} numberOfLines={1}>
+            <Text style={[typography.bodySm, styles.pitch]} numberOfLines={2}>
               {bid.description}
             </Text>
           </View>
@@ -143,24 +161,47 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               </Text>
             </View>
             <View style={styles.actionButtons}>
-              {isPending && Platform.OS === 'web' && (
+              {isPending && (
                 <>
-                  <Pressable style={[styles.actionBtn, styles.defaultActionBtn]} onPress={(e) => { e.stopPropagation(); onEdit(bid); }}>
+                  <Pressable
+                    style={[styles.actionBtn, styles.defaultActionBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit bid for ${bid.task.title}`}
+                    onPress={(e) => { e.stopPropagation(); onEdit(bid); }}
+                  >
                     <MaterialCommunityIcons name="pencil" size={13} color={brandColors.primaryMuted} />
                     <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>Edit</Text>
                   </Pressable>
-                  <Pressable style={[styles.actionBtn, styles.dangerActionBtn]} onPress={(e) => { e.stopPropagation(); onWithdraw(bid.id); }}>
+                  <Pressable
+                    style={[styles.actionBtn, styles.dangerActionBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Withdraw bid for ${bid.task.title}`}
+                    onPress={(e) => { e.stopPropagation(); onWithdraw(bid.id); }}
+                  >
+                    <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
                     <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Withdraw</Text>
                   </Pressable>
                 </>
               )}
               {bid.status === 'ACCEPTED' && bid.task.status !== 'COMPLETED' && (
-                <Pressable style={[styles.actionBtn, styles.dangerActionBtn]} onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}>
-                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Cancel</Text>
+                <Pressable
+                  style={[styles.actionBtn, styles.dangerActionBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Cancel accepted job for ${bid.task.title}`}
+                  onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}
+                >
+                  <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
+                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Cancel job</Text>
                 </Pressable>
               )}
               {bid.status === 'WITHDRAWN' && (
-                <Pressable style={[styles.actionBtn, styles.successActionBtn]} onPress={(e) => { e.stopPropagation(); onReactivate(bid.id); }}>
+                <Pressable
+                  style={[styles.actionBtn, styles.successActionBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Reactivate bid for ${bid.task.title}`}
+                  onPress={(e) => { e.stopPropagation(); onReactivate(bid.id); }}
+                >
+                  <MaterialCommunityIcons name="refresh" size={13} color={brandColors.success} />
                   <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>Reactivate</Text>
                 </Pressable>
               )}
@@ -186,6 +227,8 @@ function formatMonthLabel(key: string): string {
 }
 
 export default function MyBidsScreen() {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
   const [activeTab, setActiveTab] = useState<TabFilter>('ALL');
   const now = new Date();
@@ -233,6 +276,13 @@ export default function MyBidsScreen() {
   const completedEarnings = activeTab === 'COMPLETED'
     ? bids.reduce((sum, b) => sum + b.offered_price, 0)
     : 0;
+  const activeTabLabel = TABS.find((tab) => tab.value === activeTab)?.label ?? 'All';
+  const pipelineSummary = useMemo(() => {
+    const activeJobs = bids.filter((b) => b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED').length;
+    const pendingOffers = bids.filter((b) => b.status === 'PENDING').length;
+    const visibleValue = bids.reduce((sum, b) => sum + b.offered_price, 0);
+    return { activeJobs, pendingOffers, visibleValue };
+  }, [bids]);
 
   useFocusEffect(
     useCallback(() => {
@@ -246,25 +296,63 @@ export default function MyBidsScreen() {
   const [editDescription, setEditDescription] = useState('');
   const [editSaving, setEditSaving] = useState(false);
 
-  const webConfirm = (msg: string): boolean => {
+  const webConfirm = useCallback((msg: string): boolean => {
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
       return confirm(msg);
     }
     return true;
-  };
+  }, []);
+
+  const confirmBidAction = useCallback(({
+    title,
+    message,
+    confirmLabel,
+    destructive = false,
+    onConfirm,
+  }: {
+    title: string;
+    message: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    if (Platform.OS === 'web') {
+      if (webConfirm(`${title}\n\n${message}`)) void onConfirm();
+      return;
+    }
+
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: confirmLabel,
+        style: destructive ? 'destructive' : 'default',
+        onPress: () => void onConfirm(),
+      },
+    ]);
+  }, [webConfirm]);
 
   const handleWithdraw = useCallback(
-    async (bidId: string) => {
-      if (Platform.OS === 'web' && !webConfirm('Are you sure you want to withdraw this bid?')) return;
-      updateBidLocally(bidId, 'WITHDRAWN');
-      try {
-        await api.put(`/api/bids/${bidId}/withdraw`);
-      } catch {
-        refetch();
-      }
+    (bidId: string) => {
+      const bidTitle = bids.find((bid) => bid.id === bidId)?.task.title ?? 'this task';
+      const doWithdraw = async () => {
+        updateBidLocally(bidId, 'WITHDRAWN');
+        try {
+          await api.put(`/api/bids/${bidId}/withdraw`);
+        } catch {
+          refetch();
+        }
+      };
+
+      confirmBidAction({
+        title: 'Withdraw bid?',
+        message: `Withdraw your bid for "${bidTitle}"? You can reopen it later, but the requester will no longer see it as active.`,
+        confirmLabel: 'Withdraw bid',
+        destructive: true,
+        onConfirm: doWithdraw,
+      });
     },
-    [updateBidLocally, refetch],
+    [bids, confirmBidAction, updateBidLocally, refetch],
   );
 
   const handleEdit = useCallback((bid: UserBid) => {
@@ -274,57 +362,83 @@ export default function MyBidsScreen() {
   }, []);
 
   const handleReactivate = useCallback(
-    async (bidId: string) => {
-      if (Platform.OS === 'web') {
-        const wantEdit = webConfirm('Would you like to edit your bid before reactivating?\n\nOK = Edit first\nCancel = Reactivate as-is');
-        if (wantEdit) {
-          updateBidLocally(bidId, 'PENDING');
-          try {
-            await api.put(`/api/bids/${bidId}/reactivate`);
-            const reactivatedBid = bids.find((b) => b.id === bidId);
-            if (reactivatedBid) {
-              handleEdit({ ...reactivatedBid, status: 'PENDING' });
-            }
-          } catch {
-            refetch();
+    (bidId: string) => {
+      const reactivatedBid = bids.find((b) => b.id === bidId);
+      const bidTitle = reactivatedBid?.task.title ?? 'this task';
+      const doReactivate = async (openEdit = false) => {
+        updateBidLocally(bidId, 'PENDING');
+        try {
+          await api.put(`/api/bids/${bidId}/reactivate`);
+          if (openEdit && reactivatedBid) {
+            handleEdit({ ...reactivatedBid, status: 'PENDING' });
           }
-          return;
+        } catch {
+          refetch();
         }
+      };
+
+      if (Platform.OS === 'web') {
+        confirmBidAction({
+          title: 'Reopen bid?',
+          message: `Make your bid for "${bidTitle}" active again? You can edit it after reopening if the price or note needs changes.`,
+          confirmLabel: 'Reopen bid',
+          onConfirm: () => doReactivate(false),
+        });
+        return;
       }
-      updateBidLocally(bidId, 'PENDING');
-      try {
-        await api.put(`/api/bids/${bidId}/reactivate`);
-      } catch {
-        refetch();
-      }
+
+      Alert.alert('Reopen bid?', `Make your bid for "${bidTitle}" active again?`, [
+        { text: 'Keep withdrawn', style: 'cancel' },
+        { text: 'Reopen as-is', onPress: () => void doReactivate(false) },
+        { text: 'Reopen and edit', onPress: () => void doReactivate(true) },
+      ]);
     },
-    [updateBidLocally, refetch, bids, handleEdit],
+    [updateBidLocally, refetch, bids, handleEdit, confirmBidAction],
   );
 
   const handleDelete = useCallback(
-    async (bidId: string) => {
-      if (Platform.OS === 'web' && !webConfirm('Delete this bid permanently?')) return;
-      removeBidLocally(bidId);
-      try {
-        await api.delete(`/api/bids/${bidId}`);
-      } catch {
-        refetch();
-      }
+    (bidId: string) => {
+      const bidTitle = bids.find((bid) => bid.id === bidId)?.task.title ?? 'this task';
+      const doDelete = async () => {
+        removeBidLocally(bidId);
+        try {
+          await api.delete(`/api/bids/${bidId}`);
+        } catch {
+          refetch();
+        }
+      };
+
+      confirmBidAction({
+        title: 'Delete bid?',
+        message: `Delete your bid history for "${bidTitle}" permanently? This cannot be undone.`,
+        confirmLabel: 'Delete bid',
+        destructive: true,
+        onConfirm: doDelete,
+      });
     },
-    [removeBidLocally, refetch],
+    [bids, confirmBidAction, removeBidLocally, refetch],
   );
 
   const handleCancelAccepted = useCallback(
-    async (bid: UserBid) => {
-      if (Platform.OS === 'web' && !webConfirm('Cancel this job? The task will be reopened for other fixers.')) return;
-      try {
-        await api.put(`/api/bids/${bid.id}/cancel-accepted`);
-        refetch();
-      } catch {
-        // ignore
-      }
+    (bid: UserBid) => {
+      const doCancelAccepted = async () => {
+        try {
+          await api.put(`/api/bids/${bid.id}/cancel-accepted`);
+          refetch();
+        } catch {
+          // ignore
+        }
+      };
+
+      confirmBidAction({
+        title: 'Cancel accepted job?',
+        message: `Cancel "${bid.task.title}"? The task will reopen for other Fixers and the requester will lose your accepted job state.`,
+        confirmLabel: 'Cancel job',
+        destructive: true,
+        onConfirm: doCancelAccepted,
+      });
     },
-    [refetch],
+    [confirmBidAction, refetch],
   );
 
   const handleEditSave = useCallback(async () => {
@@ -357,10 +471,39 @@ export default function MyBidsScreen() {
   }, [navigation]);
 
   const emptyMessage = activeTab === 'ALL' ? undefined : `No ${activeTab.toLowerCase()} bids.`;
-  const emptyTitle = activeTab === 'ALL' ? "You haven't submitted any bids yet" : `No ${activeTab.toLowerCase()} bids`;
+  const emptyTitle = activeTab === 'ALL' ? 'No active bids yet' : `No ${activeTab.toLowerCase()} bids`;
 
   return (
     <View style={styles.container}>
+      <View style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}>
+        <View style={styles.workspaceHeaderMain}>
+          <View style={styles.headerKickerRow}>
+            <View style={styles.headerIconShell}>
+              <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondary} />
+            </View>
+            <Text style={styles.headerKicker}>Fixer Workspace</Text>
+          </View>
+          <Text style={styles.headerTitle}>Bid pipeline</Text>
+          <Text style={styles.headerSub} numberOfLines={2}>
+            {activeTabLabel} bids / {pipelineSummary.pendingOffers} pending / {pipelineSummary.activeJobs} active jobs
+          </Text>
+        </View>
+
+        <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
+          <View style={styles.workspaceStat}>
+            <Text style={styles.workspaceStatValue}>{loading ? '...' : bids.length}</Text>
+            <Text style={styles.workspaceStatLabel}>In view</Text>
+          </View>
+          <View style={styles.workspaceStat}>
+            <Text style={styles.workspaceStatValue}>₪{pipelineSummary.visibleValue.toLocaleString()}</Text>
+            <Text style={styles.workspaceStatLabel}>Offer value</Text>
+          </View>
+          <FButton variant="secondary" size="sm" icon="map-search-outline" onPress={handleFindJobs} style={styles.headerAction}>
+            Find jobs
+          </FButton>
+        </View>
+      </View>
+
       {/* Tab filter */}
       <View style={styles.tabBar}>
         <FlatList
@@ -397,7 +540,7 @@ export default function MyBidsScreen() {
           title={emptyTitle}
           message={
             activeTab === 'ALL'
-              ? 'Find tasks in the Discovery Feed!'
+              ? 'No offers are active yet.'
               : emptyMessage
           }
           actionLabel={activeTab === 'ALL' ? 'Find Jobs' : undefined}
@@ -463,6 +606,8 @@ export default function MyBidsScreen() {
                   style={styles.trashBtn}
                   hitSlop={8}
                   onPress={() => handleDelete(item.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete bid for ${item.task.title}`}
                 >
                   <MaterialCommunityIcons name="delete-outline" size={22} color={brandColors.danger} />
                 </Pressable>
@@ -486,7 +631,7 @@ export default function MyBidsScreen() {
             Edit Bid
           </Text>
           <FInput
-            label="Price (₪)"
+            label="Offer (₪)"
             value={editPrice}
             onChangeText={setEditPrice}
             keyboardType="numeric"
@@ -521,8 +666,97 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brandColors.background,
   },
+  workspaceHeader: {
+    backgroundColor: brandColors.primaryDark,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.lg,
+    borderBottomWidth: 3,
+    borderBottomColor: brandColors.secondary,
+  },
+  workspaceHeaderWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.lg,
+  },
+  workspaceHeaderMain: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  headerKickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerIconShell: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.sm,
+    backgroundColor: 'rgba(241,181,69,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(241,181,69,0.22)',
+  },
+  headerKicker: {
+    ...typography.eyebrow,
+    color: brandColors.secondary,
+    letterSpacing: 0.8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.textOnDark,
+  },
+  headerSub: {
+    ...typography.bodySm,
+    color: brandColors.textOnDarkMuted,
+    maxWidth: 560,
+  },
+  workspaceStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  workspaceStatsWide: {
+    justifyContent: 'flex-end',
+    minWidth: 420,
+  },
+  workspaceStat: {
+    minWidth: 112,
+    flexGrow: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,252,246,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.14)',
+  },
+  workspaceStatValue: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.secondary,
+  },
+  workspaceStatLabel: {
+    ...typography.caption,
+    color: brandColors.textOnDarkMuted,
+    marginTop: 1,
+  },
+  headerAction: {
+    alignSelf: 'stretch',
+  },
   tabBar: {
     backgroundColor: brandColors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: brandColors.outlineLight,
     ...shadows.sm,
   },
   tabContent: {
@@ -531,7 +765,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   listContent: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
+    paddingBottom: spacing.huge,
   },
 
   swipeContainer: {
@@ -562,7 +797,18 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     backgroundColor: brandColors.surface,
     padding: spacing.lg,
+    paddingLeft: spacing.lg + 4,
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    overflow: 'hidden',
+  },
+  bidAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   topRow: {
     flexDirection: 'row',
@@ -592,21 +838,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  offerValue: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.secondaryDark,
   },
   priceTag: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,42,0.16)',
+  },
+  priceTagText: {
+    color: brandColors.warning,
+    fontWeight: '700',
   },
   pitch: {
-    color: brandColors.textMuted,
-    fontStyle: 'italic',
+    color: brandColors.textSecondary,
   },
   bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+    flexWrap: 'wrap',
   },
   dateRow: {
     flexDirection: 'row',
@@ -615,6 +876,7 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   actionBtn: {
@@ -648,6 +910,8 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
   summaryContent: {
     flexDirection: 'row',

@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -38,7 +39,23 @@ interface Profile {
   portfolio_items: PortfolioItem[];
 }
 
+function isValidUrl(value: string) {
+  try {
+    return Boolean(new URL(value));
+  } catch {
+    return false;
+  }
+}
+
+function sameStringSet(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const bSet = new Set(b);
+  return a.every((value) => bSet.has(value));
+}
+
 export default function FixerProfileScreen() {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +67,7 @@ export default function FixerProfileScreen() {
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [savingSpecializations, setSavingSpecializations] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
   const [viewingAvatar, setViewingAvatar] = useState(false);
@@ -100,15 +118,28 @@ export default function FixerProfileScreen() {
 
 
   const handleSaveProfile = async () => {
+    const nextPaymentLink = paymentLink.trim();
+    if (nextPaymentLink && !isValidUrl(nextPaymentLink)) {
+      Alert.alert('Check payment link', 'Enter a full payment URL before saving.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await api.put('/api/users/me', {
+      const res = await api.put('/api/users/me', {
         full_name: fullName.trim(),
         bio: bio.trim(),
         phone_number: phone.trim() || undefined,
-        payment_link: paymentLink.trim() || undefined,
+        payment_link: nextPaymentLink || undefined,
         specializations,
       });
+      const updated = res.data.user as Partial<Profile>;
+      setProfile(prev => prev ? { ...prev, ...updated, portfolio_items: portfolioItems } : prev);
+      setFullName(updated.full_name ?? fullName.trim());
+      setBio(updated.bio ?? bio.trim());
+      setPhone(updated.phone_number ?? phone.trim());
+      setPaymentLink(updated.payment_link ?? '');
+      setSpecializations(updated.specializations ?? specializations);
       Alert.alert('Saved', 'Profile updated successfully.');
     } catch {
       Alert.alert('Error', 'Failed to save profile.');
@@ -121,6 +152,24 @@ export default function FixerProfileScreen() {
     setSpecializations(prev =>
       prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value],
     );
+  };
+
+  const handleSaveSpecializations = async () => {
+    setSavingSpecializations(true);
+    try {
+      const res = await api.put('/api/users/me', { specializations });
+      const updated = res.data.user as Partial<Profile>;
+      setProfile(prev => prev ? {
+        ...prev,
+        specializations: updated.specializations ?? specializations,
+      } : prev);
+      setSpecializations(updated.specializations ?? specializations);
+      Alert.alert('Saved', 'Trade coverage updated.');
+    } catch {
+      Alert.alert('Error', 'Failed to save trade coverage.');
+    } finally {
+      setSavingSpecializations(false);
+    }
   };
 
   const handleAddPortfolio = async () => {
@@ -162,6 +211,73 @@ export default function FixerProfileScreen() {
   if (loading) return <LoadingScreen label="Loading profile..." />;
 
   const avgRating = profile?.average_rating_as_fixer;
+  const displayName = fullName.trim() || profile?.full_name || 'Fixer profile';
+  const savedPaymentLink = profile?.payment_link?.trim() ?? '';
+  const currentPaymentLink = paymentLink.trim();
+  const currentPaymentLinkValid = currentPaymentLink.length > 0 && isValidUrl(currentPaymentLink);
+  const savedPaymentLinkValid = savedPaymentLink.length > 0 && isValidUrl(savedPaymentLink);
+  const paymentLinkChanged = currentPaymentLink !== savedPaymentLink;
+  const paymentStatus =
+    currentPaymentLink.length === 0 && savedPaymentLink.length > 0
+      ? {
+          icon: 'content-save-alert-outline',
+          label: 'Unsaved payment link',
+          color: brandColors.warning,
+          style: styles.paymentMissing,
+          message: 'Payment link changes are not saved yet.',
+        }
+      : currentPaymentLink.length === 0
+      ? {
+          icon: 'alert-circle-outline',
+          label: 'Payment needed',
+          color: brandColors.warning,
+          style: styles.paymentMissing,
+          message: 'Payment link missing. Requesters need a payout destination after completion.',
+        }
+      : !currentPaymentLinkValid
+        ? {
+            icon: 'alert-circle-outline',
+            label: 'Invalid payment URL',
+            color: brandColors.danger,
+            style: styles.paymentInvalid,
+            message: 'Enter a full payment URL before saving.',
+          }
+        : paymentLinkChanged
+          ? {
+              icon: 'content-save-alert-outline',
+              label: 'Unsaved payment link',
+              color: brandColors.warning,
+              style: styles.paymentMissing,
+              message: 'Payment link changes are not saved yet.',
+            }
+          : savedPaymentLinkValid
+            ? {
+                icon: 'check-circle-outline',
+                label: 'Payment link saved',
+                color: brandColors.success,
+                style: styles.paymentReady,
+                message: null,
+              }
+            : {
+                icon: 'alert-circle-outline',
+                label: 'Check payment link',
+                color: brandColors.warning,
+                style: styles.paymentMissing,
+                message: 'Payment link needs to be reviewed before it can be used.',
+              };
+  const hasSpecializationChanges = !sameStringSet(specializations, profile?.specializations ?? []);
+  const completionItems = [
+    fullName.trim(),
+    bio.trim(),
+    phone.trim(),
+    savedPaymentLinkValid,
+    specializations.length > 0,
+    portfolioItems.length > 0,
+    profile?.avatar_url,
+  ];
+  const completionPercent = Math.round(
+    (completionItems.filter(Boolean).length / completionItems.length) * 100,
+  );
 
   return (
     <ScrollView
@@ -169,158 +285,255 @@ export default function FixerProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Avatar ─────────────────────────────────────────────────── */}
-      <View style={styles.avatarSection}>
-        <View style={styles.avatarWrapper}>
-          <Pressable onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}>
-            {profile?.avatar_url ? (
-              <Avatar.Image size={96} source={{ uri: profile.avatar_url }} />
-            ) : (
-              <Avatar.Icon
-                size={96}
-                icon="account"
-                style={{ backgroundColor: brandColors.primaryMuted }}
-              />
-            )}
-          </Pressable>
-          <Pressable style={styles.cameraBadge} onPress={() => void pickNewAvatar()}>
-            {uploadingAvatar ? (
-              <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
-            ) : (
-              <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
-            )}
-          </Pressable>
-        </View>
-
-        <Text style={[typography.h2, { color: brandColors.textPrimary, marginTop: spacing.md }]}>
-          {profile?.full_name}
-        </Text>
-
-        {avgRating != null && avgRating > 0 && (
-          <View style={styles.ratingRow}>
-            <MaterialCommunityIcons name="star" size={16} color={brandColors.secondary} />
-            <Text style={[typography.bodyMedium, { color: brandColors.textSecondary, marginLeft: spacing.xs }]}>
-              {avgRating.toFixed(1)}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* ── Edit Form ──────────────────────────────────────────────── */}
-      <FCard style={styles.section} shadow="sm">
-        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.lg }]}>
-          Profile Details
-        </Text>
-
-        <FInput label="Full Name" value={fullName} onChangeText={setFullName} returnKeyType="next" />
-        <FInput
-          label="Bio"
-          value={bio}
-          onChangeText={setBio}
-          multiline
-          numberOfLines={3}
-          returnKeyType="next"
-        />
-        <FInput
-          label="Phone Number"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          returnKeyType="next"
-        />
-        <FInput
-          label="Payment Link (Bit / Paybox URL)"
-          value={paymentLink}
-          onChangeText={setPaymentLink}
-          keyboardType="url"
-          autoCapitalize="none"
-          returnKeyType="done"
-        />
-        {!paymentLink.trim() && (
-          <View style={styles.warningRow}>
-            <MaterialCommunityIcons name="alert-outline" size={14} color={brandColors.warning} />
-            <Text style={[typography.caption, { color: brandColors.warning, marginLeft: spacing.xs, flex: 1 }]}>
-              Add a payment link so requesters can pay you after completing a job.
-            </Text>
-          </View>
-        )}
-
-        <FButton onPress={() => void handleSaveProfile()} loading={saving} disabled={saving} fullWidth style={{ marginTop: spacing.sm }}>
-          Save Profile
-        </FButton>
-      </FCard>
-
-      {/* ── Specializations ───────────────────────────────────────── */}
-      <FCard style={styles.section} shadow="sm">
-        <Text style={[typography.eyebrow, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
-          What do you work on?
-        </Text>
-        <View style={styles.chipsWrap}>
-          {CATEGORY_LIST.map(s => (
-            <FChip
-              key={s.value}
-              label={s.label}
-              icon={s.icon}
-              selected={specializations.includes(s.value)}
-              onPress={() => toggleSpecialization(s.value)}
-              compact
-            />
-          ))}
-        </View>
-        <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: spacing.sm }]}>
-          Tap to select. Saved with "Save Profile" above.
-        </Text>
-      </FCard>
-
-      {/* ── Portfolio ─────────────────────────────────────────────── */}
-      <FCard style={styles.section} shadow="sm">
-        <View style={styles.portfolioHeader}>
-          <Text style={[typography.eyebrow, { color: brandColors.textMuted }]}>
-            My Portfolio
-          </Text>
-          <View style={styles.countChip}>
-            <Text style={[typography.caption, { color: brandColors.primary }]}>
-              {portfolioItems.length} {portfolioItems.length === 1 ? 'photo' : 'photos'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.portfolioGrid}>
-          {/* Add tile */}
-          <Pressable
-            onPress={() => void handleAddPortfolio()}
-            style={({ pressed }) => [styles.portfolioTile, styles.addTile, { opacity: pressed ? 0.7 : 1 }]}
-          >
-            {uploadingPortfolio ? (
-              <MaterialCommunityIcons name="loading" size={28} color={brandColors.primaryMuted} />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="plus" size={28} color={brandColors.primaryMuted} />
-                <Text style={[typography.caption, { color: brandColors.primaryMuted, marginTop: spacing.xs }]}>
-                  Add photo
-                </Text>
-              </>
-            )}
-          </Pressable>
-
-          {portfolioItems.map(item => (
+      <View style={[styles.workspaceShell, isWide && styles.workspaceShellWide]}>
+        <View style={[styles.profileHero, isWide && styles.profileHeroWide]}>
+          <View style={styles.avatarWrapper}>
             <Pressable
-              key={item.id}
-              onLongPress={() => handleDeletePortfolio(item)}
-              style={styles.portfolioTile}
+              onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
+              accessibilityRole="button"
+              accessibilityLabel={profile?.avatar_url ? 'View profile photo' : 'Add profile photo'}
+              accessibilityState={{ busy: uploadingAvatar }}
             >
-              <Image source={{ uri: item.image_url }} style={styles.portfolioImage} />
+              {profile?.avatar_url ? (
+                <Avatar.Image size={104} source={{ uri: profile.avatar_url }} />
+              ) : (
+                <Avatar.Icon
+                  size={104}
+                  icon="account"
+                  style={{ backgroundColor: brandColors.primaryMuted }}
+                />
+              )}
             </Pressable>
-          ))}
+            <Pressable
+              style={styles.cameraBadge}
+              onPress={() => void pickNewAvatar()}
+              accessibilityRole="button"
+              accessibilityLabel="Change profile photo"
+              accessibilityState={{ busy: uploadingAvatar }}
+            >
+              {uploadingAvatar ? (
+                <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
+              ) : (
+                <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
+              )}
+            </Pressable>
+          </View>
+
+          <View style={styles.heroCopy}>
+            <View style={styles.headerKickerRow}>
+              <View style={styles.headerIconShell}>
+                <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondary} />
+              </View>
+              <Text style={styles.headerKicker}>Fixer Profile</Text>
+            </View>
+            <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+            <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
+
+            <View style={styles.heroStats}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>
+                  {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
+                </Text>
+                <Text style={styles.heroStatLabel}>Rating</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{specializations.length}</Text>
+                <Text style={styles.heroStatLabel}>Trades</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{portfolioItems.length}</Text>
+                <Text style={styles.heroStatLabel}>Photos</Text>
+              </View>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatValue}>{completionPercent}%</Text>
+                <Text style={styles.heroStatLabel}>Profile</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.paymentStatus, paymentStatus.style]}>
+            <MaterialCommunityIcons
+              name={paymentStatus.icon as never}
+              size={16}
+              color={paymentStatus.color}
+            />
+            <Text
+              style={[
+                typography.caption,
+                { color: paymentStatus.color, fontWeight: '700' },
+              ]}
+            >
+              {paymentStatus.label}
+            </Text>
+          </View>
         </View>
-        <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: spacing.sm }]}>
-          Long-press a photo to delete it.
-        </Text>
-      </FCard>
+
+        <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
+          <View style={styles.profileMainColumn}>
+            <FCard style={styles.section} shadow="sm">
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIcon}>
+                  <MaterialCommunityIcons name="account-edit-outline" size={18} color={brandColors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.sectionKicker}>Profile details</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Basics and payout</Text>
+                </View>
+              </View>
+
+              <FInput label="Full Name" value={fullName} onChangeText={setFullName} returnKeyType="next" />
+              <FInput
+                label="Bio"
+                value={bio}
+                onChangeText={setBio}
+                multiline
+                numberOfLines={3}
+                returnKeyType="next"
+              />
+              <FInput
+                label="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+              />
+              <FInput
+                label="Payment Link (Bit / Paybox URL)"
+                value={paymentLink}
+                onChangeText={setPaymentLink}
+                keyboardType="url"
+                autoCapitalize="none"
+                returnKeyType="done"
+              />
+              {paymentStatus.message && (
+                <View style={[styles.warningRow, paymentStatus.color === brandColors.danger && styles.dangerRow]}>
+                  <MaterialCommunityIcons name="alert-outline" size={14} color={paymentStatus.color} />
+                  <Text style={[typography.caption, { color: paymentStatus.color, marginLeft: spacing.xs, flex: 1 }]}>
+                    {paymentStatus.message}
+                  </Text>
+                </View>
+              )}
+
+              <FButton
+                onPress={() => void handleSaveProfile()}
+                loading={saving}
+                disabled={saving || (currentPaymentLink.length > 0 && !currentPaymentLinkValid)}
+                fullWidth
+                style={{ marginTop: spacing.sm }}
+              >
+                Save Profile
+              </FButton>
+            </FCard>
+
+            <FCard style={styles.section} shadow="sm">
+              <View style={styles.portfolioHeader}>
+                <View style={styles.sectionHeaderCompact}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
+                  </View>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Trade coverage</Text>
+                </View>
+                <View style={styles.countChip}>
+                  <Text style={[typography.caption, { color: brandColors.primary }]}>
+                    {specializations.length} selected
+                  </Text>
+                </View>
+                {hasSpecializationChanges && (
+                  <View style={styles.unsavedChip}>
+                    <MaterialCommunityIcons name="content-save-alert-outline" size={12} color={brandColors.warning} />
+                    <Text style={[typography.caption, styles.unsavedChipText]}>Unsaved</Text>
+                  </View>
+                )}
+                <FButton
+                  size="sm"
+                  variant={hasSpecializationChanges ? 'secondary' : 'outline'}
+                  icon={hasSpecializationChanges ? 'content-save-outline' : 'check-circle-outline'}
+                  disabled={!hasSpecializationChanges || saving || savingSpecializations}
+                  loading={savingSpecializations}
+                  onPress={() => void handleSaveSpecializations()}
+                >
+                  {hasSpecializationChanges ? 'Save Trades' : 'Trades Saved'}
+                </FButton>
+              </View>
+              <View style={styles.chipsWrap}>
+                {CATEGORY_LIST.map(s => (
+                  <FChip
+                    key={s.value}
+                    label={s.label}
+                    icon={s.icon}
+                    selected={specializations.includes(s.value)}
+                    onPress={() => toggleSpecialization(s.value)}
+                    compact
+                  />
+                ))}
+              </View>
+            </FCard>
+          </View>
+
+          <View style={styles.profileSideColumn}>
+            <FCard style={styles.section} shadow="sm">
+              <View style={styles.portfolioHeader}>
+                <View style={styles.sectionHeaderCompact}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primary} />
+                  </View>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Portfolio</Text>
+                </View>
+                <View style={styles.countChip}>
+                  <Text style={[typography.caption, { color: brandColors.primary }]}>
+                    {portfolioItems.length} {portfolioItems.length === 1 ? 'photo' : 'photos'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.portfolioGrid}>
+                <Pressable
+                  onPress={() => void handleAddPortfolio()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add portfolio photo"
+                  accessibilityState={{ busy: uploadingPortfolio }}
+                  style={({ pressed }) => [styles.portfolioTile, styles.addTile, { opacity: pressed ? 0.7 : 1 }]}
+                >
+                  {uploadingPortfolio ? (
+                    <MaterialCommunityIcons name="loading" size={28} color={brandColors.primaryMuted} />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="plus" size={28} color={brandColors.primaryMuted} />
+                      <Text style={[typography.caption, { color: brandColors.primaryMuted, marginTop: spacing.xs }]}>
+                        Add photo
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+
+                {portfolioItems.map(item => (
+                  <View key={item.id} style={styles.portfolioTile}>
+                    <Image source={{ uri: item.image_url }} style={styles.portfolioImage} />
+                    <Pressable
+                      style={styles.portfolioDeleteBtn}
+                      hitSlop={8}
+                      onPress={() => handleDeletePortfolio(item)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete portfolio photo"
+                    >
+                      <MaterialCommunityIcons name="trash-can-outline" size={15} color={brandColors.white} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            </FCard>
+          </View>
+        </View>
+      </View>
 
       {/* Avatar viewer modal */}
       <Modal visible={viewingAvatar} transparent animationType="fade" onRequestClose={() => setViewingAvatar(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setViewingAvatar(false)}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setViewingAvatar(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close profile photo preview"
+        >
           <Image
             source={{ uri: profile?.avatar_url ?? '' }}
             style={styles.modalImage}
@@ -340,22 +553,40 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
   content: {
-    padding: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.huge,
     alignItems: 'center',
   },
-  avatarSection: {
+  workspaceShell: {
+    width: '100%',
+    gap: spacing.lg,
+  },
+  workspaceShellWide: {
+    maxWidth: 1120,
+  },
+  profileHero: {
+    backgroundColor: brandColors.primaryDark,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    gap: spacing.lg,
+    borderBottomWidth: 3,
+    borderBottomColor: brandColors.secondary,
+    ...shadows.md,
+  },
+  profileHeroWide: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    padding: spacing.xxl,
   },
   avatarWrapper: {
     position: 'relative',
+    alignSelf: 'flex-start',
   },
   cameraBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 0,
+    right: 0,
     width: 26,
     height: 26,
     borderRadius: 13,
@@ -363,18 +594,137 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: brandColors.background,
+    borderColor: brandColors.primaryDark,
     ...shadows.sm,
   },
-  ratingRow: {
+  heroCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  headerKickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xs,
+    gap: spacing.sm,
+  },
+  headerIconShell: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.sm,
+    backgroundColor: 'rgba(241,181,69,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(241,181,69,0.22)',
+  },
+  headerKicker: {
+    ...typography.eyebrow,
+    color: brandColors.secondary,
+    letterSpacing: 0.8,
+  },
+  heroName: {
+    fontSize: 26,
+    lineHeight: 34,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.textOnDark,
+  },
+  heroEmail: {
+    ...typography.bodySm,
+    color: brandColors.textOnDarkMuted,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  heroStat: {
+    minWidth: 82,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,252,246,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.14)',
+  },
+  heroStatValue: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.secondary,
+  },
+  heroStatLabel: {
+    ...typography.caption,
+    color: brandColors.textOnDarkMuted,
+    marginTop: 1,
+  },
+  paymentStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+  },
+  paymentReady: {
+    backgroundColor: brandColors.successSoft,
+    borderColor: 'rgba(81,122,88,0.24)',
+  },
+  paymentMissing: {
+    backgroundColor: brandColors.warningSoft,
+    borderColor: 'rgba(155,109,42,0.24)',
+  },
+  paymentInvalid: {
+    backgroundColor: brandColors.dangerSoft,
+    borderColor: 'rgba(168,91,91,0.24)',
+  },
+  profileGrid: {
+    gap: spacing.lg,
+  },
+  profileGridWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  profileMainColumn: {
+    flex: 1.3,
+    gap: spacing.lg,
+  },
+  profileSideColumn: {
+    flex: 0.9,
+    gap: spacing.lg,
   },
   section: {
     width: '100%',
-    maxWidth: 500,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  sectionHeaderCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  sectionIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionKicker: {
+    ...typography.eyebrow,
+    color: brandColors.textMuted,
+    marginBottom: 2,
   },
   warningRow: {
     flexDirection: 'row',
@@ -383,6 +733,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: brandColors.warningSoft,
     marginTop: spacing.xs,
+  },
+  dangerRow: {
+    backgroundColor: brandColors.dangerSoft,
   },
   chipsWrap: {
     flexDirection: 'row',
@@ -393,6 +746,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   countChip: {
@@ -400,6 +755,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
     backgroundColor: brandColors.infoSoft,
+  },
+  unsavedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,42,0.22)',
+  },
+  unsavedChipText: {
+    color: brandColors.warning,
+    fontWeight: '700',
   },
   portfolioGrid: {
     flexDirection: 'row',
@@ -411,6 +781,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: radii.md,
     overflow: 'hidden',
+    backgroundColor: brandColors.surfaceAlt,
+    position: 'relative',
   },
   addTile: {
     backgroundColor: brandColors.surfaceAlt,
@@ -423,6 +795,19 @@ const styles = StyleSheet.create({
   portfolioImage: {
     width: '100%',
     height: '100%',
+  },
+  portfolioDeleteBtn: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,36,56,0.74)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   modalBackdrop: {
     flex: 1,

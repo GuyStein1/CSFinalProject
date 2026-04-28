@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import * as Location from 'expo-location';
 import {
   ActivityIndicator,
@@ -44,6 +44,9 @@ const DEFAULT_CENTER: DiscoveryCenter = { lat: 32.0853, lng: 34.7818, label: 'Te
 const PRICE_SLIDER_MAX = 5000;
 
 export default function DiscoveryFeedScreen({ navigation }: Props) {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
+  const supportsWorkAreaSearch = Platform.OS === 'web';
   const [permissionState, setPermissionState] = useState<PermissionState>('checking');
   const [centerMode, setCenterMode] = useState<CenterMode>('gps');
   const [center, setCenter] = useState<DiscoveryCenter | null>(null);
@@ -76,6 +79,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [priceMax, setPriceMax] = useState(PRICE_SLIDER_MAX);
 
   const hasPriceFilter = priceMin > 0 || priceMax < PRICE_SLIDER_MAX;
+  const hasActiveFilters = radius !== DEFAULT_RADIUS_KM || selectedCategories.length > 0 || hasPriceFilter;
   const apiMinPrice = hasPriceFilter ? priceMin : null;
   const apiMaxPrice = hasPriceFilter ? (priceMax < PRICE_SLIDER_MAX ? priceMax : 999999) : null;
   const apiCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
@@ -106,6 +110,16 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     () => tasks.find((task) => task.id === selectedTaskId) ?? null,
     [selectedTaskId, tasks]
   );
+
+  const priceSummary = hasPriceFilter
+    ? `₪${priceMin}-${priceMax >= PRICE_SLIDER_MAX ? '5000+' : priceMax}`
+    : 'Any budget';
+  const categorySummary =
+    selectedCategories.length === 0
+      ? 'All trades'
+      : selectedCategories.length === 1
+        ? '1 trade'
+        : `${selectedCategories.length} trades`;
 
   const syncCenter = useCallback((nextCenter: DiscoveryCenter, mode: CenterMode) => {
     setCenter(nextCenter);
@@ -220,7 +234,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     }
   };
 
-  const handleSkipLocation = () => {
+  const handleUseDefaultLocation = () => {
     syncCenter(DEFAULT_CENTER, 'manual');
   };
 
@@ -355,6 +369,13 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     );
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setRadius(DEFAULT_RADIUS_KM);
+    setSelectedCategories([]);
+    setPriceMin(0);
+    setPriceMax(PRICE_SLIDER_MAX);
+  }, []);
+
   // Early returns for location-permission states
 
   if (permissionState === 'checking' && !center) {
@@ -392,8 +413,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               FixIt needs your location to show you tasks nearby. You can change this in Settings.
             </Text>
             <View style={styles.modalActions}>
-              <FButton variant="outline" onPress={handleSkipLocation} style={{ flex: 1 }}>
-                Skip
+              <FButton variant="outline" onPress={handleUseDefaultLocation} style={{ flex: 1 }}>
+                Use Tel Aviv
               </FButton>
               <FButton onPress={handleAllowLocation} style={{ flex: 1 }} icon="crosshairs-gps">
                 Allow
@@ -409,6 +430,36 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <View style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}>
+        <View style={styles.workspaceHeaderMain}>
+          <View style={styles.headerKickerRow}>
+            <View style={styles.headerIconShell}>
+              <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondary} />
+            </View>
+            <Text style={styles.headerKicker}>Fixer Workspace</Text>
+          </View>
+          <Text style={styles.headerTitle}>Find jobs</Text>
+          <Text style={styles.headerSub} numberOfLines={2}>
+            Open jobs near {center?.label ?? 'your work area'} / {categorySummary} / {priceSummary}
+          </Text>
+        </View>
+
+        <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
+          <View style={styles.workspaceStat}>
+            <Text style={styles.workspaceStatValue}>{loading ? '...' : tasks.length}</Text>
+            <Text style={styles.workspaceStatLabel}>Open jobs</Text>
+          </View>
+          <View style={styles.workspaceStat}>
+            <Text style={styles.workspaceStatValue}>{bidTaskIds.size}</Text>
+            <Text style={styles.workspaceStatLabel}>Active bids</Text>
+          </View>
+          <View style={styles.workspaceStat}>
+            <Text style={styles.workspaceStatValue}>{radius} km</Text>
+            <Text style={styles.workspaceStatLabel}>Range</Text>
+          </View>
+        </View>
+      </View>
+
       <FilterBar
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
@@ -419,73 +470,88 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         priceMin={priceMin}
         priceMax={priceMax}
         onPriceChange={(min, max) => { setPriceMin(min); setPriceMax(max); }}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
       />
 
-      {/* Work-area search strip — always visible, affects both map and list */}
-      <View style={styles.workAreaStrip}>
-        <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
-        <View style={styles.workAreaInputWrapper}>
-          <FInput
-            placeholder="Search a city or area to find work there…"
-            value={searchText}
-            onChangeText={handleSearchTextChange}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-            onSubmitEditing={handleSearchSubmit}
-            dense
-            style={styles.workAreaInput}
-            right={
-              searchText.length > 0 ? (
-                <FInput.Icon
-                  icon="close-circle"
-                  size={16}
-                  onPress={() => {
-                    setSearchText('');
-                    setSuggestions([]);
-                    setShowSuggestions(false);
-                    setSearchError(null);
-                  }}
-                />
-              ) : undefined
-            }
-          />
-          {showSuggestions && suggestions.length > 0 && searchFocused && (
-            <View style={styles.suggestionsContainer}>
-              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-                {suggestions.map((s) => (
-                  <Pressable
-                    key={s.placeId}
-                    style={({ pressed }) => [
-                      styles.suggestionItem,
-                      pressed && { backgroundColor: brandColors.surfaceAlt },
-                    ]}
-                    onPress={() => handleSelectSuggestion(s.placeId, s.description)}
-                  >
-                    <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
-                    <Text style={[typography.bodySm, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
-                      {s.description}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
+      {/* Work-area search uses Google Places on web; native keeps GPS/default centers only. */}
+      {supportsWorkAreaSearch && (
+        <View style={styles.workAreaStrip}>
+          <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
+          <View style={styles.workAreaInputWrapper}>
+            <FInput
+              placeholder="Search a city or area to find work there..."
+              value={searchText}
+              onChangeText={handleSearchTextChange}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+              onSubmitEditing={handleSearchSubmit}
+              dense
+              style={styles.workAreaInput}
+              right={
+                searchText.length > 0 ? (
+                  <FInput.Icon
+                    icon="close-circle"
+                    size={16}
+                    onPress={() => {
+                      setSearchText('');
+                      setSuggestions([]);
+                      setShowSuggestions(false);
+                      setSearchError(null);
+                    }}
+                  />
+                ) : undefined
+              }
+            />
+            {showSuggestions && suggestions.length > 0 && searchFocused && (
+              <View style={styles.suggestionsContainer}>
+                <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                  {suggestions.map((s) => (
+                    <Pressable
+                      key={s.placeId}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Use ${s.description} as work area`}
+                      style={({ pressed }) => [
+                        styles.suggestionItem,
+                        pressed && { backgroundColor: brandColors.surfaceAlt },
+                      ]}
+                      onPress={() => handleSelectSuggestion(s.placeId, s.description)}
+                    >
+                      <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
+                      <Text style={[typography.bodySm, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                        {s.description}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+          {searchLoading ? (
+            <ActivityIndicator size="small" color={brandColors.primary} />
+          ) : (
+            <Pressable
+              onPress={handleSearchSubmit}
+              style={styles.searchGoBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Search this work area"
+            >
+              <MaterialCommunityIcons name="arrow-right" size={18} color={brandColors.surface} />
+            </Pressable>
           )}
         </View>
-        {searchLoading ? (
-          <ActivityIndicator size="small" color={brandColors.primary} />
-        ) : (
-          <Pressable onPress={handleSearchSubmit} style={styles.searchGoBtn}>
-            <MaterialCommunityIcons name="arrow-right" size={18} color={brandColors.surface} />
-          </Pressable>
-        )}
-      </View>
+      )}
       {center && centerMode === 'manual' && !searchLoading && (
         <View style={styles.workAreaActiveBar}>
           <MaterialCommunityIcons name="map-marker-check" size={13} color={brandColors.success} />
           <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]} numberOfLines={1}>
             Showing tasks in: <Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
           </Text>
-          <Pressable onPress={() => { setSearchText(''); loadGpsCenter(); }}>
+          <Pressable
+            onPress={() => { setSearchText(''); loadGpsCenter(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Use my current location"
+          >
             <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>Use my location</Text>
           </Pressable>
         </View>
@@ -551,7 +617,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
                 <EmptyState
                   icon="map-search-outline"
                   title="No tasks found nearby"
-                  message="Try expanding your distance filter or adjusting category and price filters."
+                  message="Try expanding your distance filter or adjusting category and budget filters."
                 />
               </FCard>
             </View>
@@ -559,7 +625,11 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
           {selectedTask && !loading && (
             <View style={styles.previewCardWrapper}>
-              <DiscoveryPreviewCard task={selectedTask} onViewDetails={handleViewDetails} />
+              <DiscoveryPreviewCard
+                task={selectedTask}
+                hasBid={bidTaskIds.has(selectedTask.id)}
+                onViewDetails={handleViewDetails}
+              />
             </View>
           )}
         </View>
@@ -579,7 +649,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <EmptyState
               icon="map-search-outline"
               title="No tasks found in your area"
-              message="Try expanding your distance filter or changing categories."
+              message="Try expanding your distance filter or changing categories or budget."
             />
           ) : (
             <FlatList
@@ -588,6 +658,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               renderItem={({ item }) => (
                 <DiscoveryListCard
                   task={item}
+                  hasBid={bidTaskIds.has(item.id)}
                   onPress={() => navigation.navigate('TaskDetailsFixer', { taskId: item.id })}
                 />
               )}
@@ -606,6 +677,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: brandColors.background,
+  },
+  workspaceHeader: {
+    backgroundColor: brandColors.primaryDark,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.lg,
+    borderBottomWidth: 3,
+    borderBottomColor: brandColors.secondary,
+  },
+  workspaceHeaderWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.lg,
+  },
+  workspaceHeaderMain: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  headerKickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerIconShell: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.sm,
+    backgroundColor: 'rgba(241,181,69,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(241,181,69,0.22)',
+  },
+  headerKicker: {
+    ...typography.eyebrow,
+    color: brandColors.secondary,
+    letterSpacing: 0.8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.textOnDark,
+  },
+  headerSub: {
+    ...typography.bodySm,
+    color: brandColors.textOnDarkMuted,
+    maxWidth: 560,
+  },
+  workspaceStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  workspaceStatsWide: {
+    justifyContent: 'flex-end',
+    minWidth: 360,
+  },
+  workspaceStat: {
+    minWidth: 104,
+    flexGrow: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,252,246,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.14)',
+  },
+  workspaceStatValue: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: 0,
+    color: brandColors.secondary,
+  },
+  workspaceStatLabel: {
+    ...typography.caption,
+    color: brandColors.textOnDarkMuted,
+    marginTop: 1,
   },
   rationaleContainer: {
     flex: 1,
@@ -649,8 +803,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     backgroundColor: brandColors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
@@ -718,6 +872,7 @@ const styles = StyleSheet.create({
   },
   mapWrapper: {
     flex: 1,
+    backgroundColor: brandColors.neutralSoft,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -746,6 +901,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
+    paddingBottom: spacing.huge,
   },
 });

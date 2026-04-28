@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
@@ -37,6 +38,21 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
 const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
 
+function resetToLanding(navigation: BottomTabHeaderProps['navigation']) {
+  const parentNavigation = navigation.getParent();
+  if (parentNavigation) {
+    parentNavigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Landing' }],
+      }),
+    );
+    return;
+  }
+
+  navigation.navigate('Landing' as never);
+}
+
 // ─── Shared notification badge ───────────────────────────────────────────────
 function NotifBadge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -70,7 +86,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openLanding = () => {
-    openStackScreen('Landing');
+    resetToLanding(navigation);
   };
 
   const openNotifications = () => {
@@ -85,14 +101,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('CreateTask');
   };
 
-  const openRequesterDashboard = () => {
-    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
-  };
-
-  const openFixerWorkspace = () => {
-    navigation.navigate('FixerMode', { screen: 'FindJobs' });
-  };
-
   const openAccount = () => {
     if (mode === 'fixer') {
       navigation.navigate('FixerMode', { screen: 'FixerProfile' });
@@ -105,118 +113,122 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     <View
       style={[
         styles.desktopBar,
-        { paddingTop: insets.top > 0 ? insets.top : spacing.md },
+        { paddingTop: insets.top > 0 ? insets.top : spacing.sm },
       ]}
     >
-      {/* Logo */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to FixIt home"
-        onPress={openLanding}
-        style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
-      >
-        <AppLogo compact />
-      </Pressable>
-
-      {/* Spacer */}
-      <View style={{ flex: 1 }} />
-
-      <View style={styles.desktopQuickLinks}>
-        <Pressable style={styles.desktopQuickLink} onPress={openRequesterDashboard}>
-          <Text style={styles.desktopQuickLinkText}>Requester Space</Text>
-        </Pressable>
-        <Pressable style={styles.desktopQuickLink} onPress={openFixerWorkspace}>
-          <Text style={styles.desktopQuickLinkText}>Find Jobs</Text>
-        </Pressable>
-      </View>
-
-      {/* Mode toggle */}
-      <View style={styles.modeToggleWrap}>
+      <View style={styles.desktopBarInner}>
         <Pressable
-          style={[styles.modeToggleBtn, mode === 'requester' && styles.modeToggleBtnActive]}
-          onPress={() => handleModeChange('requester')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to FixIt home"
+          onPress={openLanding}
+          style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
         >
-          <MaterialCommunityIcons
-            name="home-outline"
-            size={16}
-            color={mode === 'requester' ? brandColors.textOnDark : brandColors.primaryMuted}
-          />
-          <Text
-            style={[
-              typography.label,
-              styles.modeToggleLabel,
-              mode === 'requester' && styles.modeToggleLabelActive,
-            ]}
-          >
-            Requester
-          </Text>
+          <AppLogo compact />
         </Pressable>
-        <Pressable
-          style={[styles.modeToggleBtn, mode === 'fixer' && styles.modeToggleBtnActive]}
-          onPress={() => handleModeChange('fixer')}
-        >
-          <MaterialCommunityIcons
-            name="wrench-outline"
-            size={16}
-            color={mode === 'fixer' ? brandColors.textOnDark : brandColors.primaryMuted}
-          />
-          <Text
-            style={[
-              typography.label,
-              styles.modeToggleLabel,
-              mode === 'fixer' && styles.modeToggleLabelActive,
-            ]}
+
+        <View style={styles.desktopCenter}>
+          <Text style={styles.desktopModeEyebrow}>Workspace</Text>
+          <View style={styles.modeToggleWrap}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to requester workspace"
+              accessibilityState={{ selected: mode === 'requester' }}
+              style={[styles.modeToggleBtn, mode === 'requester' && styles.modeToggleBtnActive]}
+              onPress={() => handleModeChange('requester')}
+            >
+              <MaterialCommunityIcons
+                name="home-outline"
+                size={15}
+                color={mode === 'requester' ? brandColors.textOnDark : brandColors.primaryMuted}
+              />
+              <Text
+                style={[
+                  styles.modeToggleLabel,
+                  mode === 'requester' && styles.modeToggleLabelActive,
+                ]}
+              >
+                Requester
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to fixer workspace"
+              accessibilityState={{ selected: mode === 'fixer' }}
+              style={[styles.modeToggleBtn, mode === 'fixer' && styles.modeToggleBtnActive]}
+              onPress={() => handleModeChange('fixer')}
+            >
+              <MaterialCommunityIcons
+                name="wrench-outline"
+                size={15}
+                color={mode === 'fixer' ? brandColors.textOnDark : brandColors.primaryMuted}
+              />
+              <Text
+                style={[
+                  styles.modeToggleLabel,
+                  mode === 'fixer' && styles.modeToggleLabelActive,
+                ]}
+              >
+                Fixer
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.desktopActions}>
+          {mode === 'requester' && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Post a task"
+              style={({ pressed }) => [styles.desktopPrimaryAction, pressed && styles.desktopActionPressed]}
+              onPress={openCreateTask}
+            >
+              <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
+              <Text style={styles.desktopPrimaryActionText}>Post task</Text>
+            </Pressable>
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              notificationCount > 0
+                ? `Open notifications, ${notificationCount} unread`
+                : 'Open notifications'
+            }
+            style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+            hitSlop={8}
+            onPress={openNotifications}
           >
-            Fixer
-          </Text>
-        </Pressable>
+            <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
+            <NotifBadge count={notificationCount} />
+          </Pressable>
+
+          {mode === 'fixer' && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+              style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+              hitSlop={8}
+              onPress={openSettings}
+            >
+              <MaterialCommunityIcons name="cog-outline" size={20} color={brandColors.primary} />
+            </Pressable>
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={mode === 'fixer' ? 'Open fixer profile' : 'Open account'}
+            style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
+            onPress={openAccount}
+          >
+            <MaterialCommunityIcons
+              name={mode === 'fixer' ? 'account-hard-hat' : 'account-circle-outline'}
+              size={19}
+              color={brandColors.primary}
+            />
+            <Text style={styles.accountLabel}>{mode === 'fixer' ? 'Profile' : 'Account'}</Text>
+          </Pressable>
+        </View>
       </View>
-
-      {/* Bell */}
-      <Pressable
-        style={styles.desktopIconBtn}
-        hitSlop={8}
-        onPress={openNotifications}
-      >
-        <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.primary} />
-        <NotifBadge count={notificationCount} />
-      </Pressable>
-
-      <Pressable
-        style={[styles.desktopIconBtn, styles.desktopPostTaskBtn]}
-        hitSlop={8}
-        onPress={openCreateTask}
-      >
-        <MaterialCommunityIcons name="plus" size={22} color={brandColors.primaryDark} />
-      </Pressable>
-
-      <Pressable
-        style={styles.desktopIconBtn}
-        hitSlop={8}
-        onPress={openSettings}
-      >
-        <MaterialCommunityIcons name="cog-outline" size={22} color={brandColors.primary} />
-      </Pressable>
-
-      {/* Account */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={mode === 'fixer' ? 'Open fixer profile' : 'Open account'}
-        style={({ pressed }) => [styles.accountButton, pressed && styles.accountButtonPressed]}
-        onPress={openAccount}
-      >
-        <View style={styles.accountIcon}>
-          <MaterialCommunityIcons
-            name={mode === 'fixer' ? 'account-hard-hat' : 'account-circle-outline'}
-            size={20}
-            color={brandColors.primary}
-          />
-        </View>
-        <View style={styles.accountTextBlock}>
-          <Text style={styles.accountLabel}>{mode === 'fixer' ? 'Fixer profile' : 'Account'}</Text>
-          <Text style={styles.accountSub}>Workspace</Text>
-        </View>
-      </Pressable>
     </View>
   );
 }
@@ -245,7 +257,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openLanding = () => {
-    openStackScreen('Landing');
+    resetToLanding(navigation);
   };
 
   const openNotifications = () => {
@@ -280,14 +292,6 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate('FixerMode', { screen: 'FixerProfile' });
   };
 
-  const openAccount = () => {
-    if (mode === 'fixer') {
-      navigation.navigate('FixerMode', { screen: 'FixerProfile' });
-      return;
-    }
-    navigation.navigate('RequesterMode', { screen: 'Profile' });
-  };
-
   return (
     <>
       <LinearGradient
@@ -297,7 +301,14 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}
       >
         {/* hamburger — left */}
-        <Pressable style={styles.iconBtn} onPress={() => setMenuOpen(true)} hitSlop={8}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open navigation menu"
+          accessibilityState={{ expanded: menuOpen }}
+          style={styles.iconBtn}
+          onPress={() => setMenuOpen(true)}
+          hitSlop={8}
+        >
           <MaterialCommunityIcons name="menu" size={24} color={brandColors.textOnDark} />
         </Pressable>
 
@@ -316,6 +327,12 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
 
         {/* bell — right */}
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            notificationCount > 0
+              ? `Open notifications, ${notificationCount} unread`
+              : 'Open notifications'
+          }
           style={styles.iconBtn}
           hitSlop={8}
           onPress={openNotifications}
@@ -336,7 +353,6 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onFixerHomePress={openFixerHome}
         onFixerBidsPress={openFixerBids}
         onFixerProfilePress={openFixerProfile}
-        onAccountPress={openAccount}
         onNotificationsPress={openNotifications}
         onSettingsPress={openSettings}
         onLandingPress={openLanding}
@@ -500,51 +516,79 @@ const styles = StyleSheet.create({
 
   // ── Desktop header ────────────────────────────────────────────
   desktopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.huge,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
     backgroundColor: brandColors.surface,
     borderBottomWidth: 1,
     borderBottomColor: brandColors.outlineLight,
     ...shadows.sm,
   },
+  desktopBarInner: {
+    width: '100%',
+    maxWidth: 1180,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  desktopCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  desktopModeEyebrow: {
+    color: brandColors.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  desktopActions: {
+    minWidth: 256,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+  },
   desktopIconBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.sm,
+    backgroundColor: brandColors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
-  desktopPostTaskBtn: {
-    backgroundColor: brandColors.secondary,
-    ...shadows.sm,
+  desktopActionPressed: {
+    opacity: 0.82,
   },
-  desktopQuickLinks: {
+  desktopPrimaryAction: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginRight: spacing.md,
-  },
-  desktopQuickLink: {
+    height: 38,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
+    backgroundColor: brandColors.secondary,
+    borderWidth: 1,
+    borderColor: brandColors.secondaryDark,
   },
-  desktopQuickLinkText: {
-    color: brandColors.primary,
+  desktopPrimaryActionText: {
+    color: brandColors.primaryDark,
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 16,
   },
   accountButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginLeft: spacing.sm,
-    paddingLeft: spacing.sm,
+    gap: spacing.xs,
+    height: 38,
+    paddingLeft: spacing.md,
     paddingRight: spacing.md,
-    height: 42,
     borderRadius: radii.pill,
     backgroundColor: brandColors.surfaceAlt,
     borderWidth: 1,
@@ -553,28 +597,11 @@ const styles = StyleSheet.create({
   accountButtonPressed: {
     opacity: 0.82,
   },
-  accountIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: brandColors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accountTextBlock: {
-    gap: 1,
-  },
   accountLabel: {
     color: brandColors.textPrimary,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 16,
-  },
-  accountSub: {
-    color: brandColors.textMuted,
-    fontSize: 10,
-    fontWeight: '600',
-    lineHeight: 12,
   },
 
   // Mode toggle (desktop)
@@ -584,21 +611,24 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     padding: 3,
     gap: 2,
-    marginRight: spacing.md,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
   modeToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
   },
   modeToggleBtnActive: {
     backgroundColor: brandColors.primary,
-    ...shadows.sm,
   },
   modeToggleLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
     color: brandColors.textMuted,
   },
   modeToggleLabelActive: {

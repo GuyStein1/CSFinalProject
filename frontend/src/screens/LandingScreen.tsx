@@ -90,15 +90,8 @@ export default function LandingScreen({
   onCategorySelect,
   onDashboard,
   onRequesterHome,
-  onRequesterTasks,
-  onMyTasks,
-  onNotifications,
-  onProfile,
-  onSettings,
   onBecomeFixer,
   onFixerHome,
-  onFixerBids,
-  onFixerProfile: _onFixerProfile,
 }: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 860;
@@ -118,8 +111,11 @@ export default function LandingScreen({
   const f3 = useFloat(200);
   const floats = [f0, f1, f2, f3];
 
-  const catCols = wide ? 4 : mid ? 2 : 1;
-  const catCellW = (width - (wide ? 160 : spacing.xxl * 2) - spacing.md * (catCols - 1)) / catCols;
+  const catCols = wide ? (width >= 1120 ? 4 : 3) : mid ? 2 : 1;
+  const categoryGridWidth = width - (wide ? 160 : spacing.xxl * 2);
+  const catCellW = (categoryGridWidth - spacing.md * (catCols - 1)) / catCols;
+  const expandedCatSpan = Math.min(2, catCols);
+  const expandedCatCellW = catCellW * expandedCatSpan + spacing.md * (expandedCatSpan - 1);
 
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -143,6 +139,9 @@ export default function LandingScreen({
     setMenuOpen(false);
     onPostTask(category);
   };
+  const handlePostTaskCta = (category?: Category) => {
+    handlePostTask(category);
+  };
 
   const handleCategoryPress = (category: Category) => {
     setMenuOpen(false);
@@ -157,15 +156,25 @@ export default function LandingScreen({
     runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()));
   };
 
+  const hasDedicatedFixerOnboarding = !isSignedIn && Boolean(onBecomeFixer && !onFixerHome);
   const handleFixerCta = () => {
     if (isSignedIn) {
-      runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? onDashboard ?? (() => onPostTask()));
+      runAndClose(onFixerHome ?? onBecomeFixer ?? onDashboard ?? onLogin ?? (() => onPostTask()));
       return;
     }
-    runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? (() => onPostTask()));
+    if (hasDedicatedFixerOnboarding && onBecomeFixer) {
+      runAndClose(onBecomeFixer);
+      return;
+    }
+    runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? onCreateAccount ?? (() => onPostTask()));
   };
 
   const handleCategoryTask = (category: Category) => {
+    if (!isSignedIn) {
+      setMenuOpen(false);
+      (onCategoryPress ?? onCategorySelect ?? onPostTask)(category);
+      return;
+    }
     setMenuOpen(false);
     (onCategoryPress ?? onCategorySelect ?? onPostTask)(category);
   };
@@ -173,33 +182,19 @@ export default function LandingScreen({
   const handleRequesterHome = () => {
     runAndClose(onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
   };
-  const handleRequesterTasks = () => {
-    runAndClose(onRequesterTasks ?? onMyTasks ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
-  };
-  const handleNotifications = () => {
-    runAndClose(onNotifications ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
-  };
-  const handleProfile = () => {
-    runAndClose(onProfile ?? onSettings ?? onRequesterHome ?? onDashboard ?? onLogin ?? (() => onPostTask()));
-  };
-  const handleFixerBids = () => {
-    runAndClose(onFixerBids ?? onFixerHome ?? onBecomeFixer ?? onLogin ?? onRequesterHome ?? onDashboard ?? (() => onPostTask()));
-  };
-  const selectedCategoryMeta = CATEGORY_METADATA[selectedCategory];
-  const signedInNavItems = [
-    { label: 'Dashboard', icon: 'view-dashboard-outline', onPress: handleRequesterHome },
-    { label: 'My Tasks', icon: 'clipboard-list-outline', onPress: handleRequesterTasks },
-    { label: 'Find Jobs', icon: 'map-search-outline', onPress: handleFixerCta },
-    { label: 'My Bids', icon: 'format-list-bulleted', onPress: handleFixerBids },
-    { label: 'Notifications', icon: 'bell-outline', onPress: handleNotifications },
-    { label: 'Profile & Settings', icon: 'account-outline', onPress: handleProfile },
-  ];
-  const signedOutNavItems = [
+
+  const publicNavItems = [
     { label: 'How it works', icon: 'progress-check', onPress: () => scrollToSection('how') },
     { label: 'Categories', icon: 'shape-outline', onPress: () => scrollToSection('categories') },
     { label: 'For Fixers', icon: 'account-hard-hat-outline', onPress: () => scrollToSection('fixers') },
   ];
-  const navItems = isSignedIn ? signedInNavItems : signedOutNavItems;
+  const signedInDashboardItems = [
+    { label: 'Requester Dashboard', shortLabel: 'Requester', icon: 'view-dashboard-outline', onPress: handleRequesterHome },
+    { label: 'Find Jobs', shortLabel: 'Fixer', icon: 'account-hard-hat-outline', onPress: handleFixerCta },
+  ];
+  const compactDashboardLabels = wide && width < 1040;
+  const postTaskCtaLabel = isSignedIn ? 'Post Task' : 'Sign in to Post Task';
+  const fixerCtaLabel = isSignedIn ? 'Open Fixer Workspace' : hasDedicatedFixerOnboarding ? 'Join as a Fixer' : 'Sign in to Find Jobs';
 
   return (
     <ScrollView
@@ -232,10 +227,12 @@ export default function LandingScreen({
 
           {wide && (
             <View style={styles.navLinks}>
-              {navItems.map((item) => (
+              {publicNavItems.map((item) => (
                 <Pressable
                   key={item.label}
                   onPress={item.onPress}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
                   style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}
                 >
                   <Text style={styles.navLink}>{item.label}</Text>
@@ -245,26 +242,71 @@ export default function LandingScreen({
           )}
 
           <View style={styles.navActions}>
-            {!isSignedIn && wide && (
-              <Pressable onPress={handleLogin} style={styles.navLogin}>
-                <Text style={styles.navLoginText}>Log In</Text>
-              </Pressable>
+            {isSignedIn && wide ? (
+              <View style={styles.navDashboardActions}>
+                {signedInDashboardItems.map((item, index) => (
+                  <Pressable
+                    key={item.label}
+                    onPress={item.onPress}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    style={({ pressed }) => [
+                      styles.navDashboardButton,
+                      index === 0 ? styles.navDashboardPrimary : styles.navDashboardSecondary,
+                      { opacity: pressed ? 0.82 : 1 },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={item.icon as never}
+                      size={16}
+                      color={index === 0 ? brandColors.primaryDark : brandColors.textOnDark}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.navDashboardText,
+                        index === 0 ? styles.navDashboardPrimaryText : styles.navDashboardSecondaryText,
+                      ]}
+                    >
+                      {compactDashboardLabels ? item.shortLabel : item.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <>
+                {!isSignedIn && wide && (
+                  <Pressable
+                    onPress={handleLogin}
+                    style={styles.navLogin}
+                    accessibilityRole="button"
+                    accessibilityLabel="Log in"
+                  >
+                    <Text style={styles.navLoginText}>Log in</Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={isSignedIn ? handleRequesterHome : () => handlePostTaskCta()}
+                  accessibilityRole="button"
+                  accessibilityLabel={isSignedIn ? 'Requester Dashboard' : postTaskCtaLabel}
+                  style={({ pressed }) => [
+                    styles.navCta,
+                    { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
+                  ]}
+                >
+                  <Text style={styles.navCtaText} numberOfLines={1}>
+                    {isSignedIn ? 'Requester Dashboard' : postTaskCtaLabel}
+                  </Text>
+                </Pressable>
+              </>
             )}
-            <Pressable
-              onPress={() => handlePostTask()}
-              style={({ pressed }) => [
-                styles.navCta,
-                { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
-              ]}
-            >
-              <Text style={styles.navCtaText}>{isSignedIn ? 'Post a Task' : 'Get Started'}</Text>
-            </Pressable>
             {!wide && (
               <Pressable
                 onPress={() => setMenuOpen((open) => !open)}
                 style={styles.menuButton}
                 accessibilityRole="button"
                 accessibilityLabel={menuOpen ? 'Close landing menu' : 'Open landing menu'}
+                accessibilityState={{ expanded: menuOpen }}
               >
                 <MaterialCommunityIcons
                   name={menuOpen ? 'close' : 'menu'}
@@ -278,10 +320,24 @@ export default function LandingScreen({
 
         {!wide && menuOpen && (
           <View style={styles.mobileMenu}>
-            {navItems.map((item) => (
+            {publicNavItems.map((item) => (
               <Pressable
                 key={item.label}
                 onPress={item.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
+              >
+                <MaterialCommunityIcons name={item.icon as never} size={18} color={brandColors.textOnDark} />
+                <Text style={styles.mobileMenuText}>{item.label}</Text>
+              </Pressable>
+            ))}
+            {isSignedIn && signedInDashboardItems.map((item) => (
+              <Pressable
+                key={item.label}
+                onPress={item.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name={item.icon as never} size={18} color={brandColors.textOnDark} />
@@ -291,28 +347,34 @@ export default function LandingScreen({
             {!isSignedIn && (
               <Pressable
                 onPress={handleLogin}
+                accessibilityRole="button"
+                accessibilityLabel="Log in"
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="login" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>Log In</Text>
+                <Text style={styles.mobileMenuText}>Log in</Text>
               </Pressable>
             )}
             {!isSignedIn && onCreateAccount && (
               <Pressable
                 onPress={handleCreateAccount}
+                accessibilityRole="button"
+                accessibilityLabel="Create account"
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="account-plus-outline" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>Create Account</Text>
+                <Text style={styles.mobileMenuText}>Create account</Text>
               </Pressable>
             )}
             {!isSignedIn && (
               <Pressable
                 onPress={handleFixerCta}
+                accessibilityRole="button"
+                accessibilityLabel={fixerCtaLabel}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>Become a Fixer</Text>
+                <Text style={styles.mobileMenuText}>{fixerCtaLabel}</Text>
               </Pressable>
             )}
           </View>
@@ -333,24 +395,29 @@ export default function LandingScreen({
               <Text style={styles.heroBadgeText}>Available across Israel</Text>
             </View>
             <Text style={styles.heroHeadline}>
-              Home help,{'\n'}
-              <Text style={{ color: brandColors.secondary }}>without the runaround.</Text>
+              Let’s fix your problems,{'\n'}
+              <Text style={styles.heroHeadlineAccent}>without the runaround.</Text>
             </Text>
             <Text style={styles.heroSub}>
-              {isSignedIn
-                ? 'Post a clear task, compare local bids, and manage the job from your requester workspace.'
-                : 'Sign in to post a home task, compare bids from local fixers, and choose who gets the job.'}
+              Post a home task, compare bids from local fixers, and choose who gets the job.
             </Text>
             <View style={styles.heroActions}>
-              <FButton onPress={() => handlePostTask()} variant="secondary" size="lg" icon="plus">
-                Post a Task
+              <FButton onPress={() => handlePostTaskCta()} variant="secondary" size="lg" icon={isSignedIn ? 'plus' : 'login'}>
+                {postTaskCtaLabel}
               </FButton>
               <Pressable
                 onPress={handleFixerCta}
+                accessibilityRole="button"
+                accessibilityLabel={fixerCtaLabel}
                 style={({ pressed }) => [styles.heroGhostBtn, { opacity: pressed ? 0.8 : 1 }]}
               >
+                <MaterialCommunityIcons
+                  name={isSignedIn ? 'account-hard-hat-outline' : 'account-plus-outline'}
+                  size={18}
+                  color={brandColors.textOnDarkMuted}
+                />
                 <Text style={styles.heroGhostText}>
-                  {isSignedIn ? 'Find Jobs ->' : 'Become a Fixer ->'}
+                  {fixerCtaLabel}
                 </Text>
               </Pressable>
             </View>
@@ -443,70 +510,82 @@ export default function LandingScreen({
           </Text>
         </View>
         <View style={styles.catGrid}>
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat.label}
-              onPress={() => handleCategoryPress(cat.value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Explore ${cat.label} tasks`}
-              style={({ pressed }) => [
-                styles.catCell,
-                selectedCategory === cat.value && styles.catCellSelected,
-                { width: catCellW, opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
-              ]}
-            >
-              <Image source={cat.image} style={styles.catImage} resizeMode="cover" />
-              <LinearGradient
-                colors={['rgba(15,36,56,0.0)', 'rgba(15,36,56,0.75)']}
-                style={styles.catOverlay}
+          {CATEGORIES.map((cat) => {
+            const selected = selectedCategory === cat.value;
+            return (
+              <View
+                key={cat.label}
+                style={[
+                  styles.catCell,
+                  selected && styles.catCellSelected,
+                  selected && styles.catCellExpanded,
+                  { width: selected ? expandedCatCellW : catCellW },
+                ]}
               >
-                <View style={[styles.catIconBadge, { backgroundColor: cat.color }]}>
-                  <MaterialCommunityIcons name={cat.icon as never} size={14} color="#fff" />
-                </View>
-                <Text style={styles.catLabel}>{cat.label}</Text>
-                <Text style={styles.catDescription} numberOfLines={2}>{cat.description}</Text>
-                <View style={styles.catExamples}>
-                  {cat.examples.slice(0, 2).map((example) => (
-                    <View key={example} style={styles.catExamplePill}>
-                      <Text style={styles.catExampleText} numberOfLines={1}>{example}</Text>
+                <Image source={cat.image} style={styles.catImage} resizeMode="cover" />
+                <LinearGradient
+                  colors={selected
+                    ? ['rgba(15,36,56,0.22)', 'rgba(15,36,56,0.96)']
+                    : ['rgba(15,36,56,0.0)', 'rgba(15,36,56,0.75)']}
+                  style={[styles.catOverlay, selected && styles.catOverlayExpanded]}
+                >
+                  <Pressable
+                    onPress={() => handleCategoryPress(cat.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={selected ? `${cat.label} selected` : `View details for ${cat.label} tasks`}
+                    style={({ pressed }) => [
+                      styles.catSummaryPressable,
+                      selected && styles.catSummaryPressableExpanded,
+                      { opacity: pressed ? 0.86 : 1 },
+                    ]}
+                  >
+                    <View style={[styles.catIconBadge, { backgroundColor: cat.color }]}>
+                      <MaterialCommunityIcons name={cat.icon as never} size={14} color={brandColors.textOnDark} />
                     </View>
-                  ))}
-                </View>
-                <View style={styles.catActionRow}>
-                  <Text style={styles.catActionText}>{selectedCategory === cat.value ? 'Selected' : 'Explore'}</Text>
-                  <MaterialCommunityIcons name={selectedCategory === cat.value ? 'chevron-down' : 'plus'} size={14} color="#fff" />
-                </View>
-              </LinearGradient>
-            </Pressable>
-          ))}
-        </View>
-        <View style={styles.categoryDetailCard}>
-          <Image source={selectedCategoryMeta.image} style={styles.categoryDetailImage} resizeMode="cover" />
-          <View style={styles.categoryDetailBody}>
-            <View style={styles.categoryDetailKicker}>
-              <MaterialCommunityIcons name={selectedCategoryMeta.icon as never} size={18} color={selectedCategoryMeta.color} />
-              <Text style={[styles.categoryDetailKickerText, { color: selectedCategoryMeta.color }]}>
-                {selectedCategoryMeta.label}
-              </Text>
-            </View>
-            <Text style={styles.categoryDetailTitle}>{selectedCategoryMeta.description}</Text>
-            <Text style={styles.categoryDetailCopy}>
-              Use photos, a clear budget, and a precise address so nearby Fixers can price the job accurately.
-            </Text>
-            <View style={styles.categoryDetailChips}>
-              {selectedCategoryMeta.examples.map((task) => (
-                <View key={task} style={[styles.categoryDetailChip, { backgroundColor: selectedCategoryMeta.soft }]}>
-                  <Text style={[styles.categoryDetailChipText, { color: selectedCategoryMeta.color }]}>{task}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.categoryDetailPrompt}>
-              Start with the category selected, then add the task details that will help Fixers bid.
-            </Text>
-            <FButton onPress={() => handleCategoryTask(selectedCategoryMeta.value)} icon="plus" fullWidth>
-              {`Post a ${selectedCategoryMeta.label} Task`}
-            </FButton>
-          </View>
+                    <Text style={styles.catLabel}>{cat.label}</Text>
+                    <Text style={styles.catDescription} numberOfLines={selected ? 3 : 2}>{cat.description}</Text>
+                    <View style={styles.catExamples}>
+                      {cat.examples.slice(0, selected ? 3 : 2).map((example) => (
+                        <View key={example} style={styles.catExamplePill}>
+                          <Text style={styles.catExampleText} numberOfLines={1}>{example}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <View style={styles.catActionRow}>
+                      <Text style={styles.catActionText}>{selected ? 'Selected' : 'View details'}</Text>
+                      <MaterialCommunityIcons
+                        name={selected ? 'check-circle-outline' : 'plus'}
+                        size={14}
+                        color={brandColors.textOnDark}
+                      />
+                    </View>
+                  </Pressable>
+
+                  {selected && (
+                    <View style={styles.catInlineDetail}>
+                      <Text style={styles.catInlineCopy} numberOfLines={3}>
+                        {cat.detailCopy}
+                      </Text>
+                      <View style={styles.catInlineChips}>
+                        {cat.commonTasks.slice(0, 4).map((task) => (
+                          <View key={task} style={styles.catInlineChip}>
+                            <Text style={styles.catInlineChipText} numberOfLines={1}>{task}</Text>
+                          </View>
+                        ))}
+                      </View>
+                      <Text style={styles.catInlinePrompt} numberOfLines={3}>
+                        {cat.starterPrompt}
+                      </Text>
+                      <FButton onPress={() => handleCategoryTask(cat.value)} icon={isSignedIn ? 'plus' : 'login'} fullWidth>
+                        {isSignedIn ? `Post in ${cat.label}` : postTaskCtaLabel}
+                      </FButton>
+                    </View>
+                  )}
+                </LinearGradient>
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -528,7 +607,7 @@ export default function LandingScreen({
               Join 1,800+ fixers already earning from tasks near them.
             </Text>
             <FButton onPress={handleFixerCta} variant="secondary" size="lg" icon="account-hard-hat">
-              {isSignedIn ? 'Open Fixer Workspace' : 'Join as a Fixer'}
+              {fixerCtaLabel}
             </FButton>
           </View>
 
@@ -600,7 +679,7 @@ const styles = StyleSheet.create({
   navWordmark: {
     fontSize: 18,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: brandColors.textOnDark,
   },
   navLinks: {
@@ -634,11 +713,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
     borderRadius: radii.pill,
+    maxWidth: 180,
   },
   navCtaText: {
     fontSize: 13,
     fontWeight: '700',
     color: brandColors.primaryDark,
+  },
+  navDashboardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexShrink: 0,
+  },
+  navDashboardButton: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+  },
+  navDashboardPrimary: {
+    backgroundColor: brandColors.secondary,
+    borderColor: brandColors.secondary,
+  },
+  navDashboardSecondary: {
+    backgroundColor: 'rgba(255,252,246,0.10)',
+    borderColor: 'rgba(255,252,246,0.20)',
+  },
+  navDashboardText: {
+    fontSize: 13,
+    fontWeight: '800',
+    maxWidth: 140,
+  },
+  navDashboardPrimaryText: {
+    color: brandColors.primaryDark,
+  },
+  navDashboardSecondaryText: {
+    color: brandColors.textOnDark,
   },
   menuButton: {
     width: 38,
@@ -728,8 +844,11 @@ const styles = StyleSheet.create({
     fontSize: 44,
     fontWeight: '800',
     lineHeight: 52,
-    letterSpacing: -1,
+    letterSpacing: 0,
     color: brandColors.textOnDark,
+  },
+  heroHeadlineAccent: {
+    color: brandColors.secondary,
   },
   heroSub: {
     fontSize: 16,
@@ -744,6 +863,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroGhostBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
@@ -828,7 +950,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: brandColors.primary,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   statLabel: {
     fontSize: 13,
@@ -918,12 +1040,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    alignItems: 'flex-start',
   },
   catCell: {
     height: 196,
     borderRadius: radii.xl,
     overflow: 'hidden',
     ...shadows.sm,
+  },
+  catCellExpanded: {
+    height: 430,
   },
   catCellSelected: {
     borderWidth: 3,
@@ -941,6 +1067,20 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
+  catOverlayExpanded: {
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  catSummaryPressable: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+  },
+  catSummaryPressableExpanded: {
+    flex: 0,
+    minHeight: 132,
+  },
   catIconBadge: {
     width: 26,
     height: 26,
@@ -952,7 +1092,7 @@ const styles = StyleSheet.create({
   catLabel: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
+    color: brandColors.textOnDark,
   },
   catDescription: {
     fontSize: 12,
@@ -984,67 +1124,41 @@ const styles = StyleSheet.create({
   },
   catActionText: {
     fontSize: 11,
-    color: '#fff',
+    color: brandColors.textOnDark,
     fontWeight: '800',
   },
-  categoryDetailCard: {
-    marginTop: spacing.lg,
-    borderRadius: radii.xxl,
-    overflow: 'hidden',
-    backgroundColor: brandColors.surface,
-    ...shadows.md,
-  },
-  categoryDetailImage: {
-    width: '100%',
-    height: 190,
-  },
-  categoryDetailBody: {
-    padding: spacing.xxl,
+  catInlineDetail: {
     gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.22)',
+    paddingTop: spacing.md,
   },
-  categoryDetailKicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+  catInlineCopy: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.92)',
   },
-  categoryDetailKickerText: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  categoryDetailTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 28,
-    color: brandColors.primary,
-  },
-  categoryDetailCopy: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: brandColors.textSecondary,
-  },
-  categoryDetailChips: {
+  catInlineChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  categoryDetailChip: {
+  catInlineChip: {
+    maxWidth: '100%',
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  categoryDetailChipText: {
-    fontSize: 12,
+  catInlineChipText: {
+    fontSize: 11,
     fontWeight: '700',
+    color: brandColors.textOnDark,
   },
-  categoryDetailPrompt: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: brandColors.textMuted,
-    backgroundColor: brandColors.background,
-    borderRadius: radii.md,
-    padding: spacing.md,
+  catInlinePrompt: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: brandColors.textOnDarkMuted,
   },
 
   // ── Fixer CTA ─────────────────────────────────────────────────
@@ -1081,7 +1195,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '800',
     lineHeight: 44,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: brandColors.textOnDark,
   },
   fixerSub: {
@@ -1133,7 +1247,7 @@ const styles = StyleSheet.create({
   footerWordmark: {
     fontSize: 16,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: brandColors.textOnDark,
   },
   footerTagline: {
