@@ -115,7 +115,7 @@ export default function RequesterDashboard({ navigation }: Props) {
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <View style={[styles.heroInner, { paddingHorizontal: horizontalPadding }]}>
+        <View style={[styles.heroInner, wide && styles.heroInnerWide, { paddingHorizontal: horizontalPadding }]}>
           <View style={[styles.heroCopy, wide && styles.heroCopyWide]}>
             <View style={styles.workspacePill}>
               <View style={styles.liveDot} />
@@ -355,6 +355,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     gap: spacing.xxl,
   },
+  heroInnerWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   heroCopy: {
     gap: spacing.md,
   },
@@ -430,10 +435,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   heroPanelWide: {
-    position: 'absolute',
-    right: spacing.xxxl,
-    top: spacing.sm,
     width: 350,
+    flexShrink: 0,
   },
   panelEyebrow: {
     ...typography.eyebrow,

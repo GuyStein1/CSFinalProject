@@ -38,10 +38,23 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
 const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
 
-function getActiveWorkspaceScreen(route: BottomTabHeaderProps['route']): string | undefined {
-  const state = (route as { state?: { index?: number; routes?: Array<{ name?: string }> } }).state;
+type NestedRouteSnapshot = {
+  name?: string;
+  params?: { screen?: unknown };
+  state?: {
+    index?: number;
+    routes?: NestedRouteSnapshot[];
+  };
+};
+
+function getActiveWorkspaceScreen(route: NestedRouteSnapshot): string | undefined {
+  const state = route.state;
   const activeRoute = state?.routes?.[state.index ?? 0];
-  return activeRoute?.name;
+  if (activeRoute) {
+    return getActiveWorkspaceScreen(activeRoute) ?? activeRoute.name;
+  }
+
+  return typeof route.params?.screen === 'string' ? route.params.screen : undefined;
 }
 
 function resetToLanding(navigation: BottomTabHeaderProps['navigation']) {
@@ -73,10 +86,22 @@ function NotifBadge({ count }: { count: number }) {
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const topInset = insets.top > 0 ? insets.top : spacing.sm;
+  const [navStateVersion, setNavStateVersion] = useState(0);
+  const [activeScreenOverride, setActiveScreenOverride] = useState<string | null>(null);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
+
+  useEffect(() => {
+    return navigation.addListener('state', () => {
+      setNavStateVersion((version) => version + 1);
+    });
+  }, [navigation]);
+
+  useEffect(() => {
+    setActiveScreenOverride(null);
+  }, [route.name]);
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -109,9 +134,23 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openWorkspaceScreen = (screen: string) => {
+    setActiveScreenOverride(screen);
     navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', { screen });
   };
-  const activeScreen = getActiveWorkspaceScreen(route) ?? (mode === 'fixer' ? 'FindJobs' : 'Dashboard');
+  const navigatorState = React.useMemo(() => navigation.getState(), [navigation, navStateVersion]);
+  const activeModeRoute =
+    navigatorState.routes.find((item) => item.name === route.name) as NestedRouteSnapshot | undefined;
+  const activeScreenFromState =
+    getActiveWorkspaceScreen((activeModeRoute ?? route) as NestedRouteSnapshot) ??
+    (mode === 'fixer' ? 'FindJobs' : 'Dashboard');
+  const activeScreen = activeScreenOverride ?? activeScreenFromState;
+
+  useEffect(() => {
+    if (activeScreenOverride && activeScreenFromState === activeScreenOverride) {
+      setActiveScreenOverride(null);
+    }
+  }, [activeScreenFromState, activeScreenOverride]);
+
   const workspaceTabs = mode === 'fixer'
     ? [
         { label: 'Find Jobs', screen: 'FindJobs', icon: 'map-search-outline' },
