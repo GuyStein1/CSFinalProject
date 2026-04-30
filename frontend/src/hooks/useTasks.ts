@@ -74,7 +74,8 @@ const COASTLINE: [number, number][] = [
   [33.10, 35.08], // Nahariya
 ];
 
-function minLngForLat(lat: number): number {
+/** @internal exported for testing */
+export function minLngForLat(lat: number): number {
   if (lat <= COASTLINE[0][0]) return COASTLINE[0][1];
   if (lat >= COASTLINE[COASTLINE.length - 1][0]) return COASTLINE[COASTLINE.length - 1][1];
   for (let i = 0; i < COASTLINE.length - 1; i++) {
@@ -93,7 +94,8 @@ function minLngForLat(lat: number): number {
 const OFFSET_MAX_METERS = 50;
 const METERS_PER_DEG_LAT = 111_320; // roughly constant
 
-function hashCode(s: string): number {
+/** @internal exported for testing */
+export function hashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
     h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
@@ -101,7 +103,8 @@ function hashCode(s: string): number {
   return h >>> 0; // unsigned
 }
 
-function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: number; lng: number } {
+/** @internal exported for testing */
+export function applyPrivacyOffset(lat: number, lng: number, taskId: string): { lat: number; lng: number } {
   const h = hashCode(taskId);
   const angle = ((h & 0xffff) / 0xffff) * Math.PI * 2;
   const distance = 10 + ((h >>> 16) / 0xffff) * (OFFSET_MAX_METERS - 10);
