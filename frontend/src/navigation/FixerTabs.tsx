@@ -6,14 +6,10 @@ import { useTheme } from 'react-native-paper';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
 import FixerProfileScreen from '../screens/FixerProfileScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import ConversationListScreen from '../screens/ConversationListScreen';
 import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
-
-function MessagesScreen() {
-  return <PlaceholderScreen title="Messages" />;
-}
 
 function TabIcon({ name, color, size, focused }: { name: string; color: string; size: number; focused: boolean }) {
   return (
@@ -61,7 +57,7 @@ export default function FixerTabs() {
       />
       <Tab.Screen
         name="Messages"
-        component={MessagesScreen}
+        component={ConversationListScreen}
         options={{
           tabBarLabel: 'Messages',
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (

@@ -27,6 +27,7 @@ interface Bid {
     average_rating_as_fixer: number | null;
     phone_number: string | null;
     payment_link: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -39,6 +40,7 @@ interface MyReview {
 
 interface Task {
   id: string;
+  requester_id: string;
   title: string;
   description: string;
   category: string;
@@ -472,6 +474,22 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           <View style={styles.actionButtons}>
             <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
               Mark as Completed
+            </FButton>
+            <FButton
+              variant="outline"
+              icon="chat-outline"
+              onPress={() => navigation.navigate('Chat', {
+                taskId: task.id,
+                myDbId: task.requester_id,
+                recipientId: acceptedBid.fixer_id,
+                recipientName: acceptedBid.fixer?.full_name || 'Fixer',
+                recipientAvatar: acceptedBid.fixer?.avatar_url || null,
+                taskTitle: task.title,
+                taskStatus: task.status,
+              })}
+              fullWidth
+            >
+              Chat with Fixer
             </FButton>
             <Pressable onPress={cancelTask} style={styles.cancelRow}>
               <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />

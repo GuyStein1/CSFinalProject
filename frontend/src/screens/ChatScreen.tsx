@@ -14,8 +14,6 @@ import { getSocket } from '../utils/socket';
 import { FButton, FInput } from '../components/ui';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors, radii, spacing, typography } from '../theme';
-import { auth } from '../config/firebase';
-
 interface Message {
   id: string;
   task_id: string;
@@ -28,6 +26,7 @@ interface Message {
 
 interface ChatScreenParams {
   taskId: string;
+  myDbId?: string;
   recipientId?: string;
   recipientName?: string;
   recipientAvatar?: string | null;
@@ -43,6 +42,7 @@ function formatTime(dateStr: string): string {
 export default function ChatScreen({ route }: { route: any }) {
   const {
     taskId,
+    myDbId: myDbIdParam,
     recipientId,
     recipientName = 'User',
     recipientAvatar = null,
@@ -51,7 +51,7 @@ export default function ChatScreen({ route }: { route: any }) {
   } = (route.params ?? {}) as ChatScreenParams;
 
   const navigation = useNavigation();
-  const myId = auth.currentUser?.uid;
+  const [myDbId, setMyDbId] = useState<string | undefined>(myDbIdParam);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +81,14 @@ export default function ChatScreen({ route }: { route: any }) {
     });
   }, [navigation, taskTitle, recipientAvatar]);
 
+  // Fetch current user's DB ID if not provided via nav params
+  useEffect(() => {
+    if (myDbIdParam) return;
+    api.get('/api/users/me').then((res) => {
+      setMyDbId((res.data.user as { id: string }).id);
+    }).catch(() => { /* non-fatal */ });
+  }, [myDbIdParam]);
+
   // Load chat history
   const loadMessages = useCallback(async (p: number) => {
     try {
@@ -106,7 +114,7 @@ export default function ChatScreen({ route }: { route: any }) {
     void (async () => {
       const socket = await getSocket();
       socketRef.current = socket;
-      socket.emit('join_chat', { taskId });
+      socket.emit('join_chat', taskId);
       socket.on('receive_message', (msg: Message) => {
         setMessages(prev => [...prev, msg]);
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -128,7 +136,7 @@ export default function ChatScreen({ route }: { route: any }) {
     const optimistic: Message = {
       id: `opt-${Date.now()}`,
       task_id: taskId,
-      sender_id: myId ?? '',
+      sender_id: myDbId ?? '',
       recipient_id: recipientId ?? '',
       content,
       is_read: false,
@@ -173,7 +181,7 @@ export default function ChatScreen({ route }: { route: any }) {
         onEndReached={loadMore}
         onEndReachedThreshold={0.1}
         renderItem={({ item }) => {
-          const isMine = item.sender_id === myId;
+          const isMine = item.sender_id === myDbId;
           return (
             <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
               {!isMine && (
