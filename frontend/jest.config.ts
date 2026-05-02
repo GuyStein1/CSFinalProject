@@ -16,6 +16,7 @@ const config: Config = {
     '^socket\\.io-client$': '<rootDir>/src/__mocks__/socket.io-client.ts',
     '^expo-notifications$': '<rootDir>/src/__mocks__/expo-notifications.ts',
     '^expo-constants$': '<rootDir>/src/__mocks__/expo-constants.ts',
+    '^@react-native-async-storage/async-storage$': '<rootDir>/src/__mocks__/@react-native-async-storage/async-storage.ts',
   },
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)',
