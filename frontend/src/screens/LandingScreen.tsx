@@ -39,7 +39,8 @@ interface Props {
 }
 
 const CATEGORIES = CATEGORY_LIST;
-const WORKER_IMAGE = require('../../assets/landing-worker-cut.png');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const WORKER_IMAGE = require('../../assets/landing-worker-cut.png') as number;
 
 const SPEED_LINES = [
   { top: '18%', left: '58%', width: 130 },
