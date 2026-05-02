@@ -1,7 +1,38 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import api from '../api/axiosInstance';
 import { auth } from '../config/firebase';
+import { disconnectSocket } from '../utils/socket';
+
+const PUSH_PROMPTED_KEY = 'push_permission_prompted';
+
+async function registerPushTokenSilently(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const alreadyPrompted = await AsyncStorage.getItem(PUSH_PROMPTED_KEY);
+    const { status: existing } = await Notifications.getPermissionsAsync();
+
+    let finalStatus = existing;
+    if (!alreadyPrompted && existing !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+      await AsyncStorage.setItem(PUSH_PROMPTED_KEY, 'true');
+    }
+
+    if (finalStatus === 'granted') {
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+      if (!projectId) return;
+      const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+      await api.post('/api/users/me/push-token', { token });
+    }
+  } catch {
+    // Never block auth flow for push failures
+  }
+}
 
 export type AuthBootstrapStatus = 'checking' | 'signed_out' | 'needs_sync' | 'ready' | 'error';
 
@@ -34,6 +65,7 @@ export default function useAuthBootstrap() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [suggestedFullName, setSuggestedFullName] = useState('');
+  const pushRegistered = useRef(false);
 
   const verifyLocalUser = useCallback(async () => {
     await api.get('/api/users/me');
@@ -49,6 +81,10 @@ export default function useAuthBootstrap() {
       try {
         await verifyLocalUser();
         setStatus('ready');
+        if (!pushRegistered.current) {
+          pushRegistered.current = true;
+          void registerPushTokenSilently();
+        }
       } catch (nextError) {
         const status = getApiErrorStatus(nextError);
 
@@ -75,6 +111,7 @@ export default function useAuthBootstrap() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
+        disconnectSocket(); // tear down socket so next user gets a fresh authenticated connection
         setStatus('signed_out');
         setError(null);
         setUserEmail(null);
@@ -141,6 +178,7 @@ export default function useAuthBootstrap() {
   }, [bootstrapSignedInUser]);
 
   const logOut = useCallback(async () => {
+    disconnectSocket(); // disconnect before Firebase sign-out so the socket doesn't linger
     await signOut(auth);
   }, []);
 

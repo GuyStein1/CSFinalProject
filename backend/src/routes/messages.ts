@@ -21,7 +21,12 @@ router.get('/tasks/:id/messages', async (req: Request, res: Response, next: Next
 
     const isMember =
       task.requester_id === userId || task.assigned_fixer_id === userId;
-    if (!isMember) throw new ForbiddenError('Not a participant in this chat');
+    const bid = isMember
+      ? null
+      : await prisma.bid.findFirst({
+          where: { task_id: taskId, fixer_id: userId, status: { in: ['PENDING', 'ACCEPTED'] } },
+        });
+    if (!isMember && !bid) throw new ForbiddenError('Not a participant in this chat');
 
     const [messages, total] = await Promise.all([
       prisma.message.findMany({
@@ -30,7 +35,7 @@ router.get('/tasks/:id/messages', async (req: Request, res: Response, next: Next
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          sender: { select: { id: true, full_name: true, avatar_url: true } },
+          sender: { select: { id: true, firebase_uid: true, full_name: true, avatar_url: true } },
         },
       }),
       prisma.message.count({ where: { task_id: taskId } }),
@@ -99,6 +104,35 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
       });
 
     res.json({ conversations });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/tasks/:id/messages/read — mark all unread messages received by the caller in this task as read
+router.put('/tasks/:id/messages/read', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const taskId = req.params.id;
+    const userId = req.user!.id;
+
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new NotFoundError('Task not found');
+
+    const isMember =
+      task.requester_id === userId || task.assigned_fixer_id === userId;
+    const bid = isMember
+      ? null
+      : await prisma.bid.findFirst({
+          where: { task_id: taskId, fixer_id: userId, status: { in: ['PENDING', 'ACCEPTED'] } },
+        });
+    if (!isMember && !bid) throw new ForbiddenError('Not a participant in this chat');
+
+    await prisma.message.updateMany({
+      where: { task_id: taskId, recipient_id: userId, is_read: false },
+      data: { is_read: true },
+    });
+
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

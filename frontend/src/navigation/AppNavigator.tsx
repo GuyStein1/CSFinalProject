@@ -18,6 +18,7 @@ import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
+import ChatScreen from '../screens/ChatScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
@@ -218,6 +219,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>
   );
 }
