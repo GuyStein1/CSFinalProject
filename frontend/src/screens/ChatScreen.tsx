@@ -11,6 +11,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import api from '../api/axiosInstance';
 import { getSocket } from '../utils/socket';
+import { useNotificationContext } from '../context/NotificationContext';
+import { auth } from '../config/firebase';
 import { FButton, FInput } from '../components/ui';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors, radii, spacing, typography } from '../theme';
@@ -22,6 +24,7 @@ interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  sender?: { id: string; firebase_uid: string; full_name: string; avatar_url: string | null };
 }
 
 interface ChatScreenParams {
@@ -51,6 +54,7 @@ export default function ChatScreen({ route }: { route: any }) {
   } = (route.params ?? {}) as ChatScreenParams;
 
   const navigation = useNavigation();
+  const { refetch: refetchNotifications } = useNotificationContext();
   const [myDbId, setMyDbId] = useState<string | undefined>(myDbIdParam);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -81,13 +85,14 @@ export default function ChatScreen({ route }: { route: any }) {
     });
   }, [navigation, taskTitle, recipientAvatar]);
 
-  // Fetch current user's DB ID if not provided via nav params
+  // Fetch current user's DB ID only when not provided via nav params (used for optimistic bubble recipient_id)
   useEffect(() => {
     if (myDbIdParam) return;
     api.get('/api/users/me').then((res) => {
       setMyDbId((res.data.user as { id: string }).id);
     }).catch(() => { /* non-fatal */ });
   }, [myDbIdParam]);
+  // Note: isMine no longer depends on myDbId — it uses Firebase UID (always sync available)
 
   // Load chat history
   const loadMessages = useCallback(async (p: number) => {
@@ -100,6 +105,8 @@ export default function ChatScreen({ route }: { route: any }) {
         setMessages(prev => [...fetched, ...prev]);
       }
       if (fetched.length < 30) setHasMore(false);
+      // Mark messages as read on first page load (badge reset)
+      if (p === 1) void api.put(`/api/tasks/${taskId}/messages/read`).catch(() => {});
     } catch {
       // history unavailable — chat still usable via socket
     } finally {
@@ -116,8 +123,26 @@ export default function ChatScreen({ route }: { route: any }) {
       socketRef.current = socket;
       socket.emit('join_chat', taskId);
       socket.on('receive_message', (msg: Message) => {
-        setMessages(prev => [...prev, msg]);
+        const sentByMe = msg.sender?.firebase_uid
+          ? msg.sender.firebase_uid === auth.currentUser?.uid
+          : msg.sender_id === myDbId;
+
+        setMessages(prev => {
+          if (sentByMe) {
+            // Replace the optimistic bubble with the confirmed server message
+            const optIdx = prev.findIndex(m => m.id.startsWith('opt-') && m.content === msg.content);
+            if (optIdx !== -1) {
+              const updated = [...prev];
+              updated[optIdx] = msg;
+              return updated;
+            }
+          }
+          return [...prev, msg];
+        });
         flatListRef.current?.scrollToEnd({ animated: true });
+
+        // Only refresh bell badge for messages from the other party
+        if (!sentByMe) void refetchNotifications();
       });
     })();
 
@@ -132,11 +157,12 @@ export default function ChatScreen({ route }: { route: any }) {
     setText('');
     setSending(true);
 
-    // Optimistic bubble
+    // Optimistic bubble — include firebase_uid so isMine works immediately
     const optimistic: Message = {
       id: `opt-${Date.now()}`,
       task_id: taskId,
       sender_id: myDbId ?? '',
+      sender: { id: myDbId ?? '', firebase_uid: auth.currentUser?.uid ?? '', full_name: '', avatar_url: null },
       recipient_id: recipientId ?? '',
       content,
       is_read: false,
@@ -145,7 +171,7 @@ export default function ChatScreen({ route }: { route: any }) {
     setMessages(prev => [...prev, optimistic]);
     flatListRef.current?.scrollToEnd({ animated: true });
 
-    socketRef.current.emit('send_message', { taskId, content });
+    socketRef.current.emit('send_message', { taskId, content, recipientId });
     setSending(false);
   };
 
@@ -181,7 +207,10 @@ export default function ChatScreen({ route }: { route: any }) {
         onEndReached={loadMore}
         onEndReachedThreshold={0.1}
         renderItem={({ item }) => {
-          const isMine = item.sender_id === myDbId;
+          // Use Firebase UID (always sync) as primary check; fall back to DB ID if sender not populated
+          const isMine = item.sender?.firebase_uid
+            ? item.sender.firebase_uid === auth.currentUser?.uid
+            : item.sender_id === myDbId;
           return (
             <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
               {!isMine && (
@@ -310,6 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     padding: spacing.md,
+    paddingLeft: 84, // clear the accessibility FAB (left:20 + width:56 + 8px gap)
     paddingBottom: spacing.lg,
     backgroundColor: brandColors.surface,
     borderTopWidth: 1,

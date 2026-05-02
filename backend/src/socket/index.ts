@@ -42,10 +42,21 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         const task = await prisma.task.findUnique({ where: { id: taskId } });
         if (!task) return;
 
-        const isMember =
+        const isTaskMember =
           task.requester_id === authedSocket.userId ||
           task.assigned_fixer_id === authedSocket.userId;
-        if (!isMember) return;
+
+        const hasBid = isTaskMember
+          ? true
+          : !!(await prisma.bid.findFirst({
+              where: {
+                task_id: taskId,
+                fixer_id: authedSocket.userId,
+                status: { in: ['PENDING', 'ACCEPTED'] },
+              },
+            }));
+
+        if (!isTaskMember && !hasBid) return;
 
         socket.join(`task_chat_${taskId}`);
       } catch (err) {
@@ -56,7 +67,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // send_message — persist to DB, broadcast to room, push-notify offline recipient
     socket.on(
       'send_message',
-      async (payload: { taskId: string; content: string }) => {
+      async (payload: { taskId: string; content: string; recipientId?: string }) => {
         try {
           const { taskId, content } = payload;
           if (!taskId || !content?.trim()) return;
@@ -64,15 +75,30 @@ export function initSocket(httpServer: HttpServer): SocketServer {
           const task = await prisma.task.findUnique({ where: { id: taskId } });
           if (!task) return;
 
-          const isMember =
+          const isTaskMember =
             task.requester_id === authedSocket.userId ||
             task.assigned_fixer_id === authedSocket.userId;
-          if (!isMember) return;
 
-          const recipientId =
-            task.requester_id === authedSocket.userId
-              ? task.assigned_fixer_id
-              : task.requester_id;
+          const hasBid = isTaskMember
+            ? true
+            : !!(await prisma.bid.findFirst({
+                where: {
+                  task_id: taskId,
+                  fixer_id: authedSocket.userId,
+                  status: { in: ['PENDING', 'ACCEPTED'] },
+                },
+              }));
+
+          if (!isTaskMember && !hasBid) return;
+
+          let recipientId: string | null;
+          if (task.requester_id === authedSocket.userId) {
+            // sender is requester — use assigned fixer or the hint from the client (pending-bid chat)
+            recipientId = task.assigned_fixer_id ?? payload.recipientId ?? null;
+          } else {
+            // sender is fixer — recipient is always the requester
+            recipientId = task.requester_id;
+          }
 
           if (!recipientId) return;
 
@@ -84,7 +110,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
               content: content.trim(),
             },
             include: {
-              sender: { select: { id: true, full_name: true, avatar_url: true } },
+              sender: { select: { id: true, firebase_uid: true, full_name: true, avatar_url: true } },
             },
           });
 

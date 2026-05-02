@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import api from '../api/axiosInstance';
 import { auth } from '../config/firebase';
+import { disconnectSocket } from '../utils/socket';
 
 const PUSH_PROMPTED_KEY = 'push_permission_prompted';
 
@@ -110,6 +111,7 @@ export default function useAuthBootstrap() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
+        disconnectSocket(); // tear down socket so next user gets a fresh authenticated connection
         setStatus('signed_out');
         setError(null);
         setUserEmail(null);
@@ -176,6 +178,7 @@ export default function useAuthBootstrap() {
   }, [bootstrapSignedInUser]);
 
   const logOut = useCallback(async () => {
+    disconnectSocket(); // disconnect before Firebase sign-out so the socket doesn't linger
     await signOut(auth);
   }, []);
 

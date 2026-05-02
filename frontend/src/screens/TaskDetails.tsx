@@ -414,6 +414,23 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     Decline
                   </FButton>
                 </View>
+                <FButton
+                  variant="outline"
+                  size="sm"
+                  icon="chat-outline"
+                  onPress={() => navigation.navigate('Chat', {
+                    taskId: task.id,
+                    myDbId: task.requester_id,
+                    recipientId: bid.fixer_id,
+                    recipientName: bid.fixer?.full_name || 'Fixer',
+                    recipientAvatar: bid.fixer?.avatar_url || null,
+                    taskTitle: task.title,
+                    taskStatus: task.status,
+                  })}
+                  style={{ marginTop: spacing.xs }}
+                >
+                  Chat
+                </FButton>
               </FCard>
             ))
           )}
