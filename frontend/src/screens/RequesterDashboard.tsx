@@ -1,217 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   Pressable,
-  Image,
-  Platform,
   useWindowDimensions,
-  ImageSourcePropType,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import Feather from '@expo/vector-icons/Feather';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendEmailVerification } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-
-type Category =
-  | 'ASSEMBLY'
-  | 'MOUNTING'
-  | 'MOVING'
-  | 'PAINTING'
-  | 'PLUMBING'
-  | 'ELECTRICITY'
-  | 'OUTDOORS'
-  | 'CLEANING';
+import {
+  CATEGORY_LIST,
+  type Category,
+} from '../utils/categoryMetadata';
 
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
 
-interface CategoryInfo {
-  value: Category;
-  label: string;
-  emoji: string;
-  image: ImageSourcePropType;
-  description: string;
-  jobs: string[];
-  color: string;
-  softColor: string;
-}
+const WORKSPACE_STEPS = [
+  {
+    icon: 'clipboard-edit-outline',
+    title: 'Post clearly',
+    copy: 'Add the job, area, budget, and photos so Fixers can price it quickly.',
+  },
+  {
+    icon: 'hand-extended-outline',
+    title: 'Compare bids',
+    copy: 'Review offers, availability, and fit from your task workspace.',
+  },
+  {
+    icon: 'check-decagram-outline',
+    title: 'Finish confidently',
+    copy: 'Track progress, mark completion, and keep the record in one place.',
+  },
+] as const;
 
-const CATEGORIES: CategoryInfo[] = [
-  {
-    value: 'ASSEMBLY',
-    label: 'Assembly',
-    emoji: '🔩',
-    image: require('../../assets/Assembly.jpg'),
-    description: 'Professional assembly of furniture, flat-packs, and home equipment.',
-    jobs: [
-      'Assemble IKEA furniture',
-      'Build a wardrobe',
-      'Set up a desk & chair',
-      'Assemble a bed frame',
-      'Put together shelving units',
-      'Build a TV stand or sideboard',
-    ],
-    color: '#7B61FF',
-    softColor: '#EFECFF',
-  },
-  {
-    value: 'MOUNTING',
-    label: 'Mounting',
-    emoji: '📺',
-    image: require('../../assets/Mounting.jpg'),
-    description: 'Secure mounting of TVs, shelves, mirrors, curtain rods, and more.',
-    jobs: [
-      'Mount a TV on the wall',
-      'Hang wall shelves',
-      'Install curtain rods',
-      'Hang a mirror or artwork',
-      'Mount a whiteboard or corkboard',
-      'Install floating wall cabinets',
-    ],
-    color: '#0D7C6E',
-    softColor: '#E0F5F3',
-  },
-  {
-    value: 'MOVING',
-    label: 'Moving',
-    emoji: '🚚',
-    image: require('../../assets/Moving.jpg'),
-    description: 'Help with moving furniture, packing, and heavy lifting.',
-    jobs: [
-      'Move furniture within home',
-      'Help with apartment move',
-      'Pack and label boxes',
-      'Load / unload a truck',
-      'Carry heavy items upstairs',
-      'Disassemble & reassemble furniture for moving',
-    ],
-    color: '#1E8449',
-    softColor: '#E6F4EC',
-  },
-  {
-    value: 'PAINTING',
-    label: 'Painting',
-    emoji: '🎨',
-    image: require('../../assets/Painting.jpg'),
-    description: 'Interior and exterior painting — from single rooms to full homes.',
-    jobs: [
-      'Paint a room',
-      'Touch up walls and ceilings',
-      'Paint exterior trim',
-      'Repaint kitchen cabinets',
-      'Apply wallpaper',
-      'Stain or varnish wood surfaces',
-    ],
-    color: '#C0392B',
-    softColor: '#FCECEA',
-  },
-  {
-    value: 'PLUMBING',
-    label: 'Plumbing',
-    emoji: '🚿',
-    image: require('../../assets/Plumbing.jpg'),
-    description: 'Leaks, blocked drains, faucet replacements, and water installations.',
-    jobs: [
-      'Fix a leaking pipe',
-      'Unclog a drain',
-      'Replace a faucet or tap',
-      'Install a new shower head',
-      'Fix a running toilet',
-      'Connect a washing machine',
-    ],
-    color: '#2E86C1',
-    softColor: '#E4F2FB',
-  },
-  {
-    value: 'ELECTRICITY',
-    label: 'Electricity',
-    emoji: '⚡',
-    image: require('../../assets/Electricity.jpg'),
-    description: 'Electrical repairs, lighting installations, and outlet work.',
-    jobs: [
-      'Fix or replace a light fixture',
-      'Install a new power outlet',
-      'Replace a circuit breaker',
-      'Set up smart home lighting',
-      'Install a ceiling fan',
-      'Rewire a light switch',
-    ],
-    color: '#D4900A',
-    softColor: '#FEF3D7',
-  },
-  {
-    value: 'OUTDOORS',
-    label: 'Outdoors',
-    emoji: '🌿',
-    image: require('../../assets/Outdoors.jpg'),
-    description: 'Garden care, lawn work, pressure washing, and outdoor maintenance.',
-    jobs: [
-      'Mow and edge the lawn',
-      'Trim hedges and bushes',
-      'Pressure wash patio or driveway',
-      'Plant flowers or build garden beds',
-      'Clear leaves and garden waste',
-      'Assemble or repair garden furniture',
-    ],
-    color: '#27AE60',
-    softColor: '#E8F8EF',
-  },
-  {
-    value: 'CLEANING',
-    label: 'Cleaning',
-    emoji: '🧹',
-    image: require('../../assets/Cleaning.jpg'),
-    description: 'Professional home cleaning, deep cleans, and post-renovation tidy-ups.',
-    jobs: [
-      'Full apartment clean',
-      'Deep clean kitchen and bathrooms',
-      'Post-renovation cleanup',
-      'Spring cleaning & decluttering',
-      'Carpet and upholstery cleaning',
-      'Window cleaning inside & out',
-    ],
-    color: '#8E44AD',
-    softColor: '#F4ECF7',
-  },
-];
-
-// Injects Poppins from Google Fonts on web (once, no extra package needed)
-function useDisplayFont() {
-  useEffect(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      if (document.getElementById('fixit-poppins')) return;
-      const link = document.createElement('link');
-      link.id = 'fixit-poppins';
-      link.rel = 'stylesheet';
-      link.href =
-        'https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  return Platform.OS === 'web' ? 'Poppins' : undefined;
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
 export default function RequesterDashboard({ navigation }: Props) {
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [emailVerified, setEmailVerified] = useState(true);
   const [verificationSent, setVerificationSent] = useState(false);
   const { width } = useWindowDimensions();
-  const displayFont = useDisplayFont();
+
+  const wide = width >= 900;
+  const tablet = width >= 680;
+  const horizontalPadding = wide ? spacing.xxxl : spacing.lg;
+  const contentWidth = Math.min(width, 1120);
+  const categoryColumns = wide ? 4 : tablet ? 3 : 2;
+  const categoryGap = spacing.md;
+  const availableContentWidth = Math.max(0, contentWidth - horizontalPadding * 2);
+  const categoryCellWidth =
+    Math.max(0, (availableContentWidth - categoryGap * (categoryColumns - 1)) / categoryColumns);
+
+  const user = auth.currentUser;
+  const firstName = user?.displayName?.split(' ')[0] ?? null;
+  const greeting = getGreeting();
 
   useEffect(() => {
-    const user = auth.currentUser;
     if (user && !user.emailVerified) setEmailVerified(false);
-  }, []);
+  }, [user]);
 
   const handleResendVerification = async () => {
-    const user = auth.currentUser;
     if (!user) return;
     try {
       await sendEmailVerification(user);
@@ -221,16 +80,28 @@ export default function RequesterDashboard({ navigation }: Props) {
     }
   };
 
-  const isDesktop = width >= 768;
-  const heroPaddingH = isDesktop ? 80 : spacing.xxl;
-  const selected = CATEGORIES.find((c) => c.value === selectedCategory) ?? null;
-
-  const handleCategoryPress = (value: Category) => {
-    setSelectedCategory((prev) => (prev === value ? null : value));
+  const navigateToCreate = (category?: Category) => {
+    navigation.navigate('CreateTask', category ? { category } : undefined);
   };
 
-  const CARD_WIDTH = isDesktop ? 190 : 150;
-  const CARD_HEIGHT = isDesktop ? 240 : 200;
+  const quickActions = [
+    {
+      icon: 'plus-circle-outline',
+      title: 'Post Task',
+      copy: 'Start a new request with photos, budget, and location.',
+      action: () => navigateToCreate(),
+      tone: brandColors.secondary,
+      soft: brandColors.warningSoft,
+    },
+    {
+      icon: 'clipboard-list-outline',
+      title: 'My Tasks',
+      copy: 'Review bids, edit open requests, and mark active jobs complete.',
+      action: () => navigation.navigate('MyTasks'),
+      tone: brandColors.primaryMuted,
+      soft: brandColors.infoSoft,
+    },
+  ];
 
   return (
     <ScrollView
@@ -238,209 +109,227 @@ export default function RequesterDashboard({ navigation }: Props) {
       contentContainerStyle={styles.scroll}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Hero ─────────────────────────────────────────────────── */}
       <LinearGradient
-        colors={['#050D18', '#0C1E33', '#132D4A', '#1A3D63']}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
-        style={[styles.hero, isDesktop && styles.heroDesktop]}
+        colors={[brandColors.primary, brandColors.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
       >
-        {/* Decorative glow orbs */}
-        <View style={[styles.orb, styles.orbTopLeft]} />
-        <View style={[styles.orb, styles.orbBottomRight]} />
+        <View style={[styles.heroInner, wide && styles.heroInnerWide, { paddingHorizontal: horizontalPadding }]}>
+          <View style={[styles.heroCopy, wide && styles.heroCopyWide]}>
+            <View style={styles.workspacePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.workspacePillText}>Requester workspace</Text>
+            </View>
 
-        <View style={[styles.heroContent, isDesktop && styles.heroContentDesktop]}>
-          {/* Eyebrow */}
-          <View style={styles.eyebrowBadge}>
-            <Feather name="shield" size={11} color={brandColors.secondary} />
-            <Text style={styles.eyebrowText}>YOUR TRUSTED LOCAL FIXERS</Text>
+            <Text style={styles.greeting}>
+              {firstName ? `${greeting}, ${firstName}.` : `${greeting}.`}
+            </Text>
+            <Text style={styles.heroSub}>
+              Post a clear home task, compare local Fixer bids, and keep every job moving from
+              one focused workspace.
+            </Text>
+
+            <View style={[styles.heroActions, !tablet && styles.heroActionsStacked]}>
+              <FButton
+                onPress={() => navigateToCreate()}
+                variant="secondary"
+                size="lg"
+                icon="plus"
+                style={!tablet ? styles.fullWidthButton : undefined}
+              >
+                Post Task
+              </FButton>
+              <Pressable
+                onPress={() => navigation.navigate('MyTasks')}
+                accessibilityRole="button"
+                accessibilityLabel="Open my tasks"
+                style={({ pressed }) => [
+                  styles.heroGhostBtn,
+                  !tablet && styles.fullWidthButton,
+                  { opacity: pressed ? 0.78 : 1 },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="clipboard-list-outline"
+                  size={18}
+                  color={brandColors.textOnDark}
+                />
+                <Text style={styles.heroGhostText}>My Tasks</Text>
+              </Pressable>
+            </View>
           </View>
 
-          {/* Headline */}
-          <Text
-            style={[
-              styles.headline,
-              isDesktop && styles.headlineDesktop,
-              displayFont ? { fontFamily: displayFont } : null,
-            ]}
-          >
-            Let's Fix Your Problems
-          </Text>
-
-          {/* Subtitle */}
-          <Text style={[styles.heroSubtitle, isDesktop && styles.heroSubtitleDesktop]}>
-            What do you need help with today?
-          </Text>
-
-          {/* CTA — sharp corners for contrast with the rounded hero */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.heroCta,
-              isDesktop && styles.heroCtaDesktop,
-              { transform: [{ scale: pressed ? 0.96 : 1 }], opacity: pressed ? 0.9 : 1 },
-            ]}
-            onPress={() => navigation.navigate('CreateTask')}
-          >
-            <Feather name="plus" size={18} color={brandColors.primaryDark} />
-            <Text style={[typography.button, { color: brandColors.primaryDark }]}>
-              Post a Task
-            </Text>
-          </Pressable>
+          <View style={[styles.heroPanel, wide && styles.heroPanelWide]}>
+            <Text style={styles.panelEyebrow}>Next best action</Text>
+            <Text style={styles.panelTitle}>Post the task once. Manage the rest here.</Text>
+            <View style={styles.panelDivider} />
+            <View style={styles.panelRow}>
+              <View style={styles.panelIconShell}>
+                <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondary} />
+              </View>
+              <View style={styles.panelText}>
+                <Text style={styles.panelRowTitle}>Photos help bids arrive faster</Text>
+                <Text style={styles.panelRowCopy}>Add context before local Fixers quote the work.</Text>
+              </View>
+            </View>
+            <View style={styles.panelRow}>
+              <View style={styles.panelIconShell}>
+                <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondary} />
+              </View>
+              <View style={styles.panelText}>
+                <Text style={styles.panelRowTitle}>Your task history stays organized</Text>
+                <Text style={styles.panelRowCopy}>Open, in-progress, completed, and canceled jobs remain separated.</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </LinearGradient>
 
-      {/* ── Email Verification Banner ──────────────────────────── */}
-      {!emailVerified && (
-        <View style={[styles.verifyBanner, { marginHorizontal: heroPaddingH }]}>
-          <Feather name="alert-circle" size={18} color={brandColors.warning} />
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.label, { color: brandColors.textPrimary }]}>
-              Verify your email
-            </Text>
-            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-              {verificationSent
-                ? 'Verification email sent — check your inbox!'
-                : 'Please verify your email to unlock all features.'}
-            </Text>
-          </View>
-          {!verificationSent && (
-            <Pressable onPress={handleResendVerification} style={styles.verifyBtn}>
-              <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '700' }]}>
-                Resend
+      <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
+        {!emailVerified && (
+          <View style={styles.verifyBanner}>
+            <View style={styles.verifyIcon}>
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={18}
+                color={brandColors.warning}
+              />
+            </View>
+            <View style={styles.verifyCopy}>
+              <Text style={[typography.label, { color: brandColors.textPrimary }]}>Verify your email</Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                {verificationSent
+                  ? 'Verification email sent. Check your inbox to unlock every workspace feature.'
+                  : 'Please verify your email to unlock every workspace feature.'}
               </Text>
-            </Pressable>
-          )}
-        </View>
-      )}
+            </View>
+            {!verificationSent && (
+              <Pressable
+                onPress={() => void handleResendVerification()}
+                accessibilityRole="button"
+                accessibilityLabel="Resend verification email"
+                style={({ pressed }) => [styles.verifyBtn, { opacity: pressed ? 0.75 : 1 }]}
+              >
+                <Text style={[typography.caption, styles.verifyBtnText]}>Resend</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
-      {/* ── Category Carousel ────────────────────────────────────── */}
-      <View style={styles.section}>
-        {/* Editorial section header */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: heroPaddingH }]}>
-          <View style={styles.sectionAccentRule} />
-          <View style={styles.sectionHeaderText}>
-            <Text style={styles.sectionEyebrow}>POPULAR SERVICES</Text>
-            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
-              Browse by category
-            </Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionEyebrow}>Controls</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Run your request</Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.navigate('Profile')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile settings"
+              style={({ pressed }) => [styles.profileShortcut, { opacity: pressed ? 0.72 : 1 }]}
+            >
+              <MaterialCommunityIcons name="account-cog-outline" size={18} color={brandColors.primary} />
+            </Pressable>
+          </View>
+
+          <View style={[styles.quickGrid, wide && styles.quickGridWide]}>
+            {quickActions.map((action) => (
+              <Pressable
+                key={action.title}
+                onPress={action.action}
+                accessibilityRole="button"
+                accessibilityLabel={action.title}
+                style={({ pressed }) => [
+                  styles.quickTile,
+                  wide && styles.quickTileWide,
+                  {
+                    opacity: pressed ? 0.9 : 1,
+                    transform: [{ scale: pressed ? 0.985 : 1 }],
+                  },
+                ]}
+              >
+                <View style={[styles.quickIcon, { backgroundColor: action.soft }]}>
+                  <MaterialCommunityIcons name={action.icon as never} size={22} color={action.tone} />
+                </View>
+                <View style={styles.quickText}>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{action.title}</Text>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{action.copy}</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+              </Pressable>
+            ))}
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.carouselContent,
-            { paddingHorizontal: heroPaddingH },
-          ]}
-          decelerationRate="fast"
-        >
-          {CATEGORIES.map((cat) => {
-            const isActive = selectedCategory === cat.value;
-            return (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionEyebrow}>Services</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Start with a category</Text>
+            </View>
+          </View>
+
+          <View style={styles.categoryGrid}>
+            {CATEGORY_LIST.map((category) => (
               <Pressable
-                key={cat.value}
+                key={category.value}
+                onPress={() => navigateToCreate(category.value)}
+                accessibilityRole="button"
+                accessibilityLabel={`Post a ${category.label} task`}
                 style={({ pressed }) => [
-                  styles.carouselCard,
+                  styles.categoryTile,
                   {
-                    width: CARD_WIDTH,
-                    height: CARD_HEIGHT,
-                    borderColor: isActive ? cat.color : 'transparent',
+                    width: categoryCellWidth,
+                    opacity: pressed ? 0.88 : 1,
                     transform: [{ scale: pressed ? 0.97 : 1 }],
                   },
                 ]}
-                onPress={() => handleCategoryPress(cat.value)}
               >
-                <Image
-                  source={cat.image}
-                  style={styles.carouselImage}
-                  resizeMode="cover"
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.78)']}
-                  style={styles.carouselOverlay}
-                >
-                  {/* Emoji badge — much more distinctive than a tiny icon */}
-                  <View style={[styles.carouselEmojiBadge, { backgroundColor: cat.color }]}>
-                    <Text style={styles.carouselEmoji}>{cat.emoji}</Text>
+                <View style={styles.categoryTopRow}>
+                  <View style={[styles.categoryIcon, { backgroundColor: category.bg }]}>
+                    <MaterialCommunityIcons name={category.icon as never} size={20} color={category.color} />
                   </View>
-                  <Text style={styles.carouselLabel}>{cat.label}</Text>
-                </LinearGradient>
-
-                {isActive && (
-                  <View style={[styles.activeRing, { borderColor: cat.color }]} />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* ── Category info panel ──────────────────────────────────── */}
-      {selected && (
-        <View
-          style={[
-            styles.infoPanel,
-            {
-              marginHorizontal: isDesktop ? heroPaddingH : 0,
-              borderTopColor: selected.color,
-            },
-          ]}
-        >
-          {/* Top color stripe */}
-          <View style={[styles.infoPanelStripe, { backgroundColor: selected.color }]} />
-
-          <View style={styles.infoPanelBody}>
-            <View style={styles.infoPanelHeader}>
-              <Text style={styles.infoPanelEmoji}>{selected.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
-                  {selected.label}
-                </Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
-                  {selected.description}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[typography.label, styles.jobsLabel]}>Popular jobs</Text>
-            <View style={styles.jobChips}>
-              {selected.jobs.map((job) => (
-                <Pressable
-                  key={job}
-                  style={({ pressed }) => [
-                    styles.jobChip,
-                    { borderColor: selected.softColor, opacity: pressed ? 0.8 : 1 },
-                  ]}
-                  onPress={() =>
-                    navigation.navigate('CreateTask', {
-                      category: selected.value,
-                      title: job,
-                    })
-                  }
-                >
-                  <Text style={styles.jobChipEmoji}>{selected.emoji}</Text>
-                  <Text style={[typography.caption, { color: brandColors.textPrimary }]}>
-                    {job}
+                  <MaterialCommunityIcons name="chevron-right" size={18} color={brandColors.textMuted} />
+                </View>
+                <View style={styles.categoryCopy}>
+                  <Text style={[typography.label, styles.categoryLabel]} numberOfLines={1}>
+                    {category.label}
                   </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <FButton
-              onPress={() =>
-                navigation.navigate('CreateTask', { category: selected.value })
-              }
-              variant="primary"
-              size="md"
-              iconRight="arrow-right"
-              fullWidth
-            >
-              {`Post a ${selected.label} Task`}
-            </FButton>
+                  <Text style={[typography.caption, styles.categoryDescription]} numberOfLines={2}>
+                    {category.description}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
         </View>
-      )}
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionEyebrow}>Flow</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>How requests move</Text>
+            </View>
+          </View>
+
+          <View style={[styles.stepGrid, wide && styles.stepGridWide]}>
+            {WORKSPACE_STEPS.map((step, index) => (
+              <View key={step.title} style={[styles.stepItem, wide && styles.stepItemWide]}>
+                <View style={styles.stepTopRow}>
+                  <View style={styles.stepIcon}>
+                    <MaterialCommunityIcons name={step.icon as never} size={20} color={brandColors.primary} />
+                  </View>
+                  <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
+                </View>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{step.title}</Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{step.copy}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -451,259 +340,307 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
   scroll: {
-    paddingBottom: 64,
+    paddingBottom: 88,
   },
-
-  // ── Hero ───────────────────────────────────────────────────────
   hero: {
-    paddingTop: spacing.xxxl + 8,
-    paddingBottom: spacing.xxxl + 8,
-    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    flexGrow: 0,
+    flexShrink: 0,
     overflow: 'hidden',
   },
-  heroDesktop: {
-    paddingTop: 72,
-    paddingBottom: 72,
-    paddingHorizontal: 80,
-  },
-  orb: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  orbTopLeft: {
-    width: 260,
-    height: 260,
-    top: -100,
-    left: -80,
-    backgroundColor: 'rgba(42, 100, 160, 0.35)',
-  },
-  orbBottomRight: {
-    width: 200,
-    height: 200,
-    bottom: -80,
-    right: -60,
-    backgroundColor: 'rgba(26, 61, 99, 0.5)',
-  },
-  heroContent: {
-    alignItems: 'flex-start',
-  },
-  heroContentDesktop: {
-    alignItems: 'center',
+  heroInner: {
+    width: '100%',
+    maxWidth: 1120,
     alignSelf: 'center',
-    maxWidth: 680,
+    gap: spacing.xxl,
+  },
+  heroInnerWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  heroCopy: {
+    gap: spacing.md,
+  },
+  heroCopyWide: {
+    maxWidth: 610,
+  },
+  workspacePill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255,252,246,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.12)',
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: brandColors.secondary,
+  },
+  workspacePillText: {
+    ...typography.eyebrow,
+    color: brandColors.textOnDark,
+  },
+  greeting: {
+    ...typography.hero,
+    color: brandColors.textOnDark,
+    maxWidth: 640,
+  },
+  heroSub: {
+    ...typography.body,
+    color: brandColors.textOnDarkMuted,
+    maxWidth: 620,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  heroActionsStacked: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+  },
+  fullWidthButton: {
     width: '100%',
   },
-  eyebrowBadge: {
+  heroGhostBtn: {
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(241, 181, 69, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(241, 181, 69, 0.35)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: radii.pill,
-    marginBottom: spacing.lg,
-  },
-  eyebrowText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    color: brandColors.secondary,
-    textTransform: 'uppercase' as const,
-  },
-  headline: {
-    fontSize: 30,
-    fontWeight: '800',
-    lineHeight: 38,
-    letterSpacing: -0.8,
-    color: '#FFFFFF',
-    marginBottom: spacing.md,
-  },
-  headlineDesktop: {
-    fontSize: 56,
-    lineHeight: 66,
-    letterSpacing: -2,
-    textAlign: 'center',
-  },
-  heroSubtitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: spacing.xxl + 4,
-    lineHeight: 22,
-  },
-  heroSubtitleDesktop: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  heroCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: brandColors.secondary,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.md + 2,
-    borderRadius: radii.pill,
+    justifyContent: 'center',
     gap: spacing.sm,
-    ...shadows.md,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.28)',
   },
-  heroCtaDesktop: {
-    paddingHorizontal: 36,
-    paddingVertical: 14,
+  heroGhostText: {
+    ...typography.button,
+    color: brandColors.textOnDark,
   },
-
-  // ── Verification banner ────────────────────────────────────────
+  heroPanel: {
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    backgroundColor: 'rgba(255,252,246,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.14)',
+    gap: spacing.md,
+  },
+  heroPanelWide: {
+    width: 350,
+    flexShrink: 0,
+  },
+  panelEyebrow: {
+    ...typography.eyebrow,
+    color: brandColors.secondary,
+  },
+  panelTitle: {
+    ...typography.h2,
+    color: brandColors.textOnDark,
+  },
+  panelDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,252,246,0.14)',
+  },
+  panelRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
+  },
+  panelIconShell: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,252,246,0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  panelText: {
+    flex: 1,
+    gap: 2,
+  },
+  panelRowTitle: {
+    ...typography.label,
+    color: brandColors.textOnDark,
+  },
+  panelRowCopy: {
+    ...typography.caption,
+    color: brandColors.textOnDarkMuted,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
+  },
   verifyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radii.sharp,
+    marginBottom: spacing.xxl,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.warningSoft,
+    ...shadows.sm,
+  },
+  verifyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: brandColors.warningSoft,
-    borderLeftWidth: 3,
-    borderLeftColor: brandColors.warning,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyCopy: {
+    flex: 1,
+    gap: 2,
   },
   verifyBtn: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.xs,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
   },
-
-  // ── Category section ───────────────────────────────────────────
+  verifyBtnText: {
+    color: brandColors.warning,
+    fontWeight: '700',
+  },
   section: {
-    marginTop: spacing.xxl,
+    marginTop: spacing.xxxl,
+    gap: spacing.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  // Amber vertical rule to the left of the section title
-  sectionAccentRule: {
-    width: 4,
-    height: 44,
-    borderRadius: radii.sharp,
-    backgroundColor: brandColors.secondary,
-  },
-  sectionHeaderText: {
-    gap: 2,
   },
   sectionEyebrow: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    color: brandColors.textMuted,
-    textTransform: 'uppercase' as const,
+    ...typography.eyebrow,
+    color: brandColors.primaryMuted,
   },
-  carouselContent: {
+  profileShortcut: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+  },
+  quickGrid: {
     gap: spacing.md,
-    paddingBottom: spacing.sm,
   },
-  carouselCard: {
-    borderRadius: radii.xl,
-    overflow: 'hidden',
-    borderWidth: 3,
-    ...shadows.md,
+  quickGridWide: {
+    flexDirection: 'row',
   },
-  carouselImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  carouselOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
+  quickTile: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    ...shadows.sm,
   },
-  // Emoji badge — more character than a tiny icon
-  carouselEmojiBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.xs,
+  quickTileWide: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  quickIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  carouselEmoji: {
-    fontSize: 15,
-    lineHeight: 20,
+  quickText: {
+    flex: 1,
+    gap: spacing.xs,
   },
-  carouselLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-    flexShrink: 1,
-  },
-  activeRing: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.xl,
-    borderWidth: 3,
-  },
-
-  // ── Info panel — sharp top, rounded bottom, color stripe ───────
-  infoPanel: {
-    marginTop: spacing.xl,
-    borderRadius: radii.xl,
-    borderTopLeftRadius: radii.sharp,
-    borderTopRightRadius: radii.sharp,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderTopWidth: 0, // stripe takes its place
-    borderColor: brandColors.outlineLight,
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  infoPanelStripe: {
-    height: 5,
-  },
-  infoPanelBody: {
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  infoPanelHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  infoPanelEmoji: {
-    fontSize: 32,
-    lineHeight: 40,
-  },
-  jobsLabel: {
-    color: brandColors.textMuted,
-    marginTop: spacing.xs,
-  },
-  jobChips: {
+  categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  jobChip: {
+  categoryTile: {
+    minHeight: 124,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  categoryTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.xs,
-    borderWidth: 1,
-    backgroundColor: brandColors.background,
+    justifyContent: 'space-between',
   },
-  jobChipEmoji: {
-    fontSize: 12,
-    lineHeight: 16,
+  categoryIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCopy: {
+    gap: spacing.xs,
+  },
+  categoryLabel: {
+    color: brandColors.textPrimary,
+  },
+  categoryDescription: {
+    color: brandColors.textMuted,
+  },
+  stepGrid: {
+    gap: spacing.md,
+  },
+  stepGridWide: {
+    flexDirection: 'row',
+  },
+  stepItem: {
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.surface,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    gap: spacing.sm,
+  },
+  stepItemWide: {
+    flex: 1,
+  },
+  stepTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stepIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.lg,
+    backgroundColor: brandColors.infoSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumber: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: brandColors.surfaceAlt,
   },
 });

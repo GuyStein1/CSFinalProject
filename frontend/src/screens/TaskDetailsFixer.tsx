@@ -26,6 +26,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { getCategoryMeta } from '../utils/categoryMetadata';
 
 interface DirectionsResult {
   distanceText: string;   // e.g. "12.3 ק״מ"
@@ -65,18 +66,6 @@ interface ExistingBid {
   offered_price: number;
   description?: string;
 }
-
-const CATEGORY_META: Record<string, { icon: string; label: string; color: string }> = {
-  ASSEMBLY:    { icon: 'hammer-screwdriver', label: 'Assembly',    color: '#7B61FF' },
-  MOUNTING:    { icon: 'television',         label: 'Mounting',    color: '#0D7C6E' },
-  MOVING:      { icon: 'truck-delivery',     label: 'Moving',      color: '#1E8449' },
-  PAINTING:    { icon: 'brush',              label: 'Painting',    color: '#C0392B' },
-  PLUMBING:    { icon: 'water-pump',         label: 'Plumbing',    color: '#2E86C1' },
-  ELECTRICITY: { icon: 'lightning-bolt',     label: 'Electricity', color: '#D4900A' },
-  OUTDOORS:    { icon: 'tree-outline',       label: 'Outdoors',    color: '#27AE60' },
-  CLEANING:    { icon: 'broom',             label: 'Cleaning',    color: '#8E44AD' },
-};
-const DEFAULT_CAT_META = { icon: 'wrench', label: 'Other', color: '#7A8B96' };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CAROUSEL_HEIGHT = 260;
@@ -284,7 +273,7 @@ export default function TaskDetailsFixer({ route }: Props) {
 
   const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'Quote Required';
   const hasPhotos = task.media_urls && task.media_urls.length > 0;
-  const catMeta = CATEGORY_META[task.category] ?? DEFAULT_CAT_META;
+  const catMeta = getCategoryMeta(task.category);
 
   return (
     <View style={styles.container}>
@@ -340,7 +329,7 @@ export default function TaskDetailsFixer({ route }: Props) {
 
           {/* Category + Budget */}
           <View style={styles.chipRow}>
-            <View style={[styles.categoryChip, { backgroundColor: catMeta.color + '18' }]}>
+            <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
               <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
               <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
             </View>

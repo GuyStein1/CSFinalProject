@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -20,6 +20,7 @@ interface AuthScreenProps {
   onSyncLocalAccount: (fullName: string, phoneNumber: string) => Promise<void>;
   onRetry: () => Promise<void>;
   onLogOut: () => Promise<void>;
+  initialMode?: Mode;
 }
 
 type Mode = 'welcome' | 'login' | 'register' | 'forgot';
@@ -33,8 +34,9 @@ export default function AuthScreen({
   onSyncLocalAccount,
   onRetry,
   onLogOut,
+  initialMode = 'welcome',
 }: AuthScreenProps) {
-  const [mode, setMode] = useState<Mode>('welcome');
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -118,8 +120,8 @@ export default function AuthScreen({
 
   const renderShell = (content: React.ReactNode) => (
     <LinearGradient
-      colors={['#050D18', '#0C1E33', '#2A5478', brandColors.background]}
-      locations={[0, 0.2, 0.55, 1]}
+      colors={[brandColors.primary, brandColors.primaryDark, '#0A1D30', brandColors.background]}
+      locations={[0, 0.3, 0.6, 1]}
       style={styles.gradient}
     >
       <KeyboardAvoidingView
@@ -151,7 +153,7 @@ export default function AuthScreen({
         <AppLogo compact showTagline />
         <Text style={[typography.h1, styles.title]}>Finish your account setup</Text>
         <Text style={[typography.body, styles.body]}>
-          You are signed in with Firebase, but this account does not exist in the Fixlt
+          You are signed in with Firebase, but this account does not exist in the FixIt
           database yet.
         </Text>
 
@@ -213,19 +215,36 @@ export default function AuthScreen({
 
   // ── Welcome ────────────────────────────────────────────────────────────────
   if (mode === 'welcome') {
-    return renderShell(
-      <View style={styles.content}>
-        <AppLogo showTagline />
-        <Text style={[typography.body, styles.body]}>
-          Find trusted fixers for any home task — or earn money as one.
-        </Text>
-        <FButton onPress={() => goTo('login')} fullWidth icon="login">
-          Sign In
-        </FButton>
-        <FButton variant="secondary" onPress={() => goTo('register')} fullWidth icon="account-plus">
-          Create Account
-        </FButton>
-      </View>
+    return (
+      <LinearGradient
+        colors={[brandColors.primary, brandColors.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.welcomeScreen}
+      >
+        <View style={styles.welcomeCenter}>
+          <AppLogo iconOnly />
+          <Text style={styles.welcomeWordmark}>FixIt</Text>
+          <Text style={styles.welcomeTagline}>Your neighborhood. Fixed.</Text>
+        </View>
+        <View style={styles.welcomeActions}>
+          <FButton onPress={() => goTo('login')} variant="secondary" fullWidth>
+            Log In
+          </FButton>
+          <Pressable
+            onPress={() => goTo('register')}
+            style={({ pressed }) => [
+              styles.welcomeGhostBtn,
+              { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+          >
+            <Text style={styles.welcomeGhostText}>Create Account</Text>
+          </Pressable>
+          <Text style={styles.welcomeFootnote}>
+            Trusted by Fixers and Requesters across Israel
+          </Text>
+        </View>
+      </LinearGradient>
     );
   }
 
@@ -234,7 +253,7 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>Sign in to Fixlt</Text>
+        <Text style={[typography.h1, styles.title]}>Sign in to FixIt</Text>
 
         <FInput
           label="Email"
@@ -277,7 +296,7 @@ export default function AuthScreen({
         </FButton>
 
         <FButton variant="ghost" onPress={() => goTo('welcome')} fullWidth>
-          ← Back
+          Back
         </FButton>
       </View>
     );
@@ -382,7 +401,7 @@ export default function AuthScreen({
             Send Reset Link
           </FButton>
           <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
-            ← Back to Sign In
+            Back to Sign In
           </FButton>
         </>
       )}
@@ -391,6 +410,58 @@ export default function AuthScreen({
 }
 
 const styles = StyleSheet.create({
+  // Welcome screen — full-screen navy, no card
+  welcomeScreen: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.huge + spacing.xxxl,
+    paddingBottom: spacing.huge,
+  },
+  welcomeCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  welcomeWordmark: {
+    fontSize: 48,
+    fontWeight: '800',
+    letterSpacing: -1,
+    color: brandColors.textOnDark,
+    marginTop: spacing.md,
+  },
+  welcomeTagline: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: brandColors.secondary,
+    textAlign: 'center',
+  },
+  welcomeActions: {
+    gap: spacing.md,
+  },
+  welcomeGhostBtn: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 252, 246, 0.4)',
+    backgroundColor: 'transparent',
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeGhostText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: brandColors.textOnDark,
+  },
+  welcomeFootnote: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: 'rgba(255, 252, 246, 0.55)',
+    marginTop: spacing.sm,
+    letterSpacing: 0.3,
+  },
+
   gradient: {
     flex: 1,
   },

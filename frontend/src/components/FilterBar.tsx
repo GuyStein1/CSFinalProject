@@ -2,36 +2,26 @@ import React, { useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import Feather from '@expo/vector-icons/Feather';
 import { FChip } from './ui';
-import type { Category } from '../hooks/useTasks';
+import { CATEGORY_LIST, type Category } from '../constants/categories';
 import { brandColors, radii, spacing, shadows, typography } from '../theme';
 
 export type ViewMode = 'map' | 'list';
-
-// Icons must be valid MaterialCommunityIcons names (used by FChip internally)
-const CATEGORY_OPTIONS: { value: Category; label: string; icon: string }[] = [
-  { value: 'ASSEMBLY',    label: 'Assembly',    icon: 'wrench' },
-  { value: 'MOUNTING',    label: 'Mounting',    icon: 'monitor' },
-  { value: 'MOVING',      label: 'Moving',      icon: 'truck' },
-  { value: 'PAINTING',    label: 'Painting',    icon: 'pencil' },
-  { value: 'PLUMBING',    label: 'Plumbing',    icon: 'water' },
-  { value: 'ELECTRICITY', label: 'Electricity', icon: 'lightning-bolt' },
-  { value: 'OUTDOORS',    label: 'Outdoors',    icon: 'weather-sunny' },
-  { value: 'CLEANING',    label: 'Cleaning',    icon: 'weather-windy' },
-];
 
 // --- Distance slider ---
 const DISTANCE_MIN = 1;
 const DISTANCE_MAX = 80;
 
-// --- Price slider ---
+// --- Budget slider ---
 const PRICE_MIN = 0;
 const PRICE_MAX = 5000; // 5000 represents "5000+"
 
@@ -48,6 +38,9 @@ interface FilterBarProps {
   priceMin: number;
   priceMax: number;
   onPriceChange: (min: number, max: number) => void;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
+  compact?: boolean;
 }
 
 // --- Single-thumb slider for distance ---
@@ -115,7 +108,7 @@ function DistanceSlider({ value, onChange }: { value: number; onChange: (v: numb
   );
 }
 
-// --- Dual-thumb slider for price range ---
+// --- Dual-thumb slider for budget range ---
 function PriceRangeSlider({
   minValue,
   maxValue,
@@ -194,10 +187,10 @@ function PriceRangeSlider({
     <View style={sliderStyles.container}>
       <View style={sliderStyles.labelRow}>
         <Feather name="dollar-sign" size={13} color={brandColors.textMuted} />
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Price</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Budget</Text>
         <Text style={[typography.label, { color: brandColors.primary, marginLeft: 'auto' }]}>
           {minValue === PRICE_MIN && maxValue >= PRICE_MAX
-            ? 'Any price'
+            ? 'Any budget'
             : `₪${formatPrice(minValue)} – ₪${formatPrice(maxValue)}`}
         </Text>
       </View>
@@ -241,22 +234,34 @@ export default function FilterBar({
   priceMin,
   priceMax,
   onPriceChange,
+  hasActiveFilters = false,
+  onClearFilters,
+  compact,
 }: FilterBarProps) {
+  const { width } = useWindowDimensions();
+  const isCompact = compact ?? (Platform.OS === 'web' && width >= 900);
   const [expanded, setExpanded] = useState(false);
+  const budgetSummary =
+    priceMin === PRICE_MIN && priceMax >= PRICE_MAX
+      ? 'Budget: Any'
+      : `Budget: ₪${priceMin}–₪${priceMax >= PRICE_MAX ? '5000+' : priceMax}`;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isCompact && styles.containerCompact]}>
       {/* Top row: view toggle + category chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact]}
       >
         {/* View toggle */}
         <View style={styles.viewToggle}>
           <Pressable
-            style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, isCompact && styles.toggleBtnCompact, viewMode === 'map' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('map')}
+            accessibilityRole="button"
+            accessibilityLabel="Show map view"
+            accessibilityState={{ selected: viewMode === 'map' }}
           >
             <Feather
               name="map"
@@ -268,8 +273,11 @@ export default function FilterBar({
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, isCompact && styles.toggleBtnCompact, viewMode === 'list' && styles.toggleBtnActive]}
             onPress={() => onViewModeChange('list')}
+            accessibilityRole="button"
+            accessibilityLabel="Show list view"
+            accessibilityState={{ selected: viewMode === 'list' }}
           >
             <Feather
               name="list"
@@ -286,19 +294,34 @@ export default function FilterBar({
 
         {/* Expand/collapse button for sliders */}
         <Pressable
-          style={[styles.filterToggle, expanded && styles.filterToggleActive]}
+          style={[styles.filterToggle, isCompact && styles.filterToggleCompact, expanded && styles.filterToggleActive]}
           onPress={() => setExpanded((p) => !p)}
+          accessibilityRole="button"
+          accessibilityLabel="Adjust distance and budget filters"
+          accessibilityState={{ expanded }}
         >
           <Feather name="sliders" size={14} color={expanded ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.caption, { color: expanded ? brandColors.primary : brandColors.textMuted }]}>
-            {radius} km · ₪{priceMin === 0 && priceMax >= PRICE_MAX ? 'Any' : `${priceMin}–${priceMax >= PRICE_MAX ? '5000+' : priceMax}`}
+            {radius} km · {budgetSummary}
           </Text>
           <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={brandColors.textMuted} />
         </Pressable>
 
+        {hasActiveFilters && onClearFilters && (
+          <Pressable
+            style={[styles.resetButton, isCompact && styles.resetButtonCompact]}
+            onPress={onClearFilters}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+          >
+            <Feather name="x-circle" size={14} color={brandColors.danger} />
+            <Text style={[typography.caption, styles.resetText]}>Clear filters</Text>
+          </Pressable>
+        )}
+
         <View style={styles.divider} />
 
-        {CATEGORY_OPTIONS.map(({ value, label, icon }) => (
+        {CATEGORY_LIST.map(({ value, label, icon }) => (
           <FChip
             key={value}
             label={label}
@@ -312,7 +335,7 @@ export default function FilterBar({
 
       {/* Expandable slider panel */}
       {expanded && (
-        <View style={styles.sliderPanel}>
+        <View style={[styles.sliderPanel, isCompact && styles.sliderPanelCompact]}>
           <DistanceSlider value={radius} onChange={onRadiusChange} />
           <PriceRangeSlider minValue={priceMin} maxValue={priceMax} onChange={onPriceChange} />
         </View>
@@ -387,11 +410,19 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.surface,
     ...shadows.sm,
   },
+  containerCompact: {
+    shadowOpacity: 0.05,
+  },
   scrollContent: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  scrollContentCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
+    gap: spacing.xs,
   },
   viewToggle: {
     flexDirection: 'row',
@@ -407,6 +438,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.xs,
+  },
+  toggleBtnCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   toggleBtnActive: {
     backgroundColor: brandColors.surface,
@@ -425,8 +460,29 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     backgroundColor: brandColors.surfaceAlt,
   },
+  filterToggleCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
   filterToggleActive: {
     backgroundColor: brandColors.infoSoft,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.dangerSoft,
+  },
+  resetButtonCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  resetText: {
+    color: brandColors.danger,
+    fontWeight: '700',
   },
   divider: {
     width: 1,
@@ -441,6 +497,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: brandColors.outlineLight,
+  },
+  sliderPanelCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
   },
   bottomAccent: {
     height: 2,

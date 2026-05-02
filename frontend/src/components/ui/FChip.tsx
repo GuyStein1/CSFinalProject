@@ -4,6 +4,8 @@ import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { brandColors, radii, spacing, typography } from '../../theme';
 
+type MaterialCommunityIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
 interface FChipProps {
   label: string;
   selected?: boolean;
@@ -11,6 +13,7 @@ interface FChipProps {
   icon?: string;
   style?: ViewStyle;
   compact?: boolean;
+  accessibilityLabel?: string;
 }
 
 export default function FChip({
@@ -20,10 +23,14 @@ export default function FChip({
   icon,
   style,
   compact = false,
+  accessibilityLabel,
 }: FChipProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={onPress ? { selected } : undefined}
       style={({ pressed }) => [
         styles.base,
         compact && styles.compact,
@@ -34,16 +41,16 @@ export default function FChip({
     >
       {icon && (
         <MaterialCommunityIcons
-          name={icon as never}
+          name={icon as MaterialCommunityIconName}
           size={compact ? 14 : 16}
-          color={selected ? brandColors.primary : brandColors.textMuted}
+          color={selected ? brandColors.textOnDark : brandColors.textMuted}
           style={styles.icon}
         />
       )}
       <Text
         style={[
           compact ? typography.caption : typography.label,
-          { color: selected ? brandColors.primary : brandColors.textMuted },
+          { color: selected ? brandColors.textOnDark : brandColors.textMuted },
         ]}
       >
         {label}
@@ -66,8 +73,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
   },
   selected: {
-    backgroundColor: brandColors.infoSoft,
-    borderColor: brandColors.primaryMuted,
+    backgroundColor: brandColors.primary,
+    borderColor: brandColors.primary,
   },
   unselected: {
     backgroundColor: brandColors.surfaceAlt,

@@ -18,7 +18,7 @@ export default function EmptyState({ icon, title, message, actionLabel, onAction
     <View style={styles.container}>
       {/* Mascot watermark — sits behind everything */}
       <Image
-        source={require('../../assets/logo-without-text.png')}
+        source={require('../../assets/fixit-logo-mark-transparent.png')}
         style={styles.watermark}
         resizeMode="contain"
       />

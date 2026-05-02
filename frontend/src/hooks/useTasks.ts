@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axiosInstance';
+import type { Category } from '../constants/categories';
 
-export type Category =
-  | 'ASSEMBLY'
-  | 'MOUNTING'
-  | 'MOVING'
-  | 'PAINTING'
-  | 'PLUMBING'
-  | 'ELECTRICITY'
-  | 'OUTDOORS'
-  | 'CLEANING';
+export type { Category };
 
 export interface DiscoveryTask {
   id: string;

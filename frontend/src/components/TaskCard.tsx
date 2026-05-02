@@ -3,21 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import StatusBadge from './StatusBadge';
+import { getCategoryMetadata, type Category } from '../constants/categories';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
-type Category = 'ASSEMBLY' | 'MOUNTING' | 'MOVING' | 'PAINTING' | 'PLUMBING' | 'ELECTRICITY' | 'OUTDOORS' | 'CLEANING';
-
-const CATEGORY_META: Record<string, { icon: string; color: string; bg: string }> = {
-  ASSEMBLY:    { icon: 'hammer-screwdriver', color: '#7B61FF', bg: '#EFECFF' },
-  MOUNTING:    { icon: 'television',         color: '#0D7C6E', bg: '#E0F5F3' },
-  MOVING:      { icon: 'truck-delivery',     color: '#1E8449', bg: '#E6F4EC' },
-  PAINTING:    { icon: 'brush',              color: '#C0392B', bg: '#FCECEA' },
-  PLUMBING:    { icon: 'water-pump',         color: '#2E86C1', bg: '#E4F2FB' },
-  ELECTRICITY: { icon: 'lightning-bolt',     color: '#D4900A', bg: '#FEF3D7' },
-  OUTDOORS:    { icon: 'tree-outline',       color: '#27AE60', bg: '#E8F8EF' },
-  CLEANING:    { icon: 'broom',             color: '#8E44AD', bg: '#F4ECF7' },
-};
 
 interface TaskCardProps {
   title: string;
@@ -33,6 +22,7 @@ interface TaskCardProps {
   onCancel?: () => void;
   onMarkCompleted?: () => void;
   onEdit?: () => void;
+  onReview?: () => void;
   muted?: boolean;
 }
 
@@ -50,138 +40,152 @@ export default function TaskCard({
   onCancel,
   onMarkCompleted,
   onEdit,
+  onReview,
   muted = false,
 }: TaskCardProps) {
-  const meta = CATEGORY_META[category] ?? { icon: 'wrench', color: '#7A8B96', bg: '#E9E2D5' };
-  const hasActions = onDelete || onReactivate || onCancel || onMarkCompleted || onEdit;
+  const meta = getCategoryMetadata(category);
+  const budgetLabel = suggestedPrice != null ? `₪${suggestedPrice}` : 'Open to quotes';
+  const hasOffers = bidCount != null && bidCount > 0 && status === 'OPEN';
+  const waitingForOffers = bidCount != null && bidCount === 0 && status === 'OPEN';
+  const assigned = fixerName && status === 'IN_PROGRESS';
+  const hasActions = Boolean(
+    onPress || onDelete || onReactivate || onCancel || onMarkCompleted || onEdit || onReview
+  );
+  const detailsActionLabel = hasOffers ? 'Review bids' : 'View details';
+  const detailsActionIcon = hasOffers ? 'hand-extended-outline' : 'text-box-search-outline';
+  const detailsActionTone: 'warning' | 'default' = hasOffers ? 'warning' : 'default';
 
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `Open task ${title}` : undefined}
       style={({ pressed }) => [
         styles.card,
         muted && styles.cardMuted,
         shadows.sm,
         {
-          opacity: pressed ? 0.94 : 1,
-          transform: [{ scale: pressed ? 0.975 : 1 }],
+          opacity: pressed ? 0.94 : muted ? 0.82 : 1,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
           backgroundColor: pressed ? brandColors.surfaceAlt : brandColors.surface,
         },
       ]}
     >
-      {/* Category accent bar */}
       <View style={[styles.accentBar, { backgroundColor: meta.color }]} />
 
       <View style={styles.topRow}>
         <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
           <MaterialCommunityIcons name={meta.icon as never} size={22} color={meta.color} />
         </View>
+
         <View style={styles.titleBlock}>
+          <View style={styles.categoryRow}>
+            <Text style={[typography.caption, styles.categoryLabel]} numberOfLines={1}>
+              {meta.label}
+            </Text>
+          </View>
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>
             {title}
           </Text>
-          <View style={styles.locationRow}>
-            <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
-            <Text style={[typography.bodySm, styles.location]} numberOfLines={1}>
-              {locationName}
-            </Text>
-          </View>
         </View>
+
         <StatusBadge status={status} />
       </View>
 
-      <View style={styles.bottomRow}>
-        <View style={styles.metaGroup}>
-          {suggestedPrice != null && (
-            <Text style={[typography.h3, styles.price]}>₪{suggestedPrice}</Text>
-          )}
-          {suggestedPrice == null && (
-            <Text style={[typography.bodySm, styles.quoteLabel]}>Quote</Text>
-          )}
-        </View>
+      <View style={styles.infoGrid}>
+        <InfoChip icon="cash" label={budgetLabel} emphasized />
+        <InfoChip
+          icon="map-marker-outline"
+          label={locationName || 'Location not set'}
+        />
       </View>
 
-      {/* Bid badges & fixer assignment */}
-      {bidCount != null && bidCount > 0 && status === 'OPEN' && (
-        <View style={styles.newOffersBadge}>
-          <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.warning} />
-          <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>
-            {bidCount} {bidCount === 1 ? 'new offer' : 'new offers'} — tap to review
-          </Text>
-        </View>
+      {hasOffers && (
+        <TaskSignal
+          icon="hand-extended-outline"
+          label={`${bidCount} ${bidCount === 1 ? 'new offer' : 'new offers'} ready to review`}
+          tone="warning"
+        />
       )}
-      {bidCount != null && bidCount === 0 && status === 'OPEN' && (
-        <View style={styles.noBidChip}>
-          <MaterialCommunityIcons name="clock-outline" size={13} color={brandColors.textMuted} />
-          <Text style={[typography.caption, { color: brandColors.textMuted }]}>No bids yet</Text>
-        </View>
+      {waitingForOffers && (
+        <TaskSignal
+          icon="clock-outline"
+          label="Awaiting the first bid"
+          tone="neutral"
+        />
       )}
-      {fixerName && status === 'IN_PROGRESS' && (
-        <View style={styles.footerChip}>
-          <MaterialCommunityIcons name="account-check-outline" size={13} color={brandColors.success} />
-          <Text style={[typography.caption, { color: brandColors.success }]}>
-            Assigned to {fixerName}
-          </Text>
-        </View>
+      {assigned && (
+        <TaskSignal
+          icon="account-check-outline"
+          label={`Assigned to ${fixerName}`}
+          tone="success"
+        />
+      )}
+      {onReview && (
+        <TaskSignal
+          icon="star-outline"
+          label="Review this completed task"
+          tone="warning"
+        />
       )}
 
-      {/* Action buttons */}
       {hasActions && (
         <View style={styles.actionRow}>
+          {onPress && (
+            <ActionButton
+              icon={detailsActionIcon}
+              label={detailsActionLabel}
+              tone={detailsActionTone}
+              onPress={onPress}
+            />
+          )}
+          {onReview && (
+            <ActionButton
+              icon="star-outline"
+              label="Leave review"
+              tone="warning"
+              onPress={onReview}
+            />
+          )}
           {onReactivate && status === 'CANCELED' && (
-            <Pressable
-              style={[styles.actionBtn, styles.successBtn]}
-              onPress={(e) => { e.stopPropagation(); onReactivate(); }}
-            >
-              <MaterialCommunityIcons name="refresh" size={14} color={brandColors.success} />
-              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
-                Reactivate
-              </Text>
-            </Pressable>
+            <ActionButton
+              icon="refresh"
+              label="Reopen"
+              tone="success"
+              onPress={onReactivate}
+            />
           )}
           {onEdit && (
-            <Pressable
-              style={[styles.actionBtn, styles.defaultBtn]}
-              onPress={(e) => { e.stopPropagation(); onEdit(); }}
-            >
-              <MaterialCommunityIcons name="pencil" size={14} color={brandColors.primaryMuted} />
-              <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>
-                Edit
-              </Text>
-            </Pressable>
+            <ActionButton
+              icon="pencil-outline"
+              label="Edit"
+              tone="default"
+              onPress={onEdit}
+            />
           )}
           {onMarkCompleted && (
-            <Pressable
-              style={[styles.actionBtn, styles.successBtn]}
-              onPress={(e) => { e.stopPropagation(); onMarkCompleted(); }}
-            >
-              <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
-              <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>
-                Mark as Completed
-              </Text>
-            </Pressable>
+            <ActionButton
+              icon="check-circle-outline"
+              label="Mark complete"
+              tone="success"
+              onPress={onMarkCompleted}
+            />
           )}
           {onCancel && (
-            <Pressable
-              style={[styles.actionBtn, styles.dangerBtn]}
-              onPress={(e) => { e.stopPropagation(); onCancel(); }}
-            >
-              <MaterialCommunityIcons name="close-circle-outline" size={14} color={brandColors.danger} />
-              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
-                Cancel
-              </Text>
-            </Pressable>
+            <ActionButton
+              icon="close-circle-outline"
+              label="Cancel"
+              tone="danger"
+              onPress={onCancel}
+            />
           )}
           {onDelete && (
-            <Pressable
-              style={[styles.actionBtn, styles.dangerBtn]}
-              onPress={(e) => { e.stopPropagation(); onDelete(); }}
-            >
-              <MaterialCommunityIcons name="delete-outline" size={14} color={brandColors.danger} />
-              <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>
-                Delete
-              </Text>
-            </Pressable>
+            <ActionButton
+              icon="delete-outline"
+              label="Delete"
+              tone="danger"
+              onPress={onDelete}
+            />
           )}
         </View>
       )}
@@ -189,101 +193,211 @@ export default function TaskCard({
   );
 }
 
+function InfoChip({
+  icon,
+  label,
+  emphasized = false,
+}: {
+  icon: string;
+  label: string;
+  emphasized?: boolean;
+}) {
+  return (
+    <View style={[styles.infoChip, emphasized && styles.infoChipEmphasized]}>
+      <MaterialCommunityIcons
+        name={icon as never}
+        size={14}
+        color={emphasized ? brandColors.primary : brandColors.textMuted}
+      />
+      <Text
+        style={[
+          typography.caption,
+          emphasized ? styles.infoTextEmphasized : styles.infoText,
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function TaskSignal({
+  icon,
+  label,
+  tone,
+}: {
+  icon: string;
+  label: string;
+  tone: 'warning' | 'success' | 'neutral';
+}) {
+  const color =
+    tone === 'success'
+      ? brandColors.success
+      : tone === 'warning'
+        ? brandColors.warning
+        : brandColors.textMuted;
+  const background =
+    tone === 'success'
+      ? brandColors.successSoft
+      : tone === 'warning'
+        ? brandColors.warningSoft
+        : brandColors.neutralSoft;
+
+  return (
+    <View style={[styles.signal, { backgroundColor: background }]}>
+      <MaterialCommunityIcons name={icon as never} size={14} color={color} />
+      <Text style={[typography.caption, styles.signalText, { color }]} numberOfLines={2}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  tone,
+  onPress,
+}: {
+  icon: string;
+  label: string;
+  tone: 'default' | 'success' | 'warning' | 'danger';
+  onPress: () => void;
+}) {
+  const color =
+    tone === 'success'
+      ? brandColors.success
+      : tone === 'warning'
+        ? brandColors.warning
+        : tone === 'danger'
+          ? brandColors.danger
+          : brandColors.primaryMuted;
+  const background =
+    tone === 'success'
+      ? brandColors.successSoft
+      : tone === 'warning'
+        ? brandColors.warningSoft
+        : tone === 'danger'
+          ? brandColors.dangerSoft
+          : brandColors.surfaceAlt;
+  const border =
+    tone === 'default'
+      ? brandColors.outlineLight
+      : color;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        styles.actionBtn,
+        { backgroundColor: background, borderColor: border, opacity: pressed ? 0.72 : 1 },
+      ]}
+      onPress={(e) => {
+        e.stopPropagation();
+        onPress();
+      }}
+    >
+      <MaterialCommunityIcons name={icon as never} size={14} color={color} />
+      <Text style={[typography.caption, styles.actionText, { color }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: brandColors.surface,
+    position: 'relative',
     borderRadius: radii.lg,
     padding: spacing.lg,
-    paddingLeft: spacing.lg + 4,
+    paddingLeft: spacing.lg + 6,
     marginBottom: spacing.md,
     gap: spacing.md,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
   cardMuted: {
-    opacity: 0.7,
-  },
-  topRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'center',
+    borderColor: brandColors.outlineLight,
   },
   accentBar: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    width: 4,
+    width: 5,
+  },
+  topRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
   },
   iconCircle: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   titleBlock: {
     flex: 1,
-    gap: 3,
+    minWidth: 0,
+    gap: 2,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryLabel: {
+    color: brandColors.primaryMuted,
+    fontWeight: '700',
   },
   title: {
     color: brandColors.textPrimary,
   },
-  locationRow: {
+  infoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  infoChip: {
+    minHeight: 32,
+    maxWidth: '100%',
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  location: {
-    color: brandColors.textMuted,
-    flex: 1,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metaGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  price: {
-    color: brandColors.primary,
-  },
-  quoteLabel: {
-    color: brandColors.primaryMuted,
-    fontStyle: 'italic',
-  },
-  newOffersBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs + 2,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.pill,
-    backgroundColor: brandColors.warningSoft,
-    alignSelf: 'flex-start',
-  },
-  noBidChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs + 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
     backgroundColor: brandColors.neutralSoft,
-    alignSelf: 'flex-start',
   },
-  footerChip: {
+  infoChipEmphasized: {
+    backgroundColor: brandColors.infoSoft,
+  },
+  infoText: {
+    color: brandColors.textMuted,
+    flexShrink: 1,
+  },
+  infoTextEmphasized: {
+    color: brandColors.primary,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  signal: {
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: spacing.xs + 2,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 1,
+    paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
-    backgroundColor: brandColors.surfaceAlt,
-    alignSelf: 'flex-start',
+  },
+  signalText: {
+    flexShrink: 1,
+    fontWeight: '700',
   },
   actionRow: {
     flexDirection: 'row',
@@ -295,24 +409,16 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   actionBtn: {
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     borderWidth: 1,
   },
-  successBtn: {
-    borderColor: brandColors.success,
-    backgroundColor: brandColors.successSoft,
-  },
-  dangerBtn: {
-    borderColor: brandColors.danger,
-    backgroundColor: brandColors.dangerSoft,
-  },
-  defaultBtn: {
-    borderColor: brandColors.outline,
-    backgroundColor: brandColors.surfaceAlt,
+  actionText: {
+    fontWeight: '700',
   },
 });

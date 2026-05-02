@@ -13,6 +13,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
+import { getCategoryMeta } from '../utils/categoryMetadata';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -284,6 +285,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const acceptedBid = bids.find((b) => b.status === 'ACCEPTED');
   const pendingBids = bids.filter((b) => b.status === 'PENDING');
   const banner = STATUS_BANNER[task.status];
+  const catMeta = getCategoryMeta(task.category);
 
   // 14-day review window
   const reviewWindowDays = 14;
@@ -341,6 +343,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
         <View style={styles.detailsDivider} />
 
+        <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label="Category" value={catMeta.label} />
         <DetailRow icon="cash-multiple" label="Budget" value={task.suggested_price ? `₪${task.suggested_price}` : 'Quote Required'} />
         <DetailRow icon="map-marker-outline" label="Location" value={task.general_location_name} />
         {task.status !== 'OPEN' && (
@@ -696,11 +699,21 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   );
 }
 
-function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function DetailRow({
+  icon,
+  iconColor = brandColors.primaryMuted,
+  label,
+  value,
+}: {
+  icon: string;
+  iconColor?: string;
+  label: string;
+  value: string;
+}) {
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIconShell}>
-        <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
+        <MaterialCommunityIcons name={icon as never} size={18} color={iconColor} />
       </View>
       <View style={styles.detailText}>
         <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
@@ -734,7 +747,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
   },
   editIconBtn: {
     width: 40,
@@ -814,7 +827,7 @@ const styles = StyleSheet.create({
   bidPriceTag: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     backgroundColor: brandColors.infoSoft,
   },
   bidPitch: {
