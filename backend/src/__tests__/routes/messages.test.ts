@@ -299,6 +299,45 @@ describe('PUT /api/tasks/:id/messages/read', () => {
   });
 });
 
+// ── PUT /api/tasks/:id/messages/read — messages_read emit ────────────────────
+
+describe('PUT /api/tasks/:id/messages/read (read receipts)', () => {
+  it('only marks messages where the caller is recipient', async () => {
+    const task = await createTaskInProgress();
+    // Fixer sends 2 messages to requester; requester sends 1 to fixer
+    await prisma.message.createMany({
+      data: [
+        { task_id: task.id, sender_id: fixerId, recipient_id: requesterId, content: 'hi 1', is_read: false },
+        { task_id: task.id, sender_id: fixerId, recipient_id: requesterId, content: 'hi 2', is_read: false },
+        { task_id: task.id, sender_id: requesterId, recipient_id: fixerId, content: 'reply', is_read: false },
+      ],
+    });
+
+    __setUid('requester-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/messages/read`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // Requester's unread should be 0, fixer's unread stays 1
+    const requesterUnread = await prisma.message.count({ where: { task_id: task.id, recipient_id: requesterId, is_read: false } });
+    const fixerUnread = await prisma.message.count({ where: { task_id: task.id, recipient_id: fixerId, is_read: false } });
+    expect(requesterUnread).toBe(0);
+    expect(fixerUnread).toBe(1);
+  });
+
+  it('is idempotent — calling again when already read returns ok', async () => {
+    const task = await createTaskInProgress();
+
+    __setUid('requester-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/messages/read`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+});
+
 // ── GET /api/conversations ────────────────────────────────────────────────────
 
 describe('GET /api/conversations', () => {
@@ -377,5 +416,62 @@ describe('GET /api/conversations', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.conversations).toHaveLength(0);
+  });
+
+  it('includes conversations for a fixer with pending bid', async () => {
+    // Requester creates task, fixer bids (not accepted), then messages are exchanged
+    __setUid('requester-uid');
+    const taskRes = await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({
+        title: 'Bid chat task',
+        description: 'Testing conversations with pending bid.',
+        category: 'PLUMBING',
+        general_location_name: 'Haifa',
+        exact_address: '5 Herzl St',
+        lat: 32.81,
+        lng: 34.99,
+      });
+    const taskId = taskRes.body.task.id as string;
+
+    __setUid('fixer-uid');
+    await request(app)
+      .post(`/api/tasks/${taskId}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 100, description: 'I can help.' });
+
+    // Seed messages between them
+    await prisma.message.create({
+      data: { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'Hi, interested?' },
+    });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .get('/api/conversations')
+      .set('Authorization', FIXER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.conversations).toHaveLength(1);
+    expect(res.body.conversations[0].otherParty?.full_name).toBe('Requester');
+  });
+
+  it('shows the correct other party name for both sides', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+
+    // Requester sees Fixer
+    __setUid('requester-uid');
+    const reqRes = await request(app)
+      .get('/api/conversations')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(reqRes.body.conversations[0].otherParty?.full_name).toBe('Fixer');
+
+    // Fixer sees Requester
+    __setUid('fixer-uid');
+    const fixRes = await request(app)
+      .get('/api/conversations')
+      .set('Authorization', FIXER_AUTH);
+    expect(fixRes.body.conversations[0].otherParty?.full_name).toBe('Requester');
   });
 });

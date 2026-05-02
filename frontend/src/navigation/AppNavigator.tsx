@@ -24,6 +24,7 @@ import ChatScreen from '../screens/ChatScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import type { Category } from '../constants/categories';
 import {
@@ -93,6 +94,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
+  const { unreadCount: unreadMsgCount } = useUnreadMessages();
 
   useEffect(() => {
     return navigation.addListener('state', () => {
@@ -156,11 +158,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     ? [
         { label: 'Find Jobs', screen: 'FindJobs', icon: 'map-search-outline' },
         { label: 'My Bids', screen: 'MyBids', icon: 'format-list-checks' },
+        { label: 'Messages', screen: 'Messages', icon: 'chat-outline' },
         { label: 'Profile', screen: 'FixerProfile', icon: 'account-hard-hat-outline' },
       ]
     : [
         { label: 'Home', screen: 'Dashboard', icon: 'home-outline' },
         { label: 'My Tasks', screen: 'MyTasks', icon: 'clipboard-list-outline' },
+        { label: 'Messages', screen: 'Messages', icon: 'chat-outline' },
         { label: 'Account', screen: 'Profile', icon: 'account-circle-outline' },
       ];
 
@@ -233,6 +237,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
           <View style={styles.desktopPageTabs}>
             {workspaceTabs.map((item) => {
               const selected = activeScreen === item.screen;
+              const showMsgBadge = item.screen === 'Messages' && unreadMsgCount > 0;
               return (
                 <Pressable
                   key={item.screen}
@@ -248,12 +253,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                 >
                   <MaterialCommunityIcons
                     name={item.icon as never}
-                    size={16}
+                    size={18}
                     color={selected ? brandColors.primary : brandColors.textMuted}
                   />
                   <Text style={[styles.desktopPageTabText, selected && styles.desktopPageTabTextActive]}>
                     {item.label}
                   </Text>
+                  {showMsgBadge && <NotifBadge count={unreadMsgCount} />}
                 </Pressable>
               );
             })}
@@ -712,11 +718,13 @@ const styles = StyleSheet.create({
   },
   desktopPageTab: {
     minHeight: 38,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: spacing.xs,
+    justifyContent: 'center',
+    gap: 2,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -725,9 +733,9 @@ const styles = StyleSheet.create({
     borderColor: brandColors.outlineLight,
   },
   desktopPageTabText: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '700',
-    lineHeight: 16,
+    lineHeight: 13,
     color: brandColors.textMuted,
   },
   desktopPageTabTextActive: {

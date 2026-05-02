@@ -33,7 +33,8 @@ export default function SettingsScreen() {
 
   const handlePushToggle = async (value: boolean) => {
     if (Platform.OS === 'web') {
-      Alert.alert('Not supported', 'Push notifications are only available on mobile devices.');
+      // On web, toggle locally (push tokens only work on mobile)
+      setPushEnabled(value);
       return;
     }
     if (!value) {

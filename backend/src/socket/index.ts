@@ -9,10 +9,18 @@ interface AuthenticatedSocket extends Socket {
   userId: string;
 }
 
+let ioInstance: SocketServer | null = null;
+
+/** Get the live Socket.io server instance (available after initSocket is called). */
+export function getIO(): SocketServer | null {
+  return ioInstance;
+}
+
 export function initSocket(httpServer: HttpServer): SocketServer {
   const io = new SocketServer(httpServer, {
     cors: { origin: '*', methods: ['GET', 'POST'] },
   });
+  ioInstance = io;
 
   // Auth handshake — verify Firebase token and attach userId to socket
   io.use(async (socket, next) => {
@@ -140,6 +148,50 @@ export function initSocket(httpServer: HttpServer): SocketServer {
         }
       },
     );
+
+    // mark_read — batch-update unread messages and notify the sender in real-time
+    socket.on('mark_read', async (taskId: string) => {
+      try {
+        if (!taskId) return;
+
+        const task = await prisma.task.findUnique({ where: { id: taskId } });
+        if (!task) return;
+
+        const userId = authedSocket.userId;
+        const isMember =
+          task.requester_id === userId || task.assigned_fixer_id === userId;
+        const hasBid = isMember
+          ? true
+          : !!(await prisma.bid.findFirst({
+              where: { task_id: taskId, fixer_id: userId, status: { in: ['PENDING', 'ACCEPTED'] } },
+            }));
+        if (!isMember && !hasBid) return;
+
+        // Find unread messages sent TO this user, then mark them read
+        const unreadMessages = await prisma.message.findMany({
+          where: { task_id: taskId, recipient_id: userId, is_read: false },
+          select: { id: true, sender_id: true },
+        });
+
+        if (unreadMessages.length === 0) return;
+
+        await prisma.message.updateMany({
+          where: { task_id: taskId, recipient_id: userId, is_read: false },
+          data: { is_read: true },
+        });
+
+        const messageIds = unreadMessages.map((m) => m.id);
+
+        // Emit to the room so the sender's UI can show read indicators
+        io.to(`task_chat_${taskId}`).emit('messages_read', {
+          taskId,
+          readerId: userId,
+          messageIds,
+        });
+      } catch (err) {
+        console.error('[socket] mark_read error', err);
+      }
+    });
   });
 
   return io;

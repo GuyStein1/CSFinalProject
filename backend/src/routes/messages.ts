@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { prisma } from '../config/prisma';
 import { ForbiddenError, NotFoundError } from '../utils/errors';
+import { getIO } from '../socket';
 
 const router = Router();
 
@@ -52,10 +53,14 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
   try {
     const userId = req.user!.id;
 
+    // Find all tasks where the user has sent or received messages
     const tasks = await prisma.task.findMany({
       where: {
-        OR: [{ requester_id: userId }, { assigned_fixer_id: userId }],
-        messages: { some: {} },
+        messages: {
+          some: {
+            OR: [{ sender_id: userId }, { recipient_id: userId }],
+          },
+        },
       },
       include: {
         requester: { select: { id: true, full_name: true, avatar_url: true } },
@@ -63,7 +68,9 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
         messages: {
           orderBy: { created_at: 'desc' },
           take: 1,
-          select: { content: true, created_at: true, sender_id: true, is_read: true },
+          include: {
+            sender: { select: { id: true, full_name: true, avatar_url: true } },
+          },
         },
       },
     });
@@ -83,13 +90,26 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
 
     const conversations = tasks
       .map((task) => {
-        const otherParty =
-          task.requester_id === userId ? task.fixer : task.requester;
+        // Determine the other party: if user is requester, show fixer (or last message sender)
+        // If user is fixer/bidder, show requester
+        let otherParty: { id: string; full_name: string; avatar_url: string | null } | null = null;
+        if (task.requester_id === userId) {
+          otherParty = task.fixer ?? task.messages[0]?.sender ?? null;
+        } else {
+          otherParty = task.requester;
+        }
+        // Make sure we don't show ourselves as the "other party"
+        if (otherParty?.id === userId && task.messages[0]?.sender) {
+          // Last message was from us — look at recipient side
+          otherParty = task.requester_id === userId ? task.fixer : task.requester;
+        }
+
         const lastMessage = task.messages[0] ?? null;
 
         return {
           taskId: task.id,
           taskTitle: task.title,
+          taskStatus: task.status,
           otherParty,
           lastMessage: lastMessage
             ? { content: lastMessage.content, timestamp: lastMessage.created_at }
@@ -127,10 +147,28 @@ router.put('/tasks/:id/messages/read', async (req: Request, res: Response, next:
         });
     if (!isMember && !bid) throw new ForbiddenError('Not a participant in this chat');
 
+    // Find which messages will be marked so we can notify the sender
+    const unreadMessages = await prisma.message.findMany({
+      where: { task_id: taskId, recipient_id: userId, is_read: false },
+      select: { id: true },
+    });
+
     await prisma.message.updateMany({
       where: { task_id: taskId, recipient_id: userId, is_read: false },
       data: { is_read: true },
     });
+
+    // Emit real-time read receipt to the chat room
+    if (unreadMessages.length > 0) {
+      const io = getIO();
+      if (io) {
+        io.to(`task_chat_${taskId}`).emit('messages_read', {
+          taskId,
+          readerId: userId,
+          messageIds: unreadMessages.map((m) => m.id),
+        });
+      }
+    }
 
     res.json({ ok: true });
   } catch (err) {

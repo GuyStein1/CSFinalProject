@@ -3,16 +3,19 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Avatar, Text } from 'react-native-paper';
+import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import api from '../api/axiosInstance';
 import { uploadImage } from '../utils/uploadImage';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
@@ -71,6 +74,8 @@ export default function FixerProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
   const [viewingAvatar, setViewingAvatar] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -423,6 +428,54 @@ export default function FixerProfileScreen() {
               >
                 Save Profile
               </FButton>
+
+              <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 }}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+                      Push Notifications
+                    </Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                      Bid updates, messages, and task alerts
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={pushEnabled}
+                  onValueChange={async (value) => {
+                    if (Platform.OS === 'web') {
+                      // On web, toggle locally (push tokens only work on mobile)
+                      setPushEnabled(value);
+                      return;
+                    }
+                    if (!value) { setPushEnabled(false); return; }
+                    setPushLoading(true);
+                    try {
+                      const { status } = await Notifications.requestPermissionsAsync();
+                      if (status !== 'granted') {
+                        Alert.alert('Permission denied', 'Enable notifications in your device settings.');
+                        return;
+                      }
+                      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string;
+                      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+                      await api.post('/api/users/me/push-token', { token: tokenData.data });
+                      setPushEnabled(true);
+                    } catch (err) {
+                      Alert.alert('Error', err instanceof Error ? err.message : String(err));
+                    } finally {
+                      setPushLoading(false);
+                    }
+                  }}
+                  disabled={pushLoading}
+                  trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
+                  thumbColor={brandColors.white}
+                />
+              </View>
             </FCard>
 
             <FCard style={styles.section} shadow="sm">

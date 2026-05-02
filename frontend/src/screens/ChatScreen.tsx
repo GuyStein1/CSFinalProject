@@ -3,6 +3,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -68,22 +69,31 @@ export default function ChatScreen({ route }: { route: any }) {
 
   const isReadOnly = taskStatus === 'COMPLETED';
 
-  // Set header dynamically
+  // Set header dynamically — avatar tap navigates to public profile
   useEffect(() => {
     navigation.setOptions({
       title: taskTitle || 'Chat',
-      headerRight: () =>
-        recipientAvatar ? (
-          <Avatar.Image size={32} source={{ uri: recipientAvatar }} style={{ marginRight: spacing.md }} />
-        ) : (
-          <Avatar.Icon
-            size={32}
-            icon="account"
-            style={{ backgroundColor: brandColors.primaryMuted, marginRight: spacing.md }}
-          />
-        ),
+      headerRight: () => (
+        <Pressable
+          onPress={() => {
+            if (recipientId) {
+              (navigation as unknown as { navigate: (s: string, p: object) => void }).navigate('PublicProfile', { userId: recipientId });
+            }
+          }}
+        >
+          {recipientAvatar ? (
+            <Avatar.Image size={32} source={{ uri: recipientAvatar }} style={{ marginRight: spacing.md }} />
+          ) : (
+            <Avatar.Icon
+              size={32}
+              icon="account"
+              style={{ backgroundColor: brandColors.primaryMuted, marginRight: spacing.md }}
+            />
+          )}
+        </Pressable>
+      ),
     });
-  }, [navigation, taskTitle, recipientAvatar]);
+  }, [navigation, taskTitle, recipientAvatar, recipientId]);
 
   // Fetch current user's DB ID only when not provided via nav params (used for optimistic bubble recipient_id)
   useEffect(() => {
@@ -122,6 +132,10 @@ export default function ChatScreen({ route }: { route: any }) {
       const socket = await getSocket();
       socketRef.current = socket;
       socket.emit('join_chat', taskId);
+
+      // Also emit mark_read via socket so the sender gets real-time receipt
+      socket.emit('mark_read', taskId);
+
       socket.on('receive_message', (msg: Message) => {
         const sentByMe = msg.sender?.firebase_uid
           ? msg.sender.firebase_uid === auth.currentUser?.uid
@@ -142,12 +156,27 @@ export default function ChatScreen({ route }: { route: any }) {
         flatListRef.current?.scrollToEnd({ animated: true });
 
         // Only refresh bell badge for messages from the other party
-        if (!sentByMe) void refetchNotifications();
+        if (!sentByMe) {
+          void refetchNotifications();
+          // Mark incoming messages as read immediately since the chat is open
+          socket.emit('mark_read', taskId);
+        }
+      });
+
+      // Listen for read receipts — update sent messages to show as read
+      socket.on('messages_read', (payload: { taskId: string; readerId: string; messageIds: string[] }) => {
+        if (payload.taskId !== taskId) return;
+        setMessages(prev =>
+          prev.map(m =>
+            payload.messageIds.includes(m.id) ? { ...m, is_read: true } : m,
+          ),
+        );
       });
     })();
 
     return () => {
       socketRef.current?.off('receive_message');
+      socketRef.current?.off('messages_read');
     };
   }, [taskId, loadMessages]);
 
@@ -214,19 +243,37 @@ export default function ChatScreen({ route }: { route: any }) {
           return (
             <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
               {!isMine && (
-                recipientAvatar ? (
-                  <Avatar.Image size={28} source={{ uri: recipientAvatar }} style={styles.bubbleAvatar} />
-                ) : (
-                  <Avatar.Icon size={28} icon="account" style={[styles.bubbleAvatar, { backgroundColor: brandColors.primaryMuted }]} />
-                )
+                <Pressable
+                  onPress={() => {
+                    if (recipientId) {
+                      (navigation as unknown as { navigate: (s: string, p: object) => void }).navigate('PublicProfile', { userId: recipientId });
+                    }
+                  }}
+                >
+                  {recipientAvatar ? (
+                    <Avatar.Image size={28} source={{ uri: recipientAvatar }} style={styles.bubbleAvatar} />
+                  ) : (
+                    <Avatar.Icon size={28} icon="account" style={[styles.bubbleAvatar, { backgroundColor: brandColors.primaryMuted }]} />
+                  )}
+                </Pressable>
               )}
               <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
                 <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary }]}>
                   {item.content}
                 </Text>
-                <Text style={[typography.caption, styles.bubbleTime, { color: isMine ? 'rgba(255,255,255,0.65)' : brandColors.textMuted }]}>
-                  {formatTime(item.created_at)}
-                </Text>
+                <View style={styles.bubbleMeta}>
+                  <Text style={[typography.caption, styles.bubbleTime, { color: isMine ? 'rgba(255,255,255,0.65)' : brandColors.textMuted }]}>
+                    {formatTime(item.created_at)}
+                  </Text>
+                  {isMine && (
+                    <MaterialCommunityIcons
+                      name={item.is_read ? 'check-all' : 'check'}
+                      size={14}
+                      color={item.is_read ? '#7DD3FC' : 'rgba(255,255,255,0.5)'}
+                      style={styles.readIndicator}
+                    />
+                  )}
+                </View>
               </View>
             </View>
           );
@@ -330,9 +377,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
   },
-  bubbleTime: {
-    marginTop: 2,
+  bubbleMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-end',
+    marginTop: 2,
+  },
+  bubbleTime: {
+  },
+  readIndicator: {
+    marginLeft: 4,
   },
   footer: {
     flexDirection: 'row',
