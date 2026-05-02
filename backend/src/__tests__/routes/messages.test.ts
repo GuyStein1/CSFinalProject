@@ -169,6 +169,136 @@ describe('GET /api/tasks/:id/messages', () => {
   });
 });
 
+// ── GET /api/tasks/:id/messages — pending-bid access ─────────────────────────
+
+describe('GET /api/tasks/:id/messages (pending-bid access)', () => {
+  it('allows a fixer with a pending bid to read messages', async () => {
+    // Requester creates a task, fixer bids but bid is NOT accepted
+    __setUid('requester-uid');
+    const taskRes = await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({
+        title: 'Pending bid task',
+        description: 'Need some work done.',
+        category: 'PLUMBING',
+        general_location_name: 'Tel Aviv',
+        exact_address: '1 Test St',
+        lat: 32.08,
+        lng: 34.78,
+      });
+    const taskId = taskRes.body.task.id as string;
+
+    __setUid('fixer-uid');
+    await request(app)
+      .post(`/api/tasks/${taskId}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 150, description: 'I can do it.' });
+
+    // Seed a message directly so there is something to fetch
+    await prisma.message.create({
+      data: { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'Hello, are you available?' },
+    });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .get(`/api/tasks/${taskId}/messages`)
+      .set('Authorization', FIXER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toHaveLength(1);
+  });
+});
+
+// ── PUT /api/tasks/:id/messages/read ─────────────────────────────────────────
+
+describe('PUT /api/tasks/:id/messages/read', () => {
+  it('marks all unread messages for the caller as read and returns ok', async () => {
+    const task = await createTaskInProgress();
+    // Seed 3 unread messages sent to the requester
+    await prisma.message.createMany({
+      data: [
+        { task_id: task.id, sender_id: fixerId, recipient_id: requesterId, content: 'msg 1', is_read: false },
+        { task_id: task.id, sender_id: fixerId, recipient_id: requesterId, content: 'msg 2', is_read: false },
+        { task_id: task.id, sender_id: requesterId, recipient_id: fixerId, content: 'my msg', is_read: false },
+      ],
+    });
+
+    __setUid('requester-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/messages/read`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+
+    // Only the requester's received messages should be marked read
+    const stillUnread = await prisma.message.count({
+      where: { task_id: task.id, recipient_id: requesterId, is_read: false },
+    });
+    expect(stillUnread).toBe(0);
+  });
+
+  it('returns 404 for a non-existent task', async () => {
+    __setUid('requester-uid');
+    const res = await request(app)
+      .put('/api/tasks/non-existent-id/messages/read')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 403 for a non-participant', async () => {
+    const task = await createTaskInProgress();
+
+    __setUid('other-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/messages/read`)
+      .set('Authorization', OTHER_AUTH);
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 401 without auth header', async () => {
+    const task = await createTaskInProgress();
+    const res = await request(app).put(`/api/tasks/${task.id}/messages/read`);
+    expect(res.status).toBe(401);
+  });
+
+  it('allows a fixer with a pending bid to mark messages as read', async () => {
+    __setUid('requester-uid');
+    const taskRes = await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({
+        title: 'Pending read task',
+        description: 'Need work.',
+        category: 'PLUMBING',
+        general_location_name: 'Tel Aviv',
+        exact_address: '1 Test St',
+        lat: 32.08,
+        lng: 34.78,
+      });
+    const taskId = taskRes.body.task.id as string;
+
+    __setUid('fixer-uid');
+    await request(app)
+      .post(`/api/tasks/${taskId}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 150, description: 'I can do it.' });
+
+    await prisma.message.create({
+      data: { task_id: taskId, sender_id: requesterId, recipient_id: fixerId, content: 'Hi', is_read: false },
+    });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${taskId}/messages/read`)
+      .set('Authorization', FIXER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+});
+
 // ── GET /api/conversations ────────────────────────────────────────────────────
 
 describe('GET /api/conversations', () => {

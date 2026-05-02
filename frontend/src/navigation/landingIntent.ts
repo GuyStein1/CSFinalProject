@@ -52,6 +52,15 @@ export type RootStackParamList = {
   Settings: undefined;
   PublicProfile: { userId?: string } | undefined;
   NotificationCenter: undefined;
+  Chat: {
+    taskId: string;
+    myDbId?: string;
+    recipientId?: string;
+    recipientName?: string;
+    recipientAvatar?: string | null;
+    taskTitle?: string;
+    taskStatus?: string;
+  };
 };
 
 export function asLandingScreenWithNavigationProps<P>(

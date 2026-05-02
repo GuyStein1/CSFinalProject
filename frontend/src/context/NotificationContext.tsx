@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import api from '../api/axiosInstance';
+import { getSocket } from '../utils/socket';
+import { auth } from '../config/firebase';
 
 export interface AppNotification {
   id: string;
@@ -14,8 +16,8 @@ export interface AppNotification {
   updated_at: string;
 }
 
-export const FIXER_NOTIF_TYPES = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED'];
-export const REQUESTER_NOTIF_TYPES = ['NEW_BID'];
+export const FIXER_NOTIF_TYPES = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED', 'NEW_MESSAGE'];
+export const REQUESTER_NOTIF_TYPES = ['NEW_BID', 'NEW_MESSAGE'];
 
 interface NotificationContextValue {
   notifications: AppNotification[];
@@ -119,6 +121,29 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     intervalRef.current = setInterval(fetchNotifications, POLL_INTERVAL);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchNotifications]);
+
+  // Global socket listener — refresh bell badge instantly on any incoming message,
+  // regardless of which screen the user is currently on.
+  useEffect(() => {
+    let mounted = true;
+    let cleanup: (() => void) | null = null;
+
+    void (async () => {
+      const socket = await getSocket();
+      const handler = (msg: { sender?: { firebase_uid?: string } }) => {
+        // Only refresh notifications for messages received from someone else
+        const sentByMe = msg?.sender?.firebase_uid === auth.currentUser?.uid;
+        if (mounted && !sentByMe) void fetchNotifications();
+      };
+      socket.on('receive_message', handler);
+      cleanup = () => socket.off('receive_message', handler);
+    })();
+
+    return () => {
+      mounted = false;
+      cleanup?.();
+    };
   }, [fetchNotifications]);
 
   return (

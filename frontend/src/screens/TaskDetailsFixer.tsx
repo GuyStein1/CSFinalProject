@@ -18,7 +18,7 @@ import {
 } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
@@ -77,6 +77,8 @@ interface Props {
 
 export default function TaskDetailsFixer({ route }: Props) {
   const taskId = route.params?.taskId;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const navigation = useNavigation<any>();
 
   const [task, setTask] = useState<Task | null>(null);
   const [existingBid, setExistingBid] = useState<ExistingBid | null>(null);
@@ -408,6 +410,26 @@ export default function TaskDetailsFixer({ route }: Props) {
               </View>
               <StatusBadge status={existingBid.status} />
             </View>
+          )}
+
+          {/* Chat with Requester — only when bid is accepted */}
+          {existingBid?.status === 'ACCEPTED' && task && (
+            <FButton
+              variant="outline"
+              icon="chat-outline"
+              onPress={() => navigation.navigate('Chat', {
+                taskId: task.id,
+                recipientId: task.requester_id,
+                recipientName: task.requester?.full_name || 'Requester',
+                recipientAvatar: task.requester?.avatar_url || null,
+                taskTitle: task.title,
+                taskStatus: task.status,
+              })}
+              fullWidth
+              style={{ marginTop: spacing.sm }}
+            >
+              Chat with Requester
+            </FButton>
           )}
         </View>
       </ScrollView>

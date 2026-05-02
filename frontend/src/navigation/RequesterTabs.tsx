@@ -6,6 +6,7 @@ import { useTheme } from 'react-native-paper';
 import RequesterDashboard from '../screens/RequesterDashboard';
 import MyTasksScreen from '../screens/MyTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ConversationListScreen from '../screens/ConversationListScreen';
 import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -62,6 +63,16 @@ export default function RequesterTabs() {
           tabBarLabel: 'My Tasks',
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'clipboard-list' : 'clipboard-list-outline'} color={color} size={size} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Messages"
+        component={ConversationListScreen}
+        options={{
+          tabBarLabel: 'Messages',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name={focused ? 'chat' : 'chat-outline'} color={color} size={size} focused={focused} />
           ),
         }}
       />
