@@ -86,16 +86,23 @@ export default function ConversationListScreen() {
               })
             }
           >
-            {/* Avatar */}
-            {other?.avatar_url ? (
-              <Avatar.Image size={48} source={{ uri: other.avatar_url }} />
-            ) : (
-              <Avatar.Icon
-                size={48}
-                icon="account"
-                style={{ backgroundColor: brandColors.primaryMuted }}
-              />
-            )}
+            {/* Avatar — tap to view public profile */}
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                if (other?.id) navigation.navigate('PublicProfile', { userId: other.id });
+              }}
+            >
+              {other?.avatar_url ? (
+                <Avatar.Image size={48} source={{ uri: other.avatar_url }} />
+              ) : (
+                <Avatar.Icon
+                  size={48}
+                  icon="account"
+                  style={{ backgroundColor: brandColors.primaryMuted }}
+                />
+              )}
+            </Pressable>
 
             {/* Content */}
             <View style={styles.content}>

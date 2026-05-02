@@ -7,6 +7,7 @@ import RequesterDashboard from '../screens/RequesterDashboard';
 import MyTasksScreen from '../screens/MyTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -32,6 +33,7 @@ export default function RequesterTabs() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
+  const { unreadCount } = useUnreadMessages();
 
   return (
     <Tab.Navigator
@@ -71,6 +73,8 @@ export default function RequesterTabs() {
         component={ConversationListScreen}
         options={{
           tabBarLabel: 'Messages',
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: brandColors.primary, fontSize: 10, fontWeight: '700' },
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'chat' : 'chat-outline'} color={color} size={size} focused={focused} />
           ),

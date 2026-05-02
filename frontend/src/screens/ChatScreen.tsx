@@ -3,6 +3,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -68,22 +69,31 @@ export default function ChatScreen({ route }: { route: any }) {
 
   const isReadOnly = taskStatus === 'COMPLETED';
 
-  // Set header dynamically
+  // Set header dynamically — avatar tap navigates to public profile
   useEffect(() => {
     navigation.setOptions({
       title: taskTitle || 'Chat',
-      headerRight: () =>
-        recipientAvatar ? (
-          <Avatar.Image size={32} source={{ uri: recipientAvatar }} style={{ marginRight: spacing.md }} />
-        ) : (
-          <Avatar.Icon
-            size={32}
-            icon="account"
-            style={{ backgroundColor: brandColors.primaryMuted, marginRight: spacing.md }}
-          />
-        ),
+      headerRight: () => (
+        <Pressable
+          onPress={() => {
+            if (recipientId) {
+              (navigation as unknown as { navigate: (s: string, p: object) => void }).navigate('PublicProfile', { userId: recipientId });
+            }
+          }}
+        >
+          {recipientAvatar ? (
+            <Avatar.Image size={32} source={{ uri: recipientAvatar }} style={{ marginRight: spacing.md }} />
+          ) : (
+            <Avatar.Icon
+              size={32}
+              icon="account"
+              style={{ backgroundColor: brandColors.primaryMuted, marginRight: spacing.md }}
+            />
+          )}
+        </Pressable>
+      ),
     });
-  }, [navigation, taskTitle, recipientAvatar]);
+  }, [navigation, taskTitle, recipientAvatar, recipientId]);
 
   // Fetch current user's DB ID only when not provided via nav params (used for optimistic bubble recipient_id)
   useEffect(() => {
@@ -233,11 +243,19 @@ export default function ChatScreen({ route }: { route: any }) {
           return (
             <View style={[styles.bubbleRow, isMine ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
               {!isMine && (
-                recipientAvatar ? (
-                  <Avatar.Image size={28} source={{ uri: recipientAvatar }} style={styles.bubbleAvatar} />
-                ) : (
-                  <Avatar.Icon size={28} icon="account" style={[styles.bubbleAvatar, { backgroundColor: brandColors.primaryMuted }]} />
-                )
+                <Pressable
+                  onPress={() => {
+                    if (recipientId) {
+                      (navigation as unknown as { navigate: (s: string, p: object) => void }).navigate('PublicProfile', { userId: recipientId });
+                    }
+                  }}
+                >
+                  {recipientAvatar ? (
+                    <Avatar.Image size={28} source={{ uri: recipientAvatar }} style={styles.bubbleAvatar} />
+                  ) : (
+                    <Avatar.Icon size={28} icon="account" style={[styles.bubbleAvatar, { backgroundColor: brandColors.primaryMuted }]} />
+                  )}
+                </Pressable>
               )}
               <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
                 <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary }]}>

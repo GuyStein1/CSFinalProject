@@ -7,6 +7,7 @@ import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
 import FixerProfileScreen from '../screens/FixerProfileScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { brandColors, shadows, spacing } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -28,6 +29,7 @@ export default function FixerTabs() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
+  const { unreadCount } = useUnreadMessages();
 
   return (
     <Tab.Navigator
@@ -67,6 +69,8 @@ export default function FixerTabs() {
         component={ConversationListScreen}
         options={{
           tabBarLabel: 'Messages',
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: brandColors.secondaryDark, fontSize: 10, fontWeight: '700' },
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
             <TabIcon name={focused ? 'chat' : 'chat-outline'} color={color} size={size} focused={focused} />
           ),
