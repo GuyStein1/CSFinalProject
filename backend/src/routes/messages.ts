@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { prisma } from '../config/prisma';
 import { ForbiddenError, NotFoundError } from '../utils/errors';
+import { getIO } from '../socket';
 
 const router = Router();
 
@@ -127,10 +128,28 @@ router.put('/tasks/:id/messages/read', async (req: Request, res: Response, next:
         });
     if (!isMember && !bid) throw new ForbiddenError('Not a participant in this chat');
 
+    // Find which messages will be marked so we can notify the sender
+    const unreadMessages = await prisma.message.findMany({
+      where: { task_id: taskId, recipient_id: userId, is_read: false },
+      select: { id: true },
+    });
+
     await prisma.message.updateMany({
       where: { task_id: taskId, recipient_id: userId, is_read: false },
       data: { is_read: true },
     });
+
+    // Emit real-time read receipt to the chat room
+    if (unreadMessages.length > 0) {
+      const io = getIO();
+      if (io) {
+        io.to(`task_chat_${taskId}`).emit('messages_read', {
+          taskId,
+          readerId: userId,
+          messageIds: unreadMessages.map((m) => m.id),
+        });
+      }
+    }
 
     res.json({ ok: true });
   } catch (err) {
