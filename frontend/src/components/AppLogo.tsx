@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   markCompact: {
-    width: 44,
-    aspectRatio: MARK_ASPECT_RATIO,
+    width: 32,
+    height: 32,
   },
   markStandalone: {
     width: 96,
@@ -135,10 +135,10 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   wordmarkCompact: {
-    fontSize: 17,
+    fontSize: 22,
     fontWeight: '800',
     letterSpacing: 0,
-    lineHeight: 20,
+    lineHeight: 26,
   },
   tagline: {
     marginTop: 2,
@@ -148,9 +148,9 @@ const styles = StyleSheet.create({
   },
   taglineCompact: {
     marginTop: 1,
-    fontSize: 7,
-    fontWeight: '600',
-    letterSpacing: 0.9,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   heroSilhouette: {
     width: 460,
