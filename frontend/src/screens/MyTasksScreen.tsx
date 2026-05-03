@@ -53,7 +53,7 @@ export default function MyTasksScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'open' | 'in_progress' | 'bids' | 'review' | null>(null);
+  const [filter, setFilter] = useState<'in_progress' | 'review' | null>(null);
   const { width } = useWindowDimensions();
 
   const wide = width >= 820;
@@ -248,15 +248,11 @@ export default function MyTasksScreen({ navigation }: Props) {
   const reviewCount = pastTasks.filter((task) => task.status === 'COMPLETED' && !task.has_review).length;
 
   // Apply pill filter
-  const filteredActiveTasks = filter === 'open'
-    ? activeTasks.filter((t) => t.status === 'OPEN')
-    : filter === 'in_progress'
-      ? activeTasks.filter((t) => t.status === 'IN_PROGRESS')
-      : filter === 'bids'
-        ? activeTasks.filter((t) => (t.bid_count || 0) > 0)
-        : filter === 'review'
-          ? []
-          : activeTasks;
+  const filteredActiveTasks = filter === 'in_progress'
+    ? activeTasks.filter((t) => t.status === 'IN_PROGRESS')
+    : filter === 'review'
+      ? []
+      : activeTasks;
 
   const filteredPastTasks = filter === 'review'
     ? pastTasks.filter((t) => t.status === 'COMPLETED' && !t.has_review)
@@ -468,8 +464,8 @@ function WorkspaceHeader({
   inProgressCount: number;
   pendingBidCount: number;
   reviewCount: number;
-  activeFilter: 'open' | 'in_progress' | 'bids' | 'review' | null;
-  onPillPress: (filter: 'open' | 'in_progress' | 'bids' | 'review') => void;
+  activeFilter: 'in_progress' | 'review' | null;
+  onPillPress: (filter: 'in_progress' | 'review') => void;
 }) {
   return (
     <LinearGradient
@@ -496,8 +492,6 @@ function WorkspaceHeader({
           value={openTasksCount}
           color={brandColors.success}
           wide={wide}
-          active={activeFilter === 'open'}
-          onPress={() => onPillPress('open')}
         />
         <SummaryPill
           icon="progress-wrench"
@@ -514,8 +508,6 @@ function WorkspaceHeader({
           value={pendingBidCount}
           color={brandColors.secondaryLight}
           wide={wide}
-          active={activeFilter === 'bids'}
-          onPress={() => onPillPress('bids')}
         />
         <SummaryPill
           icon="star-outline"

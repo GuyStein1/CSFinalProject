@@ -81,6 +81,7 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
           take: 1,
           include: {
             sender: { select: { id: true, full_name: true, avatar_url: true } },
+            recipient: { select: { id: true, full_name: true, avatar_url: true } },
           },
         },
       },
@@ -101,18 +102,18 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
 
     const conversations = tasks
       .map((task) => {
-        // Determine the other party: if user is requester, show fixer (or last message sender)
-        // If user is fixer/bidder, show requester
+        // Determine the other party
         let otherParty: { id: string; full_name: string; avatar_url: string | null } | null = null;
+        const lastMsg = task.messages[0];
         if (task.requester_id === userId) {
-          otherParty = task.fixer ?? task.messages[0]?.sender ?? null;
+          // User is requester — show fixer, or message counterpart
+          otherParty = task.fixer ?? (lastMsg?.sender?.id !== userId ? lastMsg?.sender : lastMsg?.recipient) ?? null;
         } else {
           otherParty = task.requester;
         }
-        // Make sure we don't show ourselves as the "other party"
-        if (otherParty?.id === userId && task.messages[0]?.sender) {
-          // Last message was from us — look at recipient side
-          otherParty = task.requester_id === userId ? task.fixer : task.requester;
+        // Final safety: never show ourselves
+        if (otherParty?.id === userId) {
+          otherParty = lastMsg?.sender?.id !== userId ? lastMsg?.sender ?? null : lastMsg?.recipient ?? null;
         }
 
         const lastMessage = task.messages[0] ?? null;
