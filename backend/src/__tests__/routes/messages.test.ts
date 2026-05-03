@@ -474,4 +474,71 @@ describe('GET /api/conversations', () => {
       .set('Authorization', FIXER_AUTH);
     expect(fixRes.body.conversations[0].otherParty?.full_name).toBe('Requester');
   });
+
+  it('filters conversations by mode=requester', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+
+    // Requester in requester mode sees conversations (they own the task)
+    __setUid('requester-uid');
+    const res = await request(app)
+      .get('/api/conversations?mode=requester')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.conversations).toHaveLength(1);
+
+    // Fixer in requester mode sees nothing (they don't own the task)
+    __setUid('fixer-uid');
+    const fixRes = await request(app)
+      .get('/api/conversations?mode=requester')
+      .set('Authorization', FIXER_AUTH);
+    expect(fixRes.status).toBe(200);
+    expect(fixRes.body.conversations).toHaveLength(0);
+  });
+
+  it('filters conversations by mode=fixer', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+
+    // Fixer in fixer mode sees conversations (they are not the requester)
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .get('/api/conversations?mode=fixer')
+      .set('Authorization', FIXER_AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.conversations).toHaveLength(1);
+
+    // Requester in fixer mode sees nothing (they own the task)
+    __setUid('requester-uid');
+    const reqRes = await request(app)
+      .get('/api/conversations?mode=fixer')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(reqRes.status).toBe(200);
+    expect(reqRes.body.conversations).toHaveLength(0);
+  });
+});
+
+// ── Messages deleted on task completion ──────────────────────────────────────
+
+describe('Task completion deletes messages', () => {
+  it('deletes all messages when requester marks task as COMPLETED', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+
+    // Verify messages exist
+    const before = await prisma.message.count({ where: { task_id: task.id } });
+    expect(before).toBe(3);
+
+    // Complete the task
+    __setUid('requester-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'COMPLETED' });
+    expect(res.status).toBe(200);
+
+    // Messages should be gone
+    const after = await prisma.message.count({ where: { task_id: task.id } });
+    expect(after).toBe(0);
+  });
 });
