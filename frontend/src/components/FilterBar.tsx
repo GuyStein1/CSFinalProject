@@ -41,6 +41,8 @@ interface FilterBarProps {
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
   compact?: boolean;
+  /** When true, force the filter panel open externally */
+  forceExpanded?: boolean;
 }
 
 // --- Single-thumb slider for distance ---
@@ -237,10 +239,12 @@ export default function FilterBar({
   hasActiveFilters = false,
   onClearFilters,
   compact,
+  forceExpanded,
 }: FilterBarProps) {
   const { width } = useWindowDimensions();
   const isCompact = compact ?? (Platform.OS === 'web' && width >= 900);
   const [expanded, setExpanded] = useState(false);
+  const isExpanded = forceExpanded || expanded;
   const budgetSummary =
     priceMin === PRICE_MIN && priceMax >= PRICE_MAX
       ? 'Budget: Any'
@@ -294,17 +298,17 @@ export default function FilterBar({
 
         {/* Expand/collapse button for sliders */}
         <Pressable
-          style={[styles.filterToggle, isCompact && styles.filterToggleCompact, expanded && styles.filterToggleActive]}
+          style={[styles.filterToggle, isCompact && styles.filterToggleCompact, isExpanded && styles.filterToggleActive]}
           onPress={() => setExpanded((p) => !p)}
           accessibilityRole="button"
           accessibilityLabel="Adjust distance and budget filters"
-          accessibilityState={{ expanded }}
+          accessibilityState={{ expanded: isExpanded }}
         >
-          <Feather name="sliders" size={14} color={expanded ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.caption, { color: expanded ? brandColors.primary : brandColors.textMuted }]}>
+          <Feather name="sliders" size={14} color={isExpanded ? brandColors.primary : brandColors.textMuted} />
+          <Text style={[typography.caption, { color: isExpanded ? brandColors.primary : brandColors.textMuted }]}>
             {radius} km · {budgetSummary}
           </Text>
-          <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={brandColors.textMuted} />
+          <Feather name={isExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={brandColors.textMuted} />
         </Pressable>
 
         {hasActiveFilters && onClearFilters && (
@@ -334,7 +338,7 @@ export default function FilterBar({
       </ScrollView>
 
       {/* Expandable slider panel */}
-      {expanded && (
+      {isExpanded && (
         <View style={[styles.sliderPanel, isCompact && styles.sliderPanelCompact]}>
           <DistanceSlider value={radius} onChange={onRadiusChange} />
           <PriceRangeSlider minValue={priceMin} maxValue={priceMax} onChange={onPriceChange} />

@@ -67,7 +67,15 @@ function injectWebStyles() {
     html.a11y-high-contrast #root * {
       color: #fff !important;
       border-color: #555 !important;
-      background-color: transparent !important;
+    }
+    /* Preserve hidden/inactive screens */
+    html.a11y-high-contrast #root [aria-hidden="true"],
+    html.a11y-high-contrast #root [style*="display: none"],
+    html.a11y-high-contrast #root [style*="display:none"] {
+      display: none !important;
+    }
+    html.a11y-high-contrast #root [style*="opacity: 0"] {
+      opacity: 0 !important;
     }
     html.a11y-high-contrast #root [role="banner"],
     html.a11y-high-contrast #root [role="navigation"],

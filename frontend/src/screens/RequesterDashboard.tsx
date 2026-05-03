@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
+  FlatList,
+  Image,
   StyleSheet,
   Pressable,
   useWindowDimensions,
@@ -17,6 +19,7 @@ import {
   CATEGORY_LIST,
   type Category,
 } from '../utils/categoryMetadata';
+import { CATEGORY_METADATA } from '../constants/categories';
 
 interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
@@ -55,12 +58,6 @@ export default function RequesterDashboard({ navigation }: Props) {
   const wide = width >= 900;
   const tablet = width >= 680;
   const horizontalPadding = wide ? spacing.xxxl : spacing.lg;
-  const contentWidth = Math.min(width, 1120);
-  const categoryColumns = wide ? 4 : tablet ? 3 : 2;
-  const categoryGap = spacing.md;
-  const availableContentWidth = Math.max(0, contentWidth - horizontalPadding * 2);
-  const categoryCellWidth =
-    Math.max(0, (availableContentWidth - categoryGap * (categoryColumns - 1)) / categoryColumns);
 
   const user = auth.currentUser;
   const firstName = user?.displayName?.split(' ')[0] ?? null;
@@ -271,39 +268,38 @@ export default function RequesterDashboard({ navigation }: Props) {
             </View>
           </View>
 
-          <View style={styles.categoryGrid}>
-            {CATEGORY_LIST.map((category) => (
+          <FlatList
+            data={CATEGORY_LIST}
+            keyExtractor={(item) => item.value}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryCarousel}
+            renderItem={({ item: category }) => (
               <Pressable
-                key={category.value}
                 onPress={() => navigateToCreate(category.value)}
                 accessibilityRole="button"
                 accessibilityLabel={`Post a ${category.label} task`}
                 style={({ pressed }) => [
-                  styles.categoryTile,
-                  {
-                    width: categoryCellWidth,
-                    opacity: pressed ? 0.88 : 1,
-                    transform: [{ scale: pressed ? 0.97 : 1 }],
-                  },
+                  styles.categoryCard,
+                  { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
               >
-                <View style={styles.categoryTopRow}>
-                  <View style={[styles.categoryIcon, { backgroundColor: category.bg }]}>
-                    <MaterialCommunityIcons name={category.icon as never} size={20} color={category.color} />
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={18} color={brandColors.textMuted} />
-                </View>
-                <View style={styles.categoryCopy}>
-                  <Text style={[typography.label, styles.categoryLabel]} numberOfLines={1}>
+                <Image
+                  source={CATEGORY_METADATA[category.value as keyof typeof CATEGORY_METADATA].image}
+                  style={styles.categoryImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.65)']}
+                  style={styles.categoryOverlay}
+                />
+                <View style={styles.categoryCardContent}>
+                  <Text style={styles.categoryCardLabel} numberOfLines={1}>
                     {category.label}
-                  </Text>
-                  <Text style={[typography.caption, styles.categoryDescription]} numberOfLines={2}>
-                    {category.description}
                   </Text>
                 </View>
               </Pressable>
-            ))}
-          </View>
+            )}
+          />
         </View>
 
         <View style={styles.section}>
@@ -571,41 +567,40 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  categoryCarousel: {
     gap: spacing.md,
+    paddingRight: spacing.lg,
   },
-  categoryTile: {
-    minHeight: 124,
-    padding: spacing.lg,
+  categoryCard: {
+    width: 140,
+    height: 180,
     borderRadius: radii.lg,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  categoryTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  categoryIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+  categoryOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
   },
-  categoryCopy: {
-    gap: spacing.xs,
+  categoryCardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.md,
   },
-  categoryLabel: {
-    color: brandColors.textPrimary,
-  },
-  categoryDescription: {
-    color: brandColors.textMuted,
+  categoryCardLabel: {
+    color: brandColors.white,
+    fontWeight: '700',
+    fontSize: 14,
   },
   stepGrid: {
     gap: spacing.md,
