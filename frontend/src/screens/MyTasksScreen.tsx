@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -52,6 +53,7 @@ export default function MyTasksScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'open' | 'in_progress' | 'bids' | 'review' | null>(null);
   const { width } = useWindowDimensions();
 
   const wide = width >= 820;
@@ -245,6 +247,23 @@ export default function MyTasksScreen({ navigation }: Props) {
   const pendingBidCount = activeTasks.reduce((sum, task) => sum + (task.bid_count || 0), 0);
   const reviewCount = pastTasks.filter((task) => task.status === 'COMPLETED' && !task.has_review).length;
 
+  // Apply pill filter
+  const filteredActiveTasks = filter === 'open'
+    ? activeTasks.filter((t) => t.status === 'OPEN')
+    : filter === 'in_progress'
+      ? activeTasks.filter((t) => t.status === 'IN_PROGRESS')
+      : filter === 'bids'
+        ? activeTasks.filter((t) => (t.bid_count || 0) > 0)
+        : filter === 'review'
+          ? []
+          : activeTasks;
+
+  const filteredPastTasks = filter === 'review'
+    ? pastTasks.filter((t) => t.status === 'COMPLETED' && !t.has_review)
+    : filter != null
+      ? []
+      : pastTasks;
+
   if (loading) return <LoadingScreen label="Loading your tasks..." />;
 
   if (loadError && tasks.length === 0) {
@@ -269,6 +288,8 @@ export default function MyTasksScreen({ navigation }: Props) {
               inProgressCount={0}
               pendingBidCount={0}
               reviewCount={0}
+              activeFilter={filter}
+              onPillPress={(f) => setFilter(filter === f ? null : f)}
             />
             <View style={styles.emptyPanel}>
               <EmptyState
@@ -307,6 +328,8 @@ export default function MyTasksScreen({ navigation }: Props) {
               inProgressCount={0}
               pendingBidCount={0}
               reviewCount={0}
+              activeFilter={filter}
+              onPillPress={(f) => setFilter(filter === f ? null : f)}
             />
             <View style={styles.emptyPanel}>
               <EmptyState
@@ -344,17 +367,19 @@ export default function MyTasksScreen({ navigation }: Props) {
             inProgressCount={inProgressCount}
             pendingBidCount={pendingBidCount}
             reviewCount={reviewCount}
+            activeFilter={filter}
+            onPillPress={(f) => setFilter(filter === f ? null : f)}
           />
           {loadError && <ErrorBanner message={loadError} onRetry={retryTasks} />}
 
           <View style={styles.section}>
             <SectionHeader
               label="Active tasks"
-              count={activeTasks.length}
+              count={filteredActiveTasks.length}
               helper="Open requests and jobs currently assigned to a Fixer."
             />
-            {activeTasks.length > 0 ? (
-              activeTasks.map((task) => (
+            {filteredActiveTasks.length > 0 ? (
+              filteredActiveTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   title={task.title}
@@ -388,12 +413,12 @@ export default function MyTasksScreen({ navigation }: Props) {
           <View style={styles.section}>
             <SectionHeader
               label="Past tasks"
-              count={pastTasks.length}
+              count={filteredPastTasks.length}
               helper="Completed and canceled work, including review and cleanup actions."
               muted
             />
-            {pastTasks.length > 0 ? (
-              pastTasks.map((task) => {
+            {filteredPastTasks.length > 0 ? (
+              filteredPastTasks.map((task) => {
                 const canReview = task.status === 'COMPLETED' && !task.has_review;
                 return (
                   <TaskCard
@@ -435,12 +460,16 @@ function WorkspaceHeader({
   inProgressCount,
   pendingBidCount,
   reviewCount,
+  activeFilter,
+  onPillPress,
 }: {
   wide: boolean;
   openTasksCount: number;
   inProgressCount: number;
   pendingBidCount: number;
   reviewCount: number;
+  activeFilter: 'open' | 'in_progress' | 'bids' | 'review' | null;
+  onPillPress: (filter: 'open' | 'in_progress' | 'bids' | 'review') => void;
 }) {
   return (
     <LinearGradient
@@ -467,6 +496,8 @@ function WorkspaceHeader({
           value={openTasksCount}
           color={brandColors.success}
           wide={wide}
+          active={activeFilter === 'open'}
+          onPress={() => onPillPress('open')}
         />
         <SummaryPill
           icon="progress-wrench"
@@ -474,6 +505,8 @@ function WorkspaceHeader({
           value={inProgressCount}
           color={brandColors.secondary}
           wide={wide}
+          active={activeFilter === 'in_progress'}
+          onPress={() => onPillPress('in_progress')}
         />
         <SummaryPill
           icon="hand-extended-outline"
@@ -481,6 +514,8 @@ function WorkspaceHeader({
           value={pendingBidCount}
           color={brandColors.secondaryLight}
           wide={wide}
+          active={activeFilter === 'bids'}
+          onPress={() => onPillPress('bids')}
         />
         <SummaryPill
           icon="star-outline"
@@ -488,6 +523,8 @@ function WorkspaceHeader({
           value={reviewCount}
           color={brandColors.warning}
           wide={wide}
+          active={activeFilter === 'review'}
+          onPress={() => onPillPress('review')}
         />
       </View>
     </LinearGradient>
@@ -500,15 +537,22 @@ function SummaryPill({
   value,
   color,
   wide,
+  active,
+  onPress,
 }: {
   icon: string;
   label: string;
   value: number;
   color: string;
   wide: boolean;
+  active?: boolean;
+  onPress?: () => void;
 }) {
   return (
-    <View style={[styles.summaryPill, wide && styles.summaryPillWide]}>
+    <Pressable
+      onPress={onPress}
+      style={[styles.summaryPill, wide && styles.summaryPillWide, active && { borderColor: color, borderWidth: 2 }]}
+    >
       <View style={styles.summaryIcon}>
         <MaterialCommunityIcons name={icon as never} size={16} color={color} />
       </View>
@@ -516,7 +560,7 @@ function SummaryPill({
         <Text style={styles.summaryValue}>{value}</Text>
         <Text style={styles.summaryLabel}>{label}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

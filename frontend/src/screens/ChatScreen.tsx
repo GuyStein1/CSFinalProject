@@ -69,10 +69,20 @@ export default function ChatScreen({ route }: { route: any }) {
 
   const isReadOnly = taskStatus === 'COMPLETED';
 
-  // Set header dynamically — avatar tap navigates to public profile
+  // Set header dynamically — title tap opens task, avatar tap navigates to public profile
   useEffect(() => {
     navigation.setOptions({
-      title: taskTitle || 'Chat',
+      headerTitle: () => (
+        <Pressable
+          onPress={() => {
+            (navigation as unknown as { navigate: (s: string, p: object) => void }).navigate('TaskDetails', { taskId });
+          }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '600', color: brandColors.textPrimary }} numberOfLines={1}>
+            {taskTitle || 'Chat'}
+          </Text>
+        </Pressable>
+      ),
       headerRight: () => (
         <Pressable
           onPress={() => {
@@ -93,7 +103,7 @@ export default function ChatScreen({ route }: { route: any }) {
         </Pressable>
       ),
     });
-  }, [navigation, taskTitle, recipientAvatar, recipientId]);
+  }, [navigation, taskId, taskTitle, recipientAvatar, recipientId]);
 
   // Fetch current user's DB ID only when not provided via nav params (used for optimistic bubble recipient_id)
   useEffect(() => {
