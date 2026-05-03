@@ -451,9 +451,13 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         );
       }
     } else if (task.status === 'IN_PROGRESS' && newStatus === 'COMPLETED') {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: { status: 'COMPLETED', completed_at: new Date() },
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await tx.task.update({
+          where: { id: task.id },
+          data: { status: 'COMPLETED', completed_at: new Date() },
+        });
+        // Delete chat messages once the task is completed
+        await tx.message.deleteMany({ where: { task_id: task.id } });
       });
 
       if (task.assigned_fixer_id) {

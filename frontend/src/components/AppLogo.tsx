@@ -43,7 +43,7 @@ export default function AppLogo({
   const wordmark = (
     <View style={[styles.textStack, !compact && styles.textStackCentered]}>
       <Text style={[compact ? styles.wordmarkCompact : styles.wordmark, { color: wordmarkColor }]}>
-        FixIt
+        Fix<Text style={{ color: brandColors.secondary }}>i</Text>t
       </Text>
       {showTagline && (
         <Text style={[compact ? styles.taglineCompact : styles.tagline, { color: taglineColor }]}>

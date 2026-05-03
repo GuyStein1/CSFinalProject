@@ -71,6 +71,7 @@ export default function RequesterTabs() {
       <Tab.Screen
         name="Messages"
         component={ConversationListScreen}
+        initialParams={{ mode: 'requester' }}
         options={{
           tabBarLabel: 'Messages',
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,

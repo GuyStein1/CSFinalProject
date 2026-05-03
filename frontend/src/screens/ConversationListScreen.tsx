@@ -33,22 +33,24 @@ function formatTime(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function ConversationListScreen() {
+export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const mode = route?.params?.mode;
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get('/api/conversations');
+      const params = mode ? { mode } : {};
+      const res = await api.get('/api/conversations', { params });
       setConversations(res.data.conversations ?? []);
     } catch {
       // non-fatal
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useFocusEffect(useCallback(() => {
     setLoading(true);

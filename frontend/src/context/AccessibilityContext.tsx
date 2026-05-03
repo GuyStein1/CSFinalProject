@@ -67,7 +67,6 @@ function injectWebStyles() {
     html.a11y-high-contrast #root * {
       color: #fff !important;
       border-color: #555 !important;
-      background-color: transparent !important;
     }
     html.a11y-high-contrast #root [role="banner"],
     html.a11y-high-contrast #root [role="navigation"],

@@ -269,7 +269,6 @@ export default function MyTasksScreen({ navigation }: Props) {
               inProgressCount={0}
               pendingBidCount={0}
               reviewCount={0}
-              onCreate={() => navigation.navigate('CreateTask')}
             />
             <View style={styles.emptyPanel}>
               <EmptyState
@@ -308,7 +307,6 @@ export default function MyTasksScreen({ navigation }: Props) {
               inProgressCount={0}
               pendingBidCount={0}
               reviewCount={0}
-              onCreate={() => navigation.navigate('CreateTask')}
             />
             <View style={styles.emptyPanel}>
               <EmptyState
@@ -346,7 +344,6 @@ export default function MyTasksScreen({ navigation }: Props) {
             inProgressCount={inProgressCount}
             pendingBidCount={pendingBidCount}
             reviewCount={reviewCount}
-            onCreate={() => navigation.navigate('CreateTask')}
           />
           {loadError && <ErrorBanner message={loadError} onRetry={retryTasks} />}
 
@@ -438,14 +435,12 @@ function WorkspaceHeader({
   inProgressCount,
   pendingBidCount,
   reviewCount,
-  onCreate,
 }: {
   wide: boolean;
   openTasksCount: number;
   inProgressCount: number;
   pendingBidCount: number;
   reviewCount: number;
-  onCreate: () => void;
 }) {
   return (
     <LinearGradient
@@ -463,15 +458,6 @@ function WorkspaceHeader({
             of the way.
           </Text>
         </View>
-        <FButton
-          onPress={onCreate}
-          variant="secondary"
-          size="md"
-          icon="plus"
-          style={!wide ? styles.headerButtonFull : undefined}
-        >
-          Post Task
-        </FButton>
       </View>
 
       <View style={[styles.summaryRail, wide && styles.summaryRailWide]}>
@@ -648,9 +634,6 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     color: brandColors.textOnDarkMuted,
     maxWidth: 560,
-  },
-  headerButtonFull: {
-    width: '100%',
   },
   summaryRail: {
     marginTop: spacing.xl,

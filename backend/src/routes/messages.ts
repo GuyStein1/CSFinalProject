@@ -49,13 +49,24 @@ router.get('/tasks/:id/messages', async (req: Request, res: Response, next: Next
 });
 
 // GET /api/conversations — conversation summaries for the authenticated user (sorted by most recent)
+// Optional query param: ?mode=requester|fixer — filters by role in the task
 router.get('/conversations', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    const mode = req.query.mode as string | undefined;
+
+    // Build role filter based on mode
+    const roleFilter =
+      mode === 'requester'
+        ? { requester_id: userId }
+        : mode === 'fixer'
+          ? { NOT: { requester_id: userId } }
+          : {};
 
     // Find all tasks where the user has sent or received messages
     const tasks = await prisma.task.findMany({
       where: {
+        ...roleFilter,
         messages: {
           some: {
             OR: [{ sender_id: userId }, { recipient_id: userId }],
