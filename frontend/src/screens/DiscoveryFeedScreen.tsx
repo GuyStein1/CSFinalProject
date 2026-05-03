@@ -58,7 +58,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
-  const [bidFilter, setBidFilter] = useState<'has_bid' | null>(null);
+  const [bidFilter, setBidFilter] = useState<'has_bid' | 'no_bid' | null>(null);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -105,9 +105,11 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     if (selectedCategories.length > 1) {
       filtered = filtered.filter((t) => selectedCategories.includes(t.category));
     }
-    // Apply bid filter from stats pill
+    // Apply bid filter from stats pills
     if (bidFilter === 'has_bid') {
       filtered = filtered.filter((t) => bidTaskIds.has(t.id));
+    } else if (bidFilter === 'no_bid') {
+      filtered = filtered.filter((t) => !bidTaskIds.has(t.id));
     }
     return filtered;
   }, [rawTasks, selectedCategories, currentUserId, bidFilter, bidTaskIds]);
@@ -455,6 +457,13 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => !currentUserId || t.requesterId !== currentUserId).length}</Text>
             <Text style={styles.workspaceStatLabel}>Open jobs</Text>
           </View>
+          <Pressable
+            style={[styles.workspaceStat, bidFilter === 'no_bid' && styles.workspaceStatActive]}
+            onPress={() => setBidFilter(bidFilter === 'no_bid' ? null : 'no_bid')}
+          >
+            <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => (!currentUserId || t.requesterId !== currentUserId) && !bidTaskIds.has(t.id)).length}</Text>
+            <Text style={styles.workspaceStatLabel}>New</Text>
+          </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'has_bid' && styles.workspaceStatActive]}
             onPress={() => setBidFilter(bidFilter === 'has_bid' ? null : 'has_bid')}
