@@ -58,6 +58,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
+  const [bidFilter, setBidFilter] = useState<'has_bid' | 'no_bid' | null>(null);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Fetch current user ID once on mount to filter out own tasks
@@ -103,8 +105,14 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     if (selectedCategories.length > 1) {
       filtered = filtered.filter((t) => selectedCategories.includes(t.category));
     }
+    // Apply bid filter from stats pills
+    if (bidFilter === 'has_bid') {
+      filtered = filtered.filter((t) => bidTaskIds.has(t.id));
+    } else if (bidFilter === 'no_bid') {
+      filtered = filtered.filter((t) => !bidTaskIds.has(t.id));
+    }
     return filtered;
-  }, [rawTasks, selectedCategories, currentUserId]);
+  }, [rawTasks, selectedCategories, currentUserId, bidFilter, bidTaskIds]);
 
   const selectedTask = useMemo(
     () => tasks.find((task) => task.id === selectedTaskId) ?? null,
@@ -445,18 +453,27 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         </View>
 
         <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
-          <View style={styles.workspaceStat}>
+          <Pressable
+            style={[styles.workspaceStat, bidFilter === 'no_bid' && styles.workspaceStatActive]}
+            onPress={() => setBidFilter(bidFilter === 'no_bid' ? null : 'no_bid')}
+          >
             <Text style={styles.workspaceStatValue}>{loading ? '...' : tasks.length}</Text>
             <Text style={styles.workspaceStatLabel}>Open jobs</Text>
-          </View>
-          <View style={styles.workspaceStat}>
+          </Pressable>
+          <Pressable
+            style={[styles.workspaceStat, bidFilter === 'has_bid' && styles.workspaceStatActive]}
+            onPress={() => setBidFilter(bidFilter === 'has_bid' ? null : 'has_bid')}
+          >
             <Text style={styles.workspaceStatValue}>{bidTaskIds.size}</Text>
             <Text style={styles.workspaceStatLabel}>Active bids</Text>
-          </View>
-          <View style={styles.workspaceStat}>
+          </Pressable>
+          <Pressable
+            style={[styles.workspaceStat, showFilterPanel && styles.workspaceStatActive]}
+            onPress={() => setShowFilterPanel(!showFilterPanel)}
+          >
             <Text style={styles.workspaceStatValue}>{radius} km</Text>
             <Text style={styles.workspaceStatLabel}>Range</Text>
-          </View>
+          </Pressable>
         </View>
       </View>
 
@@ -473,6 +490,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         onPriceChange={(min, max) => { setPriceMin(min); setPriceMax(max); }}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={handleClearFilters}
+        forceExpanded={showFilterPanel}
       />
 
       {/* Work-area search uses Google Places on web; native keeps GPS/default centers only. */}
@@ -752,6 +770,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,252,246,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255,252,246,0.14)',
+  },
+  workspaceStatActive: {
+    borderColor: brandColors.secondary,
+    borderWidth: 2,
+    backgroundColor: 'rgba(241,181,69,0.12)',
   },
   workspaceStatValue: {
     fontSize: 16,
