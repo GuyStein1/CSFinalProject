@@ -509,6 +509,11 @@ export default function LandingScreen({
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [subPage, setSubPage] = useState<string | null>(null);
+  const [expandedJob, setExpandedJob] = useState<number | null>(null);
+  const [applyJob, setApplyJob] = useState<string | null>(null);
+  const [applyEmail, setApplyEmail] = useState('');
+  const [applySent, setApplySent] = useState(false);
   const closeMenus = () => {
     setMobileMenuOpen(false);
   };
@@ -567,6 +572,411 @@ export default function LandingScreen({
 
   const logoSrc = assetSrc(imgLogo);
   const workerSrc = assetSrc(imgWorker);
+
+  if (subPage) {
+    const spHero = (icon: string, title: React.ReactNode, subtitle: string, gradient: string) => (
+      <div style={{ position: 'relative', overflow: 'hidden', background: gradient, padding: 'clamp(60px,10vw,120px) 24px clamp(48px,8vw,80px)', textAlign: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(28,60,86,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(28,60,86,0.04) 1px, transparent 1px)', backgroundSize: '48px 48px', WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)' }} />
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 700, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 20, background: 'rgba(255,255,255,0.85)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', marginBottom: 24, animation: 'rise 700ms cubic-bezier(0.16,1,0.3,1) forwards', opacity: 0 }}>
+            <LandingIcon name={icon} size={36} />
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, color: 'var(--primary)', margin: '0 0 16px', lineHeight: 1.1, opacity: 0, animation: 'rise 800ms cubic-bezier(0.16,1,0.3,1) 150ms forwards' }}>{title}</h1>
+          <p style={{ fontSize: 'clamp(16px,2vw,19px)', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 560, margin: '0 auto', opacity: 0, animation: 'rise 800ms cubic-bezier(0.16,1,0.3,1) 300ms forwards' }}>{subtitle}</p>
+        </div>
+      </div>
+    );
+    const spSection = (children: React.ReactNode, bg?: string) => (
+      <div style={{ background: bg || '#fff', padding: 'clamp(40px,6vw,80px) 24px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>{children}</div>
+      </div>
+    );
+    const spCard = (children: React.ReactNode, delay?: number) => (
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 'clamp(20px,3vw,32px)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 300ms, box-shadow 300ms', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${delay || 0}ms forwards` }}>
+        {children}
+      </div>
+    );
+    return (
+      <div className="fi-landing" style={{ overflowX: 'hidden' }}>
+        {/* Back button */}
+        <div style={{ position: 'fixed', top: 20, left: 20, zIndex: 100 }}>
+          <button
+            type="button"
+            onClick={() => { setSubPage(null); setExpandedJob(null); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--primary)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', transition: 'transform 200ms, box-shadow 200ms' }}
+          >
+            <LandingIcon name="arrow-left" size={18} /> Back to home
+          </button>
+        </div>
+
+        {/* ── ABOUT ─────────────────────────── */}
+        {subPage === 'about' && (
+          <>
+            {spHero('information-outline', <>About Fix<span style={{ color: '#D49A2A' }}>I</span>t</>, 'A neighborhood task marketplace connecting homeowners with skilled local professionals.', 'linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 50%, #fdf6e3 100%)')}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E4F2FB', color: '#2E86C1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="lightbulb-outline" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Our Story</h3>
+                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Founded in 2026 in Tel Aviv by three CS students who saw a gap between people who need help around the house and skilled workers looking for flexible jobs nearby.</p>
+                </>, 100)}
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FFF3E0', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="target" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Our Mission</h3>
+                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Make home maintenance accessible, transparent, and fair for everyone — whether you are a homeowner posting your first task or a fixer building your reputation.</p>
+                </>, 200)}
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E0F5F3', color: '#0D7C6E', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="account-group-outline" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>The Team</h3>
+                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>A team of three developers passionate about great products and real-world impact. We build, test, and ship together — every feature, every sprint.</p>
+                </>, 300)}
+              </div>
+            , '#f8f9fb')}
+            {spSection(
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>By the numbers</div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>Growing every day.</h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24, textAlign: 'center' }}>
+                  {[{ num: '2,500+', label: 'Tasks posted' }, { num: '1,200+', label: 'Active fixers' }, { num: '15+', label: 'Service categories' }, { num: '4.8', label: 'Average rating' }].map((s, i) => (
+                    <div key={i} style={{ padding: 24, opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 100}ms forwards` }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,48px)', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>{s.num}</div>
+                      <div style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 8 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── CAREERS ───────────────────────── */}
+        {subPage === 'careers' && (
+          <>
+            {spHero('briefcase-outline', 'Careers', 'Join a small, focused team building the future of local home services. We care about great products and real-world impact.', 'linear-gradient(135deg, #f0f4f8 0%, #e0ecf8 50%, #f5f0ff 100%)')}
+            {spSection(
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>Open Positions</div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>Find your next role.</h2>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { title: 'Full-Stack Developer', location: 'Tel Aviv', type: 'Full-time', icon: 'code-braces', color: '#2E86C1', bg: '#E4F2FB', desc: 'Build and maintain our React Native mobile app and Node.js backend.', details: 'You will work across the entire stack — from crafting responsive UI components in React Native to designing RESTful APIs in Express. You\'ll collaborate closely with product and design to ship features end-to-end.\n\nRequirements: 2+ years TypeScript, React/React Native experience, relational databases (PostgreSQL preferred), fast-paced startup comfort.' },
+                    { title: 'Backend Engineer', location: 'Tel Aviv', type: 'Full-time', icon: 'server-network', color: '#6A1B9A', bg: '#F3E5F5', desc: 'Design scalable APIs, optimize geospatial queries with PostGIS, and build real-time features.', details: 'Own the server-side architecture — robust APIs, PostGIS spatial queries, real-time messaging with Socket.io, authentication, and deployment pipelines.\n\nRequirements: 3+ years backend, strong SQL and Node.js, WebSockets experience, passion for performance.' },
+                    { title: 'Mobile Developer', location: 'Remote', type: 'Full-time', icon: 'cellphone', color: '#00796B', bg: '#E0F2F1', desc: 'Craft pixel-perfect cross-platform experiences for iOS and Android using Expo.', details: 'Build polished, performant mobile experiences. Smooth animations, offline-first patterns, pushing Expo and React Native to the limit.\n\nRequirements: 2+ years React Native, published apps, Expo experience, eye for UI/UX detail.' },
+                    { title: 'Product Designer', location: 'Tel Aviv', type: 'Full-time', icon: 'palette-outline', color: '#E65100', bg: '#FFF3E0', desc: 'Own the design system, create intuitive flows, and champion accessibility.', details: 'Lead visual and interaction design across mobile and web. User research to hi-fi prototypes. Accessibility and RTL support are first-class.\n\nRequirements: 3+ years product design, Figma, mobile apps, WCAG guidelines, bonus for RTL experience.' },
+                    { title: 'QA Engineer', location: 'Remote', type: 'Part-time', icon: 'test-tube', color: '#2E7D32', bg: '#E8F5E9', desc: 'Write automated tests, set up CI pipelines, and maintain our quality bar.', details: 'Build and maintain testing infrastructure — unit, integration, and E2E. Establish quality gates in CI/CD.\n\nRequirements: 2+ years QA, Jest/testing-library, GitHub Actions, systematic test coverage approach.' },
+                    { title: 'DevOps Engineer', location: 'Tel Aviv', type: 'Full-time', icon: 'cloud-outline', color: '#1565C0', bg: '#E3F2FD', desc: 'Manage cloud infrastructure, CI/CD, monitoring, and deployment pipelines.', details: 'Ensure reliable, fast deployments. Monitoring, alerting, build optimization, database migrations.\n\nRequirements: 2+ years DevOps/SRE, Docker, CI/CD, cloud platforms (Render/Vercel/AWS), PostgreSQL.' },
+                  ].map((job, i) => (
+                    <div key={i} style={{ background: '#fff', border: expandedJob === i ? '2px solid var(--primary)' : '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', transition: 'all 300ms cubic-bezier(0.16,1,0.3,1)', boxShadow: expandedJob === i ? '0 8px 32px rgba(15,36,56,0.10)' : '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
+                      <button onClick={() => setExpandedJob(expandedJob === i ? null : i)} style={{ width: '100%', padding: '24px 28px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 20, alignItems: 'center' }}>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: job.bg, color: job.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'transform 350ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+                          <LandingIcon name={job.icon} size={26} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{job.title}</h4>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <span style={{ fontSize: 12, background: job.bg, color: job.color, padding: '4px 12px', borderRadius: 20, fontWeight: 700 }}>{job.type}</span>
+                              <span style={{ fontSize: 12, background: '#f3f4f6', color: '#6b7280', padding: '4px 12px', borderRadius: 20, fontWeight: 600 }}>{job.location}</span>
+                              <span style={{ fontSize: 16, color: '#9ca3af', transition: 'transform 300ms', display: 'inline-block', transform: expandedJob === i ? 'rotate(180deg)' : 'rotate(0)' }}>&#9660;</span>
+                            </div>
+                          </div>
+                          <p style={{ fontSize: 14, lineHeight: 1.5, color: '#6b7280', margin: '6px 0 0' }}>{job.desc}</p>
+                        </div>
+                      </button>
+                      {expandedJob === i && (
+                        <div style={{ padding: '0 28px 28px 100px', borderTop: '1px solid #f3f4f6', animation: 'rise 400ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
+                          {job.details.split('\n\n').map((para, pi) => (
+                            <p key={pi} style={{ fontSize: 15, lineHeight: 1.7, color: '#4b5563', margin: pi === 0 ? '20px 0 0' : '14px 0 0' }}>{para}</p>
+                          ))}
+                          <button
+                            onClick={() => { setApplyJob(job.title); setApplyEmail(''); setApplySent(false); }}
+                            style={{ marginTop: 24, padding: '12px 32px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', transition: 'transform 200ms, box-shadow 200ms', boxShadow: '0 4px 16px rgba(15,36,56,0.2)' }}
+                          >
+                            Apply Now
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 40, padding: '32px', background: '#f8f9fb', borderRadius: 16, opacity: 0, animation: 'rise 600ms cubic-bezier(0.16,1,0.3,1) 700ms forwards' }}>
+                  <p style={{ fontSize: 16, color: 'var(--text-secondary)', margin: 0 }}>Don&#39;t see a perfect fit? Send your CV to <a href="mailto:careers@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 700 }}>careers@fixit-app.com</a></p>
+                </div>
+              </>
+            )}
+
+            {/* Apply Modal */}
+            {applyJob && (
+              <div onClick={() => setApplyJob(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, animation: 'rise 300ms forwards' }}>
+                <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '36px 40px', maxWidth: 460, width: '90%', boxShadow: '0 24px 80px rgba(0,0,0,0.18)', animation: 'rise 400ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
+                  {!applySent ? (
+                    <>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: '#E4F2FB', color: '#2E86C1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><LandingIcon name="email-outline" size={28} /></div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--primary)', margin: '0 0 6px' }}>Apply for {applyJob}</h3>
+                      <p style={{ fontSize: 15, color: '#6b7280', margin: '0 0 24px', lineHeight: 1.5 }}>Enter your email and we&#39;ll get back to you soon.</p>
+                      <input
+                        type="email"
+                        placeholder="your@email.com"
+                        value={applyEmail}
+                        onChange={(e) => setApplyEmail((e.target as HTMLInputElement).value)}
+                        style={{ width: '100%', padding: '14px 18px', border: '2px solid #e5e7eb', borderRadius: 12, fontSize: 16, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color 200ms' }}
+                      />
+                      <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
+                        <button onClick={() => setApplyJob(null)} style={{ padding: '12px 22px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                        <button
+                          onClick={() => { if (applyEmail.includes('@')) setApplySent(true); }}
+                          style={{ padding: '12px 28px', background: applyEmail.includes('@') ? 'var(--primary)' : '#d1d5db', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: applyEmail.includes('@') ? 'pointer' : 'default', transition: 'background 200ms', boxShadow: applyEmail.includes('@') ? '0 4px 16px rgba(15,36,56,0.2)' : 'none' }}
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8F5E9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, animation: 'rise 500ms cubic-bezier(0.16,1,0.3,1) forwards' }}><LandingIcon name="check-circle-outline" size={36} /></div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--primary)', margin: '0 0 8px' }}>Application Sent!</h3>
+                      <p style={{ fontSize: 16, color: '#6b7280', margin: '0 0 24px', lineHeight: 1.5 }}>We&#39;ll reach out to <strong>{applyEmail}</strong> shortly.</p>
+                      <button onClick={() => setApplyJob(null)} style={{ padding: '12px 32px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(15,36,56,0.2)' }}>Done</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── PRESS ─────────────────────────── */}
+        {subPage === 'press' && (
+          <>
+            {spHero('newspaper-variant-outline', 'Press', 'Media resources, press releases, and everything you need to write about FixIt.', 'linear-gradient(135deg, #fdf6e3 0%, #f0f4f8 50%, #e8f0fe 100%)')}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FFF3E0', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="file-document-outline" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Press Kit</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Download our logo pack, brand guidelines, product screenshots, and founder bios — everything you need for your story.</p>
+                </>, 100)}
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E3F2FD', color: '#1565C0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="microphone-outline" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Interviews</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Our founders are available for interviews about the local services market, startup life in Israel, and the future of gig work.</p>
+                </>, 200)}
+                {spCard(<>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="email-outline" size={26} /></div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Get in Touch</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>For media inquiries, reach out to <a href="mailto:press@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 600 }}>press@fixit-app.com</a> and we&#39;ll respond within 24 hours.</p>
+                </>, 300)}
+              </div>
+            , '#f8f9fb')}
+            {spSection(
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>In the News</div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>What people are saying.</h2>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { source: 'Geektime', date: 'April 2026', headline: '"FixIt is rethinking how Israelis find local help — and it\'s working."' },
+                    { source: 'Calcalist', date: 'March 2026', headline: '"Three students built a marketplace that puts trust and transparency first."' },
+                    { source: 'The Marker', date: 'February 2026', headline: '"The Waze of home repairs? FixIt connects fixers and homeowners in real-time."' },
+                  ].map((pr, i) => (
+                    <div key={i} style={{ padding: '24px 28px', background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 120}ms forwards` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>{pr.source}</span>
+                        <span style={{ fontSize: 13, color: '#9ca3af' }}>{pr.date}</span>
+                      </div>
+                      <p style={{ fontSize: 16, lineHeight: 1.5, color: '#374151', margin: 0, fontStyle: 'italic' }}>{pr.headline}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── CONTACT ───────────────────────── */}
+        {subPage === 'contact' && (
+          <>
+            {spHero('email-outline', 'Contact Us', 'Have a question, suggestion, or just want to say hi? We\'d love to hear from you.', 'linear-gradient(135deg, #e8f0fe 0%, #f0f4f8 50%, #e0f5f3 100%)')}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+                {[
+                  { icon: 'email-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'General Inquiries', detail: 'hello@fixit-app.com', href: 'mailto:hello@fixit-app.com', sub: 'Questions about FixIt, partnerships, or anything else.' },
+                  { icon: 'wrench-outline', color: '#E65100', bg: '#FFF3E0', title: 'Support', detail: 'support@fixit-app.com', href: 'mailto:support@fixit-app.com', sub: 'Technical issues, account help, or bug reports.' },
+                  { icon: 'map-marker-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Office', detail: 'Tel Aviv, Israel', href: '', sub: 'We\'re based in the heart of Tel Aviv\'s tech scene.' },
+                ].map((c, i) => (
+                  <div key={i} style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 120}ms forwards` }}>
+                    {spCard(<>
+                      <div style={{ width: 52, height: 52, borderRadius: 14, background: c.bg, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name={c.icon} size={28} /></div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 4px' }}>{c.title}</h3>
+                      {c.href ? <a href={c.href} style={{ fontSize: 16, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>{c.detail}</a> : <span style={{ fontSize: 16, color: 'var(--primary)', fontWeight: 600 }}>{c.detail}</span>}
+                      <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-secondary)', margin: '10px 0 0' }}>{c.sub}</p>
+                    </>)}
+                  </div>
+                ))}
+              </div>
+            , '#f8f9fb')}
+          </>
+        )}
+
+        {/* ── PRICING ───────────────────────── */}
+        {subPage === 'pricing' && (
+          <>
+            {spHero('tag-outline', <>Pricing — it&#39;s <span style={{ color: '#D49A2A' }}>free</span>.</>, 'No commissions, no subscriptions, no hidden fees. Just connect and get the job done.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #fdf6e3 100%)')}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 28 }}>
+                {[
+                  { plan: 'Requester', price: '0', desc: 'For homeowners who need things fixed.', features: ['Post unlimited tasks', 'Receive bids from local fixers', 'In-app chat with fixers', 'Rate and review fixers', 'Location privacy until bid accepted'] },
+                  { plan: 'Fixer', price: '0', desc: 'For skilled professionals looking for jobs.', features: ['Browse jobs on the map', 'Place unlimited bids', 'Build your portfolio & reputation', 'In-app chat with requesters', 'Push notifications for new jobs'] },
+                ].map((p, i) => (
+                  <div key={i} style={{ background: i === 0 ? '#fff' : 'var(--primary)', border: i === 0 ? '2px solid #e5e7eb' : '2px solid var(--primary)', borderRadius: 20, padding: 'clamp(28px,4vw,40px)', boxShadow: '0 8px 32px rgba(0,0,0,0.06)', opacity: 0, animation: `rise 700ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms forwards` }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: i === 0 ? '#D49A2A' : 'rgba(255,255,255,0.7)', marginBottom: 8 }}>{p.plan}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 800, color: i === 0 ? 'var(--primary)' : '#fff', lineHeight: 1, marginBottom: 4 }}>&#8362;{p.price}</div>
+                    <div style={{ fontSize: 15, color: i === 0 ? '#9ca3af' : 'rgba(255,255,255,0.6)', marginBottom: 24 }}>forever</div>
+                    <p style={{ fontSize: 15, lineHeight: 1.6, color: i === 0 ? 'var(--text-secondary)' : 'rgba(255,255,255,0.85)', marginBottom: 24 }}>{p.desc}</p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {p.features.map((f, fi) => (
+                        <li key={fi} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: i === 0 ? '#374151' : 'rgba(255,255,255,0.9)' }}>
+                          <span style={{ width: 22, height: 22, borderRadius: '50%', background: i === 0 ? '#E8F5E9' : 'rgba(255,255,255,0.15)', color: i === 0 ? '#2E7D32' : '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>&#10003;</span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            , '#f8f9fb')}
+          </>
+        )}
+
+        {/* ── FAQ ────────────────────────────── */}
+        {subPage === 'faq' && (
+          <>
+            {spHero('frequently-asked-questions', 'FAQ', 'Everything you need to know about using FixIt.', 'linear-gradient(135deg, #f5f0ff 0%, #f0f4f8 50%, #e8f0fe 100%)')}
+            {spSection(
+              <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { q: 'How do I post a task?', a: 'Sign in, choose a category, describe what you need, set a budget and location, and submit. Fixers in your area will start bidding within minutes.', icon: 'plus-circle-outline' },
+                  { q: 'How do I become a Fixer?', a: 'Every account can be both a requester and a fixer. Switch to Fixer mode using the toggle in the navigation bar and start browsing jobs near you.', icon: 'swap-horizontal' },
+                  { q: 'Is FixIt free?', a: 'Yes! There are no fees for posting tasks or placing bids. Payment is handled directly between you and the fixer via Bit or Paybox.', icon: 'cash-remove' },
+                  { q: 'How does payment work?', a: 'Once the job is done, the requester pays the fixer directly via Bit or Paybox. FixIt does not process payments — we just connect people.', icon: 'credit-card-outline' },
+                  { q: 'How do I know a fixer is reliable?', a: 'Every fixer has a public profile with ratings, reviews from past clients, and a portfolio of their work. Review these before accepting a bid.', icon: 'shield-check-outline' },
+                  { q: 'Can I cancel a task?', a: 'Yes, you can cancel an open task at any time. If a fixer is already assigned, contact them via chat first to coordinate.', icon: 'close-circle-outline' },
+                  { q: 'What areas does FixIt cover?', a: 'FixIt works across Israel. Jobs are shown based on proximity, so fixers see tasks near their current location.', icon: 'map-outline' },
+                ].map((item, i) => (
+                  <div key={i} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 70}ms forwards` }}>
+                    <button onClick={() => setExpandedJob(expandedJob === i ? null : i)} style={{ width: '100%', padding: '20px 24px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f0f4f8', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={item.icon} size={22} /></div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', margin: 0, flex: 1 }}>{item.q}</h3>
+                      <span style={{ fontSize: 18, color: '#9ca3af', transition: 'transform 300ms', display: 'inline-block', transform: expandedJob === i ? 'rotate(180deg)' : 'rotate(0)', flexShrink: 0 }}>&#9660;</span>
+                    </button>
+                    {expandedJob === i && (
+                      <div style={{ padding: '0 24px 20px 80px', animation: 'rise 300ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
+                        <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{item.a}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            , '#f8f9fb')}
+          </>
+        )}
+
+        {/* ── TRUST & SAFETY ────────────────── */}
+        {subPage === 'trust' && (
+          <>
+            {spHero('shield-check-outline', 'Trust & Safety', 'Your safety is our priority. Here\'s how FixIt keeps the community trustworthy.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #e8f0fe 100%)')}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+                {[
+                  { icon: 'account-check-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'Verified Accounts', desc: 'Every user signs in with a verified email address through Firebase Authentication. No anonymous profiles.' },
+                  { icon: 'star-outline', color: '#E65100', bg: '#FFF3E0', title: 'Reviews & Ratings', desc: 'After every completed task, both sides can leave honest reviews. Ratings are public and build real reputation.' },
+                  { icon: 'chat-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'In-App Chat', desc: 'All communication stays on the platform for transparency. Messages are encrypted and auto-deleted on task completion.' },
+                  { icon: 'map-marker-check-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Location Privacy', desc: 'Your exact address is only shared after you accept a bid. Before that, only a general area is shown on the map.' },
+                  { icon: 'flag-outline', color: '#C62828', bg: '#FFEBEE', title: 'Report System', desc: 'Flag inappropriate behavior at any time. Our team reviews every report and takes action within 24 hours.' },
+                  { icon: 'lock-outline', color: '#1565C0', bg: '#E3F2FD', title: 'Secure Payments', desc: 'Payments go directly between parties via Bit or Paybox. FixIt never stores payment information.' },
+                ].map((item, i) => (
+                  <div key={i} style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
+                    {spCard(<>
+                      <div style={{ width: 52, height: 52, borderRadius: 14, background: item.bg, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, transition: 'transform 350ms cubic-bezier(0.34,1.56,0.64,1)' }}><LandingIcon name={item.icon} size={28} /></div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 8px' }}>{item.title}</h3>
+                      <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{item.desc}</p>
+                    </>)}
+                  </div>
+                ))}
+              </div>
+            , '#f8f9fb')}
+          </>
+        )}
+
+        {/* ── PRIVACY ───────────────────────── */}
+        {subPage === 'privacy' && (
+          <>
+            {spHero('eye-off-outline', 'Privacy Policy', 'We take your privacy seriously. Here\'s exactly what we collect and why.', 'linear-gradient(135deg, #f0f4f8 0%, #e3f2fd 50%, #f5f0ff 100%)')}
+            {spSection(
+              <>
+                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>Last updated: May 2026</div>
+                <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
+                  {[
+                    { icon: 'database-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'What We Collect', text: 'FixIt collects only the information necessary to connect requesters with fixers: your name, email, profile photo, and location when you post or browse tasks.' },
+                    { icon: 'hand-back-right-off-outline', color: '#C62828', bg: '#FFEBEE', title: 'What We Don\'t Do', text: 'We do not sell your personal data to third parties. Your exact address is never shown publicly — only a general area is displayed until a bid is accepted.' },
+                    { icon: 'chat-remove-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'Chat & Messages', text: 'Chat messages are stored securely and deleted automatically when a task is completed. We do not read, analyze, or share your private conversations.' },
+                    { icon: 'bell-outline', color: '#E65100', bg: '#FFF3E0', title: 'Push Notifications', text: 'Push notification tokens are used solely for delivering app notifications. We never send marketing push notifications without your explicit consent.' },
+                    { icon: 'email-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Questions?', text: 'For questions about your data or to request deletion, contact privacy@fixit-app.com. We respond within 48 hours.' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 14, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={s.icon} size={26} /></div>
+                      <div>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 8px' }}>{s.title}</h3>
+                        <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{s.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            , '#f8f9fb')}
+          </>
+        )}
+
+        {/* ── TERMS ─────────────────────────── */}
+        {subPage === 'terms' && (
+          <>
+            {spHero('file-document-check-outline', 'Terms of Service', 'The rules of the road. By using FixIt, you agree to these terms.', 'linear-gradient(135deg, #fdf6e3 0%, #f0f4f8 50%, #e0f5f3 100%)')}
+            {spSection(
+              <>
+                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>Last updated: May 2026</div>
+                <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {[
+                    { num: '01', title: 'Eligibility', text: 'You must be at least 18 years old to use the FixIt platform. By creating an account, you confirm that you meet this requirement.' },
+                    { num: '02', title: 'Accuracy', text: 'You are responsible for the accuracy of information you provide — including task descriptions, profile information, and bid details.' },
+                    { num: '03', title: 'Marketplace Role', text: 'FixIt is a marketplace that connects requesters and fixers. We are not responsible for the quality, safety, or legality of work performed.' },
+                    { num: '04', title: 'Payments', text: 'Payment is handled directly between requesters and fixers via Bit or Paybox. FixIt does not process, hold, or guarantee any payments.' },
+                    { num: '05', title: 'Conduct', text: 'Abusive behavior, spam, fraudulent listings, or harassment will result in immediate account suspension and potential permanent ban.' },
+                    { num: '06', title: 'Updates', text: 'FixIt may update these terms at any time. Continued use of the platform constitutes acceptance of the updated terms.' },
+                  ].map((t, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', padding: '24px 28px', background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px #d1d5db', lineHeight: 1, flexShrink: 0, width: 48, textAlign: 'center' }}>{t.num}</div>
+                      <div>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 6px' }}>{t.title}</h3>
+                        <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{t.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 40, padding: '28px', background: '#f8f9fb', borderRadius: 16, opacity: 0, animation: 'rise 600ms cubic-bezier(0.16,1,0.3,1) 700ms forwards' }}>
+                  <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Questions? Contact <a href="mailto:legal@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 700 }}>legal@fixit-app.com</a></p>
+                </div>
+              </>
+            , '#f8f9fb')}
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div id="fixit-landing">
@@ -914,25 +1324,25 @@ export default function LandingScreen({
               <li><a href="#how">How it works</a></li>
               <li><a href="#categories">Categories</a></li>
               <li><a href="#fixers">For Fixers</a></li>
-              <li><span>Pricing</span></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('pricing'); }}>Pricing</a></li>
             </ul>
           </div>
           <div>
             <h5>Company</h5>
             <ul>
-              <li><span>About</span></li>
-              <li><span>Careers</span></li>
-              <li><span>Press</span></li>
-              <li><span>Contact</span></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('about'); }}>About</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('careers'); }}>Careers</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('press'); }}>Press</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('contact'); }}>Contact</a></li>
             </ul>
           </div>
           <div>
             <h5>Help</h5>
             <ul>
-              <li><span>FAQ</span></li>
-              <li><span>Trust &amp; Safety</span></li>
-              <li><span>Privacy</span></li>
-              <li><span>Terms</span></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('faq'); }}>FAQ</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('trust'); }}>Trust &amp; Safety</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('privacy'); }}>Privacy</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('terms'); }}>Terms</a></li>
             </ul>
           </div>
         </div>
