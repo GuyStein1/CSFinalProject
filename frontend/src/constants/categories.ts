@@ -12,6 +12,7 @@ export const CATEGORY_VALUES = [
   'ELECTRICITY',
   'OUTDOORS',
   'CLEANING',
+  'OTHER',
 ] as const;
 
 export type Category = (typeof CATEGORY_VALUES)[number];
@@ -149,6 +150,20 @@ export const CATEGORY_METADATA = {
     commonTasks: ['deep clean', 'move-out clean', 'post-renovation cleanup', 'appliance cleaning'],
     starterPrompt: 'Describe the space, number of rooms, key problem areas, and whether supplies are provided.',
   },
+  OTHER: {
+    value: 'OTHER',
+    label: 'Other',
+    icon: 'wrench',
+    color: '#7A8B96',
+    soft: '#E9E2D5',
+    bg: '#E9E2D5',
+    image: require('../../assets/fixit-logo.png'),
+    description: 'General home tasks that don\'t fit other categories.',
+    examples: ['odd jobs', 'minor repairs', 'custom requests'],
+    detailCopy: 'Use this for home tasks that do not fit one of the main categories.',
+    commonTasks: ['odd jobs', 'minor repairs', 'custom requests'],
+    starterPrompt: 'Describe the task clearly and add photos so fixers can understand the job.',
+  },
 } as const satisfies Record<Category, CategoryMetadata>;
 
 export const CATEGORY_LIST: readonly CategoryMetadata[] = CATEGORY_VALUES.map((value) => CATEGORY_METADATA[value]);
@@ -162,6 +177,7 @@ export const CATEGORY_COLORS = {
   ELECTRICITY: CATEGORY_METADATA.ELECTRICITY.color,
   OUTDOORS: CATEGORY_METADATA.OUTDOORS.color,
   CLEANING: CATEGORY_METADATA.CLEANING.color,
+  OTHER: CATEGORY_METADATA.OTHER.color,
 } satisfies Record<Category, string>;
 
 export const DEFAULT_CATEGORY_METADATA = {

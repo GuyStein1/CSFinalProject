@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
+import AdminNavigator from './src/navigation/AdminNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
@@ -111,6 +112,14 @@ function RootContent() {
         onLogOut={handleAuthLogOut}
         initialMode={authInitialMode}
       />
+    );
+  }
+
+  if (authState.isAdmin) {
+    return (
+      <NavigationContainer theme={navigationTheme}>
+        <AdminNavigator />
+      </NavigationContainer>
     );
   }
 

@@ -3,6 +3,8 @@ import {
   createTaskSchema,
   createBidSchema,
   createReviewSchema,
+  rejectBidSchema,
+  reportReviewSchema,
   updateUserSchema,
   pushTokenSchema,
   createPortfolioItemSchema,
@@ -111,5 +113,39 @@ describe('createPortfolioItemSchema', () => {
 
   it('rejects non-URL image_url', () => {
     expect(() => createPortfolioItemSchema.parse({ image_url: 'not-a-url' })).toThrow();
+  });
+});
+
+// ── rejectBidSchema ────────────────────────────────────────────────────────
+describe('rejectBidSchema', () => {
+  it('accepts valid rejection with reason only', () => {
+    expect(() => rejectBidSchema.parse({ rejection_reason: 'PRICE_TOO_HIGH' })).not.toThrow();
+  });
+
+  it('accepts valid rejection with reason and note', () => {
+    expect(() => rejectBidSchema.parse({ rejection_reason: 'OTHER', rejection_note: 'Too expensive' })).not.toThrow();
+  });
+
+  test.each([
+    [{}, 'missing reason'],
+    [{ rejection_reason: 'INVALID' }, 'invalid reason'],
+    [{ rejection_reason: 'TASK_CANCELED' }, 'TASK_CANCELED not allowed from client'],
+  ])('rejects: %s', (input, _label) => {
+    expect(() => rejectBidSchema.parse(input)).toThrow();
+  });
+});
+
+// ── reportReviewSchema ─────────────────────────────────────────────────────
+describe('reportReviewSchema', () => {
+  it('accepts valid report', () => {
+    expect(() => reportReviewSchema.parse({ reason: 'SPAM' })).not.toThrow();
+  });
+
+  it('accepts report with details', () => {
+    expect(() => reportReviewSchema.parse({ reason: 'OFFENSIVE', details: 'Contains hate speech' })).not.toThrow();
+  });
+
+  it('rejects invalid reason', () => {
+    expect(() => reportReviewSchema.parse({ reason: 'INVALID' })).toThrow();
   });
 });

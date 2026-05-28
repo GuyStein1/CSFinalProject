@@ -3,6 +3,14 @@ import api from '../api/axiosInstance';
 
 export type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 
+export type BidRejectionReason =
+  | 'PRICE_TOO_HIGH'
+  | 'BAD_TIMING'
+  | 'CHOSE_ANOTHER'
+  | 'NOT_QUALIFIED'
+  | 'TASK_CANCELED'
+  | 'OTHER';
+
 export interface BidTask {
   id: string;
   title: string;
@@ -21,6 +29,10 @@ export interface UserBid {
   status: BidStatus;
   created_at: string;
   task: BidTask;
+  rejection_reason?: BidRejectionReason | null;
+  rejection_note?: string | null;
+  auto_rejected_winning_price?: number | null;
+  auto_rejected_winning_rating?: number | null;
 }
 
 interface UseBidsOptions {

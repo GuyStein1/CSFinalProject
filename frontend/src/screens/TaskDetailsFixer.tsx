@@ -65,7 +65,20 @@ interface ExistingBid {
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   offered_price: number;
   description?: string;
+  rejection_reason?: string | null;
+  rejection_note?: string | null;
+  auto_rejected_winning_price?: number | null;
+  auto_rejected_winning_rating?: number | null;
 }
+
+const REJECTION_LABELS: Record<string, string> = {
+  PRICE_TOO_HIGH: 'Price too high',
+  BAD_TIMING: 'Bad timing',
+  CHOSE_ANOTHER: 'Another fixer was chosen',
+  NOT_QUALIFIED: 'Not the right fit',
+  TASK_CANCELED: 'Task was canceled',
+  OTHER: 'Other reason',
+};
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CAROUSEL_HEIGHT = 260;
@@ -401,12 +414,39 @@ export default function TaskDetailsFixer({ route }: Props) {
 
           {/* Existing bid info */}
           {existingBid && (
-            <View style={styles.existingBidBanner}>
-              <MaterialCommunityIcons name="check-circle" size={22} color={brandColors.success} />
+            <View style={[
+              styles.existingBidBanner,
+              existingBid.status === 'REJECTED' && styles.existingBidRejected,
+            ]}>
+              <MaterialCommunityIcons
+                name={existingBid.status === 'REJECTED' ? 'close-circle' : 'check-circle'}
+                size={22}
+                color={existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success}
+              />
               <View style={{ flex: 1 }}>
-                <Text style={[typography.h3, { color: brandColors.success }]}>
+                <Text style={[typography.h3, { color: existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success }]}>
                   Your Bid: ₪{existingBid.offered_price}
                 </Text>
+                {existingBid.status === 'REJECTED' && existingBid.rejection_reason && (
+                  <View style={{ marginTop: spacing.xs, gap: spacing.xs }}>
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                      Reason: {REJECTION_LABELS[existingBid.rejection_reason] ?? 'Rejected'}
+                    </Text>
+                    {existingBid.rejection_note ? (
+                      <Text style={[typography.bodySm, { color: brandColors.textMuted, fontStyle: 'italic' }]}>
+                        &quot;{existingBid.rejection_note}&quot;
+                      </Text>
+                    ) : null}
+                    {existingBid.auto_rejected_winning_price != null && (
+                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                        Winning bid: ₪{existingBid.auto_rejected_winning_price}
+                        {existingBid.auto_rejected_winning_rating != null && existingBid.auto_rejected_winning_rating > 0
+                          ? ` · Rating: ${existingBid.auto_rejected_winning_rating.toFixed(1)}★`
+                          : ''}
+                      </Text>
+                    )}
+                  </View>
+                )}
               </View>
               <StatusBadge status={existingBid.status} />
             </View>
@@ -691,11 +731,14 @@ const styles = StyleSheet.create({
 
   existingBidBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radii.lg,
     backgroundColor: brandColors.successSoft,
+  },
+  existingBidRejected: {
+    backgroundColor: brandColors.dangerSoft,
   },
 
   bottomBar: {

@@ -53,6 +53,15 @@ const users = [
     phone_number: '0506666666',
     specializations: [Category.MOVING, Category.CLEANING],
   },
+  // Admin
+  {
+    firebase_uid: 'Pj6uxErNNGakznDCiot2bqBZQin1',
+    full_name: 'Admin',
+    email: 'admin@example.com',
+    phone_number: null,
+    specializations: [] as Category[],
+    is_admin: true,
+  },
 ];
 
 // ─── Task status distribution ───
@@ -162,7 +171,7 @@ async function main() {
   for (const user of users) {
     const created = await prisma.user.upsert({
       where: { firebase_uid: user.firebase_uid },
-      update: {},
+      update: { is_admin: (user as { is_admin?: boolean }).is_admin ?? false },
       create: user,
       select: { id: true },
     });

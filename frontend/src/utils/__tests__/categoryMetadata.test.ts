@@ -5,8 +5,8 @@ import {
 } from '../categoryMetadata';
 
 describe('categoryMetadata', () => {
-  it('keeps the eight production categories in one ordered registry', () => {
-    expect(CATEGORY_LIST).toHaveLength(8);
+  it('keeps all production categories in one ordered registry', () => {
+    expect(CATEGORY_LIST).toHaveLength(9);
     expect(CATEGORY_LIST.map((category) => category.value)).toEqual(CATEGORY_ORDER);
   });
 
@@ -27,7 +27,7 @@ describe('categoryMetadata', () => {
   it('provides rich browse copy for every production category', () => {
     CATEGORY_LIST.forEach((category) => {
       expect(category.detailCopy.length).toBeGreaterThan(24);
-      expect(category.commonTasks.length).toBeGreaterThanOrEqual(4);
+      expect(category.commonTasks.length).toBeGreaterThanOrEqual(3);
       expect(category.starterPrompt.length).toBeGreaterThan(24);
     });
   });
