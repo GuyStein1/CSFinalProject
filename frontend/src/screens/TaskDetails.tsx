@@ -24,6 +24,8 @@ interface Bid {
   offered_price: number;
   description: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  is_repeat_customer?: boolean;
+  previous_tasks_together?: number;
   fixer?: {
     full_name: string;
     average_rating_as_fixer: number | null;
@@ -47,10 +49,12 @@ interface Task {
   description: string;
   category: string;
   status: TaskStatus;
+  urgency?: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   suggested_price: number | null;
   general_location_name: string;
   exact_address: string;
   media_urls: string[];
+  completion_photos: string[];
   is_payment_confirmed: boolean;
   created_at: string;
   completed_at: string | null;
@@ -369,7 +373,13 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         <View style={styles.detailsDivider} />
 
         <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label="Category" value={catMeta.label} />
-        <DetailRow icon="cash-multiple" label="Budget" value={task.suggested_price ? `₪${task.suggested_price}` : 'Quote Required'} />
+        {task.urgency === 'TODAY' && (
+          <DetailRow icon="clock-alert-outline" iconColor={brandColors.danger} label="Urgency" value="Today" />
+        )}
+        {task.urgency === 'THIS_WEEK' && (
+          <DetailRow icon="calendar-week" iconColor={brandColors.warning} label="Urgency" value="This week" />
+        )}
+        <DetailRow icon="cash-multiple" label="Budget" value={task.suggested_price ? `₪${task.suggested_price}` : 'No price specified'} />
         <DetailRow icon="map-marker-outline" label="Location" value={task.general_location_name} />
         {task.status !== 'OPEN' && (
           <DetailRow icon="home-outline" label="Address" value={task.exact_address} />
@@ -422,6 +432,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                       </View>
                     ) : (
                       <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
+                    )}
+                    {bid.is_repeat_customer && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <MaterialCommunityIcons name="account-check" size={14} color={brandColors.primary} />
+                        <Text style={[typography.caption, { color: brandColors.primary }]}>
+                          Worked together {bid.previous_tasks_together} time{(bid.previous_tasks_together ?? 0) !== 1 ? 's' : ''} before
+                        </Text>
+                      </View>
                     )}
                   </View>
                   </Pressable>
@@ -673,6 +691,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </FButton>
         </Modal>
       </Portal>
+
+      {/* Completion Photos (shown for IN_PROGRESS and COMPLETED) */}
+      {(task.status === 'IN_PROGRESS' || task.status === 'COMPLETED') && (task.completion_photos?.length ?? 0) > 0 && (
+        <View style={styles.section}>
+          <FSectionHeader title="Completion Photos" accentColor={brandColors.primary} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {task.completion_photos.map((url, i) => (
+              <Image key={i} source={{ uri: url }} style={{ width: 100, height: 100, borderRadius: radii.md }} />
+            ))}
+          </View>
+        </View>
+      )}
 
       {/* COMPLETED: Payment & Review */}
       {task.status === 'COMPLETED' && (

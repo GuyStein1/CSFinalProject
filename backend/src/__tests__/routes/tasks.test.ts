@@ -641,3 +641,122 @@ describe('POST /api/tasks/:id/reviews (edge cases)', () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ── POST /api/tasks/:id/completion-photos ─────────────────────────────────────
+
+describe('POST /api/tasks/:id/completion-photos', () => {
+  it('assigned fixer can upload completion photos to an in-progress task', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/completion-photos`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ completion_photos: ['https://example.com/photo1.jpg'] });
+    expect(res.status).toBe(200);
+    expect(res.body.task.completion_photos).toContain('https://example.com/photo1.jpg');
+
+    // Photo should also be added to portfolio
+    const fixerUser = await prisma.user.findFirst({ where: { firebase_uid: 'fixer-uid' } });
+    const items = await prisma.portfolioItem.findMany({ where: { fixer_id: fixerUser!.id } });
+    expect(items.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('non-assigned user cannot upload completion photos', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+
+    __setUid('test-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/completion-photos`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ completion_photos: ['https://example.com/photo1.jpg'] });
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 400 on an OPEN task', async () => {
+    const task = await createTask();
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .post(`/api/tasks/${task.id}/completion-photos`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ completion_photos: ['https://example.com/photo1.jpg'] });
+    expect(res.status).toBe(403); // not the assigned fixer (no fixer assigned yet)
+  });
+
+  it('returns 404 for non-existent task', async () => {
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .post('/api/tasks/non-existent/completion-photos')
+      .set('Authorization', FIXER_AUTH)
+      .send({ completion_photos: ['https://example.com/photo1.jpg'] });
+    expect(res.status).toBe(404);
+  });
+});
+
+// ── Response time calculation ─────────────────────────────────────────────────
+
+describe('Fixer response time calculation', () => {
+  it('updates avg_response_time_minutes when a bid is placed', async () => {
+    const task = await createTask();
+    __setUid('fixer-uid');
+    await request(app)
+      .post(`/api/tasks/${task.id}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 100, description: 'Quick response' });
+
+    const fixer = await prisma.user.findFirst({ where: { firebase_uid: 'fixer-uid' } });
+    expect(fixer?.avg_response_time_minutes).not.toBeNull();
+    expect(typeof fixer?.avg_response_time_minutes).toBe('number');
+  });
+});
+
+// ── Task urgency ──────────────────────────────────────────────────────────────
+
+describe('Task urgency', () => {
+  it('creates a task with urgency TODAY', async () => {
+    __setUid('test-uid');
+    const res = await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({
+        title: 'Urgent task',
+        description: 'Need this done today',
+        category: 'PLUMBING',
+        urgency: 'TODAY',
+        general_location_name: 'Tel Aviv',
+        exact_address: '1 Test St',
+        lat: 32.08,
+        lng: 34.78,
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.task.urgency).toBe('TODAY');
+  });
+
+  it('filters discovery feed by urgency', async () => {
+    __setUid('test-uid');
+    await request(app)
+      .post('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .send({
+        title: 'Urgent',
+        description: 'Need ASAP',
+        category: 'PLUMBING',
+        urgency: 'TODAY',
+        general_location_name: 'Tel Aviv',
+        exact_address: '1 Test St',
+        lat: 32.08,
+        lng: 34.78,
+      });
+
+    const res = await request(app)
+      .get('/api/tasks')
+      .set('Authorization', REQUESTER_AUTH)
+      .query({ lat: 32.08, lng: 34.78, urgency: 'TODAY' });
+    expect(res.status).toBe(200);
+    expect(res.body.tasks.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.tasks.every((t: { urgency: string }) => t.urgency === 'TODAY')).toBe(true);
+  });
+});

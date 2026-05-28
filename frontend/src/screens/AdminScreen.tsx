@@ -2,6 +2,8 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Image,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -17,6 +19,8 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography, shadows } from '../theme';
+
+type AdminTab = 'reviews' | 'verifications';
 
 interface Report {
   id: string;
@@ -36,6 +40,15 @@ interface FlaggedReview {
   reviewee: { id: string; full_name: string; email: string };
   task: { id: string; title: string } | null;
   reports: Report[];
+}
+
+interface PendingVerification {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url: string | null;
+  verification_photo_url: string | null;
+  created_at: string;
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -61,8 +74,11 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export default function AdminScreen() {
+  const [activeTab, setActiveTab] = useState<AdminTab>('reviews');
   const [reviews, setReviews] = useState<FlaggedReview[]>([]);
+  const [verifications, setVerifications] = useState<PendingVerification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
   const fetchFlagged = useCallback(async () => {
     setLoading(true);
@@ -82,10 +98,20 @@ export default function AdminScreen() {
     }
   }, []);
 
+  const fetchVerifications = useCallback(async () => {
+    try {
+      const res = await api.get('/api/admin/pending-verifications');
+      setVerifications(res.data.users ?? []);
+    } catch {
+      // silent
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void fetchFlagged();
-    }, [fetchFlagged]),
+      void fetchVerifications();
+    }, [fetchFlagged, fetchVerifications]),
   );
 
   const handleHide = async (reviewId: string) => {
@@ -118,6 +144,21 @@ export default function AdminScreen() {
     }
   };
 
+  const handleVerify = async (userId: string, action: 'approve' | 'reject') => {
+    try {
+      await api.post(`/api/admin/users/${userId}/verify`, { action });
+      setVerifications((prev) => prev.filter((v) => v.id !== userId));
+    } catch {
+      const msg = `Failed to ${action} verification`;
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(msg);
+      } else {
+        Alert.alert('Error', msg);
+      }
+    }
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
   };
@@ -141,19 +182,86 @@ export default function AdminScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{reviews.length}</Text>
-          <Text style={styles.statLabel}>Flagged Reviews</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>
-            {reviews.reduce((sum, r) => sum + r.reports.length, 0)}
+      <View style={styles.tabRow}>
+        <Pressable
+          style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
+          onPress={() => setActiveTab('reviews')}
+        >
+          <MaterialCommunityIcons name="flag-outline" size={16} color={activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted} />
+          <Text style={[typography.bodyMedium, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
+            Reviews ({reviews.length})
           </Text>
-          <Text style={styles.statLabel}>Total Reports</Text>
-        </View>
+        </Pressable>
+        <Pressable
+          style={[styles.tab, activeTab === 'verifications' && styles.tabActive]}
+          onPress={() => setActiveTab('verifications')}
+        >
+          <MaterialCommunityIcons name="shield-check-outline" size={16} color={activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted} />
+          <Text style={[typography.bodyMedium, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
+            Verifications ({verifications.length})
+          </Text>
+        </Pressable>
       </View>
 
+      {activeTab === 'verifications' ? (
+        <FlatList
+          data={verifications}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <FCard style={{ ...styles.reviewCard, borderLeftColor: brandColors.primary }}>
+              <View style={styles.reviewMeta}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{item.full_name}</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>{item.email}</Text>
+                </View>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                  {new Date(item.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+              {item.verification_photo_url && (
+                <Pressable onPress={() => setViewingPhotoUrl(item.verification_photo_url)}>
+                  <Image
+                    source={{ uri: item.verification_photo_url }}
+                    style={{ width: '100%', height: 200, borderRadius: radii.md, marginVertical: spacing.sm }}
+                    resizeMode="contain"
+                  />
+                  <Text style={[typography.caption, { color: brandColors.primary, textAlign: 'center', marginBottom: spacing.xs }]}>
+                    Tap to view full size
+                  </Text>
+                </Pressable>
+              )}
+              <View style={styles.actions}>
+                <FButton
+                  variant="outline"
+                  size="sm"
+                  icon="close-circle-outline"
+                  onPress={() => void handleVerify(item.id, 'reject')}
+                  style={{ flex: 1 }}
+                >
+                  Reject
+                </FButton>
+                <FButton
+                  size="sm"
+                  icon="check-circle-outline"
+                  onPress={() => void handleVerify(item.id, 'approve')}
+                  style={{ flex: 1 }}
+                >
+                  Approve
+                </FButton>
+              </View>
+            </FCard>
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              icon="shield-check-outline"
+              title="No pending verifications"
+              message="All verification requests have been handled."
+            />
+          }
+          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        />
+      ) : (
       <FlatList
         data={reviews}
         keyExtractor={(item) => item.id}
@@ -241,6 +349,51 @@ export default function AdminScreen() {
         }
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
       />
+      )}
+
+      {/* Full-screen photo viewer */}
+      <Modal visible={!!viewingPhotoUrl} transparent animationType="fade" onRequestClose={() => setViewingPhotoUrl(null)}>
+        <View style={styles.photoModalOverlay}>
+          <View style={styles.photoModalHeader}>
+            <Pressable onPress={() => setViewingPhotoUrl(null)} hitSlop={12}>
+              <MaterialCommunityIcons name="close" size={28} color={brandColors.white} />
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                if (!viewingPhotoUrl) return;
+                try {
+                  const res = await api.get('/api/admin/download-photo', {
+                    params: { url: viewingPhotoUrl },
+                    responseType: 'blob',
+                  });
+                  const blobUrl = URL.createObjectURL(res.data as Blob);
+                  const a = document.createElement('a');
+                  a.href = blobUrl;
+                  a.download = 'verification-photo.jpg';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                } catch {
+                  Alert.alert('Error', 'Failed to download photo.');
+                }
+              }}
+              hitSlop={12}
+            >
+              <MaterialCommunityIcons name="download" size={28} color={brandColors.white} />
+            </Pressable>
+          </View>
+          <Pressable style={styles.photoModalBody} onPress={() => setViewingPhotoUrl(null)}>
+            {viewingPhotoUrl && (
+              <Image
+                source={{ uri: viewingPhotoUrl }}
+                style={styles.photoModalImage}
+                resizeMode="contain"
+              />
+            )}
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -295,29 +448,24 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: brandColors.dangerSoft,
   },
-  statsRow: {
+  tabRow: {
     flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.lg,
-  },
-  statCard: {
-    flex: 1,
     backgroundColor: brandColors.surface,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
+    borderBottomWidth: 1,
+    borderBottomColor: brandColors.outlineLight,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: brandColors.primary,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: brandColors.textMuted,
-    marginTop: spacing.xs,
+  tabActive: {
+    borderBottomColor: brandColors.primary,
   },
   list: {
     paddingHorizontal: spacing.lg,
@@ -365,5 +513,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  photoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+  },
+  photoModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'web' ? spacing.lg : spacing.huge,
+    paddingBottom: spacing.md,
+  },
+  photoModalBody: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalImage: {
+    width: '90%',
+    height: '80%',
   },
 });

@@ -90,4 +90,92 @@ router.post(
   },
 );
 
+// GET /api/admin/pending-verifications — list fixers awaiting verification
+router.get(
+  '/pending-verifications',
+  async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users = await prisma.user.findMany({
+        where: { verification_status: 'PENDING' },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          avatar_url: true,
+          verification_photo_url: true,
+          created_at: true,
+        },
+        orderBy: { updated_at: 'asc' },
+      });
+      res.json({ users });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/admin/users/:id/verify — approve or reject verification
+router.post(
+  '/users/:id/verify',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { action } = req.body as { action?: string };
+      if (action !== 'approve' && action !== 'reject') {
+        return res.status(400).json({ error: { message: 'action must be "approve" or "reject"' } });
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+      if (!user) throw new NotFoundError('User not found');
+
+      const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { verification_status: status },
+      });
+
+      // Notify the fixer
+      await prisma.notification.create({
+        data: {
+          user_id: user.id,
+          title: action === 'approve' ? 'Verification approved!' : 'Verification rejected',
+          body: action === 'approve'
+            ? 'Your identity has been verified. A badge will now appear on your profile.'
+            : 'Your verification was not approved. You can resubmit with a clearer photo.',
+          type: action === 'approve' ? 'VERIFICATION_APPROVED' : 'VERIFICATION_REJECTED',
+          related_entity_id: user.id,
+          related_entity_type: 'user',
+        },
+      });
+
+      res.json({ message: `Verification ${action}d` });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/admin/download-photo?url=... — proxy download for verification photos
+router.get(
+  '/download-photo',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const url = req.query.url as string;
+      if (!url || !url.startsWith('https://firebasestorage.googleapis.com/')) {
+        return res.status(400).json({ error: { message: 'Invalid URL' } });
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) return res.status(502).json({ error: { message: 'Failed to fetch photo' } });
+
+      res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+      res.setHeader('Content-Disposition', 'attachment; filename="verification-photo.jpg"');
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 export default router;

@@ -20,7 +20,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../api/axiosInstance';
+import { uploadImage } from '../utils/uploadImage';
+import { auth } from '../config/firebase';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -49,11 +52,14 @@ interface Task {
   description: string;
   category: string;
   status: TaskStatus;
+  urgency?: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   suggested_price: number | null;
   media_urls: string[];
+  completion_photos: string[];
   general_location_name: string;
   created_at: string;
   requester_id: string;
+  assigned_fixer_id?: string | null;
   requester?: TaskRequester;
   bid_count?: number;
   lat?: number | null;
@@ -107,6 +113,7 @@ export default function TaskDetailsFixer({ route }: Props) {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [directions, setDirections] = useState<DirectionsResult | null>(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Get user's location for distance calculation
   useEffect(() => {
@@ -284,7 +291,7 @@ export default function TaskDetailsFixer({ route }: Props) {
     );
   }
 
-  const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'Quote Required';
+  const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'No price specified';
   const hasPhotos = task.media_urls && task.media_urls.length > 0;
   const catMeta = getCategoryMeta(task.category);
 
@@ -340,11 +347,25 @@ export default function TaskDetailsFixer({ route }: Props) {
             <StatusBadge status={task.status} />
           </View>
 
-          {/* Category + Budget */}
+          {/* Category + Urgency + Budget */}
           <View style={styles.chipRow}>
-            <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
-              <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
-              <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
+              <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
+                <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
+                <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+              </View>
+              {task.urgency === 'TODAY' && (
+                <View style={[styles.categoryChip, { backgroundColor: brandColors.dangerSoft }]}>
+                  <MaterialCommunityIcons name="clock-alert-outline" size={16} color={brandColors.danger} />
+                  <Text style={[typography.label, { color: brandColors.danger }]}>Today</Text>
+                </View>
+              )}
+              {task.urgency === 'THIS_WEEK' && (
+                <View style={[styles.categoryChip, { backgroundColor: brandColors.warningSoft }]}>
+                  <MaterialCommunityIcons name="calendar-week" size={16} color={brandColors.warning} />
+                  <Text style={[typography.label, { color: brandColors.warning }]}>This week</Text>
+                </View>
+              )}
             </View>
             <Text style={[typography.h2, styles.budget]}>{budgetLabel}</Text>
           </View>
@@ -449,6 +470,57 @@ export default function TaskDetailsFixer({ route }: Props) {
                 )}
               </View>
               <StatusBadge status={existingBid.status} />
+            </View>
+          )}
+
+          {/* Completion Photos — only for assigned fixer on in-progress tasks */}
+          {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
+            <View style={{ gap: spacing.md }}>
+              <Divider style={styles.divider} />
+              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Completion Photos</Text>
+              {(task.completion_photos?.length ?? 0) > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                  {task.completion_photos.map((url, i) => (
+                    <Image key={i} source={{ uri: url }} style={{ width: 80, height: 80, borderRadius: radii.md }} />
+                  ))}
+                </View>
+              )}
+              <FButton
+                variant="secondary"
+                icon="camera-plus-outline"
+                loading={uploadingPhotos}
+                disabled={uploadingPhotos}
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: 'images',
+                    quality: 0.8,
+                    allowsMultipleSelection: true,
+                  });
+                  if (result.canceled || !task) return;
+                  setUploadingPhotos(true);
+                  try {
+                    const userId = auth.currentUser?.uid ?? 'unknown';
+                    const urls = await Promise.all(
+                      result.assets.map((asset, i) =>
+                        uploadImage(asset.uri, `completion/${userId}/${Date.now()}_${i}.jpg`),
+                      ),
+                    );
+                    const allPhotos = [...(task.completion_photos ?? []), ...urls];
+                    await api.post(`/api/tasks/${task.id}/completion-photos`, {
+                      completion_photos: allPhotos,
+                    });
+                    setTask((prev) => prev ? { ...prev, completion_photos: allPhotos } : prev);
+                    Alert.alert('Uploaded', 'Completion photos added and saved to your portfolio.');
+                  } catch {
+                    Alert.alert('Error', 'Failed to upload completion photos.');
+                  } finally {
+                    setUploadingPhotos(false);
+                  }
+                }}
+                fullWidth
+              >
+                Add Completion Photos
+              </FButton>
             </View>
           )}
 

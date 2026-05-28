@@ -17,6 +17,7 @@ import {
   updateTaskStatusSchema,
   createBidSchema,
   createReviewSchema,
+  completionPhotosSchema,
 } from '../schemas';
 
 const router = Router();
@@ -54,6 +55,7 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
       media_urls,
       category,
       suggested_price,
+      urgency,
       general_location_name,
       exact_address,
       lat,
@@ -64,6 +66,7 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
       media_urls?: string[];
       category: Category;
       suggested_price?: number;
+      urgency?: string;
       general_location_name: string;
       exact_address: string;
       lat: number;
@@ -80,8 +83,8 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
     const result = await prisma.$queryRaw<{ id: string }[]>`
       INSERT INTO "Task" (
         id, requester_id, title, description, media_urls, category,
-        suggested_price, status, general_location_name, exact_address,
-        coordinates, is_payment_confirmed, created_at, updated_at
+        suggested_price, urgency, status, general_location_name, exact_address,
+        coordinates, completion_photos, is_payment_confirmed, created_at, updated_at
       ) VALUES (
         gen_random_uuid(),
         ${req.user.id},
@@ -90,10 +93,12 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
         ${media_urls ?? []}::text[],
         ${category}::"Category",
         ${suggested_price ?? null},
+        ${urgency ?? 'FLEXIBLE'}::"TaskUrgency",
         'OPEN'::"TaskStatus",
         ${general_location_name},
         ${exact_address},
         ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
+        '{}'::text[],
         false,
         now(),
         now()
@@ -120,6 +125,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       lng,
       radius = '10',
       category,
+      urgency,
       minPrice,
       maxPrice,
       page = '1',
@@ -160,6 +166,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       lat: number;
       lng: number;
       distance_km: number;
+      urgency: string;
       bid_count: number;
     };
 
@@ -169,7 +176,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     if (minPriceNum !== null && maxPriceNum !== null) {
       tasks = await prisma.$queryRaw<TaskRow[]>`
         SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
-               t.suggested_price, t.status, t.general_location_name,
+               t.suggested_price, t.urgency, t.status, t.general_location_name,
                t.is_payment_confirmed, t.created_at, t.updated_at,
                ST_Y(t.coordinates::geometry) AS lat,
                ST_X(t.coordinates::geometry) AS lng,
@@ -196,6 +203,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
           )
           AND (t.suggested_price IS NULL OR (t.suggested_price >= ${minPriceNum} AND t.suggested_price <= ${maxPriceNum}))
           ${category ? Prisma.sql`AND t.category = ${category}::"Category"` : Prisma.empty}
+          ${urgency ? Prisma.sql`AND t.urgency = ${urgency}::"TaskUrgency"` : Prisma.empty}
         ORDER BY distance_km ASC, t.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
@@ -209,11 +217,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
           )
           AND (suggested_price IS NULL OR (suggested_price >= ${minPriceNum} AND suggested_price <= ${maxPriceNum}))
           ${category ? Prisma.sql`AND category = ${category}::"Category"` : Prisma.empty}
+          ${urgency ? Prisma.sql`AND urgency = ${urgency}::"TaskUrgency"` : Prisma.empty}
       `;
     } else {
       tasks = await prisma.$queryRaw<TaskRow[]>`
         SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
-               t.suggested_price, t.status, t.general_location_name,
+               t.suggested_price, t.urgency, t.status, t.general_location_name,
                t.is_payment_confirmed, t.created_at, t.updated_at,
                ST_Y(t.coordinates::geometry) AS lat,
                ST_X(t.coordinates::geometry) AS lng,
@@ -239,6 +248,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ${radiusMeters}
           )
           ${category ? Prisma.sql`AND t.category = ${category}::"Category"` : Prisma.empty}
+          ${urgency ? Prisma.sql`AND t.urgency = ${urgency}::"TaskUrgency"` : Prisma.empty}
         ORDER BY distance_km ASC, t.created_at DESC
         LIMIT ${limitNum} OFFSET ${offset}
       `;
@@ -251,6 +261,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             ${radiusMeters}
           )
           ${category ? Prisma.sql`AND category = ${category}::"Category"` : Prisma.empty}
+          ${urgency ? Prisma.sql`AND urgency = ${urgency}::"TaskUrgency"` : Prisma.empty}
       `;
     }
 
@@ -459,6 +470,13 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         });
         // Delete chat messages once the task is completed
         await tx.message.deleteMany({ where: { task_id: task.id } });
+        // Increment fixer's completed task count
+        if (task.assigned_fixer_id) {
+          await tx.user.update({
+            where: { id: task.assigned_fixer_id },
+            data: { completed_tasks_as_fixer: { increment: 1 } },
+          });
+        }
       });
 
       if (task.assigned_fixer_id) {
@@ -558,6 +576,22 @@ router.post('/:id/bids', validate(createBidSchema), async (req: Request, res: Re
       },
     });
 
+    // Update fixer's average response time (minutes from task creation to bid)
+    const responseMinutes = (Date.now() - task.created_at.getTime()) / (1000 * 60);
+    const fixer = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { avg_response_time_minutes: true, bids: { select: { id: true }, where: { id: { not: bid.id } } } },
+    });
+    if (fixer) {
+      const previousBidCount = fixer.bids.length;
+      const prevAvg = fixer.avg_response_time_minutes ?? 0;
+      const newAvg = (prevAvg * previousBidCount + responseMinutes) / (previousBidCount + 1);
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { avg_response_time_minutes: Math.round(newAvg * 100) / 100 },
+      });
+    }
+
     await sendNotification(
       task.requester_id,
       'New Bid',
@@ -587,7 +621,28 @@ router.get('/:id/bids', async (req: Request, res: Response, next: NextFunction) 
       orderBy: { created_at: 'asc' },
     });
 
-    res.json({ bids });
+    // Repeat customer indicator: check if the requester has previously completed tasks with each fixer
+    const previousTaskCounts = await prisma.task.groupBy({
+      by: ['assigned_fixer_id'],
+      where: {
+        requester_id: req.user.id,
+        status: 'COMPLETED',
+        id: { not: task.id },
+        assigned_fixer_id: { in: bids.map((b) => b.fixer_id) },
+      },
+      _count: true,
+    });
+    const repeatMap = new Map(
+      previousTaskCounts.map((r) => [r.assigned_fixer_id, r._count]),
+    );
+
+    const enrichedBids = bids.map((b) => ({
+      ...b,
+      is_repeat_customer: (repeatMap.get(b.fixer_id) ?? 0) > 0,
+      previous_tasks_together: repeatMap.get(b.fixer_id) ?? 0,
+    }));
+
+    res.json({ bids: enrichedBids });
   } catch (err) {
     next(err);
   }
@@ -648,6 +703,37 @@ router.post('/:id/reviews', validate(createReviewSchema), async (req: Request, r
     await recalculateFixerRating(task.assigned_fixer_id);
 
     res.status(201).json({ review });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tasks/:id/completion-photos — fixer uploads completion photos
+router.post('/:id/completion-photos', validate(completionPhotosSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.assigned_fixer_id) throw new ForbiddenError('Only the assigned fixer can upload completion photos');
+    if (task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED') {
+      throw new ValidationError('Completion photos can only be added to in-progress or completed tasks');
+    }
+
+    const { completion_photos } = req.body as { completion_photos: string[] };
+
+    const updated = await prisma.task.update({
+      where: { id: task.id },
+      data: { completion_photos },
+    });
+
+    // Auto-add to fixer's portfolio
+    const portfolioData = completion_photos.map((url) => ({
+      fixer_id: req.user.id,
+      image_url: url,
+      description: `Completed: ${task.title}`,
+    }));
+    await prisma.portfolioItem.createMany({ data: portfolioData });
+
+    res.json({ task: updated });
   } catch (err) {
     next(err);
   }

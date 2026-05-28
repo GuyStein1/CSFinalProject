@@ -12,6 +12,7 @@ export const createTaskSchema = z.object({
   media_urls: z.array(z.url()).optional(),
   category: z.enum(['ASSEMBLY', 'MOUNTING', 'MOVING', 'PAINTING', 'PLUMBING', 'ELECTRICITY', 'OUTDOORS', 'CLEANING', 'OTHER']),
   suggested_price: z.number().positive().nullable().optional(),
+  urgency: z.enum(['FLEXIBLE', 'THIS_WEEK', 'TODAY']).optional(),
   general_location_name: z.string().trim().min(1, 'General location is required'),
   exact_address: z.string().trim().min(1, 'Exact address is required'),
   lat: z.number().min(-90).max(90),
@@ -79,4 +80,12 @@ export const pushTokenSchema = z.object({
 export const createPortfolioItemSchema = z.object({
   image_url: z.url(),
   description: z.string().trim().max(500).optional(),
+});
+
+export const submitVerificationSchema = z.object({
+  verification_photo_url: z.url(),
+});
+
+export const completionPhotosSchema = z.object({
+  completion_photos: z.array(z.url()).min(1).max(10),
 });
