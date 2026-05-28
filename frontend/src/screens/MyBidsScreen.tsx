@@ -153,6 +153,32 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             </Text>
           </View>
 
+          {bid.status === 'REJECTED' && bid.rejection_reason && (
+            <View style={styles.rejectionBanner}>
+              <View style={styles.rejectionHeader}>
+                <MaterialCommunityIcons name="information-outline" size={14} color={brandColors.danger} />
+                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>
+                  {REJECTION_LABELS[bid.rejection_reason] ?? 'Rejected'}
+                </Text>
+              </View>
+              {bid.rejection_note ? (
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]} numberOfLines={3}>
+                  &quot;{bid.rejection_note}&quot;
+                </Text>
+              ) : null}
+              {bid.auto_rejected_winning_price != null && (
+                <View style={styles.rejectionContext}>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                    Winning bid: ₪{bid.auto_rejected_winning_price}
+                    {bid.auto_rejected_winning_rating != null && bid.auto_rejected_winning_rating > 0
+                      ? ` · Rating: ${bid.auto_rejected_winning_rating.toFixed(1)}★`
+                      : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           <View style={styles.bottomRow}>
             <View style={styles.dateRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color={brandColors.textMuted} />
@@ -213,6 +239,15 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
   );
 }
 
+const REJECTION_LABELS: Record<string, string> = {
+  PRICE_TOO_HIGH: 'Price too high',
+  BAD_TIMING: 'Bad timing',
+  CHOSE_ANOTHER: 'Another fixer was chosen',
+  NOT_QUALIFIED: 'Not the right fit',
+  TASK_CANCELED: 'Task was canceled',
+  OTHER: 'Other reason',
+};
+
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function getMonthKey(dateStr: string | null): string {
@@ -233,7 +268,8 @@ export default function MyBidsScreen() {
   const [activeTab, setActiveTab] = useState<TabFilter>('ALL');
   const now = new Date();
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
+  const [selectedYear, setSelectedYear] = useState<number | null>(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(currentMonthKey);
   const statusFilter = activeTab === 'COMPLETED' ? 'ACCEPTED' : activeTab === 'ALL' ? null : activeTab;
 
   const { bids: rawBids, loading, error, refetch, updateBidLocally, removeBidLocally } = useBids({
@@ -245,14 +281,26 @@ export default function MyBidsScreen() {
     (b) => b.status === 'ACCEPTED' && b.task.status === 'COMPLETED',
   );
 
-  // Available months from completed bids
-  const availableMonths = [...new Set(allCompletedBids.map((b) => getMonthKey(b.task.completed_at ?? b.created_at)))].sort().reverse();
+  // Available years and months from completed bids
+  const availableYears = [...new Set(
+    allCompletedBids.map((b) => new Date(b.task.completed_at ?? b.created_at).getFullYear()),
+  )].sort((a, b) => b - a);
 
-  // Ensure selected month is valid — if current selection isn't in the list, pick the most recent
+  const effectiveYear = selectedYear;
+
+  const availableMonths = effectiveYear != null
+    ? [...new Set(
+        allCompletedBids
+          .filter((b) => new Date(b.task.completed_at ?? b.created_at).getFullYear() === effectiveYear)
+          .map((b) => getMonthKey(b.task.completed_at ?? b.created_at)),
+      )].sort().reverse()
+    : [];
+
+  // Ensure selected month is valid
   const effectiveMonth =
-    availableMonths.length > 0 && !availableMonths.includes(selectedMonth)
-      ? availableMonths[0]
-      : selectedMonth;
+    selectedMonth != null && availableMonths.includes(selectedMonth)
+      ? selectedMonth
+      : null;
 
   const bids = rawBids
     .filter((b) => {
@@ -260,8 +308,13 @@ export default function MyBidsScreen() {
       if (activeTab === 'ACCEPTED') return b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED';
       if (activeTab === 'COMPLETED') {
         if (b.status !== 'ACCEPTED' || b.task.status !== 'COMPLETED') return false;
-        const monthKey = getMonthKey(b.task.completed_at ?? b.created_at);
-        return monthKey === effectiveMonth;
+        if (effectiveYear == null) return false; // no year selected — show nothing
+        const d = new Date(b.task.completed_at ?? b.created_at);
+        if (d.getFullYear() !== effectiveYear) return false;
+        if (effectiveMonth != null) {
+          return getMonthKey(b.task.completed_at ?? b.created_at) === effectiveMonth;
+        }
+        return true; // year matches, no month filter
       }
       return true;
     })
@@ -534,7 +587,7 @@ export default function MyBidsScreen() {
           actionLabel="Try Again"
           onAction={refetch}
         />
-      ) : bids.length === 0 ? (
+      ) : bids.length === 0 && activeTab !== 'COMPLETED' ? (
         <EmptyState
           icon={activeTab === 'ALL' ? 'hand-extended-outline' : 'filter-off-outline'}
           title={emptyTitle}
@@ -552,8 +605,34 @@ export default function MyBidsScreen() {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={activeTab === 'COMPLETED' ? (
             <View>
-              {/* Month selector */}
-              {availableMonths.length > 0 && (
+              {/* Year selector */}
+              {availableYears.length > 0 && (
+                <FlatList
+                  data={availableYears}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => String(item)}
+                  contentContainerStyle={styles.monthRow}
+                  renderItem={({ item }) => (
+                    <FChip
+                      label={String(item)}
+                      selected={effectiveYear === item}
+                      onPress={() => {
+                        if (item === effectiveYear) {
+                          setSelectedYear(null);
+                          setSelectedMonth(null);
+                        } else {
+                          setSelectedYear(item);
+                          setSelectedMonth(null);
+                        }
+                      }}
+                      compact
+                    />
+                  )}
+                />
+              )}
+              {/* Month selector — only when year is selected */}
+              {effectiveYear != null && availableMonths.length > 0 && (
                 <FlatList
                   data={availableMonths}
                   horizontal
@@ -562,9 +641,9 @@ export default function MyBidsScreen() {
                   contentContainerStyle={styles.monthRow}
                   renderItem={({ item }) => (
                     <FChip
-                      label={formatMonthLabel(item)}
+                      label={MONTH_NAMES[parseInt(item.split('-')[1]) - 1]}
                       selected={effectiveMonth === item}
-                      onPress={() => setSelectedMonth(item)}
+                      onPress={() => setSelectedMonth(item === effectiveMonth ? null : item)}
                       compact
                     />
                   )}
@@ -573,7 +652,7 @@ export default function MyBidsScreen() {
               {/* Summary card for selected month */}
               <FCard style={styles.summaryCard}>
                 <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.sm }]}>
-                  {formatMonthLabel(effectiveMonth)}
+                  {effectiveMonth ? formatMonthLabel(effectiveMonth) : effectiveYear != null ? String(effectiveYear) : 'All time'}
                 </Text>
                 <View style={styles.summaryContent}>
                   <View style={styles.summaryItem}>
@@ -614,6 +693,15 @@ export default function MyBidsScreen() {
               )}
             </View>
           )}
+          ListEmptyComponent={
+            activeTab === 'COMPLETED' && effectiveYear == null ? null : (
+              <EmptyState
+                icon="filter-off-outline"
+                title={emptyTitle}
+                message={emptyMessage}
+              />
+            )
+          }
           contentContainerStyle={styles.listContent}
           onRefresh={refetch}
           refreshing={loading}
@@ -907,6 +995,22 @@ const styles = StyleSheet.create({
   successActionBtn: {
     borderColor: brandColors.success,
     backgroundColor: brandColors.successSoft,
+  },
+  rejectionBanner: {
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.dangerSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(192,57,43,0.15)',
+    gap: spacing.xs,
+  },
+  rejectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  rejectionContext: {
+    marginTop: spacing.xs,
   },
   monthRow: {
     paddingHorizontal: spacing.lg,

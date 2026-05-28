@@ -1,7 +1,10 @@
 import React from 'react';
 import {
+  Alert,
   FlatList,
   Image,
+  Platform,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -9,7 +12,7 @@ import { Avatar, Divider, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/axiosInstance';
-import useReviews, { type Review } from '../hooks/useReviews';
+import useReviews, { reportReview, type Review } from '../hooks/useReviews';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FCard } from '../components/ui';
@@ -50,12 +53,73 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
+const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
+
+const REPORT_REASON_LABELS: Record<string, string> = {
+  SPAM: 'Spam / ספאם',
+  OFFENSIVE: 'Offensive / פוגעני',
+  MISLEADING: 'Misleading / מטעה',
+  OTHER: 'Other / אחר',
+};
+
+function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
+  const canReport = currentUserId === review.reviewee_id;
   const date = new Date(review.created_at).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
+
+  const handleReport = () => {
+    const buttons = REPORT_REASONS.map((reason) => ({
+      text: REPORT_REASON_LABELS[reason],
+      onPress: async () => {
+        try {
+          await reportReview(review.id, reason);
+          const msg = 'Report submitted / הדיווח נשלח';
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert('Thank you', msg);
+          }
+        } catch (err: unknown) {
+          const axiosErr = err as {
+            response?: { data?: { error?: { message?: string } }; status?: number };
+          };
+          const message =
+            axiosErr.response?.status === 409
+              ? 'You have already reported this review / כבר דיווחת על ביקורת זו'
+              : axiosErr.response?.data?.error?.message ?? 'Failed to submit report';
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(message);
+          } else {
+            Alert.alert('Error', message);
+          }
+        }
+      },
+    }));
+    buttons.push({ text: 'Cancel', onPress: async () => {} });
+
+    if (Platform.OS === 'web') {
+      // On web, Alert.alert doesn't support multiple buttons well — use a simple prompt
+      const choice = // eslint-disable-next-line no-alert
+        window.prompt(
+          'Report reason / סיבת הדיווח:\n1. Spam\n2. Offensive\n3. Misleading\n4. Other\n\nEnter number (1-4):',
+        );
+      const idx = parseInt(choice ?? '', 10) - 1;
+      if (idx >= 0 && idx < REPORT_REASONS.length) {
+        buttons[idx].onPress();
+      }
+    } else {
+      Alert.alert(
+        'Report Review / דיווח על ביקורת',
+        'Why are you reporting this review?\nלמה את/ה מדווח/ת על ביקורת זו?',
+        buttons,
+      );
+    }
+  };
 
   return (
     <FCard style={styles.reviewCard}>
@@ -77,7 +141,14 @@ function ReviewCard({ review }: { review: Review }) {
             )}
           </View>
         </View>
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{date}</Text>
+        <View style={styles.reviewHeaderRight}>
+          <Text style={[typography.caption, { color: brandColors.textMuted }]}>{date}</Text>
+          {canReport && (
+            <Pressable onPress={handleReport} hitSlop={8}>
+              <MaterialCommunityIcons name="flag-outline" size={16} color={brandColors.textMuted} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <StarRating rating={review.rating} size={14} />
@@ -96,7 +167,14 @@ export default function PublicProfileScreen({ route }: { route: any }) {
   const { userId } = route.params;
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const { reviews, total, loading: reviewsLoading, refetch } = useReviews({ userId });
+
+  React.useEffect(() => {
+    api.get('/api/users/me')
+      .then((res) => setCurrentUserId(res.data.user?.id ?? null))
+      .catch(() => { /* ignore */ });
+  }, []);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -218,7 +296,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           </View>
         </View>
       }
-      renderItem={({ item }) => <ReviewCard review={item} />}
+      renderItem={({ item }) => <ReviewCard review={item} currentUserId={currentUserId} />}
       ListEmptyComponent={
         <EmptyState
           icon="star-outline"
@@ -306,5 +384,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     flex: 1,
+  },
+  reviewHeaderRight: {
+    alignItems: 'flex-end',
+    gap: spacing.xs,
   },
 });

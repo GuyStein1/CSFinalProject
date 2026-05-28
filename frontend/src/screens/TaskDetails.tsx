@@ -14,6 +14,7 @@ import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 import { getCategoryMeta } from '../utils/categoryMetadata';
+import { containsProfanity, PROFANITY_ERROR_MESSAGE } from '../utils/profanityFilter';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -104,6 +105,9 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [editLocation, setEditLocation] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
+  const [rejectingBidId, setRejectingBidId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   const showReviewsForFixer = async (fixerId: string) => {
     try {
@@ -153,9 +157,20 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
-  const declineBid = async (bidId: string) => {
+  const openDeclineModal = (bidId: string) => {
+    setRejectingBidId(bidId);
+    setRejectionReason(null);
+    setRejectionNote('');
+  };
+
+  const confirmDeclineBid = async () => {
+    if (!rejectingBidId || !rejectionReason) return;
     try {
-      await api.put(`/api/bids/${bidId}/reject`);
+      await api.put(`/api/bids/${rejectingBidId}/reject`, {
+        rejection_reason: rejectionReason,
+        rejection_note: rejectionNote.trim() || undefined,
+      });
+      setRejectingBidId(null);
       fetchData();
     } catch {
       Alert.alert('Error', 'Failed to decline bid.');
@@ -206,6 +221,16 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
   const submitReview = async () => {
     if (reviewRating === 0) return;
+    const trimmed = reviewComment.trim();
+    if (trimmed && containsProfanity(trimmed)) {
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(PROFANITY_ERROR_MESSAGE);
+      } else {
+        Alert.alert('Error', PROFANITY_ERROR_MESSAGE);
+      }
+      return;
+    }
     try {
       await api.post(`/api/tasks/${taskId}/reviews`, {
         rating: reviewRating,
@@ -413,7 +438,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} style={{ flex: 1 }}>
                     Accept
                   </FButton>
-                  <FButton variant="outline" size="sm" icon="close" onPress={() => declineBid(bid.id)} style={{ flex: 1 }}>
+                  <FButton variant="outline" size="sm" icon="close" onPress={() => openDeclineModal(bid.id)} style={{ flex: 1 }}>
                     Decline
                   </FButton>
                 </View>
@@ -581,6 +606,70 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             fullWidth
           >
             Close
+          </FButton>
+        </Modal>
+      </Portal>
+
+      {/* Decline Bid Modal */}
+      <Portal>
+        <Modal
+          visible={rejectingBidId !== null}
+          onDismiss={() => setRejectingBidId(null)}
+          contentContainerStyle={styles.editModal}
+        >
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.md }]}>
+            Decline Bid
+          </Text>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+            Select a reason so the fixer can improve future bids.
+          </Text>
+          {([
+            ['PRICE_TOO_HIGH', 'Price too high'],
+            ['BAD_TIMING', 'Bad timing'],
+            ['CHOSE_ANOTHER', 'Chose another fixer'],
+            ['NOT_QUALIFIED', 'Not the right fit'],
+            ['OTHER', 'Other'],
+          ] as const).map(([value, label]) => (
+            <Pressable
+              key={value}
+              style={[
+                styles.reasonOption,
+                rejectionReason === value && styles.reasonOptionSelected,
+              ]}
+              onPress={() => setRejectionReason(value)}
+            >
+              <MaterialCommunityIcons
+                name={rejectionReason === value ? 'radiobox-marked' : 'radiobox-blank'}
+                size={20}
+                color={rejectionReason === value ? brandColors.primary : brandColors.textMuted}
+              />
+              <Text style={[
+                typography.body,
+                { color: rejectionReason === value ? brandColors.primary : brandColors.textPrimary },
+              ]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+          <FInput
+            label="Note (optional)"
+            value={rejectionNote}
+            onChangeText={setRejectionNote}
+            multiline
+            numberOfLines={2}
+            maxLength={500}
+            placeholder="Add details if you'd like..."
+          />
+          <FButton
+            onPress={confirmDeclineBid}
+            disabled={!rejectionReason}
+            fullWidth
+            style={{ marginTop: spacing.md }}
+          >
+            Confirm Decline
+          </FButton>
+          <FButton variant="outline" onPress={() => setRejectingBidId(null)} fullWidth style={{ marginTop: spacing.sm }}>
+            Cancel
           </FButton>
         </Modal>
       </Portal>
@@ -940,5 +1029,20 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '90%',
     gap: spacing.md,
+  },
+  reasonOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    marginBottom: spacing.xs,
+  },
+  reasonOptionSelected: {
+    borderColor: brandColors.primary,
+    backgroundColor: brandColors.infoSoft,
   },
 });

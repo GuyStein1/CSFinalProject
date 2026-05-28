@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
+import { recalculateFixerRating } from '../utils/ratingCalculator';
 import {
   NotFoundError,
   ForbiddenError,
@@ -436,7 +437,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
         });
         await tx.bid.updateMany({
           where: { task_id: task.id, status: 'PENDING' },
-          data: { status: 'REJECTED' },
+          data: { status: 'REJECTED', rejection_reason: 'TASK_CANCELED' },
         });
       });
 
@@ -643,15 +644,8 @@ router.post('/:id/reviews', validate(createReviewSchema), async (req: Request, r
       },
     });
 
-    // Update fixer's average rating
-    const { _avg } = await prisma.review.aggregate({
-      where: { reviewee_id: task.assigned_fixer_id },
-      _avg: { rating: true },
-    });
-    await prisma.user.update({
-      where: { id: task.assigned_fixer_id },
-      data: { average_rating_as_fixer: _avg.rating ?? 0 },
-    });
+    // Recalculate fixer's weighted average rating
+    await recalculateFixerRating(task.assigned_fixer_id);
 
     res.status(201).json({ review });
   } catch (err) {

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -57,6 +57,7 @@ function sameStringSet(a: string[], b: string[]) {
 }
 
 export default function FixerProfileScreen() {
+  const navigation = useNavigation<{ navigate: (screen: string, params: object) => void }>();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -335,12 +336,19 @@ export default function FixerProfileScreen() {
             <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
 
             <View style={styles.heroStats}>
-              <View style={styles.heroStat}>
+              <Pressable
+                style={styles.heroStat}
+                onPress={() => {
+                  if (profile?.id) {
+                    navigation.navigate('PublicProfile', { userId: profile.id });
+                  }
+                }}
+              >
                 <Text style={styles.heroStatValue}>
                   {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
                 </Text>
-                <Text style={styles.heroStatLabel}>Rating</Text>
-              </View>
+                <Text style={[styles.heroStatLabel, { textDecorationLine: 'underline' }]}>Rating</Text>
+              </Pressable>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatValue}>{specializations.length}</Text>
                 <Text style={styles.heroStatLabel}>Trades</Text>

@@ -57,3 +57,11 @@ export default function useReviews({ userId, enabled = true }: UseReviewsParams)
 
   return { reviews, total, loading, error, refetch: fetchReviews };
 }
+
+export async function reportReview(
+  reviewId: string,
+  reason: 'SPAM' | 'OFFENSIVE' | 'MISLEADING' | 'OTHER',
+  details?: string,
+) {
+  return api.post(`/api/reviews/${reviewId}/report`, { reason, details });
+}

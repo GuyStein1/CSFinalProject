@@ -202,15 +202,17 @@ router.get('/:id/reviews', async (req: Request, res: Response, next: NextFunctio
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
     const offset = (pageNum - 1) * limitNum;
 
+    const whereClause = { reviewee_id: req.params.id, is_hidden: false };
+
     const [reviews, total] = await prisma.$transaction([
       prisma.review.findMany({
-        where: { reviewee_id: req.params.id },
+        where: whereClause,
         include: { reviewer: true, task: true },
         orderBy: { created_at: 'desc' },
         skip: offset,
         take: limitNum,
       }),
-      prisma.review.count({ where: { reviewee_id: req.params.id } }),
+      prisma.review.count({ where: whereClause }),
     ]);
 
     res.json({ reviews, total, page: pageNum, limit: limitNum });
