@@ -13,7 +13,8 @@
       "backgroundColor": "#F5F1E8"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
