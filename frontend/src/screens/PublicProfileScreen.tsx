@@ -33,6 +33,9 @@ interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   average_rating_as_fixer: number | null;
+  completed_tasks_as_fixer: number;
+  avg_response_time_minutes: number | null;
+  verification_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   specializations: string[];
   created_at: string;
   portfolio_items: PortfolioItem[];
@@ -51,6 +54,12 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
       ))}
     </View>
   );
+}
+
+function formatResponseTime(minutes: number): string {
+  if (minutes < 60) return `Responds in ~${Math.round(minutes)} min`;
+  if (minutes < 1440) return `Responds in ~${Math.round(minutes / 60)} hr`;
+  return `Responds in ~${Math.round(minutes / 1440)} days`;
 }
 
 const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
@@ -222,10 +231,15 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             />
           )}
 
-          {/* Name */}
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginTop: spacing.md }]}>
-            {profile?.full_name ?? 'User'}
-          </Text>
+          {/* Name + verified badge */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}>
+            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
+              {profile?.full_name ?? 'User'}
+            </Text>
+            {profile?.verification_status === 'APPROVED' && (
+              <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
+            )}
+          </View>
 
           {/* Rating */}
           {avgRating != null && avgRating > 0 && (
@@ -239,6 +253,26 @@ export default function PublicProfileScreen({ route }: { route: any }) {
               </Text>
             </View>
           )}
+
+          {/* Stats row: completed tasks + response time */}
+          <View style={styles.statsRow}>
+            {(profile?.completed_tasks_as_fixer ?? 0) > 0 && (
+              <View style={styles.statChip}>
+                <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                  {profile!.completed_tasks_as_fixer} tasks completed
+                </Text>
+              </View>
+            )}
+            {profile?.avg_response_time_minutes != null && (
+              <View style={styles.statChip}>
+                <MaterialCommunityIcons name="clock-fast" size={14} color={brandColors.primary} />
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                  {formatResponseTime(profile.avg_response_time_minutes)}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Member since */}
           {memberSince && (
@@ -331,6 +365,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: spacing.sm,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.surfaceAlt,
   },
   specRow: {
     flexDirection: 'row',

@@ -12,6 +12,7 @@ export interface DiscoveryTask {
   mediaUrls: string[];
   category: Category;
   suggestedPrice: number | null;
+  urgency: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   generalLocationName: string;
   isPaymentConfirmed: boolean;
@@ -42,6 +43,7 @@ type ApiTask = {
   media_urls: string[];
   category: Category;
   suggested_price: number | null;
+  urgency: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   general_location_name: string;
   is_payment_confirmed: boolean;
@@ -188,6 +190,7 @@ export default function useTasks({
         mediaUrls: task.media_urls ?? [],
         category: task.category,
         suggestedPrice: task.suggested_price,
+        urgency: task.urgency ?? 'FLEXIBLE',
         status: task.status,
         generalLocationName: task.general_location_name,
         isPaymentConfirmed: task.is_payment_confirmed,

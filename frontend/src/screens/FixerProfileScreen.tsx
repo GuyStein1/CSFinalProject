@@ -39,6 +39,9 @@ interface Profile {
   payment_link: string | null;
   specializations: string[];
   average_rating_as_fixer: number;
+  completed_tasks_as_fixer: number;
+  avg_response_time_minutes: number | null;
+  verification_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   portfolio_items: PortfolioItem[];
 }
 
@@ -77,6 +80,7 @@ export default function FixerProfileScreen() {
   const [viewingAvatar, setViewingAvatar] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [uploadingVerification, setUploadingVerification] = useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -196,22 +200,42 @@ export default function FixerProfileScreen() {
     }
   };
 
-  const handleDeletePortfolio = (item: PortfolioItem) => {
-    Alert.alert('Delete photo?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.delete(`/api/users/me/portfolio/${item.id}`);
-            setPortfolioItems(prev => prev.filter(p => p.id !== item.id));
-          } catch {
-            Alert.alert('Error', 'Failed to delete photo.');
-          }
-        },
-      },
-    ]);
+  const handleDeletePortfolio = async (item: PortfolioItem) => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('Delete photo? This cannot be undone.')
+      : await new Promise<boolean>(resolve =>
+          Alert.alert('Delete photo?', 'This cannot be undone.', [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+          ]),
+        );
+    if (!confirmed) return;
+    try {
+      await api.delete(`/api/users/me/portfolio/${item.id}`);
+      setPortfolioItems(prev => prev.filter(p => p.id !== item.id));
+    } catch {
+      Alert.alert('Error', 'Failed to delete photo.');
+    }
+  };
+
+  const handleSubmitVerification = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      quality: 0.8,
+      allowsEditing: true,
+    });
+    if (result.canceled || !profile) return;
+    setUploadingVerification(true);
+    try {
+      const url = await uploadImage(result.assets[0].uri, `verification/${profile.id}/${Date.now()}.jpg`);
+      await api.post('/api/users/me/verification', { verification_photo_url: url });
+      setProfile(p => p ? { ...p, verification_status: 'PENDING' } : p);
+      Alert.alert('Submitted', 'Your verification photo has been submitted for review.');
+    } catch {
+      Alert.alert('Error', 'Failed to submit verification photo.');
+    } finally {
+      setUploadingVerification(false);
+    }
   };
 
   if (loading) return <LoadingScreen label="Loading profile..." />;
@@ -332,7 +356,12 @@ export default function FixerProfileScreen() {
               </View>
               <Text style={styles.headerKicker}>Fixer Profile</Text>
             </View>
-            <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+              {profile?.verification_status === 'APPROVED' && (
+                <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
+              )}
+            </View>
             <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
 
             <View style={styles.heroStats}>
@@ -484,6 +513,53 @@ export default function FixerProfileScreen() {
                   thumbColor={brandColors.white}
                 />
               </View>
+            </FCard>
+
+            {/* Verification section */}
+            <FCard style={styles.section} shadow="sm">
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIcon}>
+                  <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.sectionKicker}>Identity</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Verification</Text>
+                </View>
+              </View>
+
+              {profile?.verification_status === 'APPROVED' ? (
+                <View style={styles.verificationBanner}>
+                  <MaterialCommunityIcons name="check-decagram" size={20} color={brandColors.primary} />
+                  <Text style={[typography.bodyMedium, { color: brandColors.primary }]}>Verified</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                    Your identity has been verified. A badge appears on your public profile.
+                  </Text>
+                </View>
+              ) : profile?.verification_status === 'PENDING' ? (
+                <View style={styles.verificationBanner}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
+                  <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>Pending review</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                    Your verification photo is being reviewed by an admin.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+                    Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.
+                  </Text>
+                  <FButton
+                    variant="secondary"
+                    icon="camera-outline"
+                    onPress={() => void handleSubmitVerification()}
+                    loading={uploadingVerification}
+                    disabled={uploadingVerification}
+                    fullWidth
+                  >
+                    Upload ID Photo
+                  </FButton>
+                </>
+              )}
             </FCard>
 
             <FCard style={styles.section} shadow="sm">
@@ -799,6 +875,14 @@ const styles = StyleSheet.create({
   },
   dangerRow: {
     backgroundColor: brandColors.dangerSoft,
+  },
+  verificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
   },
   chipsWrap: {
     flexDirection: 'row',

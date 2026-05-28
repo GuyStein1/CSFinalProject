@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
-import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema } from '../schemas';
+import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema, submitVerificationSchema } from '../schemas';
 
 const router = Router();
 
@@ -162,6 +162,30 @@ router.delete('/me/portfolio/:id', async (req: Request, res: Response, next: Nex
   }
 });
 
+// POST /api/users/me/verification — submit ID for verification
+router.post('/me/verification', validate(submitVerificationSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (user?.verification_status === 'APPROVED') {
+      return next(new ConflictError('Already verified'));
+    }
+    if (user?.verification_status === 'PENDING') {
+      return next(new ConflictError('Verification already pending'));
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        verification_status: 'PENDING',
+        verification_photo_url: req.body.verification_photo_url,
+      },
+    });
+    res.json({ message: 'Verification submitted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users/:id — public profile (limited fields)
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -173,6 +197,9 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         avatar_url: true,
         bio: true,
         average_rating_as_fixer: true,
+        completed_tasks_as_fixer: true,
+        avg_response_time_minutes: true,
+        verification_status: true,
         specializations: true,
         created_at: true,
         portfolio_items: { orderBy: { created_at: 'desc' } },

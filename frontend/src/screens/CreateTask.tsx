@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import {
   Text,
-  SegmentedButtons,
   Portal,
   Modal,
   IconButton,
@@ -40,8 +39,8 @@ export default function CreateTask({ navigation, route }: Props) {
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [category, setCategory] = useState<Category | null>(route?.params?.category ?? null);
-  const [budgetType, setBudgetType] = useState<'fixed' | 'quote'>('fixed');
   const [price, setPrice] = useState('');
+  const [urgency, setUrgency] = useState<'FLEXIBLE' | 'THIS_WEEK' | 'TODAY'>('FLEXIBLE');
   const [address, setAddress] = useState('');
   const [generalLocationName, setGeneralLocationName] = useState('');
   const [showReview, setShowReview] = useState(false);
@@ -272,7 +271,7 @@ export default function CreateTask({ navigation, route }: Props) {
       case 1: return title.trim().length > 0 && description.trim().length > 0;
       case 2: return true;
       case 3: return category !== null;
-      case 4: return budgetType === 'quote' || (budgetType === 'fixed' && parseFloat(price) > 0);
+      case 4: return true;
       case 5: return address.trim().length > 0 && addressConfirmed && pinCoords != null;
       default: return false;
     }
@@ -328,7 +327,8 @@ export default function CreateTask({ navigation, route }: Props) {
         description: description.trim(),
         media_urls: mediaUrls,
         category,
-        suggested_price: budgetType === 'fixed' ? parseFloat(price) : null,
+        suggested_price: parseFloat(price) > 0 ? parseFloat(price) : null,
+        urgency,
         general_location_name: generalLocationName || address.trim(),
         exact_address: address.trim(),
         lat: pinCoords?.latitude ?? 32.8,
@@ -484,33 +484,50 @@ export default function CreateTask({ navigation, route }: Props) {
         return (
           <View style={styles.stepContent}>
             <Text style={[typography.h2, styles.stepTitle]}>Set your budget</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Choose a fixed price or let fixers quote</Text>
-            <SegmentedButtons
-              value={budgetType}
-              onValueChange={(v) => setBudgetType(v as 'fixed' | 'quote')}
-              buttons={[
-                { value: 'fixed', label: 'Fixed Price' },
-                { value: 'quote', label: 'Quote Required' },
-              ]}
-              style={styles.segmented}
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>Optional — leave empty if you're not sure</Text>
+            <FInput
+              label="Budget (₪)"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="numeric"
+              placeholder="Enter your budget (optional)"
+              left={<FInput.Affix text="₪" />}
             />
-            {budgetType === 'fixed' ? (
-              <FInput
-                label="Budget (₪)"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-                placeholder="Enter your budget"
-                left={<FInput.Affix text="₪" />}
-              />
-            ) : (
-              <View style={styles.quoteNote}>
-                <MaterialCommunityIcons name="information-outline" size={18} color={brandColors.primaryMuted} />
-                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
-                  Fixers will propose their own price when bidding on your task.
-                </Text>
+
+            <View style={{ marginTop: spacing.xl }}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm }]}>
+                How urgent is this?
+              </Text>
+              <View style={styles.urgencyRow}>
+                {([
+                  { value: 'FLEXIBLE' as const, label: 'Flexible', icon: 'calendar-blank-outline' },
+                  { value: 'THIS_WEEK' as const, label: 'This week', icon: 'calendar-week' },
+                  { value: 'TODAY' as const, label: 'Today', icon: 'clock-alert-outline' },
+                ] as const).map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setUrgency(opt.value)}
+                    style={[
+                      styles.urgencyOption,
+                      urgency === opt.value && styles.urgencyOptionSelected,
+                      opt.value === 'TODAY' && urgency === 'TODAY' && styles.urgencyOptionUrgent,
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={opt.icon as never}
+                      size={20}
+                      color={urgency === opt.value ? (opt.value === 'TODAY' ? brandColors.danger : brandColors.primary) : brandColors.textMuted}
+                    />
+                    <Text style={[
+                      typography.bodySm,
+                      { color: urgency === opt.value ? (opt.value === 'TODAY' ? brandColors.danger : brandColors.primary) : brandColors.textMuted },
+                    ]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
-            )}
+            </View>
           </View>
         );
 
@@ -698,7 +715,8 @@ export default function CreateTask({ navigation, route }: Props) {
           <View style={styles.reviewRows}>
             <ReviewRow icon="text-box-outline" label="Title" value={title} />
             <ReviewRow icon="shape-outline" label="Category" value={CATEGORY_LIST.find((c) => c.value === category)?.label ?? ''} />
-            <ReviewRow icon="cash-multiple" label="Budget" value={budgetType === 'fixed' ? `₪${price}` : 'Quote Required'} />
+            <ReviewRow icon="cash-multiple" label="Budget" value={parseFloat(price) > 0 ? `₪${price}` : 'No price specified'} />
+            <ReviewRow icon="clock-alert-outline" label="Urgency" value={urgency === 'TODAY' ? 'Today' : urgency === 'THIS_WEEK' ? 'This week' : 'Flexible'} />
             <ReviewRow icon="map-marker-outline" label="Location" value={address} />
             <ReviewRow icon="camera-outline" label="Photos" value={`${photos.length} photo(s)`} />
           </View>
@@ -942,6 +960,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  urgencyRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  urgencyOption: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 2,
+    borderColor: brandColors.outlineLight,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  urgencyOptionSelected: {
+    borderColor: brandColors.primary,
+    backgroundColor: brandColors.infoSoft,
+  },
+  urgencyOptionUrgent: {
+    borderColor: brandColors.danger,
+    backgroundColor: brandColors.dangerSoft,
+  },
   segmented: {
     backgroundColor: brandColors.surfaceAlt,
     borderRadius: radii.pill,

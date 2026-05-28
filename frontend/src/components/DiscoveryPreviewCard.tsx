@@ -18,7 +18,7 @@ export default function DiscoveryPreviewCard({
   hasBid = false,
   onViewDetails,
 }: DiscoveryPreviewCardProps) {
-  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
+  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'No price specified';
   const catMeta = getCategoryMetadata(task.category);
 
   return (
@@ -38,12 +38,26 @@ export default function DiscoveryPreviewCard({
         </View>
       </View>
 
-      {hasBid && (
-        <View style={styles.bidNotice}>
-          <MaterialCommunityIcons name="check-circle-outline" size={15} color={brandColors.success} />
-          <Text style={[typography.caption, styles.bidNoticeText]}>Bid already sent</Text>
-        </View>
-      )}
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        {hasBid && (
+          <View style={styles.bidNotice}>
+            <MaterialCommunityIcons name="check-circle-outline" size={15} color={brandColors.success} />
+            <Text style={[typography.caption, styles.bidNoticeText]}>Bid already sent</Text>
+          </View>
+        )}
+        {task.urgency === 'TODAY' && (
+          <View style={[styles.bidNotice, { backgroundColor: brandColors.dangerSoft, borderColor: 'rgba(168,91,91,0.22)' }]}>
+            <MaterialCommunityIcons name="clock-alert-outline" size={15} color={brandColors.danger} />
+            <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>Today</Text>
+          </View>
+        )}
+        {task.urgency === 'THIS_WEEK' && (
+          <View style={[styles.bidNotice, { backgroundColor: brandColors.warningSoft, borderColor: 'rgba(155,109,42,0.22)' }]}>
+            <MaterialCommunityIcons name="calendar-week" size={15} color={brandColors.warning} />
+            <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>This week</Text>
+          </View>
+        )}
+      </View>
 
       <Text style={[typography.h2, styles.title]} numberOfLines={2}>
         {task.title}

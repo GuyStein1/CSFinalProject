@@ -59,6 +59,21 @@ enum NotificationType {
   NEW_MESSAGE
   TASK_COMPLETED
   TASK_CANCELED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+}
+
+enum VerificationStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TaskUrgency {
+  FLEXIBLE
+  THIS_WEEK
+  TODAY
 }
 
 model User {
@@ -72,10 +87,14 @@ model User {
   payment_link            String?
   specializations         Category[]
   push_token              String?
-  average_rating_as_fixer Float     @default(0)
-  is_admin                Boolean   @default(false)
-  created_at              DateTime  @default(now())
-  updated_at              DateTime  @updatedAt
+  average_rating_as_fixer    Float              @default(0)
+  completed_tasks_as_fixer   Int                @default(0)
+  avg_response_time_minutes  Float?
+  verification_status        VerificationStatus @default(NONE)
+  verification_photo_url     String?
+  is_admin                   Boolean            @default(false)
+  created_at                 DateTime           @default(now())
+  updated_at                 DateTime           @updatedAt
 
   requested_tasks  Task[]          @relation("RequesterTasks")
   assigned_tasks   Task[]          @relation("FixerTasks")
@@ -98,11 +117,13 @@ model Task {
   media_urls            String[]
   category              Category
   suggested_price       Float?
+  urgency               TaskUrgency @default(FLEXIBLE)
   status                TaskStatus @default(OPEN)
   general_location_name String
   exact_address         String
   coordinates           Unsupported("geometry(Point, 4326)")
   assigned_fixer_id     String?
+  completion_photos     String[]
   is_payment_confirmed  Boolean    @default(false)
   completed_at          DateTime?
   created_at            DateTime   @default(now())
