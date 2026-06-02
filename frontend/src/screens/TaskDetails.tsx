@@ -213,6 +213,33 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
+  const reopenTask = async () => {
+    const doReopen = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/reopen`);
+        fetchData();
+      } catch {
+        Alert.alert('Error', 'Failed to reopen task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Reopen this task and re-post it to the discovery feed?')) {
+        doReopen();
+      }
+    } else {
+      Alert.alert(
+        'Reopen Task',
+        'Reopen this task and re-post it to the discovery feed for fixers to bid on?',
+        [
+          { text: 'Cancel' },
+          { text: 'Reopen', onPress: doReopen },
+        ],
+      );
+    }
+  };
+
   const confirmPayment = async () => {
     try {
       await api.put(`/api/tasks/${taskId}/confirm-payment`);
@@ -814,6 +841,28 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </FCard>
         </View>
       )}
+
+      {/* CANCELED: Reopen */}
+      {task.status === 'CANCELED' && (
+        <View style={styles.section}>
+          <FSectionHeader title="Canceled" accentColor={brandColors.danger} />
+          <FCard>
+            <View style={styles.canceledContent}>
+              <MaterialCommunityIcons
+                name="refresh"
+                size={28}
+                color={brandColors.textMuted}
+              />
+              <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
+                This task was canceled. Reopen it to re-post it to the discovery feed for fixers to bid on again.
+              </Text>
+              <FButton onPress={reopenTask} fullWidth icon="refresh">
+                Reopen Task
+              </FButton>
+            </View>
+          </FCard>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -1049,6 +1098,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.xl,
+  },
+  canceledContent: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
   },
   editModal: {
     backgroundColor: brandColors.surface,

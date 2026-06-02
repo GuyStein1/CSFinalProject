@@ -423,10 +423,12 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
 
     if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can update task status');
 
+    // Reopening a CANCELED task is handled by the dedicated PUT /api/tasks/:id/reopen
+    // endpoint (it also clears assigned_fixer_id), so it is intentionally not a
+    // transition here.
     const validTransitions: Partial<Record<TaskStatus, TaskStatus[]>> = {
       OPEN: ['CANCELED'],
       IN_PROGRESS: ['COMPLETED', 'CANCELED'],
-      CANCELED: ['OPEN'],
     };
 
     if (!validTransitions[task.status]?.includes(newStatus)) {
@@ -505,14 +507,40 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
           'Task',
         );
       }
-    } else if (task.status === 'CANCELED' && newStatus === 'OPEN') {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: { status: 'OPEN' },
-      });
     }
 
     const updated = await prisma.task.findUnique({ where: { id: task.id } });
+    res.json({ task: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/tasks/:id/reopen — re-post a canceled task to the discovery feed
+router.put('/:id/reopen', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can reopen this task');
+    if (task.status !== 'CANCELED') throw new ValidationError('Only a canceled task can be reopened');
+
+    // Reopen as a clean OPEN task: clear the assigned fixer and wipe the previous
+    // engagement. The old bids and chat are void once a task is canceled, and clearing
+    // them: (a) removes any stale ACCEPTED bid that would otherwise inflate bid_count
+    // and leave an OPEN task in an illegal "has an accepted bid" state; (b) frees the
+    // (task_id, fixer_id) unique constraint so prior bidders can bid again; and
+    // (c) prevents a future fixer from reading the prior fixer's chat history, since
+    // message access is granted to any bidder on the task (see messages.ts).
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.bid.deleteMany({ where: { task_id: task.id } });
+      await tx.message.deleteMany({ where: { task_id: task.id } });
+      return tx.task.update({
+        where: { id: task.id },
+        data: { status: 'OPEN', assigned_fixer_id: null },
+      });
+    });
+
     res.json({ task: updated });
   } catch (err) {
     next(err);

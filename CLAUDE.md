@@ -8,30 +8,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Challenge assumptions.** Second-guess both what the user proposes and what you yourself suggest. If something feels off, flag it before writing code.
 - **Always consult the docs before implementing.** Before writing any new feature or making any non-trivial change, read the relevant files in `docs/` — especially `03_Database_Schema.md`, `04_API_Design.md`, `05_User_Flows.md`, and `07_Development_Plan.md`. The docs are the source of truth, but they are not infallible — if the docs specify something that seems wrong or suboptimal, raise it rather than implementing it as-is.
 
-## Project Status
+> **Project status is fluid — don't hardcode it here.** The work is organized into phases (see below), but which phase is active and what's done changes constantly. To learn the current state, read recent `git log` on `main`, open PRs, and the GitHub project board — not this file.
 
-**Current phase: Phase 3 (Frontend Core) — in progress.**
+## Repository Layout
 
-### Completed
-- **Phase 1** — Monorepo, PostgreSQL+PostGIS, Prisma schema, Express scaffold, Docker, CI (all team members)
-- **Phase 2 (Stein — A2)** — Firebase Admin, auth middleware, all task/bid/auth endpoints, error handling, notification stub. Fully tested via Postman.
-- **Phase 2 (Shick — C2)** — Zod validation middleware, review/notification endpoints, seed data with real Firebase UIDs
-- **Phase 2 (Zilber — B1)** — Expo frontend scaffold, Firebase Client SDK, Axios interceptor with auto token attachment
+npm workspaces monorepo. Two workspaces plus shared docs:
 
-### In Progress
-- **Phase 2 (Zilber — B2, issue #20)** — User/portfolio endpoints and real notification service (replaces stub at `backend/src/services/notificationService.ts`)
+```
+backend/    Node + Express + TypeScript API (Prisma → PostgreSQL/PostGIS)
+frontend/   React Native + Expo app (iOS / Android / web), TypeScript
+docs/       Source-of-truth specs (Docsify site) — see Documentation Index below
+```
 
-### Key Files Added in Phase 2
-- `backend/src/middleware/auth.ts` — Firebase token verification + user lookup
-- `backend/src/middleware/validate.ts` — Zod validation middleware (Shick)
-- `backend/src/utils/errors.ts` — AppError class hierarchy
-- `backend/src/config/prisma.ts` — Prisma singleton
-- `backend/src/config/firebaseAdmin.ts` — Firebase Admin init (gracefully skips if env vars missing)
-- `backend/src/services/notificationService.ts` — No-op stub, will be replaced by Zilber's B2
-- `backend/src/routes/auth.ts` — POST /api/auth/sync
-- `backend/src/routes/tasks.ts` — All task + bid-on-task endpoints
-- `backend/src/routes/bids.ts` — accept/reject/withdraw
-- `backend/src/routes/users.ts` — GET /api/users/me/tasks, GET /api/users/me/bids
+Run any workspace script from the repo root with `--workspace`, e.g. `npm run dev --workspace backend`. Note that workspace-local CLIs (like `prisma`) live in that workspace's `node_modules/.bin`, so run them from inside the workspace dir (`cd backend && npx prisma ...`) or via `npm exec -w backend -- prisma ...`.
+
+### Backend (`backend/src/`)
+- `index.ts` / `app.ts` — Express entry point + app wiring; routes mounted under `/api`
+- `routes/` — one file per domain: `auth.ts`, `tasks.ts` (tasks + bids-on-task + reviews), `bids.ts`, `users.ts`, `messages.ts`, `admin.ts`
+- `middleware/` — `auth.ts` (Firebase token verification + user lookup → `req.user`), `adminAuth.ts`, `validate.ts` (Zod), `errorHandler.ts`
+- `config/` — `prisma.ts` (Prisma singleton), `firebaseAdmin.ts` (init; gracefully skips if env vars missing)
+- `services/notificationService.ts` — `sendNotification(userId, title, body, type, relatedEntityId, relatedEntityType)`: persists a `Notification` row + sends Expo push if a token exists; never throws
+- `socket/index.ts` — Socket.io chat server (one room per task; read receipts)
+- `utils/` — `errors.ts` (AppError hierarchy), `profanityFilter.ts`, `ratingCalculator.ts`
+- `schemas.ts` — centralized Zod schemas for mutation endpoints
+- `prisma/` — `schema.prisma`, `migrations/`, `seed.ts`
+
+### Frontend (`frontend/src/`)
+- `screens/` — one file per screen; `*.web.tsx` variants where web diverges from native
+- `navigation/` — root/app/auth navigators, requester vs fixer tab configs, mode toggle
+- `components/` — shared UI; `components/ui/` holds the `F*` design-system primitives (`FButton`, `FCard`, `FInput`, `FSectionHeader`, …)
+- `hooks/`, `context/`, `api/` (`axiosInstance.ts` auto-attaches the Firebase token), `utils/`, `theme.ts`
+
+## Conventions
+
+- **TypeScript everywhere**, strict mode. Keep `tsc --noEmit` clean — CI runs lint + typecheck on both workspaces, and a pre-commit hook (husky + lint-staged) runs ESLint + typecheck on staged files.
+- **Errors:** throw the `AppError` subclasses (`NotFoundError`, `ForbiddenError`, `ValidationError`, `ConflictError`, …); the error handler turns them into `{ error: { code, message, details } }`. Don't hand-roll status codes in routes.
+- **Validation:** every mutation route uses `validate(<zodSchema>)` from `middleware/validate.ts`, with the schema defined in `schemas.ts`.
+- **Notifications:** trigger user-facing events via `sendNotification(...)` rather than writing `Notification` rows directly.
+- **Frontend UI:** prefer the `F*` primitives in `components/ui/` over raw Paper/RN components for new screens. Status chips go through `StatusBadge`.
+- **Platform-aware dialogs:** confirmations use `confirm()` on web and `Alert.alert(...)` on native (see existing screens for the pattern).
+- **i18n note:** much UI text is currently hardcoded English; a full i18n/RTL pass is planned. Check whether i18n has landed before assuming either way.
+
+## Testing
+
+- **Backend:** Jest + supertest in `backend/src/__tests__/`. Firebase UID is mocked via `__setUid`, and `cleanDatabase()` runs between tests against a real Postgres. Run: `npm test --workspace backend`.
+- **Frontend:** Jest in `frontend/src/**/__tests__/`. Run: `npm test --workspace frontend`.
+- Coverage target ≥80% on both. Mirror the existing test in a file when adding new ones.
 
 The source of truth for architecture, database schema, API design, and roadmap is the `docs/` directory. All code must align with what is defined there unless a better approach is explicitly agreed upon.
 
