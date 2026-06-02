@@ -10,28 +10,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Current phase: Phase 3 (Frontend Core) — in progress.**
+**Current phase: Phase 5 (Planned Additions) — in progress.** Phases 1–4 and 6 are substantially complete and merged to `main`. (Note: this section was written when the team was on Phase 3; it was updated 2026-06 after catching up on merged work — see git history for the authoritative state.)
 
-### Completed
+### Completed (merged to `main`)
 - **Phase 1** — Monorepo, PostgreSQL+PostGIS, Prisma schema, Express scaffold, Docker, CI (all team members)
-- **Phase 2 (Stein — A2)** — Firebase Admin, auth middleware, all task/bid/auth endpoints, error handling, notification stub. Fully tested via Postman.
-- **Phase 2 (Shick — C2)** — Zod validation middleware, review/notification endpoints, seed data with real Firebase UIDs
-- **Phase 2 (Zilber — B1)** — Expo frontend scaffold, Firebase Client SDK, Axios interceptor with auto token attachment
+- **Phase 2** — Firebase Admin + auth middleware, all task/bid/auth/user/portfolio endpoints, Zod validation, error handling, real Expo-push notification service, review + notification endpoints, seed data with real Firebase UIDs
+- **Phase 3** — All core screens on mobile + web, navigation, mode toggle, discovery feed (map + list), task creation wizard, requester dashboard, profile management, settings
+- **Phase 4** — Socket.io chat server + chat UI, conversation list, push registration, notification center, review submission + display
+- **Phase 6 (Shick)** — Seed data, deployment (`render.yaml`), demo walkthrough (`docs/Demo_Walkthrough.md`, `docs/Deployment_Guide.md`)
+- **Beyond plan** — Admin panel + admin auth, profanity filter, bid rejection reasons, task history, Google Sign-In, accessibility widget, web landing page + sub-pages, FixIt design system, read receipts (Shick C5)
 
 ### In Progress
-- **Phase 2 (Zilber — B2, issue #20)** — User/portfolio endpoints and real notification service (replaces stub at `backend/src/services/notificationService.ts`)
+- **Phase 5 (Stein)** — Task reopen flow (`PUT /api/tasks/:id/reopen`) + "Reopen Task" button on the CANCELED Task Details screen; `bid_count` in `GET /api/tasks/:id` (the bid_count part was already present). Branch: `feature/phase5-stein-task-reopen`.
+- **Phase 5 (Zilber)** — Hebrew/i18n + RTL (strings are currently hardcoded; no i18n library wired yet)
+- **Phase 5 (Shick)** — Read receipts (done, PR #101)
 
-### Key Files Added in Phase 2
+### Key backend files
 - `backend/src/middleware/auth.ts` — Firebase token verification + user lookup
-- `backend/src/middleware/validate.ts` — Zod validation middleware (Shick)
+- `backend/src/middleware/adminAuth.ts` — admin-only guard
+- `backend/src/middleware/validate.ts` — Zod validation middleware
 - `backend/src/utils/errors.ts` — AppError class hierarchy
+- `backend/src/utils/profanityFilter.ts`, `ratingCalculator.ts`
 - `backend/src/config/prisma.ts` — Prisma singleton
 - `backend/src/config/firebaseAdmin.ts` — Firebase Admin init (gracefully skips if env vars missing)
-- `backend/src/services/notificationService.ts` — No-op stub, will be replaced by Zilber's B2
-- `backend/src/routes/auth.ts` — POST /api/auth/sync
-- `backend/src/routes/tasks.ts` — All task + bid-on-task endpoints
-- `backend/src/routes/bids.ts` — accept/reject/withdraw
-- `backend/src/routes/users.ts` — GET /api/users/me/tasks, GET /api/users/me/bids
+- `backend/src/services/notificationService.ts` — real Expo push + DB persistence (`sendNotification(userId, title, body, type, relatedEntityId, relatedEntityType)`)
+- `backend/src/routes/` — `auth.ts`, `tasks.ts` (tasks + bids-on-task + reviews), `bids.ts`, `users.ts`, `messages.ts`, `admin.ts`
+- `backend/src/socket/index.ts` — Socket.io chat server (room per task, read receipts)
+
+### Testing
+- Backend: Jest + supertest in `backend/src/__tests__/` (Firebase UID mocked via `__setUid`, `cleanDatabase()` between tests). Run: `npm test --workspace backend`.
+- Frontend: Jest in `frontend/src/**/__tests__/`. Run: `npm test --workspace frontend`.
+- CI runs lint + typecheck on both workspaces; coverage target ≥80%.
 
 The source of truth for architecture, database schema, API design, and roadmap is the `docs/` directory. All code must align with what is defined there unless a better approach is explicitly agreed upon.
 

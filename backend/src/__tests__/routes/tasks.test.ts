@@ -445,24 +445,71 @@ describe('DELETE /api/tasks/:id', () => {
   });
 });
 
-// ── PUT /api/tasks/:id/status (CANCELED → OPEN) ───────────────────────────────
+// ── PUT /api/tasks/:id/reopen ─────────────────────────────────────────────────
 
-describe('PUT /api/tasks/:id/status (reopen canceled task)', () => {
+describe('PUT /api/tasks/:id/reopen', () => {
   it('requester can reopen a CANCELED task back to OPEN', async () => {
     const task = await createTask();
-    // Cancel it first
     await request(app)
       .put(`/api/tasks/${task.id}/status`)
       .set('Authorization', REQUESTER_AUTH)
       .send({ status: 'CANCELED' });
 
-    // Now reopen it
     const res = await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'OPEN' });
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', REQUESTER_AUTH);
     expect(res.status).toBe(200);
     expect(res.body.task.status).toBe('OPEN');
+  });
+
+  it('clears the assigned fixer when reopening a task canceled mid-progress', async () => {
+    const task = await createTask();
+    await acceptBid(task.id); // task is now IN_PROGRESS with an assigned fixer
+
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.task.status).toBe('OPEN');
+    expect(res.body.task.assigned_fixer_id).toBeNull();
+
+    const reloaded = await prisma.task.findUnique({ where: { id: task.id } });
+    expect(reloaded?.assigned_fixer_id).toBeNull();
+  });
+
+  it('returns 400 when the task is not CANCELED', async () => {
+    const task = await createTask(); // OPEN
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 403 when a non-requester tries to reopen', async () => {
+    const task = await createTask();
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', FIXER_AUTH);
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 404 for a nonexistent task', async () => {
+    const res = await request(app)
+      .put('/api/tasks/00000000-0000-0000-0000-000000000000/reopen')
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(404);
   });
 });
 

@@ -190,7 +190,7 @@ export default function MyTasksScreen({ navigation }: Props) {
   const reactivateTask = (task: Task) => {
     const doReactivate = async (): Promise<boolean> => {
       try {
-        await api.put(`/api/tasks/${task.id}/status`, { status: 'OPEN' });
+        await api.put(`/api/tasks/${task.id}/reopen`);
         void fetchTasks();
         return true;
       } catch {
@@ -199,7 +199,7 @@ export default function MyTasksScreen({ navigation }: Props) {
       }
     };
 
-    const message = `Reopen "${task.title}" as an open request? Review the task details before accepting new bids. If stale assignment data remains visible, it needs backend support to clear.`;
+    const message = `Reopen "${task.title}" as an open request? It will reappear on the discovery feed for fixers to bid on. Review the task details before accepting new bids.`;
 
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals

@@ -423,10 +423,12 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
 
     if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can update task status');
 
+    // Reopening a CANCELED task is handled by the dedicated PUT /api/tasks/:id/reopen
+    // endpoint (it also clears assigned_fixer_id), so it is intentionally not a
+    // transition here.
     const validTransitions: Partial<Record<TaskStatus, TaskStatus[]>> = {
       OPEN: ['CANCELED'],
       IN_PROGRESS: ['COMPLETED', 'CANCELED'],
-      CANCELED: ['OPEN'],
     };
 
     if (!validTransitions[task.status]?.includes(newStatus)) {
@@ -505,14 +507,29 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
           'Task',
         );
       }
-    } else if (task.status === 'CANCELED' && newStatus === 'OPEN') {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: { status: 'OPEN' },
-      });
     }
 
     const updated = await prisma.task.findUnique({ where: { id: task.id } });
+    res.json({ task: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/tasks/:id/reopen — re-post a canceled task to the discovery feed
+router.put('/:id/reopen', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can reopen this task');
+    if (task.status !== 'CANCELED') throw new ValidationError('Only a canceled task can be reopened');
+
+    const updated = await prisma.task.update({
+      where: { id: task.id },
+      data: { status: 'OPEN', assigned_fixer_id: null },
+    });
+
     res.json({ task: updated });
   } catch (err) {
     next(err);

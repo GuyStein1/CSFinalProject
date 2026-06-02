@@ -45,9 +45,11 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
   * Powered by PostGIS `ST_DWithin`. Returns only tasks with status `OPEN`.
 * `GET /api/tasks/:id` - Get task details. Access rules:
   * `exact_address` is included **only** if the requesting user is the task's `requester_id` or the `assigned_fixer_id`.
+  * Response includes a `bid_count` field (count of `PENDING` + `ACCEPTED` bids) so the frontend can render the correct bottom-bar state without a second request.
   * All other fields are public.
 * `PUT /api/tasks/:id` - `Stretch Goal` for later planning. Update task content while status is `OPEN`. Editable fields: `title`, `description`, `media_urls`, `category`, `suggested_price`, `general_location_name`, `exact_address`, `coordinates`.
-* `PUT /api/tasks/:id/status` - Update task status. Valid transitions: `OPEN→CANCELED` (Requester), `IN_PROGRESS→COMPLETED` (Requester), `IN_PROGRESS→CANCELED` (Requester). Setting to `COMPLETED` does **not** set `is_payment_confirmed` — that is a separate action.
+* `PUT /api/tasks/:id/status` - Update task status. Valid transitions: `OPEN→CANCELED` (Requester), `IN_PROGRESS→COMPLETED` (Requester), `IN_PROGRESS→CANCELED` (Requester). Setting to `COMPLETED` does **not** set `is_payment_confirmed` — that is a separate action. Reopening a `CANCELED` task is handled by the dedicated `/reopen` endpoint below, not this one.
+* `PUT /api/tasks/:id/reopen` - Requester re-posts a `CANCELED` task. Valid **only** when status is `CANCELED`. Resets status to `OPEN` and clears `assigned_fixer_id`, so the task reappears on the discovery feed for fresh bids. `403` if the caller is not the requester; `400` if the task is not `CANCELED`.
 * `PUT /api/tasks/:id/confirm-payment` - Requester confirms payment was sent via Bit/Paybox. Sets `Task.is_payment_confirmed = true`. Only valid when task status is `COMPLETED`.
 
 ## 4. Bidding System
