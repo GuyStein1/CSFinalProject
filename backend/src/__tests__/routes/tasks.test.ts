@@ -462,9 +462,9 @@ describe('PUT /api/tasks/:id/reopen', () => {
     expect(res.body.task.status).toBe('OPEN');
   });
 
-  it('clears the assigned fixer when reopening a task canceled mid-progress', async () => {
+  it('clears the assigned fixer and wipes the stale ACCEPTED bid when reopening a task canceled mid-progress', async () => {
     const task = await createTask();
-    await acceptBid(task.id); // task is now IN_PROGRESS with an assigned fixer
+    await acceptBid(task.id); // task is now IN_PROGRESS with an assigned fixer + ACCEPTED bid
 
     __setUid('test-uid');
     await request(app)
@@ -481,6 +481,75 @@ describe('PUT /api/tasks/:id/reopen', () => {
 
     const reloaded = await prisma.task.findUnique({ where: { id: task.id } });
     expect(reloaded?.assigned_fixer_id).toBeNull();
+
+    // No stale bids remain — an OPEN task must never carry an ACCEPTED bid.
+    const remainingBids = await prisma.bid.count({ where: { task_id: task.id } });
+    expect(remainingBids).toBe(0);
+
+    // bid_count in GET /api/tasks/:id reflects the clean slate.
+    const detail = await request(app)
+      .get(`/api/tasks/${task.id}`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(detail.body.task.bid_count).toBe(0);
+  });
+
+  it('wipes prior bids so a previously-rejected fixer can bid again after reopen', async () => {
+    const task = await createTask();
+
+    // Fixer bids while OPEN.
+    __setUid('fixer-uid');
+    const firstBid = await request(app)
+      .post(`/api/tasks/${task.id}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 150, description: 'I can do this.' });
+    expect(firstBid.status).toBe(201);
+
+    // Requester cancels (auto-rejects the pending bid) then reopens.
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+    await request(app)
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // Same fixer can submit a fresh bid — not blocked by the old one.
+    __setUid('fixer-uid');
+    const secondBid = await request(app)
+      .post(`/api/tasks/${task.id}/bids`)
+      .set('Authorization', FIXER_AUTH)
+      .send({ offered_price: 175, description: 'Bidding again.' });
+    expect(secondBid.status).toBe(201);
+    expect(secondBid.body.has_existing_bid).toBe(false);
+  });
+
+  it('wipes the prior chat history when reopening, so a new fixer cannot read it', async () => {
+    const task = await createTask();
+    await acceptBid(task.id); // IN_PROGRESS with assigned fixer
+
+    const requester = await prisma.user.findUnique({ where: { firebase_uid: 'test-uid' } });
+    const fixer = await prisma.user.findUnique({ where: { firebase_uid: 'fixer-uid' } });
+    await prisma.message.create({
+      data: {
+        task_id: task.id,
+        sender_id: requester!.id,
+        recipient_id: fixer!.id,
+        content: 'See you at 3pm.',
+      },
+    });
+
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+    await request(app)
+      .put(`/api/tasks/${task.id}/reopen`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    const remainingMessages = await prisma.message.count({ where: { task_id: task.id } });
+    expect(remainingMessages).toBe(0);
   });
 
   it('returns 400 when the task is not CANCELED', async () => {

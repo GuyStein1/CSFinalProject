@@ -525,9 +525,20 @@ router.put('/:id/reopen', async (req: Request, res: Response, next: NextFunction
     if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can reopen this task');
     if (task.status !== 'CANCELED') throw new ValidationError('Only a canceled task can be reopened');
 
-    const updated = await prisma.task.update({
-      where: { id: task.id },
-      data: { status: 'OPEN', assigned_fixer_id: null },
+    // Reopen as a clean OPEN task: clear the assigned fixer and wipe the previous
+    // engagement. The old bids and chat are void once a task is canceled, and clearing
+    // them: (a) removes any stale ACCEPTED bid that would otherwise inflate bid_count
+    // and leave an OPEN task in an illegal "has an accepted bid" state; (b) frees the
+    // (task_id, fixer_id) unique constraint so prior bidders can bid again; and
+    // (c) prevents a future fixer from reading the prior fixer's chat history, since
+    // message access is granted to any bidder on the task (see messages.ts).
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.bid.deleteMany({ where: { task_id: task.id } });
+      await tx.message.deleteMany({ where: { task_id: task.id } });
+      return tx.task.update({
+        where: { id: task.id },
+        data: { status: 'OPEN', assigned_fixer_id: null },
+      });
     });
 
     res.json({ task: updated });
