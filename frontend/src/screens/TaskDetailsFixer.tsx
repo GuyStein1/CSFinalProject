@@ -21,7 +21,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../api/axiosInstance';
+import { uploadImage } from '../utils/uploadImage';
+import { auth } from '../config/firebase';
 import StatusBadge from '../components/StatusBadge';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -50,11 +53,14 @@ interface Task {
   description: string;
   category: string;
   status: TaskStatus;
+  urgency?: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   suggested_price: number | null;
   media_urls: string[];
+  completion_photos: string[];
   general_location_name: string;
   created_at: string;
   requester_id: string;
+  assigned_fixer_id?: string | null;
   requester?: TaskRequester;
   bid_count?: number;
   lat?: number | null;
@@ -66,7 +72,20 @@ interface ExistingBid {
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   offered_price: number;
   description?: string;
+  rejection_reason?: string | null;
+  rejection_note?: string | null;
+  auto_rejected_winning_price?: number | null;
+  auto_rejected_winning_rating?: number | null;
 }
+
+const REJECTION_LABELS: Record<string, string> = {
+  PRICE_TOO_HIGH: 'Price too high',
+  BAD_TIMING: 'Bad timing',
+  CHOSE_ANOTHER: 'Another fixer was chosen',
+  NOT_QUALIFIED: 'Not the right fit',
+  TASK_CANCELED: 'Task was canceled',
+  OTHER: 'Other reason',
+};
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CAROUSEL_HEIGHT = 260;
@@ -96,6 +115,7 @@ export default function TaskDetailsFixer({ route }: Props) {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [directions, setDirections] = useState<DirectionsResult | null>(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Get user's location for distance calculation
   useEffect(() => {
@@ -329,11 +349,25 @@ export default function TaskDetailsFixer({ route }: Props) {
             <StatusBadge status={task.status} />
           </View>
 
-          {/* Category + Budget */}
+          {/* Category + Urgency + Budget */}
           <View style={styles.chipRow}>
-            <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
-              <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
-              <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
+              <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
+                <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
+                <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+              </View>
+              {task.urgency === 'TODAY' && (
+                <View style={[styles.categoryChip, { backgroundColor: brandColors.dangerSoft }]}>
+                  <MaterialCommunityIcons name="clock-alert-outline" size={16} color={brandColors.danger} />
+                  <Text style={[typography.label, { color: brandColors.danger }]}>Today</Text>
+                </View>
+              )}
+              {task.urgency === 'THIS_WEEK' && (
+                <View style={[styles.categoryChip, { backgroundColor: brandColors.warningSoft }]}>
+                  <MaterialCommunityIcons name="calendar-week" size={16} color={brandColors.warning} />
+                  <Text style={[typography.label, { color: brandColors.warning }]}>This week</Text>
+                </View>
+              )}
             </View>
             <Text style={[typography.h2, styles.budget]}>{budgetLabel}</Text>
           </View>
@@ -403,14 +437,92 @@ export default function TaskDetailsFixer({ route }: Props) {
 
           {/* Existing bid info */}
           {existingBid && (
-            <View style={styles.existingBidBanner}>
-              <MaterialCommunityIcons name="check-circle" size={22} color={brandColors.success} />
+            <View style={[
+              styles.existingBidBanner,
+              existingBid.status === 'REJECTED' && styles.existingBidRejected,
+            ]}>
+              <MaterialCommunityIcons
+                name={existingBid.status === 'REJECTED' ? 'close-circle' : 'check-circle'}
+                size={22}
+                color={existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success}
+              />
               <View style={{ flex: 1 }}>
-                <Text style={[typography.h3, { color: brandColors.success }]}>
+                <Text style={[typography.h3, { color: existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success }]}>
                   {t('taskDetailsFixer.yourBid', { amount: existingBid.offered_price })}
                 </Text>
+                {existingBid.status === 'REJECTED' && existingBid.rejection_reason && (
+                  <View style={{ marginTop: spacing.xs, gap: spacing.xs }}>
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                      Reason: {REJECTION_LABELS[existingBid.rejection_reason] ?? 'Rejected'}
+                    </Text>
+                    {existingBid.rejection_note ? (
+                      <Text style={[typography.bodySm, { color: brandColors.textMuted, fontStyle: 'italic' }]}>
+                        &quot;{existingBid.rejection_note}&quot;
+                      </Text>
+                    ) : null}
+                    {existingBid.auto_rejected_winning_price != null && (
+                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                        Winning bid: ₪{existingBid.auto_rejected_winning_price}
+                        {existingBid.auto_rejected_winning_rating != null && existingBid.auto_rejected_winning_rating > 0
+                          ? ` · Rating: ${existingBid.auto_rejected_winning_rating.toFixed(1)}★`
+                          : ''}
+                      </Text>
+                    )}
+                  </View>
+                )}
               </View>
               <StatusBadge status={existingBid.status} />
+            </View>
+          )}
+
+          {/* Completion Photos — only for assigned fixer on in-progress tasks */}
+          {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
+            <View style={{ gap: spacing.md }}>
+              <Divider style={styles.divider} />
+              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Completion Photos</Text>
+              {(task.completion_photos?.length ?? 0) > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                  {task.completion_photos.map((url, i) => (
+                    <Image key={i} source={{ uri: url }} style={{ width: 80, height: 80, borderRadius: radii.md }} />
+                  ))}
+                </View>
+              )}
+              <FButton
+                variant="secondary"
+                icon="camera-plus-outline"
+                loading={uploadingPhotos}
+                disabled={uploadingPhotos}
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: 'images',
+                    quality: 0.8,
+                    allowsMultipleSelection: true,
+                  });
+                  if (result.canceled || !task) return;
+                  setUploadingPhotos(true);
+                  try {
+                    const userId = auth.currentUser?.uid ?? 'unknown';
+                    const urls = await Promise.all(
+                      result.assets.map((asset, i) =>
+                        uploadImage(asset.uri, `completion/${userId}/${Date.now()}_${i}.jpg`),
+                      ),
+                    );
+                    const allPhotos = [...(task.completion_photos ?? []), ...urls];
+                    await api.post(`/api/tasks/${task.id}/completion-photos`, {
+                      completion_photos: allPhotos,
+                    });
+                    setTask((prev) => prev ? { ...prev, completion_photos: allPhotos } : prev);
+                    Alert.alert('Uploaded', 'Completion photos added and saved to your portfolio.');
+                  } catch {
+                    Alert.alert('Error', 'Failed to upload completion photos.');
+                  } finally {
+                    setUploadingPhotos(false);
+                  }
+                }}
+                fullWidth
+              >
+                Add Completion Photos
+              </FButton>
             </View>
           )}
 
@@ -693,11 +805,14 @@ const styles = StyleSheet.create({
 
   existingBidBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radii.lg,
     backgroundColor: brandColors.successSoft,
+  },
+  existingBidRejected: {
+    backgroundColor: brandColors.dangerSoft,
   },
 
   bottomBar: {

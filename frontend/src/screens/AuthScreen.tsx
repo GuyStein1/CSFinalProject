@@ -11,6 +11,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 import type { AuthBootstrapStatus } from '../hooks/useAuthBootstrap';
+import useGoogleAuth from '../hooks/useGoogleAuth';
 
 interface AuthScreenProps {
   status: AuthBootstrapStatus;
@@ -59,6 +60,10 @@ export default function AuthScreen({
   const [localError, setLocalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Social auth
+  const googleAuth = useGoogleAuth();
+  const [socialLoading, setSocialLoading] = useState<'google' | null>(null);
+
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -71,6 +76,19 @@ export default function AuthScreen({
   const goTo = (m: Mode) => {
     clearErrors();
     setMode(m);
+  };
+
+  const handleGoogleSignIn = async () => {
+    clearErrors();
+    setSocialLoading('google');
+    try {
+      await googleAuth.signIn();
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('cancelled')) return;
+      setLocalError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setSocialLoading(null);
+    }
   };
 
   const submitSignIn = async () => {
@@ -118,6 +136,38 @@ export default function AuthScreen({
   const submitLocalAccountSync = () => {
     if (!fullName.trim()) return;
     void onSyncLocalAccount(fullName.trim(), phoneNumber.trim());
+  };
+
+  const renderSocialButtons = (variant: 'dark' | 'light' = 'light') => {
+    const isDark = variant === 'dark';
+    const dividerColor = isDark ? 'rgba(255,252,246,0.25)' : brandColors.outlineLight;
+    const dividerTextColor = isDark ? 'rgba(255,252,246,0.55)' : brandColors.textMuted;
+
+    return (
+      <>
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
+          <Text style={[typography.caption, { color: dividerTextColor, marginHorizontal: spacing.sm }]}>
+            or continue with
+          </Text>
+          <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
+        </View>
+
+        <Pressable
+          onPress={() => void handleGoogleSignIn()}
+          disabled={socialLoading !== null}
+          style={({ pressed }) => [
+            styles.socialButton,
+            { opacity: pressed || socialLoading === 'google' ? 0.7 : 1 },
+          ]}
+        >
+          <MaterialCommunityIcons name="google" size={20} color="#4285F4" />
+          <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+            {socialLoading === 'google' ? 'Signing in...' : 'Continue with Google'}
+          </Text>
+        </Pressable>
+      </>
+    );
   };
 
   const renderShell = (content: React.ReactNode) => (
@@ -241,6 +291,9 @@ export default function AuthScreen({
           >
             <Text style={styles.welcomeGhostText}>{t('auth.welcome.createAccount')}</Text>
           </Pressable>
+
+          {renderSocialButtons('dark')}
+
           <Text style={styles.welcomeFootnote}>
             {t('auth.welcome.footnote')}
           </Text>
@@ -291,6 +344,7 @@ export default function AuthScreen({
           <Text style={[typography.caption, { color: brandColors.textMuted, marginHorizontal: spacing.sm }]}>{t('common.or')}</Text>
           <View style={styles.dividerLine} />
         </View>
+        {renderSocialButtons()}
 
         <FButton variant="ghost" onPress={() => goTo('register')} fullWidth>
           {t('auth.login.noAccount')}
@@ -355,6 +409,8 @@ export default function AuthScreen({
         <FButton onPress={() => void submitRegister()} loading={submitting} disabled={submitting} fullWidth icon="account-plus">
           {t('auth.register.submit')}
         </FButton>
+
+        {renderSocialButtons()}
 
         <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
           {t('auth.register.alreadyHave')}
@@ -528,5 +584,16 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     backgroundColor: brandColors.outlineLight,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md + 2,
+    borderRadius: radii.pill,
+    borderWidth: 1.5,
+    borderColor: brandColors.outline,
+    backgroundColor: brandColors.surface,
   },
 });

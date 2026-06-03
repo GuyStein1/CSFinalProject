@@ -65,10 +65,12 @@ export default function useAuthBootstrap() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [suggestedFullName, setSuggestedFullName] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const pushRegistered = useRef(false);
 
   const verifyLocalUser = useCallback(async () => {
-    await api.get('/api/users/me');
+    const res = await api.get('/api/users/me');
+    setIsAdmin(res.data.user?.is_admin === true);
   }, []);
 
   const bootstrapSignedInUser = useCallback(
@@ -187,6 +189,7 @@ export default function useAuthBootstrap() {
     error,
     userEmail,
     suggestedFullName,
+    isAdmin,
     signIn,
     syncLocalAccount,
     retry,

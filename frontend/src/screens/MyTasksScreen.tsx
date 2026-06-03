@@ -18,7 +18,7 @@ import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
-import { FButton } from '../components/ui';
+import { FButton, FChip } from '../components/ui';
 import { brandColors, spacing, shadows, radii, typography } from '../theme';
 import type { Category } from '../utils/categoryMetadata';
 
@@ -56,6 +56,8 @@ export default function MyTasksScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'in_progress' | 'review' | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const { width } = useWindowDimensions();
 
   const wide = width >= 820;
@@ -191,7 +193,7 @@ export default function MyTasksScreen({ navigation }: Props) {
   const reactivateTask = (task: Task) => {
     const doReactivate = async (): Promise<boolean> => {
       try {
-        await api.put(`/api/tasks/${task.id}/status`, { status: 'OPEN' });
+        await api.put(`/api/tasks/${task.id}/reopen`);
         void fetchTasks();
         return true;
       } catch {
@@ -257,11 +259,37 @@ export default function MyTasksScreen({ navigation }: Props) {
       ? []
       : activeTasks;
 
-  const filteredPastTasks = filter === 'review'
+  const filteredPastTasksBase = filter === 'review'
     ? pastTasks.filter((t) => t.status === 'COMPLETED' && !t.has_review)
     : filter != null
       ? []
       : pastTasks;
+
+  // Year/month filtering for past tasks
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const availableYears = [...new Set(
+    filteredPastTasksBase.map((t) => new Date(t.completed_at ?? t.created_at).getFullYear()),
+  )].sort((a, b) => b - a);
+
+  const effectiveYear = selectedYear;
+
+  const availableMonths = effectiveYear != null
+    ? [...new Set(
+        filteredPastTasksBase
+          .filter((t) => new Date(t.completed_at ?? t.created_at).getFullYear() === effectiveYear)
+          .map((t) => new Date(t.completed_at ?? t.created_at).getMonth()),
+      )].sort((a, b) => b - a)
+    : [];
+
+  const filteredPastTasks = effectiveYear != null
+    ? filteredPastTasksBase.filter((t) => {
+        const d = new Date(t.completed_at ?? t.created_at);
+        if (d.getFullYear() !== effectiveYear) return false;
+        if (selectedMonth != null && d.getMonth() !== selectedMonth) return false;
+        return true;
+      })
+    : [];
 
   if (loading) return <LoadingScreen label={t('myTasks.loading')} />;
 
@@ -416,6 +444,45 @@ export default function MyTasksScreen({ navigation }: Props) {
               helper={t('myTasks.sections.pastHelper')}
               muted
             />
+
+            {/* Year / Month filters */}
+            {availableYears.length > 0 && (
+              <View style={styles.dateFilters}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateFilterRow}>
+                  {availableYears.map((year) => (
+                    <FChip
+                      key={year}
+                      label={String(year)}
+                      selected={effectiveYear === year}
+                      onPress={() => {
+                        if (year === effectiveYear) {
+                          setSelectedYear(null);
+                          setSelectedMonth(null);
+                        } else {
+                          setSelectedYear(year);
+                          setSelectedMonth(null);
+                        }
+                      }}
+                      compact
+                    />
+                  ))}
+                </ScrollView>
+                {effectiveYear != null && availableMonths.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateFilterRow}>
+                    {availableMonths.map((month) => (
+                      <FChip
+                        key={month}
+                        label={MONTH_NAMES[month]}
+                        selected={selectedMonth === month}
+                        onPress={() => setSelectedMonth(month === selectedMonth ? null : month)}
+                        compact
+                      />
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            )}
+
             {filteredPastTasks.length > 0 ? (
               filteredPastTasks.map((task) => {
                 const canReview = task.status === 'COMPLETED' && !task.has_review;
@@ -715,6 +782,14 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: spacing.xxxl,
+  },
+  dateFilters: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  dateFilterRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   sectionHeader: {
     flexDirection: 'row',

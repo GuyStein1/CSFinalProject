@@ -7,6 +7,11 @@ jest.mock('firebase/auth', () => ({
   sendPasswordResetEmail: jest.fn(),
 }));
 
+jest.mock('../../hooks/useGoogleAuth', () => () => ({
+  signIn: jest.fn(),
+  ready: true,
+}));
+
 const baseProps = {
   status: 'signed_out' as const,
   error: null,

@@ -274,7 +274,7 @@
         "keepCanceled": "השאר מבוטל",
         "reopenAsIs": "פתח מחדש כמו שהוא",
         "reopenAndEdit": "פתח מחדש וערוך",
-        "message": "לפתוח מחדש את \"{{title}}\" כבקשה פתוחה? בדוק את פרטי המשימה לפני קבלת הצעות חדשות. אם נתוני הקצאה ישנים עדיין גלויים, נדרשת תמיכת שרת לניקויים.",
+        "message": "לפתוח מחדש את \"{{title}}\" כבקשה פתוחה? המשימה תופיע שוב בפיד הגילוי למתקנים להגשת הצעות. בדוק את פרטי המשימה לפני קבלת הצעות חדשות.",
         "webSuffix": "פרטי המשימה ייפתחו לאחר מכן כדי שתוכל לסקור אותם או לערוך."
       }
     },
@@ -465,7 +465,10 @@
       "location": "מיקום",
       "address": "כתובת",
       "posted": "פורסם",
-      "quoteRequired": "נדרשת הצעת מחיר"
+      "quoteRequired": "נדרשת הצעת מחיר",
+      "urgency": "דחיפות",
+      "urgencyToday": "היום",
+      "urgencyThisWeek": "השבוע"
     },
     "sections": {
       "bids": "הצעות",
@@ -639,7 +642,13 @@
       "quoteRequired": "נדרשת הצעת מחיר",
       "budgetLabel": "תקציב (₪)",
       "enterBudget": "הזן את התקציב שלך",
-      "quoteNote": "מתקנים יציעו את המחיר שלהם בעת הגשת הצעה על המשימה שלך."
+      "quoteNote": "מתקנים יציעו את המחיר שלהם בעת הגשת הצעה על המשימה שלך.",
+      "urgency": {
+        "title": "כמה זה דחוף?",
+        "flexible": "גמיש",
+        "thisWeek": "השבוע",
+        "today": "היום"
+      }
     },
     "step5": {
       "title": "מיקום",
@@ -656,6 +665,7 @@
       "titleLabel": "כותרת",
       "categoryLabel": "קטגוריה",
       "budgetLabel": "תקציב",
+      "urgencyLabel": "דחיפות",
       "locationLabel": "מיקום",
       "photosLabel": "תמונות",
       "photoCount": "{{count}} תמונה/ות"
@@ -781,7 +791,12 @@
         "confirm": "מחק"
       },
       "permissionDenied": "ההרשאה נדחתה",
-      "enableNotifications": "הפעל התראות בהגדרות המכשיר שלך."
+      "enableNotifications": "הפעל התראות בהגדרות המכשיר שלך.",
+      "verificationSubmitted": {
+        "title": "נשלח",
+        "message": "תמונת האימות שלך נשלחה לבדיקה."
+      },
+      "verificationError": "שליחת תמונת האימות נכשלה."
     }
   },
   "publicProfile": {

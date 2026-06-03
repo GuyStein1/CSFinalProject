@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { rejectBidSchema } from '../schemas';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
 import {
@@ -25,6 +27,12 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
     if (req.user.id !== bid.task.requester_id) throw new ForbiddenError('Only the requester can accept a bid');
     if (bid.status !== 'PENDING') throw new ValidationError('Only pending bids can be accepted');
 
+    // Look up winning fixer's rating for auto-rejection context
+    const winningFixer = await prisma.user.findUnique({
+      where: { id: bid.fixer_id },
+      select: { average_rating_as_fixer: true },
+    });
+
     // Run DB changes atomically — all tx calls must use tx. not prisma.
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.task.update({
@@ -37,11 +45,16 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
       });
       await tx.bid.updateMany({
         where: { task_id: bid.task_id, status: 'PENDING', id: { not: bid.id } },
-        data: { status: 'REJECTED' },
+        data: {
+          status: 'REJECTED',
+          rejection_reason: 'CHOSE_ANOTHER',
+          auto_rejected_winning_price: bid.offered_price,
+          auto_rejected_winning_rating: winningFixer?.average_rating_as_fixer ?? null,
+        },
       });
     });
 
-    // Notify outside transaction — failure here should not roll back acceptance
+    // Notify accepted fixer
     await sendNotification(
       bid.fixer_id,
       'Bid Accepted',
@@ -51,6 +64,22 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
       'Task',
     );
 
+    // Notify auto-rejected fixers
+    const autoRejected = await prisma.bid.findMany({
+      where: { task_id: bid.task_id, status: 'REJECTED', id: { not: bid.id } },
+      select: { fixer_id: true },
+    });
+    for (const rejected of autoRejected) {
+      await sendNotification(
+        rejected.fixer_id,
+        'Bid Rejected',
+        `Another fixer was chosen for "${bid.task.title}".`,
+        'BID_REJECTED',
+        bid.task_id,
+        'Task',
+      );
+    }
+
     const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
     res.json({ bid: updated });
   } catch (err) {
@@ -59,7 +88,7 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
 });
 
 // PUT /api/bids/:id/reject — requester rejects a bid
-router.put('/:id/reject', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id/reject', validate(rejectBidSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bid = await prisma.bid.findUnique({
       where: { id: req.params.id },
@@ -70,9 +99,15 @@ router.put('/:id/reject', async (req: Request, res: Response, next: NextFunction
     if (req.user.id !== bid.task.requester_id) throw new ForbiddenError('Only the requester can reject a bid');
     if (bid.status !== 'PENDING') throw new ValidationError('Only pending bids can be rejected');
 
+    const { rejection_reason, rejection_note } = req.body;
+
     const updated = await prisma.bid.update({
       where: { id: bid.id },
-      data: { status: 'REJECTED' },
+      data: {
+        status: 'REJECTED',
+        rejection_reason,
+        rejection_note: rejection_note ?? null,
+      },
     });
 
     await sendNotification(

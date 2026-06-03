@@ -142,6 +142,29 @@ describe('PUT /api/bids/:id/accept', () => {
     expect(res.status).toBe(403);
   });
 
+  it('auto-rejected bids get CHOSE_ANOTHER reason with winning price and rating', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+
+    const fixer2 = await createTestUser({ firebase_uid: 'fixer2-uid', email: 'fixer2@example.com' });
+    __setUid('fixer2-uid');
+    const bid2Res = await request(app)
+      .post(`/api/tasks/${taskId}/bids`)
+      .set('Authorization', 'Bearer fixer2-token')
+      .send({ offered_price: 120, description: 'Cheaper.' });
+
+    __setUid('test-uid');
+    await request(app).put(`/api/bids/${bid.id}/accept`).set('Authorization', REQUESTER_AUTH);
+
+    const rejectedBid = await prisma.bid.findUnique({ where: { id: bid2Res.body.bid.id } });
+    expect(rejectedBid?.status).toBe('REJECTED');
+    expect(rejectedBid?.rejection_reason).toBe('CHOSE_ANOTHER');
+    expect(rejectedBid?.auto_rejected_winning_price).toBe(150); // winning bid price
+    expect(rejectedBid?.auto_rejected_winning_rating).toBeDefined();
+
+    void fixer2;
+  });
+
   it('returns 400 when accepting an already-accepted bid', async () => {
     await createOpenTask();
     const bid = await fixerSubmitsBid();
@@ -157,16 +180,54 @@ describe('PUT /api/bids/:id/accept', () => {
 // ── PUT /api/bids/:id/reject ──────────────────────────────────────────────────
 
 describe('PUT /api/bids/:id/reject', () => {
-  it('requester can reject a pending bid', async () => {
+  it('requester can reject a pending bid with reason', async () => {
     await createOpenTask();
     const bid = await fixerSubmitsBid();
     __setUid('test-uid');
     const res = await request(app)
       .put(`/api/bids/${bid.id}/reject`)
-      .set('Authorization', REQUESTER_AUTH);
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ rejection_reason: 'PRICE_TOO_HIGH' });
     expect(res.status).toBe(200);
     const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
     expect(updated?.status).toBe('REJECTED');
+    expect(updated?.rejection_reason).toBe('PRICE_TOO_HIGH');
+  });
+
+  it('stores optional rejection_note', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    __setUid('test-uid');
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}/reject`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ rejection_reason: 'OTHER', rejection_note: 'Not what I need' });
+    expect(res.status).toBe(200);
+    const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
+    expect(updated?.rejection_reason).toBe('OTHER');
+    expect(updated?.rejection_note).toBe('Not what I need');
+  });
+
+  it('returns 400 when rejection_reason is missing', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    __setUid('test-uid');
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}/reject`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for invalid rejection_reason', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    __setUid('test-uid');
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}/reject`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ rejection_reason: 'INVALID_REASON' });
+    expect(res.status).toBe(400);
   });
 
   it('returns 403 when fixer tries to reject their own bid', async () => {
@@ -174,7 +235,8 @@ describe('PUT /api/bids/:id/reject', () => {
     const bid = await fixerSubmitsBid();
     const res = await request(app)
       .put(`/api/bids/${bid.id}/reject`)
-      .set('Authorization', FIXER_AUTH);
+      .set('Authorization', FIXER_AUTH)
+      .send({ rejection_reason: 'PRICE_TOO_HIGH' });
     expect(res.status).toBe(403);
   });
 });
@@ -280,7 +342,7 @@ describe('PUT /api/bids/:id', () => {
     await createOpenTask();
     const bid = await fixerSubmitsBid();
     __setUid('test-uid');
-    await request(app).put(`/api/bids/${bid.id}/reject`).set('Authorization', REQUESTER_AUTH);
+    await request(app).put(`/api/bids/${bid.id}/reject`).set('Authorization', REQUESTER_AUTH).send({ rejection_reason: 'OTHER' });
     __setUid('fixer-uid');
     const res = await request(app)
       .put(`/api/bids/${bid.id}`)
@@ -327,7 +389,7 @@ describe('DELETE /api/bids/:id', () => {
     await createOpenTask();
     const bid = await fixerSubmitsBid();
     __setUid('test-uid');
-    await request(app).put(`/api/bids/${bid.id}/reject`).set('Authorization', REQUESTER_AUTH);
+    await request(app).put(`/api/bids/${bid.id}/reject`).set('Authorization', REQUESTER_AUTH).send({ rejection_reason: 'PRICE_TOO_HIGH' });
 
     __setUid('fixer-uid');
     const res = await request(app)

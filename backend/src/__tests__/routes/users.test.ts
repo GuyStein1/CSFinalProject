@@ -169,6 +169,54 @@ describe('POST /api/users/me/push-token', () => {
   });
 });
 
+describe('POST /api/users/me/verification', () => {
+  it('submits verification photo', async () => {
+    const res = await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findFirst({ where: { firebase_uid: 'test-uid' } });
+    expect(user?.verification_status).toBe('PENDING');
+    expect(user?.verification_photo_url).toBe('https://example.com/id.jpg');
+  });
+
+  it('returns 409 if already pending', async () => {
+    await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+
+    const res = await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'https://example.com/id2.jpg' });
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 409 if already approved', async () => {
+    await prisma.user.updateMany({
+      where: { firebase_uid: 'test-uid' },
+      data: { verification_status: 'APPROVED' },
+    });
+
+    const res = await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 400 for invalid URL', async () => {
+    const res = await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'not-a-url' });
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('GET /api/users/:id/reviews', () => {
   it('returns an empty list when user has no reviews', async () => {
     const res = await request(app).get(`/api/users/${userId}/reviews`).set('Authorization', AUTH);

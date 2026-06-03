@@ -274,7 +274,7 @@
         "keepCanceled": "Keep canceled",
         "reopenAsIs": "Reopen as-is",
         "reopenAndEdit": "Reopen and edit",
-        "message": "Reopen \"{{title}}\" as an open request? Review the task details before accepting new bids. If stale assignment data remains visible, it needs backend support to clear.",
+        "message": "Reopen \"{{title}}\" as an open request? It will reappear on the discovery feed for fixers to bid on. Review the task details before accepting new bids.",
         "webSuffix": "The task details will open next so you can review or edit it."
       }
     },
@@ -465,7 +465,10 @@
       "location": "Location",
       "address": "Address",
       "posted": "Posted",
-      "quoteRequired": "Quote Required"
+      "quoteRequired": "Quote Required",
+      "urgency": "Urgency",
+      "urgencyToday": "Today",
+      "urgencyThisWeek": "This week"
     },
     "sections": {
       "bids": "Bids",
@@ -639,7 +642,13 @@
       "quoteRequired": "Quote Required",
       "budgetLabel": "Budget (₪)",
       "enterBudget": "Enter your budget",
-      "quoteNote": "Fixers will propose their own price when bidding on your task."
+      "quoteNote": "Fixers will propose their own price when bidding on your task.",
+      "urgency": {
+        "title": "How urgent is this?",
+        "flexible": "Flexible",
+        "thisWeek": "This week",
+        "today": "Today"
+      }
     },
     "step5": {
       "title": "Location",
@@ -656,6 +665,7 @@
       "titleLabel": "Title",
       "categoryLabel": "Category",
       "budgetLabel": "Budget",
+      "urgencyLabel": "Urgency",
       "locationLabel": "Location",
       "photosLabel": "Photos",
       "photoCount": "{{count}} photo(s)"
@@ -781,7 +791,12 @@
         "confirm": "Delete"
       },
       "permissionDenied": "Permission denied",
-      "enableNotifications": "Enable notifications in your device settings."
+      "enableNotifications": "Enable notifications in your device settings.",
+      "verificationSubmitted": {
+        "title": "Submitted",
+        "message": "Your verification photo has been submitted for review."
+      },
+      "verificationError": "Failed to submit verification photo."
     }
   },
   "publicProfile": {

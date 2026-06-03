@@ -15,6 +15,7 @@ import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 import { getCategoryMeta } from '../utils/categoryMetadata';
+import { containsProfanity, PROFANITY_ERROR_MESSAGE } from '../utils/profanityFilter';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -24,6 +25,8 @@ interface Bid {
   offered_price: number;
   description: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  is_repeat_customer?: boolean;
+  previous_tasks_together?: number;
   fixer?: {
     full_name: string;
     average_rating_as_fixer: number | null;
@@ -47,10 +50,12 @@ interface Task {
   description: string;
   category: string;
   status: TaskStatus;
+  urgency?: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   suggested_price: number | null;
   general_location_name: string;
   exact_address: string;
   media_urls: string[];
+  completion_photos: string[];
   is_payment_confirmed: boolean;
   created_at: string;
   completed_at: string | null;
@@ -106,6 +111,9 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [editLocation, setEditLocation] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
+  const [rejectingBidId, setRejectingBidId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   const showReviewsForFixer = async (fixerId: string) => {
     try {
@@ -155,9 +163,20 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
-  const declineBid = async (bidId: string) => {
+  const openDeclineModal = (bidId: string) => {
+    setRejectingBidId(bidId);
+    setRejectionReason(null);
+    setRejectionNote('');
+  };
+
+  const confirmDeclineBid = async () => {
+    if (!rejectingBidId || !rejectionReason) return;
     try {
-      await api.put(`/api/bids/${bidId}/reject`);
+      await api.put(`/api/bids/${rejectingBidId}/reject`, {
+        rejection_reason: rejectionReason,
+        rejection_note: rejectionNote.trim() || undefined,
+      });
+      setRejectingBidId(null);
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('common.tryAgain'));
@@ -196,6 +215,33 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     }
   };
 
+  const reopenTask = async () => {
+    const doReopen = async () => {
+      try {
+        await api.put(`/api/tasks/${taskId}/reopen`);
+        fetchData();
+      } catch {
+        Alert.alert('Error', 'Failed to reopen task.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Reopen this task and re-post it to the discovery feed?')) {
+        doReopen();
+      }
+    } else {
+      Alert.alert(
+        'Reopen Task',
+        'Reopen this task and re-post it to the discovery feed for fixers to bid on?',
+        [
+          { text: 'Cancel' },
+          { text: 'Reopen', onPress: doReopen },
+        ],
+      );
+    }
+  };
+
   const confirmPayment = async () => {
     try {
       await api.put(`/api/tasks/${taskId}/confirm-payment`);
@@ -208,6 +254,16 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
   const submitReview = async () => {
     if (reviewRating === 0) return;
+    const trimmed = reviewComment.trim();
+    if (trimmed && containsProfanity(trimmed)) {
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(PROFANITY_ERROR_MESSAGE);
+      } else {
+        Alert.alert('Error', PROFANITY_ERROR_MESSAGE);
+      }
+      return;
+    }
     try {
       await api.post(`/api/tasks/${taskId}/reviews`, {
         rating: reviewRating,
@@ -346,6 +402,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         <View style={styles.detailsDivider} />
 
         <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label={t('taskDetails.detail.category')} value={catMeta.label} />
+        {task.urgency === 'TODAY' && (
+          <DetailRow icon="clock-alert-outline" iconColor={brandColors.danger} label={t('taskDetails.detail.urgency')} value={t('taskDetails.detail.urgencyToday')} />
+        )}
+        {task.urgency === 'THIS_WEEK' && (
+          <DetailRow icon="calendar-week" iconColor={brandColors.warning} label={t('taskDetails.detail.urgency')} value={t('taskDetails.detail.urgencyThisWeek')} />
+        )}
         <DetailRow icon="cash-multiple" label={t('taskDetails.detail.budget')} value={task.suggested_price ? `₪${task.suggested_price}` : t('taskDetails.detail.quoteRequired')} />
         <DetailRow icon="map-marker-outline" label={t('taskDetails.detail.location')} value={task.general_location_name} />
         {task.status !== 'OPEN' && (
@@ -400,6 +462,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     ) : (
                       <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('taskDetails.bids.noReviewsYet')}</Text>
                     )}
+                    {bid.is_repeat_customer && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <MaterialCommunityIcons name="account-check" size={14} color={brandColors.primary} />
+                        <Text style={[typography.caption, { color: brandColors.primary }]}>
+                          Worked together {bid.previous_tasks_together} time{(bid.previous_tasks_together ?? 0) !== 1 ? 's' : ''} before
+                        </Text>
+                      </View>
+                    )}
                   </View>
                   </Pressable>
                   <View style={styles.bidPriceTag}>
@@ -415,7 +485,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} style={{ flex: 1 }}>
                     {t('taskDetails.actions.acceptBid')}
                   </FButton>
-                  <FButton variant="outline" size="sm" icon="close" onPress={() => declineBid(bid.id)} style={{ flex: 1 }}>
+                  <FButton variant="outline" size="sm" icon="close" onPress={() => openDeclineModal(bid.id)} style={{ flex: 1 }}>
                     {t('taskDetails.actions.decline')}
                   </FButton>
                 </View>
@@ -587,6 +657,82 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         </Modal>
       </Portal>
 
+      {/* Decline Bid Modal */}
+      <Portal>
+        <Modal
+          visible={rejectingBidId !== null}
+          onDismiss={() => setRejectingBidId(null)}
+          contentContainerStyle={styles.editModal}
+        >
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.md }]}>
+            Decline Bid
+          </Text>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+            Select a reason so the fixer can improve future bids.
+          </Text>
+          {([
+            ['PRICE_TOO_HIGH', 'Price too high'],
+            ['BAD_TIMING', 'Bad timing'],
+            ['CHOSE_ANOTHER', 'Chose another fixer'],
+            ['NOT_QUALIFIED', 'Not the right fit'],
+            ['OTHER', 'Other'],
+          ] as const).map(([value, label]) => (
+            <Pressable
+              key={value}
+              style={[
+                styles.reasonOption,
+                rejectionReason === value && styles.reasonOptionSelected,
+              ]}
+              onPress={() => setRejectionReason(value)}
+            >
+              <MaterialCommunityIcons
+                name={rejectionReason === value ? 'radiobox-marked' : 'radiobox-blank'}
+                size={20}
+                color={rejectionReason === value ? brandColors.primary : brandColors.textMuted}
+              />
+              <Text style={[
+                typography.body,
+                { color: rejectionReason === value ? brandColors.primary : brandColors.textPrimary },
+              ]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+          <FInput
+            label="Note (optional)"
+            value={rejectionNote}
+            onChangeText={setRejectionNote}
+            multiline
+            numberOfLines={2}
+            maxLength={500}
+            placeholder="Add details if you'd like..."
+          />
+          <FButton
+            onPress={confirmDeclineBid}
+            disabled={!rejectionReason}
+            fullWidth
+            style={{ marginTop: spacing.md }}
+          >
+            Confirm Decline
+          </FButton>
+          <FButton variant="outline" onPress={() => setRejectingBidId(null)} fullWidth style={{ marginTop: spacing.sm }}>
+            Cancel
+          </FButton>
+        </Modal>
+      </Portal>
+
+      {/* Completion Photos (shown for IN_PROGRESS and COMPLETED) */}
+      {(task.status === 'IN_PROGRESS' || task.status === 'COMPLETED') && (task.completion_photos?.length ?? 0) > 0 && (
+        <View style={styles.section}>
+          <FSectionHeader title="Completion Photos" accentColor={brandColors.primary} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {task.completion_photos.map((url, i) => (
+              <Image key={i} source={{ uri: url }} style={{ width: 100, height: 100, borderRadius: radii.md }} />
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* COMPLETED: Payment & Review */}
       {task.status === 'COMPLETED' && (
         <View style={styles.section}>
@@ -694,6 +840,28 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 </FButton>
               </View>
             )}
+          </FCard>
+        </View>
+      )}
+
+      {/* CANCELED: Reopen */}
+      {task.status === 'CANCELED' && (
+        <View style={styles.section}>
+          <FSectionHeader title="Canceled" accentColor={brandColors.danger} />
+          <FCard>
+            <View style={styles.canceledContent}>
+              <MaterialCommunityIcons
+                name="refresh"
+                size={28}
+                color={brandColors.textMuted}
+              />
+              <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
+                This task was canceled. Reopen it to re-post it to the discovery feed for fixers to bid on again.
+              </Text>
+              <FButton onPress={reopenTask} fullWidth icon="refresh">
+                Reopen Task
+              </FButton>
+            </View>
           </FCard>
         </View>
       )}
@@ -933,6 +1101,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.xl,
   },
+  canceledContent: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
   editModal: {
     backgroundColor: brandColors.surface,
     padding: spacing.xl,
@@ -942,5 +1115,20 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '90%',
     gap: spacing.md,
+  },
+  reasonOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    marginBottom: spacing.xs,
+  },
+  reasonOptionSelected: {
+    borderColor: brandColors.primary,
+    backgroundColor: brandColors.infoSoft,
   },
 });

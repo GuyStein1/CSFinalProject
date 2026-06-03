@@ -30,7 +30,7 @@ interface DiscoveryListCardProps {
 }
 
 export default function DiscoveryListCard({ task, hasBid = false, onPress }: DiscoveryListCardProps) {
-  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'Quote Required';
+  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'No price specified';
   const catMeta = getCategoryMetadata(task.category);
 
   return (
@@ -58,12 +58,26 @@ export default function DiscoveryListCard({ task, hasBid = false, onPress }: Dis
             <View style={styles.metaDot} />
             <Text style={[typography.caption, styles.metaText]}>{formatTimeAgo(task.createdAt)}</Text>
           </View>
-          {hasBid && (
-            <View style={styles.bidStatusPill}>
-              <MaterialCommunityIcons name="check-circle-outline" size={12} color={brandColors.success} />
-              <Text style={[typography.caption, styles.bidStatusText]}>Bid sent</Text>
-            </View>
-          )}
+          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+            {hasBid && (
+              <View style={styles.bidStatusPill}>
+                <MaterialCommunityIcons name="check-circle-outline" size={12} color={brandColors.success} />
+                <Text style={[typography.caption, styles.bidStatusText]}>Bid sent</Text>
+              </View>
+            )}
+            {task.urgency === 'TODAY' && (
+              <View style={styles.urgencyPill}>
+                <MaterialCommunityIcons name="clock-alert-outline" size={12} color={brandColors.danger} />
+                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>Today</Text>
+              </View>
+            )}
+            {task.urgency === 'THIS_WEEK' && (
+              <View style={styles.urgencyPillWeek}>
+                <MaterialCommunityIcons name="calendar-week" size={12} color={brandColors.warning} />
+                <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>This week</Text>
+              </View>
+            )}
+          </View>
         </View>
         <View style={styles.priceTag}>
           <Text style={[typography.h3, styles.price]}>{budgetLabel}</Text>
@@ -160,6 +174,30 @@ const styles = StyleSheet.create({
   bidStatusText: {
     color: brandColors.success,
     fontWeight: '700',
+  },
+  urgencyPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.dangerSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(168,91,91,0.22)',
+  },
+  urgencyPillWeek: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,42,0.22)',
   },
   metaDot: {
     width: 4,

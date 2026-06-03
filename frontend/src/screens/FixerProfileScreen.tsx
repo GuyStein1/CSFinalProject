@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
@@ -40,6 +40,9 @@ interface Profile {
   payment_link: string | null;
   specializations: string[];
   average_rating_as_fixer: number;
+  completed_tasks_as_fixer: number;
+  avg_response_time_minutes: number | null;
+  verification_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   portfolio_items: PortfolioItem[];
 }
 
@@ -58,6 +61,7 @@ function sameStringSet(a: string[], b: string[]) {
 }
 
 export default function FixerProfileScreen() {
+  const navigation = useNavigation<{ navigate: (screen: string, params: object) => void }>();
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const isWide = width >= 900;
@@ -78,6 +82,7 @@ export default function FixerProfileScreen() {
   const [viewingAvatar, setViewingAvatar] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [uploadingVerification, setUploadingVerification] = useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -197,22 +202,46 @@ export default function FixerProfileScreen() {
     }
   };
 
-  const handleDeletePortfolio = (item: PortfolioItem) => {
-    Alert.alert(t('fixerProfile.alerts.deletePortfolio.title'), t('fixerProfile.alerts.deletePortfolio.message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('fixerProfile.alerts.deletePortfolio.confirm'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.delete(`/api/users/me/portfolio/${item.id}`);
-            setPortfolioItems(prev => prev.filter(p => p.id !== item.id));
-          } catch {
-            Alert.alert(t('common.error'), t('fixerProfile.alerts.portfolioDeleteError'));
-          }
-        },
-      },
-    ]);
+  const handleDeletePortfolio = async (item: PortfolioItem) => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(t('fixerProfile.alerts.deletePortfolio.message'))
+      : await new Promise<boolean>(resolve =>
+          Alert.alert(
+            t('fixerProfile.alerts.deletePortfolio.title'),
+            t('fixerProfile.alerts.deletePortfolio.message'),
+            [
+              { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+              { text: t('fixerProfile.alerts.deletePortfolio.confirm'), style: 'destructive', onPress: () => resolve(true) },
+            ],
+          ),
+        );
+    if (!confirmed) return;
+    try {
+      await api.delete(`/api/users/me/portfolio/${item.id}`);
+      setPortfolioItems(prev => prev.filter(p => p.id !== item.id));
+    } catch {
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.portfolioDeleteError'));
+    }
+  };
+
+  const handleSubmitVerification = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      quality: 0.8,
+      allowsEditing: true,
+    });
+    if (result.canceled || !profile) return;
+    setUploadingVerification(true);
+    try {
+      const url = await uploadImage(result.assets[0].uri, `verification/${profile.id}/${Date.now()}.jpg`);
+      await api.post('/api/users/me/verification', { verification_photo_url: url });
+      setProfile(p => p ? { ...p, verification_status: 'PENDING' } : p);
+      Alert.alert(t('fixerProfile.alerts.verificationSubmitted.title'), t('fixerProfile.alerts.verificationSubmitted.message'));
+    } catch {
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.verificationError'));
+    } finally {
+      setUploadingVerification(false);
+    }
   };
 
   if (loading) return <LoadingScreen label={t('common.loading')} />;
@@ -333,16 +362,28 @@ export default function FixerProfileScreen() {
               </View>
               <Text style={styles.headerKicker}>{t('fixerProfile.headerKicker')}</Text>
             </View>
-            <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+              {profile?.verification_status === 'APPROVED' && (
+                <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
+              )}
+            </View>
             <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
 
             <View style={styles.heroStats}>
-              <View style={styles.heroStat}>
+              <Pressable
+                style={styles.heroStat}
+                onPress={() => {
+                  if (profile?.id) {
+                    navigation.navigate('PublicProfile', { userId: profile.id });
+                  }
+                }}
+              >
                 <Text style={styles.heroStatValue}>
                   {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
                 </Text>
-                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.rating')}</Text>
-              </View>
+                <Text style={[styles.heroStatLabel, { textDecorationLine: 'underline' }]}>{t('fixerProfile.stats.rating')}</Text>
+              </Pressable>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatValue}>{specializations.length}</Text>
                 <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.trades')}</Text>
@@ -478,6 +519,53 @@ export default function FixerProfileScreen() {
                   thumbColor={brandColors.white}
                 />
               </View>
+            </FCard>
+
+            {/* Verification section */}
+            <FCard style={styles.section} shadow="sm">
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIcon}>
+                  <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.sectionKicker}>Identity</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Verification</Text>
+                </View>
+              </View>
+
+              {profile?.verification_status === 'APPROVED' ? (
+                <View style={styles.verificationBanner}>
+                  <MaterialCommunityIcons name="check-decagram" size={20} color={brandColors.primary} />
+                  <Text style={[typography.bodyMedium, { color: brandColors.primary }]}>Verified</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                    Your identity has been verified. A badge appears on your public profile.
+                  </Text>
+                </View>
+              ) : profile?.verification_status === 'PENDING' ? (
+                <View style={styles.verificationBanner}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
+                  <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>Pending review</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                    Your verification photo is being reviewed by an admin.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+                    Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.
+                  </Text>
+                  <FButton
+                    variant="secondary"
+                    icon="camera-outline"
+                    onPress={() => void handleSubmitVerification()}
+                    loading={uploadingVerification}
+                    disabled={uploadingVerification}
+                    fullWidth
+                  >
+                    Upload ID Photo
+                  </FButton>
+                </>
+              )}
             </FCard>
 
             <FCard style={styles.section} shadow="sm">
@@ -793,6 +881,14 @@ const styles = StyleSheet.create({
   },
   dangerRow: {
     backgroundColor: brandColors.dangerSoft,
+  },
+  verificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
   },
   chipsWrap: {
     flexDirection: 'row',
