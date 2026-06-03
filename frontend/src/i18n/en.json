@@ -952,10 +952,82 @@
     },
     "footer": {
       "tagline": "Your neighborhood. Fixed.",
-      "copyright": "© 2026 FixIt · Tel Aviv, Israel"
+      "copyright": "© 2026 FixIt · Tel Aviv, Israel",
+      "footerTagline": "Your neighborhood. Fixed. A task marketplace for homeowners and skilled local pros.",
+      "madeby": "Made for neighbors who get things done.",
+      "product": "Product",
+      "company": "Company",
+      "help": "Help",
+      "howItWorksLink": "How it works",
+      "categoriesLink": "Categories",
+      "forFixersLink": "For Fixers",
+      "pricingLink": "Pricing",
+      "aboutLink": "About",
+      "careersLink": "Careers",
+      "pressLink": "Press",
+      "contactLink": "Contact",
+      "faqLink": "FAQ",
+      "trustSafetyLink": "Trust & Safety",
+      "privacyLink": "Privacy",
+      "termsLink": "Terms"
     },
     "language": {
       "toggle": "EN | עב"
+    },
+    "hero2": {
+      "eyebrowDefault": "Trusted by 12,000+ neighbors in Israel",
+      "eyebrowSignedIn": "Your requester workspace is ready",
+      "line1": "Let's fix your",
+      "line2": "problems.",
+      "bodyDefault": "Post any home task, compare bids from vetted local Fixers, and choose who gets the job without chasing calls or favors.",
+      "bodySignedIn": "Post the next thing your home needs, compare local Fixers, and head back to your dashboard when you are ready to manage the work.",
+      "howItWorksBtn": "How it works",
+      "trustMeta": "from 8,400+ jobs completed",
+      "fixerOnDuty": "Fixer on duty"
+    },
+    "stats2": {
+      "activeRequesters": "Active Requesters",
+      "jobsCompleted": "Jobs Completed",
+      "avgFirstBid": "Avg. First Bid",
+      "avgRating": "Average Rating"
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "Three steps.",
+      "titleAccent": "No phone tag.",
+      "sub": "Skip the WhatsApp groups and the \"I'll call you back tomorrow.\" Post your task, compare offers, hire the best one.",
+      "step1": { "title": "Describe your task", "desc": "Snap a photo, set your budget, pick a category. Sign in once, then your task is ready for local Fixers." },
+      "step2": { "title": "Compare bids", "desc": "Local Fixers send you their price, ETA, and a short pitch. Read profiles, check ratings, and pick the best fit." },
+      "step3": { "title": "Hire & pay when done", "desc": "Pick your Fixer, get the job done, then pay through Bit or Paybox. Rate your experience to help the next neighbor." }
+    },
+    "catsSection": {
+      "eyebrow": "Categories",
+      "title": "Whatever you need fixed.",
+      "copy": "Pick a category to see what belongs there, then start the task with the right context already selected.",
+      "willSelect": "We will start your task with {{label}} selected.",
+      "postCat": "Post {{label}} Task"
+    },
+    "catCards": {
+      "ASSEMBLY":    { "desc": "Flat-pack furniture, shelving, and home items.", "ex1": "IKEA wardrobes", "ex2": "bed frames", "ex3": "shelving units", "detail": "Get help turning boxed furniture and loose parts into something sturdy, level, and ready to use." },
+      "MOUNTING":    { "desc": "TVs, shelves, mirrors, and wall fixtures.", "ex1": "TV brackets", "ex2": "floating shelves", "ex3": "mirrors", "detail": "Find a fixer who can hang heavy or precise items cleanly, safely, and at the right height." },
+      "MOVING":      { "desc": "Apartment, office, or single-piece moving help.", "ex1": "small apartments", "ex2": "office moves", "ex3": "heavy items", "detail": "Book local muscle for small moves, awkward items, and short-distance transport without calling a full moving company." },
+      "PAINTING":    { "desc": "Room touch-ups, small walls, and paint repairs.", "ex1": "accent walls", "ex2": "touch-ups", "ex3": "door frames", "detail": "Refresh a room, repair scuffs, or finish small paint jobs with clean edges and less mess." },
+      "PLUMBING":    { "desc": "Leaks, clogs, faucets, and basic pipe fixes.", "ex1": "leaky taps", "ex2": "sink clogs", "ex3": "shower heads", "detail": "Handle everyday plumbing issues before they become expensive problems, from dripping taps to clogged sinks." },
+      "ELECTRICITY": { "desc": "Light fixtures, outlets, and small electrical repairs.", "ex1": "light fixtures", "ex2": "outlets", "ex3": "switches", "detail": "Get small electrical jobs handled by someone comfortable with fixtures, switches, and safe installation basics." },
+      "OUTDOORS":    { "desc": "Gardens, yards, patios, and exterior fixes.", "ex1": "yard cleanup", "ex2": "patio repairs", "ex3": "garden tasks", "detail": "Tidy, repair, or improve outdoor spaces so balconies, yards, and patios are easier to use." },
+      "CLEANING":    { "desc": "Deep cleans, move-out cleans, and post-renovation cleanup.", "ex1": "deep cleaning", "ex2": "move-out cleaning", "ex3": "after renovation", "detail": "Bring in help for serious cleaning jobs that need more than a quick tidy-up." }
+    },
+    "fixerSection": {
+      "eyebrow": "For Fixers",
+      "title": "Turn your skills into local work.",
+      "body": "Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees — we take a small cut only when you're hired.",
+      "learnMore": "Learn more",
+      "tiles": {
+        "rate":   { "title": "Set your rate",   "desc": "Bid your price on each job. No race-to-the-bottom." },
+        "nearby": { "title": "Work nearby",     "desc": "Filter by distance — keep your commute short." },
+        "trust":  { "title": "Build trust",     "desc": "Reviews stack up. Top-rated Fixers earn a badge." },
+        "paid":   { "title": "Get paid fast",   "desc": "Bit or Paybox direct. No 30-day waits." }
+      }
     }
   },
   "placeholder": {

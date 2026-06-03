@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { CATEGORY_METADATA, type Category } from '../constants/categories';
+import { getCategoryLabel } from '../utils/categoryMetadata';
 import { useLanguage } from '../context/LanguageContext';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -490,13 +491,6 @@ const LANDING_CATEGORY_ORDER: Category[] = [
 
 const CATEGORY_CARDS = LANDING_CATEGORY_ORDER.map((value) => CATEGORY_METADATA[value]);
 
-const FIXER_TILES = [
-  { icon: 'cash-multiple', title: 'Set your rate', desc: 'Bid your price on each job. No race-to-the-bottom.' },
-  { icon: 'map-marker-radius-outline', title: 'Work nearby', desc: 'Filter by distance — keep your commute short.' },
-  { icon: 'star-circle-outline', title: 'Build trust', desc: 'Reviews stack up. Top-rated Fixers earn a badge.' },
-  { icon: 'bank-transfer', title: 'Get paid fast', desc: 'Bit or Paybox direct. No 30-day waits.' },
-] as const;
-
 // ── Component ─────────────────────────────────────────────────────────────
 export default function LandingScreen({
   isSignedIn = false,
@@ -549,6 +543,12 @@ export default function LandingScreen({
   };
   const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.signInToPost');
   const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
+  const fixerTiles = [
+    { icon: 'cash-multiple',             title: t('landing.fixerSection.tiles.rate.title'),   desc: t('landing.fixerSection.tiles.rate.desc') },
+    { icon: 'map-marker-radius-outline', title: t('landing.fixerSection.tiles.nearby.title'), desc: t('landing.fixerSection.tiles.nearby.desc') },
+    { icon: 'star-circle-outline',       title: t('landing.fixerSection.tiles.trust.title'),  desc: t('landing.fixerSection.tiles.trust.desc') },
+    { icon: 'bank-transfer',             title: t('landing.fixerSection.tiles.paid.title'),   desc: t('landing.fixerSection.tiles.paid.desc') },
+  ];
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -1082,22 +1082,20 @@ export default function LandingScreen({
         <div className="fi-hero-content">
           <div className="fi-hero-eyebrow">
             <span className="pulse" />
-            {isSignedIn ? 'Your requester workspace is ready' : 'Trusted by 12,000+ neighbors in Israel'}
+            {isSignedIn ? t('landing.hero2.eyebrowSignedIn') : t('landing.hero2.eyebrowDefault')}
           </div>
 
           <h1 className="fi-hero-title">
             <span className="line">
-              <span>Let’s fix your</span>
+              <span>{t('landing.hero2.line1')}</span>
             </span>
             <span className="line">
-              <span><span className="accent shimmer">problems.</span></span>
+              <span><span className="accent shimmer">{t('landing.hero2.line2')}</span></span>
             </span>
           </h1>
 
           <p className="fi-hero-sub">
-            {isSignedIn
-              ? 'Post the next thing your home needs, compare local Fixers, and head back to your dashboard when you are ready to manage the work.'
-              : 'Post any home task, compare bids from vetted local Fixers, and choose who gets the job without chasing calls or favors.'}
+            {isSignedIn ? t('landing.hero2.bodySignedIn') : t('landing.hero2.bodyDefault')}
           </p>
 
           <div className="fi-hero-actions">
@@ -1107,7 +1105,7 @@ export default function LandingScreen({
             <button type="button" className="btn-hero ghost" onClick={handleFixerCta}>
               {fixerCtaLabel}
             </button>
-            <a href="#how" className="btn-hero quiet">How it works</a>
+            <a href="#how" className="btn-hero quiet">{t('landing.hero2.howItWorksBtn')}</a>
           </div>
 
           <div className="fi-hero-trust">
@@ -1120,7 +1118,7 @@ export default function LandingScreen({
             </div>
             <div>
               <div className="stars">★★★★★</div>
-              <div className="meta"><strong>4.9 / 5</strong> from 8,400+ jobs completed</div>
+              <div className="meta"><strong>4.9 / 5</strong> {t('landing.hero2.trustMeta')}</div>
             </div>
           </div>
         </div>
@@ -1132,7 +1130,7 @@ export default function LandingScreen({
             <span className="frame-corner tr" />
             <span className="frame-corner bl" />
             <span className="frame-corner br" />
-            <div className="fi-worker-label">Fixer on duty</div>
+            <div className="fi-worker-label">{t('landing.hero2.fixerOnDuty')}</div>
             <div className="worker-scene">
               <div className="worker-ground" />
               <div className="worker-ticks" aria-hidden="true">
@@ -1193,19 +1191,19 @@ export default function LandingScreen({
       {/* ── Stats ────────────────────────────────────────── */}
       <section className="fi-proof">
         <div className="fi-proof-inner">
-          <div className="fi-stat"><div className="num">12<span className="unit">k</span>+</div><div className="lbl">Active Requesters</div></div>
-          <div className="fi-stat"><div className="num">8.4<span className="unit">k</span></div><div className="lbl">Jobs Completed</div></div>
-          <div className="fi-stat"><div className="num">12<span className="unit">min</span></div><div className="lbl">Avg. First Bid</div></div>
-          <div className="fi-stat"><div className="num">4.9<span className="unit">★</span></div><div className="lbl">Average Rating</div></div>
+          <div className="fi-stat"><div className="num">12<span className="unit">k</span>+</div><div className="lbl">{t('landing.stats2.activeRequesters')}</div></div>
+          <div className="fi-stat"><div className="num">8.4<span className="unit">k</span></div><div className="lbl">{t('landing.stats2.jobsCompleted')}</div></div>
+          <div className="fi-stat"><div className="num">12<span className="unit">min</span></div><div className="lbl">{t('landing.stats2.avgFirstBid')}</div></div>
+          <div className="fi-stat"><div className="num">4.9<span className="unit">★</span></div><div className="lbl">{t('landing.stats2.avgRating')}</div></div>
         </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────── */}
       <section className="fi-how" id="how">
         <div className="fi-how-inner">
-          <div className="sec-eyebrow">How it works</div>
-          <h2 className="sec-title">Three steps. <em style={{ fontStyle: 'normal', color: '#D49A2A' }}>No phone tag.</em></h2>
-          <p className="sec-sub">Skip the WhatsApp groups and the "I'll call you back tomorrow." Post your task, compare offers, hire the best one.</p>
+          <div className="sec-eyebrow">{t('landing.how.eyebrow')}</div>
+          <h2 className="sec-title">{t('landing.how.title')} <em style={{ fontStyle: 'normal', color: '#D49A2A' }}>{t('landing.how.titleAccent')}</em></h2>
+          <p className="sec-sub">{t('landing.how.sub')}</p>
           <div className="fi-steps">
             <div className="fi-step">
               <div className="fi-step-num">01</div>
@@ -1214,8 +1212,8 @@ export default function LandingScreen({
                   <LandingIcon name="clipboard-edit-outline" size={28} />
                 </div>
               </div>
-              <h3>Describe your task</h3>
-              <p>Snap a photo, set your budget, pick a category. Sign in once, then your task is ready for local Fixers.</p>
+              <h3>{t('landing.how.step1.title')}</h3>
+              <p>{t('landing.how.step1.desc')}</p>
             </div>
             <div className="fi-step">
               <div className="fi-step-num">02</div>
@@ -1224,8 +1222,8 @@ export default function LandingScreen({
                   <LandingIcon name="account-search-outline" size={28} />
                 </div>
               </div>
-              <h3>Compare bids</h3>
-              <p>Local Fixers send you their price, ETA, and a short pitch. Read profiles, check ratings, and pick the best fit.</p>
+              <h3>{t('landing.how.step2.title')}</h3>
+              <p>{t('landing.how.step2.desc')}</p>
             </div>
             <div className="fi-step">
               <div className="fi-step-num">03</div>
@@ -1234,8 +1232,8 @@ export default function LandingScreen({
                   <LandingIcon name="check-circle-outline" size={28} />
                 </div>
               </div>
-              <h3>Hire &amp; pay when done</h3>
-              <p>Pick your Fixer, get the job done, then pay through Bit or Paybox. Rate your experience to help the next neighbor.</p>
+              <h3>{t('landing.how.step3.title')}</h3>
+              <p>{t('landing.how.step3.desc')}</p>
             </div>
           </div>
         </div>
@@ -1246,10 +1244,10 @@ export default function LandingScreen({
         <div className="fi-cats-inner">
           <div className="fi-cats-head">
             <div>
-              <div className="sec-eyebrow">Categories</div>
-              <h2 className="sec-title" style={{ fontSize: 'clamp(32px,4vw,52px)', margin: 0 }}>Whatever you need fixed.</h2>
+              <div className="sec-eyebrow">{t('landing.catsSection.eyebrow')}</div>
+              <h2 className="sec-title" style={{ fontSize: 'clamp(32px,4vw,52px)', margin: 0 }}>{t('landing.catsSection.title')}</h2>
             </div>
-            <p className="fi-cats-copy">Pick a category to see what belongs there, then start the task with the right context already selected.</p>
+            <p className="fi-cats-copy">{t('landing.catsSection.copy')}</p>
           </div>
           <div className="fi-cats-grid">
             {CATEGORY_CARDS.map((cat) => {
@@ -1264,7 +1262,7 @@ export default function LandingScreen({
                     type="button"
                     className="fi-cat-select"
                     aria-pressed={selected}
-                    aria-label={selected ? `Collapse ${cat.label}` : `Expand ${cat.label}`}
+                    aria-label={selected ? `Collapse ${getCategoryLabel(cat.value, t)}` : `Expand ${getCategoryLabel(cat.value, t)}`}
                     onClick={() => setSelectedCategory((current) => current === cat.value ? null : cat.value)}
                   >
                     <span className="img" style={{ backgroundImage: `url(${src})` }} />
@@ -1273,30 +1271,30 @@ export default function LandingScreen({
                       <LandingIcon name={cat.icon} />
                     </span>
                     <span className="body">
-                      <span className="name">{cat.label}</span>
-                      <span className="desc">{cat.description}</span>
+                      <span className="name">{getCategoryLabel(cat.value, t)}</span>
+                      <span className="desc">{t(`landing.catCards.${cat.value}.desc`)}</span>
                       <span className="examples">
-                        {cat.examples.slice(0, selected ? 3 : 2).map((example) => (
+                        {[t(`landing.catCards.${cat.value}.ex1`), t(`landing.catCards.${cat.value}.ex2`), t(`landing.catCards.${cat.value}.ex3`)].slice(0, selected ? 3 : 2).map((example) => (
                           <span key={example}>{example}</span>
                         ))}
                       </span>
                     </span>
                   </button>
                   {selected && (
-                    <div className="fi-cat-expanded" id={`category-details-${cat.value}`} role="region" aria-label={`${cat.label} details`}>
-                      <p>{cat.detailCopy}</p>
+                    <div className="fi-cat-expanded" id={`category-details-${cat.value}`} role="region" aria-label={`${getCategoryLabel(cat.value, t)} details`}>
+                      <p>{t(`landing.catCards.${cat.value}.detail`)}</p>
                       <div className="expanded-chips">
-                        {cat.examples.map((task) => (
+                        {[t(`landing.catCards.${cat.value}.ex1`), t(`landing.catCards.${cat.value}.ex2`), t(`landing.catCards.${cat.value}.ex3`)].map((task) => (
                           <span key={task} style={{ background: cat.soft }}>{task}</span>
                         ))}
                       </div>
                       <div className="expanded-note">
                         <LandingIcon name="lightbulb-on-outline" size={18} />
-                        <span>We will start your task with {cat.label.toLowerCase()} selected.</span>
+                        <span>{t('landing.catsSection.willSelect', { label: getCategoryLabel(cat.value, t).toLowerCase() })}</span>
                       </div>
                       <div className="expanded-actions">
                         <button type="button" className="cat-post" onClick={() => handlePostTaskCta(cat.value)}>
-                          {isSignedIn ? `Post ${cat.label} Task` : postTaskCtaLabel} <span className="arr">→</span>
+                          {isSignedIn ? t('landing.catsSection.postCat', { label: getCategoryLabel(cat.value, t) }) : postTaskCtaLabel} <span className="arr">→</span>
                         </button>
                       </div>
                     </div>
@@ -1312,22 +1310,22 @@ export default function LandingScreen({
       <section className="fi-dual" id="fixers">
         <div className="fi-dual-inner">
           <div className="fi-dual-text">
-            <div className="sec-eyebrow" style={{ color: '#F1B545' }}>For Fixers</div>
-            <h2>Turn your skills into local work.</h2>
-            <p>Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees — we take a small cut only when you're hired.</p>
+            <div className="sec-eyebrow" style={{ color: '#F1B545' }}>{t('landing.fixerSection.eyebrow')}</div>
+            <h2>{t('landing.fixerSection.title')}</h2>
+            <p>{t('landing.fixerSection.body')}</p>
             <div className="fi-dual-actions">
               <button type="button" className="btn-dual amber" onClick={handleFixerCta}>{fixerCtaLabel} <span className="arr">→</span></button>
-              <a href="#how" className="btn-dual outline">Learn more</a>
+              <a href="#how" className="btn-dual outline">{t('landing.fixerSection.learnMore')}</a>
             </div>
           </div>
           <div className="fi-dual-visual">
-            {FIXER_TILES.map((t) => (
-              <div key={t.title} className="fi-tile">
+            {fixerTiles.map((tile) => (
+              <div key={tile.title} className="fi-tile">
                 <div className="glyph">
-                  <LandingIcon name={t.icon} size={22} />
+                  <LandingIcon name={tile.icon} size={22} />
                 </div>
-                <h4>{t.title}</h4>
-                <p>{t.desc}</p>
+                <h4>{tile.title}</h4>
+                <p>{tile.desc}</p>
               </div>
             ))}
           </div>
@@ -1342,39 +1340,39 @@ export default function LandingScreen({
               {logoSrc ? <img src={logoSrc} alt="" style={{ filter: 'none' }} /> : null}
               <span>Fix<span style={{ color: '#D49A2A' }}>I</span>t</span>
             </div>
-            <p className="tag">Your neighborhood. Fixed. A task marketplace for homeowners and skilled local pros.</p>
+            <p className="tag">{t('landing.footer.footerTagline')}</p>
           </div>
           <div>
-            <h5>Product</h5>
+            <h5>{t('landing.footer.product')}</h5>
             <ul>
-              <li><a href="#how">How it works</a></li>
-              <li><a href="#categories">Categories</a></li>
-              <li><a href="#fixers">For Fixers</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('pricing'); }}>Pricing</a></li>
+              <li><a href="#how">{t('landing.footer.howItWorksLink')}</a></li>
+              <li><a href="#categories">{t('landing.footer.categoriesLink')}</a></li>
+              <li><a href="#fixers">{t('landing.footer.forFixersLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('pricing'); }}>{t('landing.footer.pricingLink')}</a></li>
             </ul>
           </div>
           <div>
-            <h5>Company</h5>
+            <h5>{t('landing.footer.company')}</h5>
             <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('about'); }}>About</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('careers'); }}>Careers</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('press'); }}>Press</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('contact'); }}>Contact</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('about'); }}>{t('landing.footer.aboutLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('careers'); }}>{t('landing.footer.careersLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('press'); }}>{t('landing.footer.pressLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('contact'); }}>{t('landing.footer.contactLink')}</a></li>
             </ul>
           </div>
           <div>
-            <h5>Help</h5>
+            <h5>{t('landing.footer.help')}</h5>
             <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('faq'); }}>FAQ</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('trust'); }}>Trust &amp; Safety</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('privacy'); }}>Privacy</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('terms'); }}>Terms</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('faq'); }}>{t('landing.footer.faqLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('trust'); }}>{t('landing.footer.trustSafetyLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('privacy'); }}>{t('landing.footer.privacyLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('terms'); }}>{t('landing.footer.termsLink')}</a></li>
             </ul>
           </div>
         </div>
         <div className="fi-footer-bottom">
-          <span>© 2026 FixIt · Tel Aviv, Israel</span>
-          <span>Made for neighbors who get things done.</span>
+          <span>{t('landing.footer.copyright')}</span>
+          <span>{t('landing.footer.madeby')}</span>
         </div>
       </footer>
     </div>
