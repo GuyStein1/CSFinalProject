@@ -13,6 +13,7 @@ import {
 import { Portal, Modal, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
@@ -24,13 +25,13 @@ import { getCategoryMeta } from '../utils/categoryMetadata';
 
 type TabFilter = 'ALL' | BidStatus | 'COMPLETED';
 
-const TABS: { value: TabFilter; label: string }[] = [
-  { value: 'ALL', label: 'Active' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'ACCEPTED', label: 'Accepted' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'REJECTED', label: 'Rejected' },
-  { value: 'WITHDRAWN', label: 'Withdrawn' },
+const TABS: { value: TabFilter; key: string }[] = [
+  { value: 'ALL', key: 'active' },
+  { value: 'PENDING', key: 'pending' },
+  { value: 'ACCEPTED', key: 'accepted' },
+  { value: 'COMPLETED', key: 'completed' },
+  { value: 'REJECTED', key: 'rejected' },
+  { value: 'WITHDRAWN', key: 'withdrawn' },
 ];
 
 const SWIPE_THRESHOLD = -80;
@@ -62,6 +63,7 @@ interface BidCardProps {
 }
 
 function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted }: BidCardProps) {
+  const { t } = useTranslation();
   const translateX = useRef(new Animated.Value(0)).current;
   const isPending = bid.status === 'PENDING';
   const catMeta = getCategoryMeta(bid.task.category);
@@ -85,7 +87,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
     }),
   ).current;
 
-  const budgetLabel = bid.task.suggested_price != null ? `₪${bid.task.suggested_price}` : 'Quote';
+  const budgetLabel = bid.task.suggested_price != null ? `₪${bid.task.suggested_price}` : t('myBids.card.quote');
 
   return (
     <View style={styles.swipeContainer}>
@@ -101,7 +103,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
         >
           <MaterialCommunityIcons name="close-circle-outline" size={22} color={brandColors.white} />
           <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' }]}>
-            Withdraw
+            {t('myBids.card.withdraw')}
           </Text>
         </Pressable>
       )}
@@ -131,7 +133,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               <View style={styles.metaRow}>
                 <MaterialCommunityIcons name="map-marker-outline" size={12} color={brandColors.textMuted} />
                 <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
-                  {bid.task.general_location_name || 'Location not set'} · {budgetLabel}
+                  {bid.task.general_location_name || t('myBids.card.locationNotSet')} · {budgetLabel}
                 </Text>
               </View>
             </View>
@@ -141,11 +143,11 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
           <View style={styles.bidDetails}>
             <View style={styles.priceRow}>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted }]}>Your offer</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.card.yourOffer')}</Text>
                 <Text style={styles.offerValue}>₪{bid.offered_price}</Text>
               </View>
               <View style={styles.priceTag}>
-                <Text style={[typography.caption, styles.priceTagText]}>Budget {budgetLabel}</Text>
+                <Text style={[typography.caption, styles.priceTagText]}>{t('myBids.card.budget', { value: budgetLabel })}</Text>
               </View>
             </View>
             <Text style={[typography.bodySm, styles.pitch]} numberOfLines={2}>
@@ -157,7 +159,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             <View style={styles.dateRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color={brandColors.textMuted} />
               <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                Submitted {formatDate(bid.created_at)}
+                {t('myBids.card.submitted', { date: formatDate(bid.created_at) })}
               </Text>
             </View>
             <View style={styles.actionButtons}>
@@ -170,7 +172,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onEdit(bid); }}
                   >
                     <MaterialCommunityIcons name="pencil" size={13} color={brandColors.primaryMuted} />
-                    <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>Edit</Text>
+                    <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>{t('myBids.card.edit')}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.actionBtn, styles.dangerActionBtn]}
@@ -179,7 +181,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onWithdraw(bid.id); }}
                   >
                     <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
-                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Withdraw</Text>
+                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.withdraw')}</Text>
                   </Pressable>
                 </>
               )}
@@ -191,7 +193,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}
                 >
                   <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
-                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>Cancel job</Text>
+                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.cancelJob')}</Text>
                 </Pressable>
               )}
               {bid.status === 'WITHDRAWN' && (
@@ -202,7 +204,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   onPress={(e) => { e.stopPropagation(); onReactivate(bid.id); }}
                 >
                   <MaterialCommunityIcons name="refresh" size={13} color={brandColors.success} />
-                  <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>Reactivate</Text>
+                  <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>{t('myBids.card.reactivate')}</Text>
                 </Pressable>
               )}
             </View>
@@ -227,6 +229,7 @@ function formatMonthLabel(key: string): string {
 }
 
 export default function MyBidsScreen() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
@@ -276,7 +279,8 @@ export default function MyBidsScreen() {
   const completedEarnings = activeTab === 'COMPLETED'
     ? bids.reduce((sum, b) => sum + b.offered_price, 0)
     : 0;
-  const activeTabLabel = TABS.find((tab) => tab.value === activeTab)?.label ?? 'All';
+  const activeTabKey = TABS.find((tab) => tab.value === activeTab)?.key ?? 'active';
+  const activeTabLabel = t(`myBids.tabs.${activeTabKey}`);
   const pipelineSummary = useMemo(() => {
     const activeJobs = bids.filter((b) => b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED').length;
     const pendingOffers = bids.filter((b) => b.status === 'PENDING').length;
@@ -323,14 +327,14 @@ export default function MyBidsScreen() {
     }
 
     Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
         text: confirmLabel,
         style: destructive ? 'destructive' : 'default',
         onPress: () => void onConfirm(),
       },
     ]);
-  }, [webConfirm]);
+  }, [webConfirm, t]);
 
   const handleWithdraw = useCallback(
     (bidId: string) => {
@@ -345,9 +349,9 @@ export default function MyBidsScreen() {
       };
 
       confirmBidAction({
-        title: 'Withdraw bid?',
-        message: `Withdraw your bid for "${bidTitle}"? You can reopen it later, but the requester will no longer see it as active.`,
-        confirmLabel: 'Withdraw bid',
+        title: t('myBids.actions.withdraw.title'),
+        message: t('myBids.actions.withdraw.message', { title: bidTitle }),
+        confirmLabel: t('myBids.actions.withdraw.confirm'),
         destructive: true,
         onConfirm: doWithdraw,
       });
@@ -379,18 +383,18 @@ export default function MyBidsScreen() {
 
       if (Platform.OS === 'web') {
         confirmBidAction({
-          title: 'Reopen bid?',
-          message: `Make your bid for "${bidTitle}" active again? You can edit it after reopening if the price or note needs changes.`,
-          confirmLabel: 'Reopen bid',
+          title: t('myBids.actions.reopen.title'),
+          message: t('myBids.actions.reopen.message', { title: bidTitle }),
+          confirmLabel: t('myBids.actions.reopen.confirm'),
           onConfirm: () => doReactivate(false),
         });
         return;
       }
 
-      Alert.alert('Reopen bid?', `Make your bid for "${bidTitle}" active again?`, [
-        { text: 'Keep withdrawn', style: 'cancel' },
-        { text: 'Reopen as-is', onPress: () => void doReactivate(false) },
-        { text: 'Reopen and edit', onPress: () => void doReactivate(true) },
+      Alert.alert(t('myBids.actions.reopen.title'), t('myBids.actions.reopen.messageSimple', { title: bidTitle }), [
+        { text: t('myBids.actions.reopen.keepWithdrawn'), style: 'cancel' },
+        { text: t('myBids.actions.reopen.reopenAsIs'), onPress: () => void doReactivate(false) },
+        { text: t('myBids.actions.reopen.reopenAndEdit'), onPress: () => void doReactivate(true) },
       ]);
     },
     [updateBidLocally, refetch, bids, handleEdit, confirmBidAction],
@@ -409,9 +413,9 @@ export default function MyBidsScreen() {
       };
 
       confirmBidAction({
-        title: 'Delete bid?',
-        message: `Delete your bid history for "${bidTitle}" permanently? This cannot be undone.`,
-        confirmLabel: 'Delete bid',
+        title: t('myBids.actions.delete.title'),
+        message: t('myBids.actions.delete.message', { title: bidTitle }),
+        confirmLabel: t('myBids.actions.delete.confirm'),
         destructive: true,
         onConfirm: doDelete,
       });
@@ -431,9 +435,9 @@ export default function MyBidsScreen() {
       };
 
       confirmBidAction({
-        title: 'Cancel accepted job?',
-        message: `Cancel "${bid.task.title}"? The task will reopen for other Fixers and the requester will lose your accepted job state.`,
-        confirmLabel: 'Cancel job',
+        title: t('myBids.actions.cancelAccepted.title'),
+        message: t('myBids.actions.cancelAccepted.message', { title: bid.task.title }),
+        confirmLabel: t('myBids.actions.cancelAccepted.confirm'),
         destructive: true,
         onConfirm: doCancelAccepted,
       });
@@ -470,8 +474,12 @@ export default function MyBidsScreen() {
     (navigation as { navigate: (screen: string) => void }).navigate('FindJobs');
   }, [navigation]);
 
-  const emptyMessage = activeTab === 'ALL' ? undefined : `No ${activeTab.toLowerCase()} bids.`;
-  const emptyTitle = activeTab === 'ALL' ? 'No active bids yet' : `No ${activeTab.toLowerCase()} bids`;
+  const emptyTitle = activeTab === 'ALL'
+    ? t('myBids.empty.noActive.title')
+    : t('myBids.empty.filtered.title', { tab: activeTabLabel.toLowerCase() });
+  const emptyMessage = activeTab === 'ALL'
+    ? t('myBids.empty.noActive.message')
+    : t('myBids.empty.filtered.message', { tab: activeTabLabel.toLowerCase() });
 
   return (
     <View style={styles.container}>
@@ -481,25 +489,25 @@ export default function MyBidsScreen() {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondary} />
             </View>
-            <Text style={styles.headerKicker}>Fixer Workspace</Text>
+            <Text style={styles.headerKicker}>{t('myBids.header.kicker')}</Text>
           </View>
-          <Text style={styles.headerTitle}>Bid pipeline</Text>
+          <Text style={styles.headerTitle}>{t('myBids.header.title')}</Text>
           <Text style={styles.headerSub} numberOfLines={2}>
-            {activeTabLabel} bids / {pipelineSummary.pendingOffers} pending / {pipelineSummary.activeJobs} active jobs
+            {t('myBids.header.sub', { tab: activeTabLabel, pending: pipelineSummary.pendingOffers, active: pipelineSummary.activeJobs })}
           </Text>
         </View>
 
         <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
           <View style={styles.workspaceStat}>
             <Text style={styles.workspaceStatValue}>{loading ? '...' : bids.length}</Text>
-            <Text style={styles.workspaceStatLabel}>In view</Text>
+            <Text style={styles.workspaceStatLabel}>{t('myBids.stats.inView')}</Text>
           </View>
           <View style={styles.workspaceStat}>
             <Text style={styles.workspaceStatValue}>₪{pipelineSummary.visibleValue.toLocaleString()}</Text>
-            <Text style={styles.workspaceStatLabel}>Offer value</Text>
+            <Text style={styles.workspaceStatLabel}>{t('myBids.stats.offerValue')}</Text>
           </View>
           <FButton variant="secondary" size="sm" icon="map-search-outline" onPress={handleFindJobs} style={styles.headerAction}>
-            Find jobs
+            {t('myBids.stats.findJobs')}
           </FButton>
         </View>
       </View>
@@ -514,7 +522,7 @@ export default function MyBidsScreen() {
           contentContainerStyle={[styles.tabContent, isWide && styles.tabContentWide]}
           renderItem={({ item }) => (
             <FChip
-              label={item.label}
+              label={t(`myBids.tabs.${item.key}`)}
               selected={activeTab === item.value}
               onPress={() => setActiveTab(item.value)}
               compact
@@ -525,25 +533,21 @@ export default function MyBidsScreen() {
 
       {/* Content */}
       {loading ? (
-        <LoadingScreen label="Loading your bids..." />
+        <LoadingScreen label={t('myBids.loading')} />
       ) : error ? (
         <EmptyState
           icon="alert-circle-outline"
-          title="Could not load bids"
+          title={t('myBids.error.title')}
           message={error}
-          actionLabel="Try Again"
+          actionLabel={t('myBids.error.retry')}
           onAction={refetch}
         />
       ) : bids.length === 0 ? (
         <EmptyState
           icon={activeTab === 'ALL' ? 'hand-extended-outline' : 'filter-off-outline'}
           title={emptyTitle}
-          message={
-            activeTab === 'ALL'
-              ? 'No offers are active yet.'
-              : emptyMessage
-          }
-          actionLabel={activeTab === 'ALL' ? 'Find Jobs' : undefined}
+          message={emptyMessage}
+          actionLabel={activeTab === 'ALL' ? t('myBids.empty.noActive.action') : undefined}
           onAction={activeTab === 'ALL' ? handleFindJobs : undefined}
         />
       ) : (
@@ -578,12 +582,12 @@ export default function MyBidsScreen() {
                 <View style={styles.summaryContent}>
                   <View style={styles.summaryItem}>
                     <Text style={[typography.h1, { color: brandColors.primary }]}>{completedTotal}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>Jobs</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.stats.jobs')}</Text>
                   </View>
                   <View style={styles.summaryDivider} />
                   <View style={styles.summaryItem}>
                     <Text style={[typography.h1, { color: brandColors.primary }]}>₪{completedEarnings.toLocaleString()}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>Earned</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.stats.earned')}</Text>
                   </View>
                 </View>
               </FCard>
@@ -628,16 +632,16 @@ export default function MyBidsScreen() {
           contentContainerStyle={styles.editModal}
         >
           <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
-            Edit Bid
+            {t('myBids.editModal.title')}
           </Text>
           <FInput
-            label="Offer (₪)"
+            label={t('myBids.editModal.offer')}
             value={editPrice}
             onChangeText={setEditPrice}
             keyboardType="numeric"
           />
           <FInput
-            label="Description"
+            label={t('myBids.editModal.description')}
             value={editDescription}
             onChangeText={setEditDescription}
             multiline
@@ -650,10 +654,10 @@ export default function MyBidsScreen() {
             fullWidth
             style={{ marginTop: spacing.sm }}
           >
-            Save Changes
+            {t('myBids.editModal.save')}
           </FButton>
           <FButton variant="outline" onPress={() => setEditingBid(null)} fullWidth style={{ marginTop: spacing.sm }}>
-            Cancel
+            {t('myBids.editModal.cancel')}
           </FButton>
         </Modal>
       </Portal>

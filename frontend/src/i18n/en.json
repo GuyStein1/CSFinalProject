@@ -1,0 +1,912 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "tryAgain": "Try Again",
+    "retry": "Retry",
+    "ok": "OK",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "send": "Send",
+    "search": "Search",
+    "refresh": "Refresh",
+    "done": "Done",
+    "next": "Next",
+    "previous": "Previous",
+    "or": "or",
+    "yesterday": "Yesterday",
+    "justNow": "Just now",
+    "saveChanges": "Save Changes"
+  },
+  "auth": {
+    "loading": {
+      "checkingSession": "Checking your session..."
+    },
+    "welcome": {
+      "title": "FixIt",
+      "tagline": "Your neighborhood. Fixed.",
+      "logIn": "Log In",
+      "createAccount": "Create Account",
+      "footnote": "Trusted by Fixers and Requesters across Israel"
+    },
+    "login": {
+      "title": "Sign in to FixIt",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot Password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account? Create one"
+    },
+    "register": {
+      "title": "Create your account",
+      "fullName": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "phoneNumber": "Phone Number (optional)",
+      "submit": "Create Account",
+      "alreadyHave": "Already have an account? Sign In",
+      "errors": {
+        "fullNameRequired": "Full name is required",
+        "emailRequired": "Email is required",
+        "passwordLength": "Password must be at least 6 characters",
+        "passwordMismatch": "Passwords do not match",
+        "registrationFailed": "Registration failed"
+      }
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "description": "Enter your email and we'll send you a link to reset your password.",
+      "email": "Email",
+      "emailPlaceholder": "Please enter your email address",
+      "submit": "Send Reset Link",
+      "backToSignIn": "Back to Sign In",
+      "sentDescription": "Check your inbox — we sent a reset link to {{email}}.",
+      "failed": "Failed to send reset email"
+    },
+    "needsSync": {
+      "title": "Finish your account setup",
+      "description": "You are signed in with Firebase, but this account does not exist in the FixIt database yet.",
+      "signedInAs": "Signed in as",
+      "fullName": "Full Name",
+      "phoneNumber": "Phone Number (optional)",
+      "createAccount": "Create Local Account",
+      "signOut": "Sign Out"
+    },
+    "error": {
+      "title": "Session verification failed",
+      "retry": "Try Again",
+      "signOut": "Sign Out"
+    }
+  },
+  "settings": {
+    "hero": {
+      "eyebrow": "Workspace",
+      "secureSession": "Secure session",
+      "verifiedEmail": "Verified email",
+      "emailNotVerified": "Email not verified"
+    },
+    "section": {
+      "account": "Account",
+      "preferences": "Preferences",
+      "session": "Session"
+    },
+    "account": {
+      "email": {
+        "label": "Email",
+        "description": "Used for sign-in and password recovery"
+      },
+      "phone": {
+        "label": "Phone Number",
+        "description": "Shown only when coordination is needed",
+        "placeholder": "Enter phone number"
+      }
+    },
+    "preferences": {
+      "pushNotifications": {
+        "label": "Push Notifications",
+        "description": "Bids, messages, payments, and task updates"
+      },
+      "language": {
+        "label": "Language",
+        "description": "Switch between English and Hebrew"
+      },
+      "changePassword": {
+        "label": "Change Password",
+        "description": "Send a reset link to your email"
+      }
+    },
+    "session": {
+      "copy": "Log out of this device. Your posted tasks, bids, and profile details stay saved.",
+      "logout": "Log Out"
+    },
+    "alerts": {
+      "logOut": {
+        "title": "Log Out",
+        "message": "Are you sure you want to log out?",
+        "confirm": "Log Out"
+      },
+      "passwordReset": {
+        "successTitle": "Success",
+        "success": "Check your inbox for a password reset link.",
+        "error": "Failed to send password reset email."
+      },
+      "phone": {
+        "savedTitle": "Saved",
+        "saved": "Phone number updated."
+      },
+      "notifications": {
+        "enabledTitle": "Notifications enabled",
+        "enabled": "You will now receive push notifications.",
+        "deniedTitle": "Permission denied",
+        "denied": "Enable notifications in your iPhone Settings to receive updates."
+      }
+    }
+  },
+  "dashboard": {
+    "hero": {
+      "workspace": "Requester workspace",
+      "sub": "Post a clear home task, compare local Fixer bids, and keep every job moving from one focused workspace.",
+      "postTask": "Post Task",
+      "myTasks": "My Tasks"
+    },
+    "panel": {
+      "eyebrow": "Next best action",
+      "title": "Post the task once. Manage the rest here.",
+      "photosTitle": "Photos help bids arrive faster",
+      "photosCopy": "Add context before local Fixers quote the work.",
+      "historyTitle": "Your task history stays organized",
+      "historyCopy": "Open, in-progress, completed, and canceled jobs remain separated."
+    },
+    "verify": {
+      "title": "Verify your email",
+      "sent": "Verification email sent. Check your inbox to unlock every workspace feature.",
+      "pending": "Please verify your email to unlock every workspace feature.",
+      "resend": "Resend"
+    },
+    "section": {
+      "controls": "Controls",
+      "controlsTitle": "Run your request",
+      "services": "Services",
+      "servicesTitle": "Start with a category",
+      "flow": "Flow",
+      "flowTitle": "How requests move"
+    },
+    "quickActions": {
+      "postTask": {
+        "title": "Post Task",
+        "copy": "Start a new request with photos, budget, and location."
+      },
+      "myTasks": {
+        "title": "My Tasks",
+        "copy": "Review bids, edit open requests, and mark active jobs complete."
+      }
+    },
+    "steps": {
+      "post": {
+        "title": "Post clearly",
+        "copy": "Add the job, area, budget, and photos so Fixers can price it quickly."
+      },
+      "compare": {
+        "title": "Compare bids",
+        "copy": "Review offers, availability, and fit from your task workspace."
+      },
+      "finish": {
+        "title": "Finish confidently",
+        "copy": "Track progress, mark completion, and keep the record in one place."
+      }
+    }
+  },
+  "myTasks": {
+    "header": {
+      "eyebrow": "My Tasks",
+      "title": "Manage every posted job",
+      "body": "Review bids, update open requests, complete assigned jobs, and keep finished work out of the way."
+    },
+    "pills": {
+      "open": "Open",
+      "inProgress": "In progress",
+      "pendingBids": "Pending bids",
+      "toReview": "To review"
+    },
+    "sections": {
+      "active": "Active tasks",
+      "activeHelper": "Open requests and jobs currently assigned to a Fixer.",
+      "past": "Past tasks",
+      "pastHelper": "Completed and canceled work, including review and cleanup actions."
+    },
+    "empty": {
+      "noTasks": {
+        "title": "No tasks yet",
+        "message": "Post your first task and manage bids, status, and completion from this workspace.",
+        "action": "Post Task"
+      },
+      "noActive": {
+        "title": "No active tasks",
+        "message": "Completed and canceled requests are still available below."
+      },
+      "noPast": {
+        "title": "No past tasks",
+        "message": "Finished and canceled jobs will appear here for reference."
+      },
+      "couldNotLoad": {
+        "title": "Couldn't load My Tasks",
+        "retry": "Retry"
+      }
+    },
+    "loading": "Loading your tasks...",
+    "loadError": "We could not load My Tasks. Check your connection and try again.",
+    "error": {
+      "refreshTitle": "Could not refresh My Tasks"
+    },
+    "actions": {
+      "delete": {
+        "title": "Delete task?",
+        "confirm": "Delete task",
+        "keep": "Keep task",
+        "messageInProgress": "Delete \"{{title}}\" while it is in progress? This permanently removes the task record even though a Fixer may already be assigned. Cancel the job first unless you are certain. This cannot be undone.",
+        "message": "Delete \"{{title}}\" permanently? This removes the task record and related history from My Tasks. This cannot be undone."
+      },
+      "cancel": {
+        "title": "Cancel task?",
+        "confirm": "Cancel task",
+        "keep": "Keep task",
+        "messageInProgress": "Cancel \"{{title}}\" while it is in progress? This stops the active job for you and the assigned Fixer and moves it to Past tasks. Only continue if the work will not be completed here.",
+        "message": "Cancel \"{{title}}\"? It will move out of active My Tasks and into Past tasks."
+      },
+      "complete": {
+        "title": "Mark task complete?",
+        "confirm": "Mark complete",
+        "notYet": "Not yet",
+        "message": "Mark \"{{title}}\" complete only after the work is finished. This moves it to Past tasks and opens the review step."
+      },
+      "reopen": {
+        "title": "Reopen task?",
+        "keepCanceled": "Keep canceled",
+        "reopenAsIs": "Reopen as-is",
+        "reopenAndEdit": "Reopen and edit",
+        "message": "Reopen \"{{title}}\" as an open request? Review the task details before accepting new bids. If stale assignment data remains visible, it needs backend support to clear.",
+        "webSuffix": "The task details will open next so you can review or edit it."
+      }
+    },
+    "alerts": {
+      "failedDelete": "Failed to delete task.",
+      "failedCancel": "Failed to cancel task.",
+      "failedComplete": "Failed to mark task as completed.",
+      "failedReopen": "Failed to reopen task."
+    }
+  },
+  "myBids": {
+    "header": {
+      "kicker": "Fixer Workspace",
+      "title": "Bid pipeline",
+      "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs"
+    },
+    "tabs": {
+      "active": "Active",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "card": {
+      "yourOffer": "Your offer",
+      "budget": "Budget {{value}}",
+      "quote": "Quote",
+      "submitted": "Submitted {{date}}",
+      "withdraw": "Withdraw",
+      "edit": "Edit",
+      "cancelJob": "Cancel job",
+      "reactivate": "Reactivate",
+      "locationNotSet": "Location not set"
+    },
+    "stats": {
+      "inView": "In view",
+      "offerValue": "Offer value",
+      "findJobs": "Find jobs",
+      "jobs": "Jobs",
+      "earned": "Earned"
+    },
+    "editModal": {
+      "title": "Edit Bid",
+      "offer": "Offer (₪)",
+      "description": "Description",
+      "save": "Save Changes",
+      "cancel": "Cancel"
+    },
+    "loading": "Loading your bids...",
+    "empty": {
+      "noActive": {
+        "title": "No active bids yet",
+        "message": "No offers are active yet.",
+        "action": "Find Jobs"
+      },
+      "filtered": {
+        "title": "No {{tab}} bids",
+        "message": "No {{tab}} bids found."
+      }
+    },
+    "error": {
+      "title": "Could not load bids",
+      "retry": "Try Again"
+    },
+    "actions": {
+      "withdraw": {
+        "title": "Withdraw bid?",
+        "message": "Withdraw your bid for \"{{title}}\"? You can reopen it later, but the requester will no longer see it as active.",
+        "confirm": "Withdraw bid"
+      },
+      "reopen": {
+        "title": "Reopen bid?",
+        "message": "Make your bid for \"{{title}}\" active again? You can edit it after reopening if the price or note needs changes.",
+        "messageSimple": "Make your bid for \"{{title}}\" active again?",
+        "confirm": "Reopen bid",
+        "keepWithdrawn": "Keep withdrawn",
+        "reopenAsIs": "Reopen as-is",
+        "reopenAndEdit": "Reopen and edit"
+      },
+      "cancelAccepted": {
+        "title": "Cancel accepted job?",
+        "message": "Cancel \"{{title}}\"? The task will reopen for other Fixers and the requester will lose your accepted job state.",
+        "confirm": "Cancel job"
+      },
+      "delete": {
+        "title": "Delete bid?",
+        "message": "Delete your bid history for \"{{title}}\" permanently? This cannot be undone.",
+        "confirm": "Delete bid"
+      }
+    }
+  },
+  "discovery": {
+    "header": {
+      "kicker": "Fixer Workspace",
+      "title": "Find jobs",
+      "sub": "Open jobs near {{location}} · {{categories}} · {{budget}}"
+    },
+    "stats": {
+      "openJobs": "Open jobs",
+      "new": "New",
+      "alreadyBid": "Already bid",
+      "range": "Range"
+    },
+    "filters": {
+      "anyBudget": "Any budget",
+      "allTrades": "All trades",
+      "oneTrade": "1 trade",
+      "nTrades": "{{n}} trades",
+      "retry": "Try Again"
+    },
+    "location": {
+      "modal": {
+        "title": "Share your location?",
+        "description": "FixIt needs your location to show you tasks nearby. You can change this in Settings.",
+        "allow": "Allow",
+        "useTelAviv": "Use Tel Aviv"
+      },
+      "rationale": {
+        "title": "Find jobs near you",
+        "description": "We need a discovery center before we can place nearby tasks on the map."
+      },
+      "searchPlaceholder": "Search a city or area to find work there...",
+      "useMyLocation": "Use my location",
+      "showingTasksIn": "Showing tasks in: ",
+      "workArea": "your work area",
+      "checking": "Checking location permissions..."
+    },
+    "loading": {
+      "nearby": "Loading nearby tasks..."
+    },
+    "empty": {
+      "noTasks": {
+        "title": "No tasks found nearby",
+        "message": "Try expanding your distance filter or adjusting category and budget filters."
+      },
+      "noTasksArea": {
+        "title": "No tasks found in your area",
+        "message": "Try expanding your distance filter or changing categories or budget."
+      }
+    },
+    "error": {
+      "couldNotLoad": "Could not load jobs",
+      "retry": "Try Again",
+      "mapsNotReady": "Maps not ready — please try again.",
+      "couldNotResolve": "Could not resolve that place. Please try again.",
+      "noResults": "No results found for that area."
+    }
+  },
+  "chat": {
+    "loading": "Loading chat...",
+    "readonly": "This task is completed. Chat is archived.",
+    "empty": {
+      "title": "No messages yet.",
+      "subtitle": "Say hello!"
+    },
+    "input": {
+      "placeholder": "Type a message…"
+    }
+  },
+  "conversations": {
+    "loading": "Loading messages…",
+    "empty": {
+      "title": "No conversations yet",
+      "message": "Start a chat from a task once a bid is accepted."
+    },
+    "yesterday": "Yesterday",
+    "unread": "unread",
+    "noMessages": "No messages yet"
+  },
+  "notifications": {
+    "loading": "Loading notifications...",
+    "empty": {
+      "title": "No notifications",
+      "message": "You're all caught up! Notifications will appear here."
+    },
+    "markAllRead": "Mark all as read",
+    "deleteAll": "Delete All",
+    "justNow": "Just now"
+  },
+  "taskDetails": {
+    "loading": "Loading task details...",
+    "notFound": "Task not found",
+    "cancelTask": "Cancel Task",
+    "detail": {
+      "category": "Category",
+      "budget": "Budget",
+      "location": "Location",
+      "address": "Address",
+      "posted": "Posted",
+      "quoteRequired": "Quote Required"
+    },
+    "sections": {
+      "bids": "Bids",
+      "receivedBids": "Received Bids",
+      "assignedFixer": "Assigned Fixer",
+      "details": "Details",
+      "payment": "Payment",
+      "review": "Leave a Review"
+    },
+    "actions": {
+      "acceptBid": "Accept",
+      "rejectBid": "Reject",
+      "decline": "Decline",
+      "chatWithFixer": "Chat with Fixer",
+      "cancelTask": "Cancel Task",
+      "markCompleted": "Mark as Completed",
+      "payFixer": "Pay Fixer",
+      "confirmPayment": "Confirm Payment",
+      "leaveReview": "Leave a Review",
+      "editTask": "Edit Task",
+      "chatWithBidder": "Chat"
+    },
+    "bids": {
+      "empty": {
+        "title": "No bids yet",
+        "message": "Once Fixers see your task, their bids will appear here."
+      },
+      "emptyMessage": "No bids yet. Fixers in your area will see your task!",
+      "seeReviews": "see reviews",
+      "noReviewsYet": "No reviews yet",
+      "accept": {
+        "title": "Accept this bid?",
+        "confirm": "Accept bid"
+      },
+      "reject": {
+        "title": "Reject this bid?",
+        "confirm": "Reject bid"
+      }
+    },
+    "fixerReviews": {
+      "title": "Fixer Reviews",
+      "noReviews": "No reviews yet."
+    },
+    "editModal": {
+      "title": "Edit Task",
+      "titleLabel": "Title",
+      "descriptionLabel": "Description",
+      "budgetLabel": "Budget (₪)",
+      "locationLabel": "General location",
+      "addressLabel": "Exact address",
+      "saveChanges": "Save Changes"
+    },
+    "payment": {
+      "confirmTitle": "Confirm payment?",
+      "confirmMessage": "Mark that you have sent payment for this task.",
+      "confirmed": "Payment Confirmed",
+      "notConfirmed": "Payment not confirmed",
+      "payFixer": "Pay Fixer",
+      "noPaymentLink": "This Fixer hasn't set up a payment link. Contact them directly."
+    },
+    "review": {
+      "rating": "Rating",
+      "comment": "Comment (optional)",
+      "submit": "Submit Review",
+      "submitted": "Review submitted",
+      "rateFixer": "Rate the fixer:",
+      "daysLeft_one": "{{count}} day left to leave a review",
+      "daysLeft_other": "{{count}} days left to leave a review",
+      "windowExpired": "The 14-day review window has expired. You can no longer leave a review for this task.",
+      "thankYou": "Review submitted. Thank you!"
+    },
+    "alerts": {
+      "cancelTitle": "Cancel task?",
+      "cancelMessage": "Are you sure you want to cancel this task?",
+      "cancelYes": "Yes, Cancel",
+      "cancelConfirm": "Cancel task",
+      "completeTitle": "Mark as completed?",
+      "completeConfirm": "Mark complete",
+      "failedCancel": "Failed to cancel task.",
+      "failedComplete": "Failed to mark task as completed.",
+      "failedPayment": "Failed to confirm payment.",
+      "failedUpdate": "Failed to update task."
+    }
+  },
+  "taskDetailsFixer": {
+    "loading": "Loading job details...",
+    "notFound": "Task not found.",
+    "noPhotos": "No photos attached",
+    "requester": "Task Requester",
+    "yourBid": "Your Bid: ₪{{amount}}",
+    "suggestedBudget": "Suggested budget: ₪{{amount}}",
+    "openToQuotes": "The requester is open to quotes.",
+    "error": {
+      "title": "Something went wrong",
+      "loadFailed": "Failed to load task details. Please try again."
+    },
+    "detail": {
+      "generalArea": "General Area",
+      "posted": "Posted",
+      "bids": "{{count}} bids submitted",
+      "bid": "{{count}} bid submitted"
+    },
+    "sections": {
+      "details": "Task Details",
+      "bidSubmission": "Submit a Bid"
+    },
+    "actions": {
+      "submitBid": "Submit Bid",
+      "editBid": "Edit Bid",
+      "withdraw": "Withdraw",
+      "withdrawBid": "Withdraw Bid",
+      "chatWithRequester": "Chat with Requester"
+    },
+    "bidStatus": {
+      "submitted": "Bid Submitted ✓",
+      "accepted": "Bid Accepted",
+      "noLongerAccepting": "No longer accepting bids"
+    },
+    "alerts": {
+      "withdrawTitle": "Withdraw bid?",
+      "withdrawConfirm": "Withdraw",
+      "withdrawMessage": "Are you sure you want to withdraw your bid?",
+      "failedWithdraw": "Failed to withdraw bid. Please try again."
+    },
+    "bidModal": {
+      "title": "Submit Your Bid",
+      "editTitle": "Edit Your Bid",
+      "price": "Your price (₪)",
+      "pricePlaceholder": "e.g. 250",
+      "pitchLabel": "Your pitch",
+      "pitchPlaceholder": "Tell the requester why you're the right person...",
+      "description": "Tell the requester why you're the right Fixer",
+      "submit": "Send Offer",
+      "updateOffer": "Update Offer",
+      "cancel": "Cancel",
+      "errorPrice": "Enter a valid price greater than ₪0.",
+      "errorPitch": "Write a short pitch to the requester.",
+      "maxBids": "This task has reached the maximum number of bids (15).",
+      "errorSubmit": "Failed to submit bid. Please try again."
+    }
+  },
+  "createTask": {
+    "title": "Post a Task",
+    "steps": {
+      "details": "Details",
+      "photos": "Photos",
+      "category": "Category",
+      "budget": "Budget",
+      "location": "Location"
+    },
+    "step1": {
+      "title": "What do you need done?",
+      "subtitle": "Give a clear title and describe the job",
+      "titleLabel": "Title",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe what you need done..."
+    },
+    "step2": {
+      "title": "Add photos",
+      "subtitle": "Up to 5 photos (optional) help fixers understand the job",
+      "add": "Add"
+    },
+    "step3": {
+      "title": "Choose a category",
+      "subtitle": "Helps fixers find your task"
+    },
+    "step4": {
+      "title": "Set your budget",
+      "subtitle": "Choose a fixed price or let fixers quote",
+      "fixedPrice": "Fixed Price",
+      "quoteRequired": "Quote Required",
+      "budgetLabel": "Budget (₪)",
+      "enterBudget": "Enter your budget",
+      "quoteNote": "Fixers will propose their own price when bidding on your task."
+    },
+    "step5": {
+      "title": "Location",
+      "subtitle": "Enter the address and verify the pin on the map",
+      "taskLocation": "Task location",
+      "locationPlaceholder": "e.g., Dizengoff 120, Tel Aviv",
+      "pinPlaced": "Pin placed — drag it or tap the map to adjust",
+      "enterAddress": "Enter an address above to place the pin",
+      "locationDenied": "Location access was denied. Enter the address above and we'll find it on the map.",
+      "privacyNote": "Fixers see only an approximate location. The exact address is shared only after you accept a bid."
+    },
+    "review": {
+      "title": "Review your task",
+      "titleLabel": "Title",
+      "categoryLabel": "Category",
+      "budgetLabel": "Budget",
+      "locationLabel": "Location",
+      "photosLabel": "Photos",
+      "photoCount": "{{count}} photo(s)"
+    },
+    "reviewPublish": "Review & Publish",
+    "publishTask": "Publish Task",
+    "goBackEdit": "Go Back & Edit",
+    "locationRationale": {
+      "title": "Enable Location Access",
+      "description": "We use your location to place a pin on the map so fixers in your area can find your task. Your exact address stays private.",
+      "allow": "Allow Location",
+      "noThanks": "No thanks, I'll enter manually"
+    },
+    "fields": {
+      "title": "Task Title",
+      "titlePlaceholder": "e.g. Fix leaking kitchen faucet",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the job, what needs to be done, and any important details...",
+      "budget": {
+        "fixed": "Fixed Price",
+        "quote": "Quote Required",
+        "amount": "Amount (₪)"
+      },
+      "location": {
+        "generalArea": "General Area",
+        "exactAddress": "Exact Address"
+      }
+    },
+    "actions": {
+      "next": "Next",
+      "back": "Back",
+      "publish": "Publish Task",
+      "addPhotos": "Add Photos"
+    },
+    "errors": {
+      "titleRequired": "Task title is required",
+      "descriptionRequired": "Description is required",
+      "categoryRequired": "Please select a category",
+      "locationRequired": "Location is required",
+      "failedCreate": "Failed to create task. Please try again.",
+      "noResults": "No results found. Try a more specific address.",
+      "mapsNotReady": "Maps not ready — please try again.",
+      "couldNotFind": "Could not find this location. Please try again.",
+      "photoPermissionTitle": "Permission required",
+      "photoPermission": "Please allow access to your photo library to add images."
+    },
+    "success": {
+      "title": "Task Posted!",
+      "message": "Your task is now live and Fixers can start bidding."
+    }
+  },
+  "fixerProfile": {
+    "title": "My Profile",
+    "headerKicker": "Fixer Profile",
+    "sectionKicker": "Profile details",
+    "sectionTitle": "Basics and payout",
+    "stats": {
+      "rating": "Rating",
+      "trades": "Trades",
+      "photos": "Photos",
+      "profileCompletion": "Profile"
+    },
+    "pushNotifications": {
+      "label": "Push Notifications",
+      "description": "Bid updates, messages, and task alerts"
+    },
+    "tradeCoverage": {
+      "title": "Trade coverage",
+      "selectedCount": "{{count}} selected",
+      "unsaved": "Unsaved",
+      "save": "Save Trades",
+      "saved": "Trades Saved"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "addPhoto": "Add photo",
+      "photoCount_one": "{{count}} photo",
+      "photoCount_other": "{{count}} photos"
+    },
+    "payment": {
+      "ready": "Payment link saved",
+      "missing": "Payment needed",
+      "invalid": "Invalid payment URL",
+      "unsavedLabel": "Unsaved payment link",
+      "missingMessage": "Payment link missing. Requesters need a payout destination after completion.",
+      "invalidMessage": "Enter a full payment URL before saving.",
+      "unsavedMessage": "Payment link changes are not saved yet.",
+      "reviewMessage": "Payment link needs to be reviewed before it can be used.",
+      "checkLink": "Check payment link",
+      "checkLinkMessage": "Enter a full payment URL before saving.",
+      "warning": "Add a payment link so requesters can pay you after completing a job."
+    },
+    "sections": {
+      "info": "Basic Info",
+      "specializations": "Specializations",
+      "portfolio": "Portfolio",
+      "payment": "Payment"
+    },
+    "fields": {
+      "fullName": "Full Name",
+      "bio": "Bio",
+      "phone": "Phone Number",
+      "paymentLink": "Payment Link (Bit / Paybox URL)"
+    },
+    "actions": {
+      "save": "Save Profile",
+      "addPortfolio": "Add Photo",
+      "changeAvatar": "Change Photo"
+    },
+    "alerts": {
+      "saved": "Profile updated successfully.",
+      "savedTitle": "Saved",
+      "saveError": "Failed to save profile.",
+      "loadError": "Failed to load profile.",
+      "avatarError": "Failed to update avatar.",
+      "tradesSaved": "Trade coverage updated.",
+      "tradesSaveError": "Failed to save trade coverage.",
+      "portfolioUploadError": "Failed to upload portfolio photo.",
+      "portfolioDeleteError": "Failed to delete photo.",
+      "deletePortfolio": {
+        "title": "Delete photo?",
+        "message": "This cannot be undone.",
+        "confirm": "Delete"
+      },
+      "permissionDenied": "Permission denied",
+      "enableNotifications": "Enable notifications in your device settings."
+    }
+  },
+  "publicProfile": {
+    "loading": "Loading profile...",
+    "anonymous": "Anonymous",
+    "sections": {
+      "about": "About",
+      "specializations": "Specializations",
+      "portfolio": "Portfolio",
+      "reviews": "Reviews"
+    },
+    "rating": "Rating",
+    "noReviews": "No reviews yet",
+    "noReviewsMessage": "This user hasn't received any reviews.",
+    "noPortfolio": "No portfolio items yet",
+    "noBio": "No bio provided",
+    "memberSince": "Member since {{date}}",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews",
+    "portfolioTitle": "Portfolio ({{count}})",
+    "reviewsTitle": "Reviews ({{count}})",
+    "review": "review",
+    "reviews": "reviews"
+  },
+  "landing": {
+    "hero": {
+      "title": "Local fixes, trusted Fixers.",
+      "subtitle": "Post a task, compare bids from verified local pros, and get the job done — on your terms.",
+      "postTask": "Post a Task",
+      "becomeFixer": "Become a Fixer",
+      "available": "Available across Israel",
+      "headline1": "Let's fix your problems,",
+      "headline2": "without the runaround.",
+      "body": "Post a home task, compare bids from local fixers, and choose who gets the job.",
+      "fixerOnDuty": "Fixer on duty"
+    },
+    "categories": {
+      "title": "What needs fixing?",
+      "subtitle": "Browse by category to find the right Fixer for your job.",
+      "postIn": "Post in {{label}}"
+    },
+    "howItWorks": {
+      "title": "How FixIt works",
+      "steps": {
+        "post": {
+          "title": "Post your task",
+          "description": "Describe the job, add photos, and set a budget or ask for quotes."
+        },
+        "compare": {
+          "title": "Compare bids",
+          "description": "Local Fixers submit bids. You review profiles, ratings, and pricing."
+        },
+        "done": {
+          "title": "Get it done",
+          "description": "Hire the best match, track progress, and pay securely when the job is complete."
+        }
+      }
+    },
+    "nav": {
+      "login": "Log In",
+      "signup": "Sign Up",
+      "dashboard": "Dashboard",
+      "myTasks": "My Tasks",
+      "postTask": "Post Task",
+      "findJobs": "Find Jobs",
+      "myBids": "My Bids",
+      "profile": "Profile",
+      "howItWorks": "How it works",
+      "categories": "Categories",
+      "forFixers": "For Fixers",
+      "requesterDashboard": "Requester Dashboard",
+      "fixer": "Fixer",
+      "createAccount": "Create account",
+      "signInToPost": "Sign in to Post Task",
+      "openFixerWorkspace": "Open Fixer Workspace",
+      "joinAsFixer": "Join as a Fixer",
+      "signInToFind": "Sign in to Find Jobs"
+    },
+    "stats": {
+      "tasksPosted": "Tasks posted",
+      "activeFixers": "Active fixers",
+      "satisfaction": "Satisfaction",
+      "avgRating": "Avg. rating"
+    },
+    "sections": {
+      "process": "THE PROCESS",
+      "processTitle": "From post to done in minutes",
+      "services": "SERVICES",
+      "servicesTitle": "Every home task, covered"
+    },
+    "steps": {
+      "post": {
+        "title": "Post your task",
+        "desc": "Describe the job, set your budget, and pin your location."
+      },
+      "pick": {
+        "title": "Pick a fixer",
+        "desc": "Browse bids from verified fixers in your neighborhood."
+      },
+      "done": {
+        "title": "Job done",
+        "desc": "Your fixer arrives, completes the work, and you pay."
+      }
+    },
+    "fixer": {
+      "eyebrow": "FOR FIXERS",
+      "headline": "Earn on your\nown schedule",
+      "sub": "Join 1,800+ fixers already earning from tasks near them.",
+      "benefits": {
+        "hours": { "title": "Choose your hours", "desc": "Accept jobs when it suits you." },
+        "nearby": { "title": "Work nearby", "desc": "Only see jobs close to you." },
+        "paid": { "title": "Get paid quickly", "desc": "Payment released when done." },
+        "reputation": { "title": "Build reputation", "desc": "Reviews boost your profile." }
+      }
+    },
+    "footer": {
+      "tagline": "Your neighborhood. Fixed.",
+      "copyright": "© 2026 FixIt · Tel Aviv, Israel"
+    },
+    "language": {
+      "toggle": "EN | עב"
+    }
+  },
+  "placeholder": {
+    "title": "Coming Soon",
+    "message": "This feature is under construction."
+  }
+}

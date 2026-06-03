@@ -10,6 +10,7 @@ import {
 import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import { getSocket } from '../utils/socket';
 import { useNotificationContext } from '../context/NotificationContext';
@@ -55,6 +56,7 @@ export default function ChatScreen({ route }: { route: any }) {
   } = (route.params ?? {}) as ChatScreenParams;
 
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const { refetch: refetchNotifications } = useNotificationContext();
   const [myDbId, setMyDbId] = useState<string | undefined>(myDbIdParam);
 
@@ -221,7 +223,7 @@ export default function ChatScreen({ route }: { route: any }) {
     void loadMessages(nextPage);
   };
 
-  if (loading) return <LoadingScreen label="Loading chat..." />;
+  if (loading) return <LoadingScreen label={t('chat.loading')} />;
 
   return (
     <KeyboardAvoidingView
@@ -292,7 +294,7 @@ export default function ChatScreen({ route }: { route: any }) {
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="chat-outline" size={40} color={brandColors.outlineLight} />
             <Text style={[typography.body, { color: brandColors.textMuted, marginTop: spacing.md, textAlign: 'center' }]}>
-              No messages yet.{'\n'}Say hello!
+              {t('chat.empty.title')}{'\n'}{t('chat.empty.subtitle')}
             </Text>
           </View>
         }
@@ -302,7 +304,7 @@ export default function ChatScreen({ route }: { route: any }) {
         <View style={styles.readOnlyBar}>
           <MaterialCommunityIcons name="lock-outline" size={14} color={brandColors.textMuted} />
           <Text style={[typography.caption, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
-            This task is completed. Chat is archived.
+            {t('chat.readonly')}
           </Text>
         </View>
       ) : (
@@ -311,7 +313,7 @@ export default function ChatScreen({ route }: { route: any }) {
             style={styles.input}
             value={text}
             onChangeText={setText}
-            placeholder="Type a message…"
+            placeholder={t('chat.input.placeholder')}
             returnKeyType="send"
             onSubmitEditing={() => void handleSend()}
             blurOnSubmit={false}

@@ -12,6 +12,7 @@ import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendEmailVerification } from 'firebase/auth';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
@@ -26,21 +27,9 @@ interface Props {
 }
 
 const WORKSPACE_STEPS = [
-  {
-    icon: 'clipboard-edit-outline',
-    title: 'Post clearly',
-    copy: 'Add the job, area, budget, and photos so Fixers can price it quickly.',
-  },
-  {
-    icon: 'hand-extended-outline',
-    title: 'Compare bids',
-    copy: 'Review offers, availability, and fit from your task workspace.',
-  },
-  {
-    icon: 'check-decagram-outline',
-    title: 'Finish confidently',
-    copy: 'Track progress, mark completion, and keep the record in one place.',
-  },
+  { icon: 'clipboard-edit-outline', key: 'post' },
+  { icon: 'hand-extended-outline', key: 'compare' },
+  { icon: 'check-decagram-outline', key: 'finish' },
 ] as const;
 
 function getGreeting(): string {
@@ -54,6 +43,7 @@ export default function RequesterDashboard({ navigation }: Props) {
   const [emailVerified, setEmailVerified] = useState(true);
   const [verificationSent, setVerificationSent] = useState(false);
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
 
   const wide = width >= 900;
   const tablet = width >= 680;
@@ -84,16 +74,16 @@ export default function RequesterDashboard({ navigation }: Props) {
   const quickActions = [
     {
       icon: 'plus-circle-outline',
-      title: 'Post Task',
-      copy: 'Start a new request with photos, budget, and location.',
+      title: t('dashboard.quickActions.postTask.title'),
+      copy: t('dashboard.quickActions.postTask.copy'),
       action: () => navigateToCreate(),
       tone: brandColors.secondary,
       soft: brandColors.warningSoft,
     },
     {
       icon: 'clipboard-list-outline',
-      title: 'My Tasks',
-      copy: 'Review bids, edit open requests, and mark active jobs complete.',
+      title: t('dashboard.quickActions.myTasks.title'),
+      copy: t('dashboard.quickActions.myTasks.copy'),
       action: () => navigation.navigate('MyTasks'),
       tone: brandColors.primaryMuted,
       soft: brandColors.infoSoft,
@@ -116,15 +106,14 @@ export default function RequesterDashboard({ navigation }: Props) {
           <View style={[styles.heroCopy, wide && styles.heroCopyWide]}>
             <View style={styles.workspacePill}>
               <View style={styles.liveDot} />
-              <Text style={styles.workspacePillText}>Requester workspace</Text>
+              <Text style={styles.workspacePillText}>{t('dashboard.hero.workspace')}</Text>
             </View>
 
             <Text style={styles.greeting}>
               {firstName ? `${greeting}, ${firstName}.` : `${greeting}.`}
             </Text>
             <Text style={styles.heroSub}>
-              Post a clear home task, compare local Fixer bids, and keep every job moving from
-              one focused workspace.
+              {t('dashboard.hero.sub')}
             </Text>
 
             <View style={[styles.heroActions, !tablet && styles.heroActionsStacked]}>
@@ -135,7 +124,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 icon="plus"
                 style={!tablet ? styles.fullWidthButton : undefined}
               >
-                Post Task
+                {t('dashboard.hero.postTask')}
               </FButton>
               <Pressable
                 onPress={() => navigation.navigate('MyTasks')}
@@ -152,22 +141,22 @@ export default function RequesterDashboard({ navigation }: Props) {
                   size={18}
                   color={brandColors.textOnDark}
                 />
-                <Text style={styles.heroGhostText}>My Tasks</Text>
+                <Text style={styles.heroGhostText}>{t('dashboard.hero.myTasks')}</Text>
               </Pressable>
             </View>
           </View>
 
           <View style={[styles.heroPanel, wide && styles.heroPanelWide]}>
-            <Text style={styles.panelEyebrow}>Next best action</Text>
-            <Text style={styles.panelTitle}>Post the task once. Manage the rest here.</Text>
+            <Text style={styles.panelEyebrow}>{t('dashboard.panel.eyebrow')}</Text>
+            <Text style={styles.panelTitle}>{t('dashboard.panel.title')}</Text>
             <View style={styles.panelDivider} />
             <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
                 <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>Photos help bids arrive faster</Text>
-                <Text style={styles.panelRowCopy}>Add context before local Fixers quote the work.</Text>
+                <Text style={styles.panelRowTitle}>{t('dashboard.panel.photosTitle')}</Text>
+                <Text style={styles.panelRowCopy}>{t('dashboard.panel.photosCopy')}</Text>
               </View>
             </View>
             <View style={styles.panelRow}>
@@ -175,8 +164,8 @@ export default function RequesterDashboard({ navigation }: Props) {
                 <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>Your task history stays organized</Text>
-                <Text style={styles.panelRowCopy}>Open, in-progress, completed, and canceled jobs remain separated.</Text>
+                <Text style={styles.panelRowTitle}>{t('dashboard.panel.historyTitle')}</Text>
+                <Text style={styles.panelRowCopy}>{t('dashboard.panel.historyCopy')}</Text>
               </View>
             </View>
           </View>
@@ -194,11 +183,9 @@ export default function RequesterDashboard({ navigation }: Props) {
               />
             </View>
             <View style={styles.verifyCopy}>
-              <Text style={[typography.label, { color: brandColors.textPrimary }]}>Verify your email</Text>
+              <Text style={[typography.label, { color: brandColors.textPrimary }]}>{t('dashboard.verify.title')}</Text>
               <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                {verificationSent
-                  ? 'Verification email sent. Check your inbox to unlock every workspace feature.'
-                  : 'Please verify your email to unlock every workspace feature.'}
+                {verificationSent ? t('dashboard.verify.sent') : t('dashboard.verify.pending')}
               </Text>
             </View>
             {!verificationSent && (
@@ -208,7 +195,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 accessibilityLabel="Resend verification email"
                 style={({ pressed }) => [styles.verifyBtn, { opacity: pressed ? 0.75 : 1 }]}
               >
-                <Text style={[typography.caption, styles.verifyBtnText]}>Resend</Text>
+                <Text style={[typography.caption, styles.verifyBtnText]}>{t('dashboard.verify.resend')}</Text>
               </Pressable>
             )}
           </View>
@@ -217,8 +204,8 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>Controls</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Run your request</Text>
+              <Text style={styles.sectionEyebrow}>{t('dashboard.section.controls')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.controlsTitle')}</Text>
             </View>
             <Pressable
               onPress={() => navigation.navigate('Profile')}
@@ -263,8 +250,8 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>Services</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>Start with a category</Text>
+              <Text style={styles.sectionEyebrow}>{t('dashboard.section.services')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.servicesTitle')}</Text>
             </View>
           </View>
 
@@ -305,22 +292,22 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>Flow</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>How requests move</Text>
+              <Text style={styles.sectionEyebrow}>{t('dashboard.section.flow')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.flowTitle')}</Text>
             </View>
           </View>
 
           <View style={[styles.stepGrid, wide && styles.stepGridWide]}>
             {WORKSPACE_STEPS.map((step, index) => (
-              <View key={step.title} style={[styles.stepItem, wide && styles.stepItemWide]}>
+              <View key={step.key} style={[styles.stepItem, wide && styles.stepItemWide]}>
                 <View style={styles.stepTopRow}>
                   <View style={styles.stepIcon}>
                     <MaterialCommunityIcons name={step.icon as never} size={20} color={brandColors.primary} />
                   </View>
                   <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
                 </View>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{step.title}</Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{step.copy}</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
               </View>
             ))}
           </View>

@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../config/firebase';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
@@ -37,6 +38,7 @@ export default function AuthScreen({
   initialMode = 'welcome',
 }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const { t } = useTranslation();
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -83,17 +85,17 @@ export default function AuthScreen({
 
   const submitRegister = async () => {
     clearErrors();
-    if (!registerFullName.trim()) { setLocalError('Full name is required'); return; }
-    if (!registerEmail.trim()) { setLocalError('Email is required'); return; }
-    if (registerPassword.length < 6) { setLocalError('Password must be at least 6 characters'); return; }
-    if (registerPassword !== confirmPassword) { setLocalError('Passwords do not match'); return; }
+    if (!registerFullName.trim()) { setLocalError(t('auth.register.errors.fullNameRequired')); return; }
+    if (!registerEmail.trim()) { setLocalError(t('auth.register.errors.emailRequired')); return; }
+    if (registerPassword.length < 6) { setLocalError(t('auth.register.errors.passwordLength')); return; }
+    if (registerPassword !== confirmPassword) { setLocalError(t('auth.register.errors.passwordMismatch')); return; }
 
     setSubmitting(true);
     try {
       await createUserWithEmailAndPassword(auth, registerEmail.trim(), registerPassword);
       await onSyncLocalAccount(registerFullName.trim(), registerPhone.trim());
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Registration failed');
+      setLocalError(err instanceof Error ? err.message : t('auth.register.errors.registrationFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -101,13 +103,13 @@ export default function AuthScreen({
 
   const submitForgot = async () => {
     clearErrors();
-    if (!forgotEmail.trim()) { setLocalError('Please enter your email address'); return; }
+    if (!forgotEmail.trim()) { setLocalError(t('auth.forgot.emailPlaceholder')); return; }
     setSubmitting(true);
     try {
       await sendPasswordResetEmail(auth, forgotEmail.trim());
       setForgotSent(true);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to send reset email');
+      setLocalError(err instanceof Error ? err.message : t('auth.forgot.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +145,7 @@ export default function AuthScreen({
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (status === 'checking') {
-    return <LoadingScreen label="Checking your session..." />;
+    return <LoadingScreen label={t('auth.loading.checkingSession')} />;
   }
 
   // ── Needs sync (Firebase account exists, no local DB user) ─────────────────
@@ -151,25 +153,24 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>Finish your account setup</Text>
+        <Text style={[typography.h1, styles.title]}>{t('auth.needsSync.title')}</Text>
         <Text style={[typography.body, styles.body]}>
-          You are signed in with Firebase, but this account does not exist in the FixIt
-          database yet.
+          {t('auth.needsSync.description')}
         </Text>
 
         {userEmail && (
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="email-outline" size={18} color={brandColors.primaryMuted} />
             <View>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>Signed in as</Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('auth.needsSync.signedInAs')}</Text>
               <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{userEmail}</Text>
             </View>
           </View>
         )}
 
-        <FInput label="Full Name" value={fullName} onChangeText={setFullName} returnKeyType="next" />
+        <FInput label={t('auth.needsSync.fullName')} value={fullName} onChangeText={setFullName} returnKeyType="next" />
         <FInput
-          label="Phone Number (optional)"
+          label={t('auth.needsSync.phoneNumber')}
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           keyboardType="phone-pad"
@@ -182,10 +183,10 @@ export default function AuthScreen({
         )}
 
         <FButton onPress={submitLocalAccountSync} disabled={!fullName.trim()} fullWidth>
-          Create Local Account
+          {t('auth.needsSync.createAccount')}
         </FButton>
         <FButton variant="ghost" onPress={onLogOut} fullWidth>
-          Sign Out
+          {t('auth.needsSync.signOut')}
         </FButton>
       </View>
     );
@@ -199,15 +200,15 @@ export default function AuthScreen({
         <View style={styles.errorIconCircle}>
           <MaterialCommunityIcons name="alert-circle-outline" size={36} color={brandColors.danger} />
         </View>
-        <Text style={[typography.h1, styles.title]}>Session verification failed</Text>
+        <Text style={[typography.h1, styles.title]}>{t('auth.error.title')}</Text>
         <Text style={[typography.body, styles.body]}>
           {error ?? 'We could not verify your session with the backend.'}
         </Text>
         <FButton onPress={() => void onRetry()} fullWidth icon="refresh">
-          Try Again
+          {t('auth.error.retry')}
         </FButton>
         <FButton variant="ghost" onPress={onLogOut} fullWidth>
-          Sign Out
+          {t('auth.error.signOut')}
         </FButton>
       </View>
     );
@@ -225,11 +226,11 @@ export default function AuthScreen({
         <View style={styles.welcomeCenter}>
           <AppLogo iconOnly />
           <Text style={styles.welcomeWordmark}>FixIt</Text>
-          <Text style={styles.welcomeTagline}>Your neighborhood. Fixed.</Text>
+          <Text style={styles.welcomeTagline}>{t('auth.welcome.tagline')}</Text>
         </View>
         <View style={styles.welcomeActions}>
           <FButton onPress={() => goTo('login')} variant="secondary" fullWidth>
-            Log In
+            {t('auth.welcome.logIn')}
           </FButton>
           <Pressable
             onPress={() => goTo('register')}
@@ -238,10 +239,10 @@ export default function AuthScreen({
               { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
-            <Text style={styles.welcomeGhostText}>Create Account</Text>
+            <Text style={styles.welcomeGhostText}>{t('auth.welcome.createAccount')}</Text>
           </Pressable>
           <Text style={styles.welcomeFootnote}>
-            Trusted by Fixers and Requesters across Israel
+            {t('auth.welcome.footnote')}
           </Text>
         </View>
       </LinearGradient>
@@ -253,10 +254,10 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>Sign in to FixIt</Text>
+        <Text style={[typography.h1, styles.title]}>{t('auth.login.title')}</Text>
 
         <FInput
-          label="Email"
+          label={t('auth.login.email')}
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
@@ -265,7 +266,7 @@ export default function AuthScreen({
           returnKeyType="next"
         />
         <FInput
-          label="Password"
+          label={t('auth.login.password')}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -278,25 +279,25 @@ export default function AuthScreen({
         )}
 
         <FButton onPress={() => void submitSignIn()} disabled={!email.trim() || !password} fullWidth icon="login">
-          Sign In
+          {t('auth.login.signIn')}
         </FButton>
 
         <FButton variant="ghost" onPress={() => goTo('forgot')} fullWidth>
-          Forgot Password?
+          {t('auth.login.forgotPassword')}
         </FButton>
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={[typography.caption, { color: brandColors.textMuted, marginHorizontal: spacing.sm }]}>or</Text>
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginHorizontal: spacing.sm }]}>{t('common.or')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
         <FButton variant="ghost" onPress={() => goTo('register')} fullWidth>
-          Don't have an account? Create one
+          {t('auth.login.noAccount')}
         </FButton>
 
         <FButton variant="ghost" onPress={() => goTo('welcome')} fullWidth>
-          Back
+          {t('common.back')}
         </FButton>
       </View>
     );
@@ -307,16 +308,16 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>Create your account</Text>
+        <Text style={[typography.h1, styles.title]}>{t('auth.register.title')}</Text>
 
         <FInput
-          label="Full Name"
+          label={t('auth.register.fullName')}
           value={registerFullName}
           onChangeText={setRegisterFullName}
           returnKeyType="next"
         />
         <FInput
-          label="Email"
+          label={t('auth.register.email')}
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
@@ -325,21 +326,21 @@ export default function AuthScreen({
           returnKeyType="next"
         />
         <FInput
-          label="Password"
+          label={t('auth.register.password')}
           secureTextEntry
           value={registerPassword}
           onChangeText={setRegisterPassword}
           returnKeyType="next"
         />
         <FInput
-          label="Confirm Password"
+          label={t('auth.register.confirmPassword')}
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           returnKeyType="next"
         />
         <FInput
-          label="Phone Number (optional)"
+          label={t('auth.register.phoneNumber')}
           value={registerPhone}
           onChangeText={setRegisterPhone}
           keyboardType="phone-pad"
@@ -352,11 +353,11 @@ export default function AuthScreen({
         )}
 
         <FButton onPress={() => void submitRegister()} loading={submitting} disabled={submitting} fullWidth icon="account-plus">
-          Create Account
+          {t('auth.register.submit')}
         </FButton>
 
         <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
-          Already have an account? Sign In
+          {t('auth.register.alreadyHave')}
         </FButton>
       </View>
     );
@@ -366,7 +367,7 @@ export default function AuthScreen({
   return renderShell(
     <View style={styles.content}>
       <AppLogo compact showTagline />
-      <Text style={[typography.h1, styles.title]}>Reset your password</Text>
+      <Text style={[typography.h1, styles.title]}>{t('auth.forgot.title')}</Text>
 
       {forgotSent ? (
         <>
@@ -374,19 +375,19 @@ export default function AuthScreen({
             <MaterialCommunityIcons name="email-check-outline" size={36} color={brandColors.success} />
           </View>
           <Text style={[typography.body, styles.body]}>
-            Check your inbox — we sent a reset link to {forgotEmail}.
+            {t('auth.forgot.sentDescription', { email: forgotEmail })}
           </Text>
           <FButton onPress={() => goTo('login')} fullWidth icon="login">
-            Back to Sign In
+            {t('auth.forgot.backToSignIn')}
           </FButton>
         </>
       ) : (
         <>
           <Text style={[typography.body, styles.body]}>
-            Enter your email and we'll send you a link to reset your password.
+            {t('auth.forgot.description')}
           </Text>
           <FInput
-            label="Email"
+            label={t('auth.forgot.email')}
             autoCapitalize="none"
             keyboardType="email-address"
             value={forgotEmail}
@@ -398,10 +399,10 @@ export default function AuthScreen({
             <Text style={[typography.bodySm, { color: brandColors.danger }]}>{localError}</Text>
           )}
           <FButton onPress={() => void submitForgot()} loading={submitting} disabled={submitting} fullWidth icon="email-send">
-            Send Reset Link
+            {t('auth.forgot.submit')}
           </FButton>
           <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
-            Back to Sign In
+            {t('auth.forgot.backToSignIn')}
           </FButton>
         </>
       )}

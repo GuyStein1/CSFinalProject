@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import AppLogo from '../components/AppLogo';
 import { FCard } from '../components/ui';
 import { brandColors, spacing, typography } from '../theme';
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function PlaceholderScreen({ title }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <FCard style={styles.card} shadow="md">
@@ -21,7 +23,7 @@ export default function PlaceholderScreen({ title }: Props) {
           </View>
           <Text style={[typography.h2, styles.title]}>{title}</Text>
           <Text style={[typography.body, styles.subtitle]}>
-            This part of the app is being polished next.
+            {t('placeholder.message')}
           </Text>
         </View>
       </FCard>

@@ -49,6 +49,7 @@ export const updateUserSchema = z.object({
   specializations: z
     .array(z.enum(['ASSEMBLY', 'MOUNTING', 'MOVING', 'PAINTING', 'PLUMBING', 'ELECTRICITY', 'OUTDOORS', 'CLEANING']))
     .optional(),
+  language: z.enum(['en', 'he']).optional(),
 });
 
 export const pushTokenSchema = z.object({

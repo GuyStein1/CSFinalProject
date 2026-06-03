@@ -18,6 +18,7 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import { auth } from '../config/firebase';
 import { uploadImage } from '../utils/uploadImage';
@@ -27,7 +28,7 @@ import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import { CATEGORY_LIST, type Category } from '../utils/categoryMetadata';
 
 const STEP_ICONS = ['text-box-outline', 'camera-outline', 'shape-outline', 'cash-multiple', 'map-marker-outline'];
-const STEP_LABELS = ['Details', 'Photos', 'Category', 'Budget', 'Location'];
+const STEP_KEYS = ['details', 'photos', 'category', 'budget', 'location'];
 
 interface Props {
   navigation: { goBack: () => void; navigate: (screen: string) => void };
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export default function CreateTask({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -155,7 +157,7 @@ export default function CreateTask({ navigation, route }: Props) {
   const geocodeByPlaceId = useCallback((placeId: string, label: string) => {
     const service = getOrCreatePlacesService();
     if (!service) {
-      setGeocodeError('Maps not ready — please try again.');
+      setGeocodeError(t('createTask.errors.mapsNotReady'));
       return;
     }
     setGeocoding(true);
@@ -182,7 +184,7 @@ export default function CreateTask({ navigation, route }: Props) {
             [neighborhood ?? sublocality, locality].filter(Boolean).join(', ') || label,
           );
         } else {
-          setGeocodeError('Could not find this location. Please try again.');
+          setGeocodeError(t('createTask.errors.couldNotFind'));
         }
       },
     );
@@ -231,7 +233,7 @@ export default function CreateTask({ navigation, route }: Props) {
     }
     const autoSvc = autocompleteRef.current;
     if (!autoSvc) {
-      setGeocodeError('Maps not ready — please try again.');
+      setGeocodeError(t('createTask.errors.mapsNotReady'));
       return;
     }
     setGeocoding(true);
@@ -243,7 +245,7 @@ export default function CreateTask({ navigation, route }: Props) {
           geocodeByPlaceId(predictions[0].place_id, predictions[0].description);
         } else {
           setGeocoding(false);
-          setGeocodeError('No results found. Try a more specific address.');
+          setGeocodeError(t('createTask.errors.noResults'));
         }
       },
     );
@@ -287,7 +289,7 @@ export default function CreateTask({ navigation, route }: Props) {
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission required', 'Please allow access to your photo library to add images.');
+        Alert.alert(t('createTask.errors.photoPermissionTitle'), t('createTask.errors.photoPermission'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -337,7 +339,7 @@ export default function CreateTask({ navigation, route }: Props) {
       setShowReview(false);
       navigation.goBack();
     } catch {
-      Alert.alert('Error', 'Failed to create task. Please try again.');
+      Alert.alert(t('common.error'), t('createTask.errors.failedCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -377,7 +379,7 @@ export default function CreateTask({ navigation, route }: Props) {
                 },
               ]}
             >
-              {STEP_LABELS[i]}
+              {t(`createTask.steps.${STEP_KEYS[i]}`)}
             </Text>
             {i < STEP_ICONS.length - 1 && (
               <View style={[styles.stepLine, isDone && styles.stepLineDone]} />
@@ -393,23 +395,23 @@ export default function CreateTask({ navigation, route }: Props) {
       case 1:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>What do you need done?</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Give a clear title and describe the job</Text>
+            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step1.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step1.subtitle')}</Text>
             <FInput
-              label="Title"
+              label={t('createTask.step1.titleLabel')}
               value={title}
               onChangeText={setTitle}
               maxLength={80}
             />
             <Text style={[typography.caption, styles.counter]}>{title.length}/80</Text>
             <FInput
-              label="Description"
+              label={t('createTask.step1.descriptionLabel')}
               value={description}
               onChangeText={setDescription}
               maxLength={500}
               multiline
               numberOfLines={5}
-              placeholder="Describe what you need done..."
+              placeholder={t('createTask.step1.descriptionPlaceholder')}
             />
             <Text style={[typography.caption, styles.counter]}>{description.length}/500</Text>
           </View>
@@ -418,8 +420,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 2:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>Add photos</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Up to 5 photos (optional) help fixers understand the job</Text>
+            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step2.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step2.subtitle')}</Text>
             <View style={styles.photoGrid}>
               {photos.map((uri, index) => (
                 <View key={index} style={styles.photoContainer}>
@@ -439,7 +441,7 @@ export default function CreateTask({ navigation, route }: Props) {
                   onPress={pickImage}
                 >
                   <MaterialCommunityIcons name="camera-plus-outline" size={28} color={brandColors.primaryMuted} />
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Add</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('createTask.step2.add')}</Text>
                 </Pressable>
               )}
             </View>
@@ -449,8 +451,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 3:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>Choose a category</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Helps fixers find your task</Text>
+            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step3.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step3.subtitle')}</Text>
             <View style={styles.categoryGrid}>
               {CATEGORY_LIST.map((cat) => {
                 const isSelected = category === cat.value;
@@ -483,31 +485,31 @@ export default function CreateTask({ navigation, route }: Props) {
       case 4:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>Set your budget</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>Choose a fixed price or let fixers quote</Text>
+            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step4.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step4.subtitle')}</Text>
             <SegmentedButtons
               value={budgetType}
               onValueChange={(v) => setBudgetType(v as 'fixed' | 'quote')}
               buttons={[
-                { value: 'fixed', label: 'Fixed Price' },
-                { value: 'quote', label: 'Quote Required' },
+                { value: 'fixed', label: t('createTask.step4.fixedPrice') },
+                { value: 'quote', label: t('createTask.step4.quoteRequired') },
               ]}
               style={styles.segmented}
             />
             {budgetType === 'fixed' ? (
               <FInput
-                label="Budget (₪)"
+                label={t('createTask.step4.budgetLabel')}
                 value={price}
                 onChangeText={setPrice}
                 keyboardType="numeric"
-                placeholder="Enter your budget"
+                placeholder={t('createTask.step4.enterBudget')}
                 left={<FInput.Affix text="₪" />}
               />
             ) : (
               <View style={styles.quoteNote}>
                 <MaterialCommunityIcons name="information-outline" size={18} color={brandColors.primaryMuted} />
                 <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
-                  Fixers will propose their own price when bidding on your task.
+                  {t('createTask.step4.quoteNote')}
                 </Text>
               </View>
             )}
@@ -517,15 +519,15 @@ export default function CreateTask({ navigation, route }: Props) {
       case 5:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>Location</Text>
+            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step5.title')}</Text>
             <Text style={[typography.bodySm, styles.stepSubtitle]}>
-              Enter the address and verify the pin on the map
+              {t('createTask.step5.subtitle')}
             </Text>
 
             <View style={styles.addressInputWrapper}>
               <FInput
-                label="Task location"
-                placeholder="e.g., Dizengoff 120, Tel Aviv"
+                label={t('createTask.step5.taskLocation')}
+                placeholder={t('createTask.step5.locationPlaceholder')}
                 value={address}
                 onChangeText={handleAddressChange}
                 onSubmitEditing={handleAddressSubmit}
@@ -600,12 +602,12 @@ export default function CreateTask({ navigation, route }: Props) {
                 {pinCoords && (
                   <Text style={[typography.caption, { color: brandColors.success, textAlign: 'center', marginTop: spacing.xs }]}>
                     <MaterialCommunityIcons name="check-circle" size={12} color={brandColors.success} />
-                    {' '}Pin placed — drag it or tap the map to adjust
+                    {' '}{t('createTask.step5.pinPlaced')}
                   </Text>
                 )}
                 {!pinCoords && (
                   <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
-                    Enter an address above to place the pin
+                    {t('createTask.step5.enterAddress')}
                   </Text>
                 )}
               </View>
@@ -614,7 +616,7 @@ export default function CreateTask({ navigation, route }: Props) {
               <View style={styles.locationDeniedNote}>
                 <MaterialCommunityIcons name="map-marker-off-outline" size={18} color={brandColors.textMuted} />
                 <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
-                  Location access was denied. Enter the address above and we'll find it on the map.
+                  {t('createTask.step5.locationDenied')}
                 </Text>
               </View>
             )}
@@ -622,7 +624,7 @@ export default function CreateTask({ navigation, route }: Props) {
             <View style={styles.addressNote}>
               <MaterialCommunityIcons name="shield-lock-outline" size={16} color={brandColors.primaryMuted} />
               <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                Fixers see only an approximate location. The exact address is shared only after you accept a bid.
+                {t('createTask.step5.privacyNote')}
               </Text>
             </View>
           </View>
@@ -659,7 +661,7 @@ export default function CreateTask({ navigation, route }: Props) {
         <View style={styles.buttons}>
           {step > 1 && (
             <FButton variant="outline" onPress={() => setStep(step - 1)} style={styles.button}>
-              Back
+              {t('createTask.actions.back')}
             </FButton>
           )}
           {step < totalSteps ? (
@@ -669,7 +671,7 @@ export default function CreateTask({ navigation, route }: Props) {
               style={styles.button}
               iconRight="arrow-right"
             >
-              Next
+              {t('createTask.actions.next')}
             </FButton>
           ) : (
             <FButton
@@ -679,7 +681,7 @@ export default function CreateTask({ navigation, route }: Props) {
               style={styles.button}
               icon="check-circle-outline"
             >
-              Review & Publish
+              {t('createTask.reviewPublish')}
             </FButton>
           )}
         </View>
@@ -692,15 +694,15 @@ export default function CreateTask({ navigation, route }: Props) {
           contentContainerStyle={styles.modal}
         >
           <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
-            Review your task
+            {t('createTask.review.title')}
           </Text>
 
           <View style={styles.reviewRows}>
-            <ReviewRow icon="text-box-outline" label="Title" value={title} />
-            <ReviewRow icon="shape-outline" label="Category" value={CATEGORY_LIST.find((c) => c.value === category)?.label ?? ''} />
-            <ReviewRow icon="cash-multiple" label="Budget" value={budgetType === 'fixed' ? `₪${price}` : 'Quote Required'} />
-            <ReviewRow icon="map-marker-outline" label="Location" value={address} />
-            <ReviewRow icon="camera-outline" label="Photos" value={`${photos.length} photo(s)`} />
+            <ReviewRow icon="text-box-outline" label={t('createTask.review.titleLabel')} value={title} />
+            <ReviewRow icon="shape-outline" label={t('createTask.review.categoryLabel')} value={CATEGORY_LIST.find((c) => c.value === category)?.label ?? ''} />
+            <ReviewRow icon="cash-multiple" label={t('createTask.review.budgetLabel')} value={budgetType === 'fixed' ? `₪${price}` : t('createTask.step4.quoteRequired')} />
+            <ReviewRow icon="map-marker-outline" label={t('createTask.review.locationLabel')} value={address} />
+            <ReviewRow icon="camera-outline" label={t('createTask.review.photosLabel')} value={t('createTask.review.photoCount', { count: photos.length })} />
           </View>
 
           <FButton
@@ -710,7 +712,7 @@ export default function CreateTask({ navigation, route }: Props) {
             fullWidth
             icon="send"
           >
-            Publish Task
+            {t('createTask.publishTask')}
           </FButton>
           <FButton
             variant="ghost"
@@ -718,7 +720,7 @@ export default function CreateTask({ navigation, route }: Props) {
             fullWidth
             style={{ marginTop: spacing.sm }}
           >
-            Go Back & Edit
+            {t('createTask.goBackEdit')}
           </FButton>
         </Modal>
       </Portal>
@@ -734,16 +736,16 @@ export default function CreateTask({ navigation, route }: Props) {
             <MaterialCommunityIcons name="map-marker-radius-outline" size={40} color={brandColors.primary} />
           </View>
           <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: 'center', marginBottom: spacing.sm }]}>
-            Enable Location Access
+            {t('createTask.locationRationale.title')}
           </Text>
           <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.xl }]}>
-            We use your location to place a pin on the map so fixers in your area can find your task. Your exact address stays private.
+            {t('createTask.locationRationale.description')}
           </Text>
           <FButton onPress={() => handleLocationPermissionResponse(true)} fullWidth>
-            Allow Location
+            {t('createTask.locationRationale.allow')}
           </FButton>
           <FButton variant="ghost" onPress={() => handleLocationPermissionResponse(false)} fullWidth style={{ marginTop: spacing.sm }}>
-            No thanks, I'll enter manually
+            {t('createTask.locationRationale.noThanks')}
           </FButton>
         </Modal>
       </Portal>

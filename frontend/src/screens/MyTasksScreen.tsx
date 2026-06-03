@@ -13,6 +13,7 @@ import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import TaskCard from '../components/TaskCard';
 import EmptyState from '../components/EmptyState';
@@ -49,6 +50,7 @@ interface ConfirmationOptions {
 }
 
 export default function MyTasksScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,7 +67,7 @@ export default function MyTasksScreen({ navigation }: Props) {
       setTasks(res.data.tasks || []);
       setLoadError(null);
     } catch {
-      setLoadError('We could not load My Tasks. Check your connection and try again.');
+      setLoadError(t('myTasks.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -96,10 +98,11 @@ export default function MyTasksScreen({ navigation }: Props) {
     title,
     message,
     confirmLabel,
-    cancelLabel = 'Cancel',
+    cancelLabel,
     destructive = false,
     onConfirm,
   }: ConfirmationOptions) => {
+    const cancel = cancelLabel ?? t('common.cancel');
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
       if (confirm(`${title}\n\n${message}`)) void onConfirm();
@@ -107,7 +110,7 @@ export default function MyTasksScreen({ navigation }: Props) {
     }
 
     Alert.alert(title, message, [
-      { text: cancelLabel, style: 'cancel' },
+      { text: cancel, style: 'cancel' },
       {
         text: confirmLabel,
         style: destructive ? 'destructive' : 'default',
@@ -122,20 +125,20 @@ export default function MyTasksScreen({ navigation }: Props) {
         await api.delete(`/api/tasks/${task.id}`);
         void fetchTasks();
       } catch {
-        Alert.alert('Error', 'Failed to delete task.');
+        Alert.alert(t('common.error'), t('myTasks.alerts.failedDelete'));
       }
     };
 
     const message =
       task.status === 'IN_PROGRESS'
-        ? `Delete "${task.title}" while it is in progress? This permanently removes the task record even though a Fixer may already be assigned. Cancel the job first unless you are certain. This cannot be undone.`
-        : `Delete "${task.title}" permanently? This removes the task record and related history from My Tasks. This cannot be undone.`;
+        ? t('myTasks.actions.delete.messageInProgress', { title: task.title })
+        : t('myTasks.actions.delete.message', { title: task.title });
 
     confirmAction({
-      title: 'Delete task?',
+      title: t('myTasks.actions.delete.title'),
       message,
-      confirmLabel: 'Delete task',
-      cancelLabel: 'Keep task',
+      confirmLabel: t('myTasks.actions.delete.confirm'),
+      cancelLabel: t('myTasks.actions.delete.keep'),
       destructive: true,
       onConfirm: doDelete,
     });
@@ -147,20 +150,20 @@ export default function MyTasksScreen({ navigation }: Props) {
         await api.put(`/api/tasks/${task.id}/status`, { status: 'CANCELED' });
         void fetchTasks();
       } catch {
-        Alert.alert('Error', 'Failed to cancel task.');
+        Alert.alert(t('common.error'), t('myTasks.alerts.failedCancel'));
       }
     };
 
     const message =
       task.status === 'IN_PROGRESS'
-        ? `Cancel "${task.title}" while it is in progress? This stops the active job for you and the assigned Fixer and moves it to Past tasks. Only continue if the work will not be completed here.`
-        : `Cancel "${task.title}"? It will move out of active My Tasks and into Past tasks.`;
+        ? t('myTasks.actions.cancel.messageInProgress', { title: task.title })
+        : t('myTasks.actions.cancel.message', { title: task.title });
 
     confirmAction({
-      title: 'Cancel task?',
+      title: t('myTasks.actions.cancel.title'),
       message,
-      confirmLabel: 'Cancel task',
-      cancelLabel: 'Keep task',
+      confirmLabel: t('myTasks.actions.cancel.confirm'),
+      cancelLabel: t('myTasks.actions.cancel.keep'),
       destructive: true,
       onConfirm: doCancel,
     });
@@ -172,15 +175,15 @@ export default function MyTasksScreen({ navigation }: Props) {
         await api.put(`/api/tasks/${task.id}/status`, { status: 'COMPLETED' });
         navigation.navigate('TaskDetails', { taskId: task.id });
       } catch {
-        Alert.alert('Error', 'Failed to mark task as completed.');
+        Alert.alert(t('common.error'), t('myTasks.alerts.failedComplete'));
       }
     };
 
     confirmAction({
-      title: 'Mark task complete?',
-      message: `Mark "${task.title}" complete only after the work is finished. This moves it to Past tasks and opens the review step.`,
-      confirmLabel: 'Mark complete',
-      cancelLabel: 'Not yet',
+      title: t('myTasks.actions.complete.title'),
+      message: t('myTasks.actions.complete.message', { title: task.title }),
+      confirmLabel: t('myTasks.actions.complete.confirm'),
+      cancelLabel: t('myTasks.actions.complete.notYet'),
       onConfirm: doComplete,
     });
   };
@@ -192,29 +195,29 @@ export default function MyTasksScreen({ navigation }: Props) {
         void fetchTasks();
         return true;
       } catch {
-        Alert.alert('Error', 'Failed to reopen task.');
+        Alert.alert(t('common.error'), t('myTasks.alerts.failedReopen'));
         return false;
       }
     };
 
-    const message = `Reopen "${task.title}" as an open request? Review the task details before accepting new bids. If stale assignment data remains visible, it needs backend support to clear.`;
+    const message = t('myTasks.actions.reopen.message', { title: task.title });
 
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm(`Reopen task?\n\n${message}\n\nThe task details will open next so you can review or edit it.`)) {
+      if (confirm(`${t('myTasks.actions.reopen.title')}\n\n${message}\n\n${t('myTasks.actions.reopen.webSuffix')}`)) {
         void doReactivate().then((reopened) => {
           if (reopened) navigation.navigate('TaskDetails', { taskId: task.id, openEdit: true });
         });
       }
     } else {
-      Alert.alert('Reopen task?', message, [
-        { text: 'Keep canceled', style: 'cancel' },
+      Alert.alert(t('myTasks.actions.reopen.title'), message, [
+        { text: t('myTasks.actions.reopen.keepCanceled'), style: 'cancel' },
         {
-          text: 'Reopen as-is',
+          text: t('myTasks.actions.reopen.reopenAsIs'),
           onPress: () => void doReactivate(),
         },
         {
-          text: 'Reopen and edit',
+          text: t('myTasks.actions.reopen.reopenAndEdit'),
           onPress: () =>
             void doReactivate().then((reopened) => {
               if (reopened) navigation.navigate('TaskDetails', { taskId: task.id, openEdit: true });
@@ -260,7 +263,7 @@ export default function MyTasksScreen({ navigation }: Props) {
       ? []
       : pastTasks;
 
-  if (loading) return <LoadingScreen label="Loading your tasks..." />;
+  if (loading) return <LoadingScreen label={t('myTasks.loading')} />;
 
   if (loadError && tasks.length === 0) {
     return (
@@ -290,9 +293,9 @@ export default function MyTasksScreen({ navigation }: Props) {
             <View style={styles.emptyPanel}>
               <EmptyState
                 icon="alert-circle-outline"
-                title="Couldn't load My Tasks"
-                message={loadError}
-                actionLabel="Retry"
+                title={t('myTasks.empty.couldNotLoad.title')}
+                message={loadError ?? ''}
+                actionLabel={t('myTasks.empty.couldNotLoad.retry')}
                 onAction={retryTasks}
               />
             </View>
@@ -330,9 +333,9 @@ export default function MyTasksScreen({ navigation }: Props) {
             <View style={styles.emptyPanel}>
               <EmptyState
                 icon="clipboard-text-outline"
-                title="No tasks yet"
-                message="Post your first task and manage bids, status, and completion from this workspace."
-                actionLabel="Post Task"
+                title={t('myTasks.empty.noTasks.title')}
+                message={t('myTasks.empty.noTasks.message')}
+                actionLabel={t('myTasks.empty.noTasks.action')}
                 onAction={() => navigation.navigate('CreateTask')}
               />
             </View>
@@ -370,9 +373,9 @@ export default function MyTasksScreen({ navigation }: Props) {
 
           <View style={styles.section}>
             <SectionHeader
-              label="Active tasks"
+              label={t('myTasks.sections.active')}
               count={filteredActiveTasks.length}
-              helper="Open requests and jobs currently assigned to a Fixer."
+              helper={t('myTasks.sections.activeHelper')}
             />
             {filteredActiveTasks.length > 0 ? (
               filteredActiveTasks.map((task) => (
@@ -400,17 +403,17 @@ export default function MyTasksScreen({ navigation }: Props) {
             ) : (
               <InlineEmpty
                 icon="clipboard-check-outline"
-                title="No active tasks"
-                message="Completed and canceled requests are still available below."
+                title={t('myTasks.empty.noActive.title')}
+                message={t('myTasks.empty.noActive.message')}
               />
             )}
           </View>
 
           <View style={styles.section}>
             <SectionHeader
-              label="Past tasks"
+              label={t('myTasks.sections.past')}
               count={filteredPastTasks.length}
-              helper="Completed and canceled work, including review and cleanup actions."
+              helper={t('myTasks.sections.pastHelper')}
               muted
             />
             {filteredPastTasks.length > 0 ? (
@@ -439,8 +442,8 @@ export default function MyTasksScreen({ navigation }: Props) {
             ) : (
               <InlineEmpty
                 icon="history"
-                title="No past tasks"
-                message="Finished and canceled jobs will appear here for reference."
+                title={t('myTasks.empty.noPast.title')}
+                message={t('myTasks.empty.noPast.message')}
               />
             )}
           </View>
@@ -467,6 +470,7 @@ function WorkspaceHeader({
   activeFilter: 'in_progress' | 'review' | null;
   onPillPress: (filter: 'in_progress' | 'review') => void;
 }) {
+  const { t } = useTranslation();
   return (
     <LinearGradient
       colors={[brandColors.primary, brandColors.primaryDark]}
@@ -476,26 +480,23 @@ function WorkspaceHeader({
     >
       <View style={[styles.headerTop, wide && styles.headerTopWide]}>
         <View style={styles.headerCopy}>
-          <Text style={styles.headerEyebrow}>My Tasks</Text>
-          <Text style={styles.headerTitle}>Manage every posted job</Text>
-          <Text style={styles.headerBody}>
-            Review bids, update open requests, complete assigned jobs, and keep finished work out
-            of the way.
-          </Text>
+          <Text style={styles.headerEyebrow}>{t('myTasks.header.eyebrow')}</Text>
+          <Text style={styles.headerTitle}>{t('myTasks.header.title')}</Text>
+          <Text style={styles.headerBody}>{t('myTasks.header.body')}</Text>
         </View>
       </View>
 
       <View style={[styles.summaryRail, wide && styles.summaryRailWide]}>
         <SummaryPill
           icon="clipboard-text-outline"
-          label="Open"
+          label={t('myTasks.pills.open')}
           value={openTasksCount}
           color={brandColors.success}
           wide={wide}
         />
         <SummaryPill
           icon="progress-wrench"
-          label="In progress"
+          label={t('myTasks.pills.inProgress')}
           value={inProgressCount}
           color={brandColors.secondary}
           wide={wide}
@@ -504,14 +505,14 @@ function WorkspaceHeader({
         />
         <SummaryPill
           icon="hand-extended-outline"
-          label="Pending bids"
+          label={t('myTasks.pills.pendingBids')}
           value={pendingBidCount}
           color={brandColors.secondaryLight}
           wide={wide}
         />
         <SummaryPill
           icon="star-outline"
-          label="To review"
+          label={t('myTasks.pills.toReview')}
           value={reviewCount}
           color={brandColors.warning}
           wide={wide}
@@ -608,17 +609,18 @@ function InlineEmpty({
 }
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.errorBanner}>
       <View style={styles.errorIcon}>
         <MaterialCommunityIcons name="alert-circle-outline" size={18} color={brandColors.danger} />
       </View>
       <View style={styles.errorCopy}>
-        <Text style={[typography.label, { color: brandColors.textPrimary }]}>Could not refresh My Tasks</Text>
+        <Text style={[typography.label, { color: brandColors.textPrimary }]}>{t('myTasks.error.refreshTitle')}</Text>
         <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{message}</Text>
       </View>
       <FButton onPress={onRetry} variant="outline" size="sm" icon="refresh">
-        Retry
+        {t('myTasks.empty.couldNotLoad.retry')}
       </FButton>
     </View>
   );

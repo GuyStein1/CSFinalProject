@@ -55,6 +55,7 @@ model User {
   payment_link            String?
   specializations         Category[]
   push_token              String?
+  language                String    @default("en")
   average_rating_as_fixer Float     @default(0)
   created_at              DateTime  @default(now())
   updated_at              DateTime  @updatedAt

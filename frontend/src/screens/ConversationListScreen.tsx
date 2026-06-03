@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -23,22 +24,23 @@ interface Conversation {
   unreadCount: number;
 }
 
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
 export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
+
+  const formatTime = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (diffDays === 1) return t('conversations.yesterday');
+    if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
 
   const load = useCallback(async () => {
     try {
@@ -57,7 +59,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
     void load();
   }, [load]));
 
-  if (loading) return <LoadingScreen label="Loading messages…" />;
+  if (loading) return <LoadingScreen label={t('conversations.loading')} />;
 
   return (
     <FlatList
@@ -68,8 +70,8 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
       ListEmptyComponent={
         <EmptyState
           icon="chat-outline"
-          title="No conversations yet"
-          message="Start a chat from a task once a bid is accepted."
+          title={t('conversations.empty.title')}
+          message={t('conversations.empty.message')}
         />
       }
       renderItem={({ item }) => {
@@ -129,7 +131,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                   ]}
                   numberOfLines={1}
                 >
-                  {item.lastMessage?.content || 'No messages yet'}
+                  {item.lastMessage?.content || t('conversations.noMessages')}
                 </Text>
                 {item.unreadCount > 0 && (
                   <View style={styles.badge}>

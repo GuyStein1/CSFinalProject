@@ -8,6 +8,7 @@ import {
 } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import CelebrationOverlay from '../components/CelebrationOverlay';
@@ -88,6 +89,7 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TaskDetails({ route, navigation }: { route: any; navigation: any }) {
+  const { t } = useTranslation();
   const { taskId, openEdit } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -111,7 +113,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       setFixerReviews(res.data.reviews || []);
       setShowFixerReviews(true);
     } catch {
-      Alert.alert('Error', 'Failed to load reviews.');
+      Alert.alert(t('common.error'), t('common.tryAgain'));
     }
   };
 
@@ -149,7 +151,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       setShowCelebration(true);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Failed to accept bid.');
+      Alert.alert(t('common.error'), t('common.tryAgain'));
     }
   };
 
@@ -158,7 +160,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       await api.put(`/api/bids/${bidId}/reject`);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Failed to decline bid.');
+      Alert.alert(t('common.error'), t('common.tryAgain'));
     }
   };
 
@@ -168,19 +170,19 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         await api.put(`/api/tasks/${taskId}/status`, { status: 'CANCELED' });
         navigation.goBack();
       } catch {
-        Alert.alert('Error', 'Failed to cancel task.');
+        Alert.alert(t('common.error'), t('taskDetails.alerts.failedCancel'));
       }
     };
 
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm('Are you sure you want to cancel this task?')) {
+      if (confirm(t('taskDetails.alerts.cancelMessage'))) {
         doCancel();
       }
     } else {
-      Alert.alert('Cancel Task', 'Are you sure you want to cancel this task?', [
-        { text: 'No' },
-        { text: 'Yes, Cancel', style: 'destructive', onPress: doCancel },
+      Alert.alert(t('taskDetails.alerts.cancelTitle'), t('taskDetails.alerts.cancelMessage'), [
+        { text: t('common.no') },
+        { text: t('taskDetails.alerts.cancelYes'), style: 'destructive', onPress: doCancel },
       ]);
     }
   };
@@ -190,7 +192,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       await api.put(`/api/tasks/${taskId}/status`, { status: 'COMPLETED' });
       fetchData();
     } catch {
-      Alert.alert('Error', 'Failed to mark task as completed.');
+      Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
     }
   };
 
@@ -200,7 +202,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       setShowCelebration(true);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Failed to confirm payment.');
+      Alert.alert(t('common.error'), t('taskDetails.alerts.failedPayment'));
     }
   };
 
@@ -228,9 +230,9 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       // server-side error is actually visible.
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
-        window.alert(`Error: ${message}`);
+        window.alert(`${t('common.error')}: ${message}`);
       } else {
-        Alert.alert('Error', message);
+        Alert.alert(t('common.error'), message);
       }
     }
   };
@@ -266,18 +268,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       setShowEditModal(false);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Failed to update task.');
+      Alert.alert(t('common.error'), t('taskDetails.alerts.failedUpdate'));
     }
   };
 
   if (loading) {
-    return <LoadingScreen label="Loading task details..." />;
+    return <LoadingScreen label={t('taskDetails.loading')} />;
   }
 
   if (!task) {
     return (
       <View style={styles.center}>
-        <Text style={[typography.body]}>Task not found</Text>
+        <Text style={[typography.body]}>{t('taskDetails.notFound')}</Text>
       </View>
     );
   }
@@ -343,15 +345,15 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
         <View style={styles.detailsDivider} />
 
-        <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label="Category" value={catMeta.label} />
-        <DetailRow icon="cash-multiple" label="Budget" value={task.suggested_price ? `₪${task.suggested_price}` : 'Quote Required'} />
-        <DetailRow icon="map-marker-outline" label="Location" value={task.general_location_name} />
+        <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label={t('taskDetails.detail.category')} value={catMeta.label} />
+        <DetailRow icon="cash-multiple" label={t('taskDetails.detail.budget')} value={task.suggested_price ? `₪${task.suggested_price}` : t('taskDetails.detail.quoteRequired')} />
+        <DetailRow icon="map-marker-outline" label={t('taskDetails.detail.location')} value={task.general_location_name} />
         {task.status !== 'OPEN' && (
-          <DetailRow icon="home-outline" label="Address" value={task.exact_address} />
+          <DetailRow icon="home-outline" label={t('taskDetails.detail.address')} value={task.exact_address} />
         )}
         <DetailRow
           icon="calendar-outline"
-          label="Posted"
+          label={t('taskDetails.detail.posted')}
           value={new Date(task.created_at).toLocaleDateString(undefined, {
             year: 'numeric', month: 'long', day: 'numeric',
           })}
@@ -361,14 +363,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {/* OPEN: Bids Section */}
       {task.status === 'OPEN' && (
         <View style={styles.section}>
-          <FSectionHeader title="Received Bids" count={pendingBids.length} />
+          <FSectionHeader title={t('taskDetails.sections.receivedBids')} count={pendingBids.length} />
 
           {pendingBids.length === 0 ? (
             <FCard style={styles.emptyBidsCard}>
               <View style={styles.emptyBidsContent}>
                 <MaterialCommunityIcons name="clock-outline" size={28} color={brandColors.textMuted} />
                 <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
-                  No bids yet. Fixers in your area will see your task!
+                  {t('taskDetails.bids.emptyMessage')}
                 </Text>
               </View>
             </FCard>
@@ -392,11 +394,11 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                           {bid.fixer.average_rating_as_fixer.toFixed(1)}
                         </Text>
                         <Pressable onPress={() => showReviewsForFixer(bid.fixer_id)}>
-                          <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>see reviews</Text>
+                          <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>{t('taskDetails.bids.seeReviews')}</Text>
                         </Pressable>
                       </View>
                     ) : (
-                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
+                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('taskDetails.bids.noReviewsYet')}</Text>
                     )}
                   </View>
                   </Pressable>
@@ -411,10 +413,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
                 <View style={styles.bidActions}>
                   <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} style={{ flex: 1 }}>
-                    Accept
+                    {t('taskDetails.actions.acceptBid')}
                   </FButton>
                   <FButton variant="outline" size="sm" icon="close" onPress={() => declineBid(bid.id)} style={{ flex: 1 }}>
-                    Decline
+                    {t('taskDetails.actions.decline')}
                   </FButton>
                 </View>
                 <FButton
@@ -432,7 +434,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   })}
                   style={{ marginTop: spacing.xs }}
                 >
-                  Chat
+                  {t('taskDetails.actions.chatWithBidder')}
                 </FButton>
               </FCard>
             ))
@@ -440,7 +442,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
           <Pressable onPress={cancelTask} style={styles.cancelRow}>
             <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
-            <Text style={[typography.label, { color: brandColors.danger }]}>Cancel Task</Text>
+            <Text style={[typography.label, { color: brandColors.danger }]}>{t('taskDetails.actions.cancelTask')}</Text>
           </Pressable>
         </View>
       )}
@@ -448,7 +450,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {/* IN_PROGRESS: Assigned Fixer */}
       {task.status === 'IN_PROGRESS' && acceptedBid && (
         <View style={styles.section}>
-          <FSectionHeader title="Assigned Fixer" accentColor={brandColors.primaryMuted} />
+          <FSectionHeader title={t('taskDetails.sections.assignedFixer')} accentColor={brandColors.primaryMuted} />
 
           <FCard style={styles.fixerCard}>
             <View style={styles.bidTop}>
@@ -472,7 +474,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     </Pressable>
                   </View>
                 ) : (
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>No reviews yet</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('taskDetails.bids.noReviewsYet')}</Text>
                 )}
                 {acceptedBid.fixer?.phone_number && (
                   <Pressable
@@ -493,7 +495,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
           <View style={styles.actionButtons}>
             <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
-              Mark as Completed
+              {t('taskDetails.actions.markCompleted')}
             </FButton>
             <FButton
               variant="outline"
@@ -509,11 +511,11 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
               })}
               fullWidth
             >
-              Chat with Fixer
+              {t('taskDetails.actions.chatWithFixer')}
             </FButton>
             <Pressable onPress={cancelTask} style={styles.cancelRow}>
               <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
-              <Text style={[typography.label, { color: brandColors.danger }]}>Cancel Task</Text>
+              <Text style={[typography.label, { color: brandColors.danger }]}>{t('taskDetails.actions.cancelTask')}</Text>
             </Pressable>
           </View>
         </View>
@@ -527,18 +529,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           contentContainerStyle={styles.editModal}
         >
           <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
-            Edit Task
+            {t('taskDetails.editModal.title')}
           </Text>
-          <FInput label="Title" value={editTitle} onChangeText={setEditTitle} maxLength={200} />
-          <FInput label="Description" value={editDescription} onChangeText={setEditDescription} multiline numberOfLines={4} maxLength={2000} />
-          <FInput label="Budget (₪)" value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" />
-          <FInput label="General location" value={editLocation} onChangeText={setEditLocation} />
-          <FInput label="Exact address" value={editAddress} onChangeText={setEditAddress} />
+          <FInput label={t('taskDetails.editModal.titleLabel')} value={editTitle} onChangeText={setEditTitle} maxLength={200} />
+          <FInput label={t('taskDetails.editModal.descriptionLabel')} value={editDescription} onChangeText={setEditDescription} multiline numberOfLines={4} maxLength={2000} />
+          <FInput label={t('taskDetails.editModal.budgetLabel')} value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" />
+          <FInput label={t('taskDetails.editModal.locationLabel')} value={editLocation} onChangeText={setEditLocation} />
+          <FInput label={t('taskDetails.editModal.addressLabel')} value={editAddress} onChangeText={setEditAddress} />
           <FButton onPress={saveEdit} fullWidth style={{ marginTop: spacing.md }}>
-            Save Changes
+            {t('taskDetails.editModal.saveChanges')}
           </FButton>
           <FButton variant="outline" onPress={() => setShowEditModal(false)} fullWidth style={{ marginTop: spacing.sm }}>
-            Cancel
+            {t('common.cancel')}
           </FButton>
         </Modal>
       </Portal>
@@ -551,10 +553,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           contentContainerStyle={styles.reviewsModal}
         >
           <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
-            Fixer Reviews
+            {t('taskDetails.fixerReviews.title')}
           </Text>
           {fixerReviews.length === 0 ? (
-            <Text style={[typography.body, { color: brandColors.textMuted }]}>No reviews yet.</Text>
+            <Text style={[typography.body, { color: brandColors.textMuted }]}>{t('taskDetails.fixerReviews.noReviews')}</Text>
           ) : (
             <ScrollView style={{ maxHeight: 400 }}>
               {fixerReviews.map((review) => (
@@ -562,7 +564,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   <View style={styles.ratingRow}>
                     <StarRating rating={review.rating} size={14} />
                     <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
-                      {review.reviewer?.full_name || 'Anonymous'}
+                      {review.reviewer?.full_name || t('publicProfile.anonymous')}
                     </Text>
                   </View>
                   {review.comment && (
@@ -580,7 +582,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             style={{ marginTop: spacing.lg }}
             fullWidth
           >
-            Close
+            {t('common.close')}
           </FButton>
         </Modal>
       </Portal>
@@ -589,14 +591,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {task.status === 'COMPLETED' && (
         <View style={styles.section}>
           {/* Payment */}
-          <FSectionHeader title="Payment" accentColor={brandColors.success} />
+          <FSectionHeader title={t('taskDetails.sections.payment')} accentColor={brandColors.success} />
           <FCard style={styles.paymentCard}>
             {task.is_payment_confirmed ? (
               <View style={styles.confirmedRow}>
                 <View style={styles.confirmedIcon}>
                   <MaterialCommunityIcons name="check" size={20} color={brandColors.white} />
                 </View>
-                <Text style={[typography.h3, { color: brandColors.success }]}>Payment Confirmed</Text>
+                <Text style={[typography.h3, { color: brandColors.success }]}>{t('taskDetails.payment.confirmed')}</Text>
               </View>
             ) : (
               <View style={styles.paymentActions}>
@@ -608,17 +610,17 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                       onPress={() => Linking.openURL(acceptedBid.fixer!.payment_link!)}
                       fullWidth
                     >
-                      Pay Fixer
+                      {t('taskDetails.actions.payFixer')}
                     </FButton>
                     <FButton variant="outline" onPress={confirmPayment} fullWidth>
-                      Confirm Payment
+                      {t('taskDetails.actions.confirmPayment')}
                     </FButton>
                   </>
                 ) : (
                   <View style={styles.noPaymentLink}>
                     <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
                     <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
-                      This Fixer hasn't set up a payment link. Contact them directly.
+                      {t('taskDetails.payment.noPaymentLink')}
                     </Text>
                     {acceptedBid?.fixer?.phone_number && (
                       <Pressable onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}>
@@ -634,20 +636,20 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </FCard>
 
           {/* Review */}
-          <FSectionHeader title="Review" accentColor={brandColors.secondary} style={{ marginTop: spacing.xxl }} />
+          <FSectionHeader title={t('taskDetails.sections.review')} accentColor={brandColors.secondary} style={{ marginTop: spacing.xxl }} />
           <FCard>
             {reviewSubmitted ? (
               <View style={styles.confirmedRow}>
                 <View style={[styles.confirmedIcon, { backgroundColor: brandColors.secondary }]}>
                   <MaterialCommunityIcons name="star" size={20} color={brandColors.white} />
                 </View>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Review submitted. Thank you!</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('taskDetails.review.thankYou')}</Text>
               </View>
             ) : reviewWindowExpired ? (
               <View style={styles.reviewExpired}>
                 <MaterialCommunityIcons name="clock-alert-outline" size={24} color={brandColors.textMuted} />
                 <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
-                  The 14-day review window has expired. You can no longer leave a review for this task.
+                  {t('taskDetails.review.windowExpired')}
                 </Text>
               </View>
             ) : (
@@ -655,10 +657,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 <View style={styles.reviewWindowBanner}>
                   <MaterialCommunityIcons name="clock-outline" size={14} color={brandColors.primaryMuted} />
                   <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>
-                    {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left to leave a review
+                    {t('taskDetails.review.daysLeft', { count: daysRemaining })}
                   </Text>
                 </View>
-                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>Rate the fixer:</Text>
+                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{t('taskDetails.review.rateFixer')}</Text>
                 <View style={styles.stars}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Pressable
@@ -675,7 +677,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   ))}
                 </View>
                 <FInput
-                  label="Comment (optional)"
+                  label={t('taskDetails.review.comment')}
                   value={reviewComment}
                   onChangeText={setReviewComment}
                   multiline
@@ -688,7 +690,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   fullWidth
                   icon="send"
                 >
-                  Submit Review
+                  {t('taskDetails.review.submit')}
                 </FButton>
               </View>
             )}

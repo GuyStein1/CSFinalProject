@@ -13,6 +13,7 @@ import {
 import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -58,6 +59,7 @@ function sameStringSet(a: string[], b: string[]) {
 
 export default function FixerProfileScreen() {
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
   const isWide = width >= 900;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function FixerProfileScreen() {
       setSpecializations(u.specializations ?? []);
       setPortfolioItems(u.portfolio_items ?? []);
     } catch {
-      Alert.alert('Error', 'Failed to load profile.');
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.loadError'));
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export default function FixerProfileScreen() {
       await api.put('/api/users/me', { avatar_url: url });
       setProfile(p => p ? { ...p, avatar_url: url } : p);
     } catch {
-      Alert.alert('Error', 'Failed to update avatar.');
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.avatarError'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -125,7 +127,7 @@ export default function FixerProfileScreen() {
   const handleSaveProfile = async () => {
     const nextPaymentLink = paymentLink.trim();
     if (nextPaymentLink && !isValidUrl(nextPaymentLink)) {
-      Alert.alert('Check payment link', 'Enter a full payment URL before saving.');
+      Alert.alert(t('fixerProfile.payment.checkLink'), t('fixerProfile.payment.checkLinkMessage'));
       return;
     }
 
@@ -145,9 +147,9 @@ export default function FixerProfileScreen() {
       setPhone(updated.phone_number ?? phone.trim());
       setPaymentLink(updated.payment_link ?? '');
       setSpecializations(updated.specializations ?? specializations);
-      Alert.alert('Saved', 'Profile updated successfully.');
+      Alert.alert(t('fixerProfile.alerts.savedTitle'), t('fixerProfile.alerts.saved'));
     } catch {
-      Alert.alert('Error', 'Failed to save profile.');
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.saveError'));
     } finally {
       setSaving(false);
     }
@@ -169,9 +171,9 @@ export default function FixerProfileScreen() {
         specializations: updated.specializations ?? specializations,
       } : prev);
       setSpecializations(updated.specializations ?? specializations);
-      Alert.alert('Saved', 'Trade coverage updated.');
+      Alert.alert(t('fixerProfile.alerts.savedTitle'), t('fixerProfile.alerts.tradesSaved'));
     } catch {
-      Alert.alert('Error', 'Failed to save trade coverage.');
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.tradesSaveError'));
     } finally {
       setSavingSpecializations(false);
     }
@@ -189,31 +191,31 @@ export default function FixerProfileScreen() {
       const res = await api.post('/api/users/me/portfolio', { image_url: url });
       setPortfolioItems(prev => [res.data.portfolioItem, ...prev]);
     } catch {
-      Alert.alert('Error', 'Failed to upload portfolio photo.');
+      Alert.alert(t('common.error'), t('fixerProfile.alerts.portfolioUploadError'));
     } finally {
       setUploadingPortfolio(false);
     }
   };
 
   const handleDeletePortfolio = (item: PortfolioItem) => {
-    Alert.alert('Delete photo?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('fixerProfile.alerts.deletePortfolio.title'), t('fixerProfile.alerts.deletePortfolio.message'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('fixerProfile.alerts.deletePortfolio.confirm'),
         style: 'destructive',
         onPress: async () => {
           try {
             await api.delete(`/api/users/me/portfolio/${item.id}`);
             setPortfolioItems(prev => prev.filter(p => p.id !== item.id));
           } catch {
-            Alert.alert('Error', 'Failed to delete photo.');
+            Alert.alert(t('common.error'), t('fixerProfile.alerts.portfolioDeleteError'));
           }
         },
       },
     ]);
   };
 
-  if (loading) return <LoadingScreen label="Loading profile..." />;
+  if (loading) return <LoadingScreen label={t('common.loading')} />;
 
   const avgRating = profile?.average_rating_as_fixer;
   const displayName = fullName.trim() || profile?.full_name || 'Fixer profile';
@@ -226,49 +228,49 @@ export default function FixerProfileScreen() {
     currentPaymentLink.length === 0 && savedPaymentLink.length > 0
       ? {
           icon: 'content-save-alert-outline',
-          label: 'Unsaved payment link',
+          label: t('fixerProfile.payment.unsavedLabel'),
           color: brandColors.warning,
           style: styles.paymentMissing,
-          message: 'Payment link changes are not saved yet.',
+          message: t('fixerProfile.payment.unsavedMessage'),
         }
       : currentPaymentLink.length === 0
       ? {
           icon: 'alert-circle-outline',
-          label: 'Payment needed',
+          label: t('fixerProfile.payment.missing'),
           color: brandColors.warning,
           style: styles.paymentMissing,
-          message: 'Payment link missing. Requesters need a payout destination after completion.',
+          message: t('fixerProfile.payment.missingMessage'),
         }
       : !currentPaymentLinkValid
         ? {
             icon: 'alert-circle-outline',
-            label: 'Invalid payment URL',
+            label: t('fixerProfile.payment.invalid'),
             color: brandColors.danger,
             style: styles.paymentInvalid,
-            message: 'Enter a full payment URL before saving.',
+            message: t('fixerProfile.payment.invalidMessage'),
           }
         : paymentLinkChanged
           ? {
               icon: 'content-save-alert-outline',
-              label: 'Unsaved payment link',
+              label: t('fixerProfile.payment.unsavedLabel'),
               color: brandColors.warning,
               style: styles.paymentMissing,
-              message: 'Payment link changes are not saved yet.',
+              message: t('fixerProfile.payment.unsavedMessage'),
             }
           : savedPaymentLinkValid
             ? {
                 icon: 'check-circle-outline',
-                label: 'Payment link saved',
+                label: t('fixerProfile.payment.ready'),
                 color: brandColors.success,
                 style: styles.paymentReady,
                 message: null,
               }
             : {
                 icon: 'alert-circle-outline',
-                label: 'Check payment link',
+                label: t('fixerProfile.payment.checkLink'),
                 color: brandColors.warning,
                 style: styles.paymentMissing,
-                message: 'Payment link needs to be reviewed before it can be used.',
+                message: t('fixerProfile.payment.reviewMessage'),
               };
   const hasSpecializationChanges = !sameStringSet(specializations, profile?.specializations ?? []);
   const completionItems = [
@@ -329,7 +331,7 @@ export default function FixerProfileScreen() {
               <View style={styles.headerIconShell}>
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondary} />
               </View>
-              <Text style={styles.headerKicker}>Fixer Profile</Text>
+              <Text style={styles.headerKicker}>{t('fixerProfile.headerKicker')}</Text>
             </View>
             <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
             <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
@@ -339,19 +341,19 @@ export default function FixerProfileScreen() {
                 <Text style={styles.heroStatValue}>
                   {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
                 </Text>
-                <Text style={styles.heroStatLabel}>Rating</Text>
+                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.rating')}</Text>
               </View>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatValue}>{specializations.length}</Text>
-                <Text style={styles.heroStatLabel}>Trades</Text>
+                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.trades')}</Text>
               </View>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatValue}>{portfolioItems.length}</Text>
-                <Text style={styles.heroStatLabel}>Photos</Text>
+                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.photos')}</Text>
               </View>
               <View style={styles.heroStat}>
                 <Text style={styles.heroStatValue}>{completionPercent}%</Text>
-                <Text style={styles.heroStatLabel}>Profile</Text>
+                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.profileCompletion')}</Text>
               </View>
             </View>
           </View>
@@ -381,14 +383,14 @@ export default function FixerProfileScreen() {
                   <MaterialCommunityIcons name="account-edit-outline" size={18} color={brandColors.primary} />
                 </View>
                 <View>
-                  <Text style={styles.sectionKicker}>Profile details</Text>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Basics and payout</Text>
+                  <Text style={styles.sectionKicker}>{t('fixerProfile.sectionKicker')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.sectionTitle')}</Text>
                 </View>
               </View>
 
-              <FInput label="Full Name" value={fullName} onChangeText={setFullName} returnKeyType="next" />
+              <FInput label={t('fixerProfile.fields.fullName')} value={fullName} onChangeText={setFullName} returnKeyType="next" />
               <FInput
-                label="Bio"
+                label={t('fixerProfile.fields.bio')}
                 value={bio}
                 onChangeText={setBio}
                 multiline
@@ -396,14 +398,14 @@ export default function FixerProfileScreen() {
                 returnKeyType="next"
               />
               <FInput
-                label="Phone Number"
+                label={t('fixerProfile.fields.phone')}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 returnKeyType="next"
               />
               <FInput
-                label="Payment Link (Bit / Paybox URL)"
+                label={t('fixerProfile.fields.paymentLink')}
                 value={paymentLink}
                 onChangeText={setPaymentLink}
                 keyboardType="url"
@@ -426,7 +428,7 @@ export default function FixerProfileScreen() {
                 fullWidth
                 style={{ marginTop: spacing.sm }}
               >
-                Save Profile
+                {t('fixerProfile.actions.save')}
               </FButton>
 
               <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
@@ -438,10 +440,10 @@ export default function FixerProfileScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-                      Push Notifications
+                      {t('fixerProfile.pushNotifications.label')}
                     </Text>
                     <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                      Bid updates, messages, and task alerts
+                      {t('fixerProfile.pushNotifications.description')}
                     </Text>
                   </View>
                 </View>
@@ -458,7 +460,7 @@ export default function FixerProfileScreen() {
                     try {
                       const { status } = await Notifications.requestPermissionsAsync();
                       if (status !== 'granted') {
-                        Alert.alert('Permission denied', 'Enable notifications in your device settings.');
+                        Alert.alert(t('fixerProfile.alerts.permissionDenied'), t('fixerProfile.alerts.enableNotifications'));
                         return;
                       }
                       const projectId = Constants.expoConfig?.extra?.eas?.projectId as string;
@@ -484,17 +486,17 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Trade coverage</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
                   <Text style={[typography.caption, { color: brandColors.primary }]}>
-                    {specializations.length} selected
+                    {t('fixerProfile.tradeCoverage.selectedCount', { count: specializations.length })}
                   </Text>
                 </View>
                 {hasSpecializationChanges && (
                   <View style={styles.unsavedChip}>
                     <MaterialCommunityIcons name="content-save-alert-outline" size={12} color={brandColors.warning} />
-                    <Text style={[typography.caption, styles.unsavedChipText]}>Unsaved</Text>
+                    <Text style={[typography.caption, styles.unsavedChipText]}>{t('fixerProfile.tradeCoverage.unsaved')}</Text>
                   </View>
                 )}
                 <FButton
@@ -505,7 +507,7 @@ export default function FixerProfileScreen() {
                   loading={savingSpecializations}
                   onPress={() => void handleSaveSpecializations()}
                 >
-                  {hasSpecializationChanges ? 'Save Trades' : 'Trades Saved'}
+                  {hasSpecializationChanges ? t('fixerProfile.tradeCoverage.save') : t('fixerProfile.tradeCoverage.saved')}
                 </FButton>
               </View>
               <View style={styles.chipsWrap}>
@@ -530,11 +532,11 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Portfolio</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.portfolio.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
                   <Text style={[typography.caption, { color: brandColors.primary }]}>
-                    {portfolioItems.length} {portfolioItems.length === 1 ? 'photo' : 'photos'}
+                    {t('fixerProfile.portfolio.photoCount', { count: portfolioItems.length })}
                   </Text>
                 </View>
               </View>
@@ -553,7 +555,7 @@ export default function FixerProfileScreen() {
                     <>
                       <MaterialCommunityIcons name="plus" size={28} color={brandColors.primaryMuted} />
                       <Text style={[typography.caption, { color: brandColors.primaryMuted, marginTop: spacing.xs }]}>
-                        Add photo
+                        {t('fixerProfile.portfolio.addPhoto')}
                       </Text>
                     </>
                   )}

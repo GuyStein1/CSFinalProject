@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { CATEGORY_METADATA, type Category } from '../constants/categories';
+import { useLanguage } from '../context/LanguageContext';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const imgLogo = require('../../assets/fixit-logo-mark-transparent.png') as { uri?: string } | number;
@@ -506,6 +508,8 @@ export default function LandingScreen({
   onBecomeFixer,
   onFixerHome,
 }: Props) {
+  const { t } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -543,8 +547,8 @@ export default function LandingScreen({
     }
     runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? onCreateAccount ?? (() => onPostTask()));
   };
-  const postTaskCtaLabel = isSignedIn ? 'Post Task' : 'Sign in to Post Task';
-  const fixerCtaLabel = isSignedIn ? 'Open Fixer Workspace' : hasDedicatedFixerOnboarding ? 'Join as a Fixer' : 'Sign in to Find Jobs';
+  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.signInToPost');
+  const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -988,26 +992,34 @@ export default function LandingScreen({
         </a>
         {!isSignedIn && (
           <div className="links">
-            <a href="#how" onClick={closeMenus}>How it works</a>
-            <a href="#categories" onClick={closeMenus}>Categories</a>
-            <a href="#fixers" onClick={closeMenus}>For Fixers</a>
-            <a href="#help" onClick={closeMenus}>Help</a>
+            <a href="#how" onClick={closeMenus}>{t('landing.nav.howItWorks')}</a>
+            <a href="#categories" onClick={closeMenus}>{t('landing.nav.categories')}</a>
+            <a href="#fixers" onClick={closeMenus}>{t('landing.nav.forFixers')}</a>
           </div>
         )}
         <div className="actions">
+          <button
+            type="button"
+            className="login"
+            onClick={() => changeLanguage(language === 'en' ? 'he' : 'en')}
+            style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, opacity: 0.75 }}
+            aria-label="Toggle language"
+          >
+            {t('landing.language.toggle')}
+          </button>
           {isSignedIn ? (
             <>
               <button type="button" className="dashboard-link" onClick={() => runAndClose(handleRequesterHome)}>
-                Requester Dashboard
+                {t('landing.nav.requesterDashboard')}
               </button>
               {onFixerHome && (
                 <button type="button" className="dashboard-link" onClick={() => runAndClose(onFixerHome)}>
-                  Find Jobs
+                  {t('landing.nav.findJobs')}
                 </button>
               )}
             </>
           ) : (
-            <button type="button" className="login" onClick={handleLogin}>Log in</button>
+            <button type="button" className="login" onClick={handleLogin}>{t('landing.nav.login')}</button>
           )}
           <button type="button" className="cta" onClick={() => handlePostTaskCta()}>
             {postTaskCtaLabel} <span className="arr">→</span>
@@ -1026,20 +1038,19 @@ export default function LandingScreen({
         <div id="fixit-mobile-menu" className={`fi-mobile-menu${mobileMenuOpen ? ' open' : ''}`}>
           {isSignedIn ? (
             <>
-              <button type="button" onClick={() => runAndClose(handleRequesterHome)}><LandingIcon name="view-dashboard-outline" size={18} />Requester Dashboard</button>
+              <button type="button" onClick={() => runAndClose(handleRequesterHome)}><LandingIcon name="view-dashboard-outline" size={18} />{t('landing.nav.requesterDashboard')}</button>
               {onFixerHome && (
-                <button type="button" onClick={() => runAndClose(onFixerHome)}><LandingIcon name="briefcase-outline" size={18} />Find Jobs</button>
+                <button type="button" onClick={() => runAndClose(onFixerHome)}><LandingIcon name="briefcase-outline" size={18} />{t('landing.nav.findJobs')}</button>
               )}
               <button type="button" onClick={() => handlePostTaskCta()}><LandingIcon name={isSignedIn ? 'plus-circle-outline' : 'login'} size={18} />{postTaskCtaLabel}</button>
             </>
           ) : (
             <>
-              <a href="#how" onClick={closeMenus}>How it works</a>
-              <a href="#categories" onClick={closeMenus}>Categories</a>
-              <a href="#fixers" onClick={closeMenus}>For Fixers</a>
-              <a href="#help" onClick={closeMenus}>Help</a>
-              <button type="button" onClick={handleLogin}><LandingIcon name="login" size={18} />Log in</button>
-              {onCreateAccount && <button type="button" onClick={() => runAndClose(onCreateAccount)}><LandingIcon name="account-plus-outline" size={18} />Create account</button>}
+              <a href="#how" onClick={closeMenus}>{t('landing.nav.howItWorks')}</a>
+              <a href="#categories" onClick={closeMenus}>{t('landing.nav.categories')}</a>
+              <a href="#fixers" onClick={closeMenus}>{t('landing.nav.forFixers')}</a>
+              <button type="button" onClick={handleLogin}><LandingIcon name="login" size={18} />{t('landing.nav.login')}</button>
+              {onCreateAccount && <button type="button" onClick={() => runAndClose(onCreateAccount)}><LandingIcon name="account-plus-outline" size={18} />{t('landing.nav.createAccount')}</button>}
               <button type="button" onClick={() => handlePostTaskCta()}><LandingIcon name={isSignedIn ? 'plus-circle-outline' : 'login'} size={18} />{postTaskCtaLabel}</button>
               <button type="button" onClick={handleFixerCta}><LandingIcon name="account-hard-hat-outline" size={18} />{fixerCtaLabel}</button>
             </>

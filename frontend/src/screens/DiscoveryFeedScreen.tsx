@@ -19,6 +19,7 @@ import FilterBar, { type ViewMode } from '../components/FilterBar';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
 import useTasks, { type Category } from '../hooks/useTasks';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
@@ -44,6 +45,7 @@ const DEFAULT_CENTER: DiscoveryCenter = { lat: 32.0853, lng: 34.7818, label: 'Te
 const PRICE_SLIDER_MAX = 5000;
 
 export default function DiscoveryFeedScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const supportsWorkAreaSearch = Platform.OS === 'web';
@@ -121,13 +123,13 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   const priceSummary = hasPriceFilter
     ? `₪${priceMin}-${priceMax >= PRICE_SLIDER_MAX ? '5000+' : priceMax}`
-    : 'Any budget';
+    : t('discovery.filters.anyBudget');
   const categorySummary =
     selectedCategories.length === 0
-      ? 'All trades'
+      ? t('discovery.filters.allTrades')
       : selectedCategories.length === 1
-        ? '1 trade'
-        : `${selectedCategories.length} trades`;
+        ? t('discovery.filters.oneTrade')
+        : t('discovery.filters.nTrades', { n: selectedCategories.length });
 
   const syncCenter = useCallback((nextCenter: DiscoveryCenter, mode: CenterMode) => {
     setCenter(nextCenter);
@@ -265,7 +267,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const geocodeByPlaceId = useCallback((placeId: string, label: string) => {
     const service = getOrCreatePlacesService();
     if (!service) {
-      setSearchError('Maps not ready — please try again.');
+      setSearchError(t('discovery.error.mapsNotReady'));
       return;
     }
     setSearchLoading(true);
@@ -280,7 +282,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           const loc = place.geometry.location;
           syncCenter({ lat: loc.lat(), lng: loc.lng(), label }, 'manual');
         } else {
-          setSearchError('Could not resolve that place. Please try again.');
+          setSearchError(t('discovery.error.couldNotResolve'));
         }
       },
     );
@@ -343,7 +345,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     }
     const autoSvc = autocompleteRef.current;
     if (!autoSvc) {
-      setSearchError('Maps not ready — please try again.');
+      setSearchError(t('discovery.error.mapsNotReady'));
       return;
     }
     setSearchLoading(true);
@@ -355,7 +357,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           geocodeByPlaceId(predictions[0].place_id, predictions[0].description);
         } else {
           setSearchLoading(false);
-          setSearchError('No results found for that area.');
+          setSearchError(t('discovery.error.noResults'));
         }
       },
     );
@@ -387,7 +389,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   // Early returns for location-permission states
 
   if (permissionState === 'checking' && !center) {
-    return <LoadingScreen label="Checking location permissions..." />;
+    return <LoadingScreen label={t('discovery.location.checking')} />;
   }
 
   if (permissionState === 'rationale' && !center) {
@@ -397,10 +399,10 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           <View style={styles.rationaleContent}>
             <AppLogo />
             <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
-              Find jobs near you
+              {t('discovery.location.rationale.title')}
             </Text>
             <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', maxWidth: 300 }]}>
-              We need a discovery center before we can place nearby tasks on the map.
+              {t('discovery.location.rationale.description')}
             </Text>
           </View>
         </FCard>
@@ -415,17 +417,17 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               <MaterialCommunityIcons name="map-marker-radius-outline" size={32} color={brandColors.primary} />
             </View>
             <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
-              Share your location?
+              {t('discovery.location.modal.title')}
             </Text>
             <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.md }]}>
-              FixIt needs your location to show you tasks nearby. You can change this in Settings.
+              {t('discovery.location.modal.description')}
             </Text>
             <View style={styles.modalActions}>
               <FButton variant="outline" onPress={handleUseDefaultLocation} style={{ flex: 1 }}>
-                Use Tel Aviv
+                {t('discovery.location.modal.useTelAviv')}
               </FButton>
               <FButton onPress={handleAllowLocation} style={{ flex: 1 }} icon="crosshairs-gps">
-                Allow
+                {t('discovery.location.modal.allow')}
               </FButton>
             </View>
           </Modal>
@@ -444,39 +446,39 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondary} />
             </View>
-            <Text style={styles.headerKicker}>Fixer Workspace</Text>
+            <Text style={styles.headerKicker}>{t('discovery.header.kicker')}</Text>
           </View>
-          <Text style={styles.headerTitle}>Find jobs</Text>
+          <Text style={styles.headerTitle}>{t('discovery.header.title')}</Text>
           <Text style={styles.headerSub} numberOfLines={2}>
-            Open jobs near {center?.label ?? 'your work area'} / {categorySummary} / {priceSummary}
+            {t('discovery.header.sub', { location: center?.label ?? t('discovery.location.workArea'), categories: categorySummary, budget: priceSummary })}
           </Text>
         </View>
 
         <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
           <View style={styles.workspaceStat}>
             <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => !currentUserId || t.requesterId !== currentUserId).length}</Text>
-            <Text style={styles.workspaceStatLabel}>Open jobs</Text>
+            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.openJobs')}</Text>
           </View>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'no_bid' && styles.workspaceStatActive]}
             onPress={() => setBidFilter(bidFilter === 'no_bid' ? null : 'no_bid')}
           >
-            <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => (!currentUserId || t.requesterId !== currentUserId) && !bidTaskIds.has(t.id)).length}</Text>
-            <Text style={styles.workspaceStatLabel}>New</Text>
+            <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((task) => (!currentUserId || task.requesterId !== currentUserId) && !bidTaskIds.has(task.id)).length}</Text>
+            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.new')}</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'has_bid' && styles.workspaceStatActive]}
             onPress={() => setBidFilter(bidFilter === 'has_bid' ? null : 'has_bid')}
           >
             <Text style={styles.workspaceStatValue}>{bidTaskIds.size}</Text>
-            <Text style={styles.workspaceStatLabel}>Already bid</Text>
+            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.alreadyBid')}</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, showFilterPanel && styles.workspaceStatActive]}
             onPress={() => setShowFilterPanel(!showFilterPanel)}
           >
             <Text style={styles.workspaceStatValue}>{radius} km</Text>
-            <Text style={styles.workspaceStatLabel}>Range</Text>
+            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.range')}</Text>
           </Pressable>
         </View>
       </View>
@@ -503,7 +505,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
           <View style={styles.workAreaInputWrapper}>
             <FInput
-              placeholder="Search a city or area to find work there..."
+              placeholder={t('discovery.location.searchPlaceholder')}
               value={searchText}
               onChangeText={handleSearchTextChange}
               onFocus={() => setSearchFocused(true)}
@@ -568,14 +570,14 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         <View style={[styles.workAreaActiveBar, isWide && styles.workAreaActiveBarWide]}>
           <MaterialCommunityIcons name="map-marker-check" size={13} color={brandColors.success} />
           <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]} numberOfLines={1}>
-            Showing tasks in: <Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
+            {t('discovery.location.showingTasksIn')}<Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
           </Text>
           <Pressable
             onPress={() => { setSearchText(''); loadGpsCenter(); }}
             accessibilityRole="button"
             accessibilityLabel="Use my current location"
           >
-            <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>Use my location</Text>
+            <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>{t('discovery.location.useMyLocation')}</Text>
           </Pressable>
         </View>
       )}
@@ -613,7 +615,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
                 <View style={styles.overlayContent}>
                   <ActivityIndicator size="small" color={brandColors.primary} />
                   <Text style={[typography.body, { color: brandColors.textMuted }]}>
-                    Loading nearby tasks...
+                    {t('discovery.loading.nearby')}
                   </Text>
                 </View>
               </FCard>
@@ -623,12 +625,12 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           {!loading && error && (
             <View style={styles.loadingOverlay}>
               <FCard style={styles.overlayCard} shadow="md">
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Could not load jobs</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('discovery.error.couldNotLoad')}</Text>
                 <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.sm }]}>
                   {error}
                 </Text>
                 <FButton onPress={refetch} size="sm" style={{ marginTop: spacing.lg }}>
-                  Try Again
+                  {t('discovery.filters.retry')}
                 </FButton>
               </FCard>
             </View>
@@ -639,8 +641,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               <FCard style={styles.overlayCard} shadow="md">
                 <EmptyState
                   icon="map-search-outline"
-                  title="No tasks found nearby"
-                  message="Try expanding your distance filter or adjusting category and budget filters."
+                  title={t('discovery.empty.noTasks.title')}
+                  message={t('discovery.empty.noTasks.message')}
                 />
               </FCard>
             </View>
@@ -659,20 +661,20 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       ) : (
         <View style={styles.listWrapper}>
           {loading ? (
-            <LoadingScreen label="Loading nearby tasks..." />
+            <LoadingScreen label={t('discovery.loading.nearby')} />
           ) : error ? (
             <EmptyState
               icon="alert-circle-outline"
-              title="Could not load jobs"
+              title={t('discovery.error.couldNotLoad')}
               message={error}
-              actionLabel="Try Again"
+              actionLabel={t('discovery.filters.retry')}
               onAction={refetch}
             />
           ) : tasks.length === 0 ? (
             <EmptyState
               icon="map-search-outline"
-              title="No tasks found in your area"
-              message="Try expanding your distance filter or changing categories or budget."
+              title={t('discovery.empty.noTasksArea.title')}
+              message={t('discovery.empty.noTasksArea.message')}
             />
           ) : (
             <FlatList
