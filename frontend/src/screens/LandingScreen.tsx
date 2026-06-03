@@ -490,14 +490,20 @@ export default function LandingScreen({
           )}
 
           <View style={styles.navActions}>
-            <Pressable
-              onPress={() => changeLanguage(language === 'en' ? 'he' : 'en')}
-              style={styles.langToggle}
-              accessibilityRole="button"
-              accessibilityLabel="Toggle language"
-            >
-              <Text style={styles.langToggleText}>{t('landing.language.toggle')}</Text>
-            </Pressable>
+            <View style={styles.langSwitcher}>
+              {(['en', 'he'] as const).map((lang) => (
+                <Pressable
+                  key={lang}
+                  onPress={() => void changeLanguage(lang)}
+                  accessibilityRole="button"
+                  style={[styles.langToggle, language === lang && styles.langToggleActive]}
+                >
+                  <Text style={[styles.langToggleText, language === lang && styles.langToggleTextActive]}>
+                    {lang === 'en' ? 'EN' : 'עב'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             {isSignedIn && wide ? (
               <View style={styles.navDashboardActions}>
                 {signedInDashboardItems.map((item, index) => (
@@ -926,6 +932,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
+  langSwitcher: {
+    flexDirection: 'row',
+    gap: 4,
+  },
   langToggle: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -933,11 +943,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,252,246,0.22)',
   },
+  langToggleActive: {
+    backgroundColor: 'rgba(255,252,246,0.18)',
+    borderColor: 'rgba(255,252,246,0.60)',
+  },
   langToggleText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '700' as const,
     color: brandColors.textOnDarkMuted,
     letterSpacing: 0.5,
+  },
+  langToggleTextActive: {
+    color: brandColors.textOnDark,
   },
   navLogin: {
     paddingHorizontal: spacing.md,

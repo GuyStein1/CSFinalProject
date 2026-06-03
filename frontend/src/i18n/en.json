@@ -1,4 +1,24 @@
 {
+  "nav": {
+    "home": "Home",
+    "myTasks": "My Tasks",
+    "messages": "Messages",
+    "account": "Account",
+    "findJobs": "Find Jobs",
+    "myBids": "My Bids",
+    "profile": "Profile"
+  },
+  "categories": {
+    "assembly": "Assembly",
+    "mounting": "Mounting",
+    "moving": "Moving",
+    "painting": "Painting",
+    "plumbing": "Plumbing",
+    "electricity": "Electricity",
+    "outdoors": "Outdoors",
+    "cleaning": "Cleaning",
+    "other": "Other"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -153,6 +173,11 @@
     }
   },
   "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
     "hero": {
       "workspace": "Requester workspace",
       "sub": "Post a clear home task, compare local Fixer bids, and keep every job moving from one focused workspace.",

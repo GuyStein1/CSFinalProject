@@ -30,7 +30,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import { getCategoryMeta } from '../utils/categoryMetadata';
+import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface DirectionsResult {
   distanceText: string;   // e.g. "12.3 ק״מ"
@@ -354,7 +354,7 @@ export default function TaskDetailsFixer({ route }: Props) {
             <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
               <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
                 <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
-                <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+                <Text style={[typography.label, { color: catMeta.color }]}>{getCategoryLabel(task.category as never, t)}</Text>
               </View>
               {task.urgency === 'TODAY' && (
                 <View style={[styles.categoryChip, { backgroundColor: brandColors.dangerSoft }]}>

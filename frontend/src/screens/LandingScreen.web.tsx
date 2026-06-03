@@ -998,15 +998,30 @@ export default function LandingScreen({
           </div>
         )}
         <div className="actions">
-          <button
-            type="button"
-            className="login"
-            onClick={() => changeLanguage(language === 'en' ? 'he' : 'en')}
-            style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, opacity: 0.75 }}
-            aria-label="Toggle language"
-          >
-            {t('landing.language.toggle')}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+            {(['en', 'he'] as const).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => void changeLanguage(lang)}
+                aria-label={`Switch to ${lang === 'en' ? 'English' : 'Hebrew'}`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  padding: '4px 8px',
+                  borderRadius: 999,
+                  border: '1px solid',
+                  borderColor: language === lang ? 'rgba(255,252,246,0.60)' : 'rgba(255,252,246,0.22)',
+                  backgroundColor: language === lang ? 'rgba(255,252,246,0.18)' : 'transparent',
+                  color: language === lang ? '#FFFCF6' : 'rgba(255,252,246,0.60)',
+                  cursor: 'pointer',
+                }}
+              >
+                {lang === 'en' ? 'EN' : 'עב'}
+              </button>
+            ))}
+          </div>
           {isSignedIn ? (
             <>
               <button type="button" className="dashboard-link" onClick={() => runAndClose(handleRequesterHome)}>

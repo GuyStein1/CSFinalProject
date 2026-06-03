@@ -18,6 +18,7 @@ import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import {
   CATEGORY_LIST,
+  getCategoryLabel,
   type Category,
 } from '../utils/categoryMetadata';
 import { CATEGORY_METADATA } from '../constants/categories';
@@ -32,13 +33,6 @@ const WORKSPACE_STEPS = [
   { icon: 'check-decagram-outline', key: 'finish' },
 ] as const;
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
 export default function RequesterDashboard({ navigation }: Props) {
   const [emailVerified, setEmailVerified] = useState(true);
   const [verificationSent, setVerificationSent] = useState(false);
@@ -51,7 +45,12 @@ export default function RequesterDashboard({ navigation }: Props) {
 
   const user = auth.currentUser;
   const firstName = user?.displayName?.split(' ')[0] ?? null;
-  const greeting = getGreeting();
+  const hour = new Date().getHours();
+  const greeting = hour < 12
+    ? t('dashboard.greeting.morning')
+    : hour < 17
+      ? t('dashboard.greeting.afternoon')
+      : t('dashboard.greeting.evening');
 
   useEffect(() => {
     if (user && !user.emailVerified) setEmailVerified(false);
@@ -265,7 +264,7 @@ export default function RequesterDashboard({ navigation }: Props) {
               <Pressable
                 onPress={() => navigateToCreate(category.value)}
                 accessibilityRole="button"
-                accessibilityLabel={`Post a ${category.label} task`}
+                accessibilityLabel={`Post a ${getCategoryLabel(category.value, t)} task`}
                 style={({ pressed }) => [
                   styles.categoryCard,
                   { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
@@ -281,7 +280,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 />
                 <View style={styles.categoryCardContent}>
                   <Text style={styles.categoryCardLabel} numberOfLines={1}>
-                    {category.label}
+                    {getCategoryLabel(category.value, t)}
                   </Text>
                 </View>
               </Pressable>

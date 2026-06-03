@@ -14,7 +14,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
-import { getCategoryMeta } from '../utils/categoryMetadata';
+import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
 import { containsProfanity, PROFANITY_ERROR_MESSAGE } from '../utils/profanityFilter';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -401,7 +401,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
         <View style={styles.detailsDivider} />
 
-        <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label={t('taskDetails.detail.category')} value={catMeta.label} />
+        <DetailRow icon={catMeta.icon} iconColor={catMeta.color} label={t('taskDetails.detail.category')} value={getCategoryLabel(task.category as never, t)} />
         {task.urgency === 'TODAY' && (
           <DetailRow icon="clock-alert-outline" iconColor={brandColors.danger} label={t('taskDetails.detail.urgency')} value={t('taskDetails.detail.urgencyToday')} />
         )}

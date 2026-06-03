@@ -25,7 +25,7 @@ import { uploadImage } from '../utils/uploadImage';
 import LocationMap from '../components/LocationMap';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import { CATEGORY_LIST, type Category } from '../utils/categoryMetadata';
+import { CATEGORY_LIST, getCategoryLabel, type Category } from '../utils/categoryMetadata';
 
 const STEP_ICONS = ['text-box-outline', 'camera-outline', 'shape-outline', 'cash-multiple', 'map-marker-outline'];
 const STEP_KEYS = ['details', 'photos', 'category', 'budget', 'location'];
@@ -736,7 +736,7 @@ export default function CreateTask({ navigation, route }: Props) {
 
           <View style={styles.reviewRows}>
             <ReviewRow icon="text-box-outline" label={t('createTask.review.titleLabel')} value={title} />
-            <ReviewRow icon="shape-outline" label={t('createTask.review.categoryLabel')} value={CATEGORY_LIST.find((c) => c.value === category)?.label ?? ''} />
+            <ReviewRow icon="shape-outline" label={t('createTask.review.categoryLabel')} value={category ? getCategoryLabel(category, t) : ''} />
             <ReviewRow icon="cash-multiple" label={t('createTask.review.budgetLabel')} value={budgetType === 'fixed' ? `₪${price}` : t('createTask.step4.quoteRequired')} />
             <ReviewRow icon="clock-alert-outline" label={t('createTask.review.urgencyLabel')} value={urgency === 'TODAY' ? t('createTask.step4.urgency.today') : urgency === 'THIS_WEEK' ? t('createTask.step4.urgency.thisWeek') : t('createTask.step4.urgency.flexible')} />
             <ReviewRow icon="map-marker-outline" label={t('createTask.review.locationLabel')} value={address} />

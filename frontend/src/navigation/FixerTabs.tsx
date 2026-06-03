@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import DiscoveryFeedScreen from '../screens/DiscoveryFeedScreen';
 import MyBidsScreen from '../screens/MyBidsScreen';
 import FixerProfileScreen from '../screens/FixerProfileScreen';
@@ -27,6 +28,7 @@ function TabIcon({ name, color, size, focused }: { name: string; color: string; 
 
 export default function FixerTabs() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
   const { unreadCount } = useUnreadMessages();
@@ -48,7 +50,7 @@ export default function FixerTabs() {
         name="FindJobs"
         component={DiscoveryFeedScreen}
         options={{
-          tabBarLabel: 'Find Jobs',
+          tabBarLabel: t('nav.findJobs'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
             <TabIcon name={focused ? 'map-search' : 'map-search-outline'} color={color} size={size} focused={focused} />
           ),
@@ -58,7 +60,7 @@ export default function FixerTabs() {
         name="MyBids"
         component={MyBidsScreen}
         options={{
-          tabBarLabel: 'My Bids',
+          tabBarLabel: t('nav.myBids'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
             <TabIcon name={focused ? 'format-list-bulleted' : 'format-list-bulleted'} color={color} size={size} focused={focused} />
           ),
@@ -69,7 +71,7 @@ export default function FixerTabs() {
         component={ConversationListScreen}
         initialParams={{ mode: 'fixer' }}
         options={{
-          tabBarLabel: 'Messages',
+          tabBarLabel: t('nav.messages'),
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
           tabBarBadgeStyle: { backgroundColor: brandColors.secondaryDark, fontSize: 10, fontWeight: '700' },
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
@@ -81,7 +83,7 @@ export default function FixerTabs() {
         name="FixerProfile"
         component={FixerProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: t('nav.profile'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
             <TabIcon name={focused ? 'account' : 'account-outline'} color={color} size={size} focused={focused} />
           ),

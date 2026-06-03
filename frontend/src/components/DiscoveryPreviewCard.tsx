@@ -2,9 +2,11 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { FButton } from './ui';
 import type { DiscoveryTask } from '../hooks/useTasks';
 import { getCategoryMetadata } from '../constants/categories';
+import { getCategoryLabel } from '../utils/categoryMetadata';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
 interface DiscoveryPreviewCardProps {
@@ -18,6 +20,7 @@ export default function DiscoveryPreviewCard({
   hasBid = false,
   onViewDetails,
 }: DiscoveryPreviewCardProps) {
+  const { t } = useTranslation();
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'No price specified';
   const catMeta = getCategoryMetadata(task.category);
 
@@ -30,7 +33,7 @@ export default function DiscoveryPreviewCard({
           </View>
           <View>
             <Text style={[typography.caption, { color: brandColors.textMuted }]}>Selected job</Text>
-            <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+            <Text style={[typography.label, { color: catMeta.color }]}>{getCategoryLabel(task.category, t)}</Text>
           </View>
         </View>
         <View style={styles.priceTag}>

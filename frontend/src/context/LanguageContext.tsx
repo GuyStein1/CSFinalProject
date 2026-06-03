@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
 import i18n from '../i18n';
@@ -31,6 +31,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const lang = (stored === 'he' ? 'he' : 'en') as Language;
       setLanguage(lang);
       i18n.changeLanguage(lang);
+      if (Platform.OS === 'web') {
+        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+      }
     }).catch(() => {});
   }, []);
 
@@ -54,7 +57,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       // non-fatal — preference saved locally
     }
 
-    if (needsRTLChange) {
+    if (Platform.OS === 'web') {
+      document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+    } else if (needsRTLChange) {
       I18nManager.allowRTL(lang === 'he');
       I18nManager.forceRTL(lang === 'he');
       try {

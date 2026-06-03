@@ -1,4 +1,24 @@
 {
+  "nav": {
+    "home": "בית",
+    "myTasks": "המשימות שלי",
+    "messages": "הודעות",
+    "account": "חשבון",
+    "findJobs": "מצא עבודות",
+    "myBids": "ההצעות שלי",
+    "profile": "פרופיל"
+  },
+  "categories": {
+    "assembly": "הרכבה",
+    "mounting": "תלייה",
+    "moving": "הובלה",
+    "painting": "צביעה",
+    "plumbing": "אינסטלציה",
+    "electricity": "חשמל",
+    "outdoors": "חצר",
+    "cleaning": "ניקיון",
+    "other": "אחר"
+  },
   "common": {
     "save": "שמור",
     "cancel": "ביטול",
@@ -153,6 +173,11 @@
     }
   },
   "dashboard": {
+    "greeting": {
+      "morning": "בוקר טוב",
+      "afternoon": "צהריים טובים",
+      "evening": "ערב טוב"
+    },
     "hero": {
       "workspace": "סביבת עבודה למזמין",
       "sub": "פרסם משימה ביתית ברורה, השווה הצעות ממתקנים מקומיים, ושמור על כל עבודה בתנועה ממקום עבודה ממוקד אחד.",
