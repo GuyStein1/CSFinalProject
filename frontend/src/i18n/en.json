@@ -6,7 +6,12 @@
     "account": "Account",
     "findJobs": "Find Jobs",
     "myBids": "My Bids",
-    "profile": "Profile"
+    "profile": "Profile",
+    "postTask": "Post task",
+    "mode": {
+      "requester": "Requester",
+      "fixer": "Fixer"
+    }
   },
   "categories": {
     "assembly": "Assembly",
@@ -447,6 +452,14 @@
       "mapsNotReady": "Maps not ready — please try again.",
       "couldNotResolve": "Could not resolve that place. Please try again.",
       "noResults": "No results found for that area."
+    },
+    "filterBar": {
+      "map": "Map",
+      "list": "List",
+      "budgetAny": "Budget: Any",
+      "budgetRange": "Budget: ₪{{min}}–₪{{max}}",
+      "clearFilters": "Clear filters",
+      "currentLocation": "Current location"
     }
   },
   "chat": {

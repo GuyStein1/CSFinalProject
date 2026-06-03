@@ -165,7 +165,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       }
 
       setFixerGps(gps);
-      syncCenter({ ...gps, label: 'Current location' }, 'gps');
+      syncCenter({ ...gps, label: t('discovery.filterBar.currentLocation') }, 'gps');
     } catch {
       // GPS failed — fall back to default
       syncCenter(DEFAULT_CENTER, 'manual');

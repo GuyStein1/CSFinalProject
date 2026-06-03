@@ -6,7 +6,12 @@
     "account": "חשבון",
     "findJobs": "מצא עבודות",
     "myBids": "ההצעות שלי",
-    "profile": "פרופיל"
+    "profile": "פרופיל",
+    "postTask": "פרסם משימה",
+    "mode": {
+      "requester": "מזמין",
+      "fixer": "מתקן"
+    }
   },
   "categories": {
     "assembly": "הרכבה",
@@ -447,6 +452,14 @@
       "mapsNotReady": "המפות אינן מוכנות — נסה שוב.",
       "couldNotResolve": "לא ניתן לאתר את המיקום. נסה שוב.",
       "noResults": "לא נמצאו תוצאות לאזור זה."
+    },
+    "filterBar": {
+      "map": "מפה",
+      "list": "רשימה",
+      "budgetAny": "תקציב: הכל",
+      "budgetRange": "תקציב: ₪{{min}}–₪{{max}}",
+      "clearFilters": "נקה פילטרים",
+      "currentLocation": "מיקום נוכחי"
     }
   },
   "chat": {

@@ -7,6 +7,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -97,6 +98,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const notificationCount = unreadCount(typeFilter);
   const { unreadCount: unreadMsgCount } = useUnreadMessages();
   const { language, changeLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   useEffect(() => {
     return navigation.addListener('state', () => {
@@ -158,16 +160,16 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
   const workspaceTabs = mode === 'fixer'
     ? [
-        { label: 'Find Jobs', screen: 'FindJobs', icon: 'map-search-outline' },
-        { label: 'My Bids', screen: 'MyBids', icon: 'format-list-checks' },
-        { label: 'Messages', screen: 'Messages', icon: 'chat-outline' },
-        { label: 'Profile', screen: 'FixerProfile', icon: 'account-hard-hat-outline' },
+        { label: t('nav.findJobs'), screen: 'FindJobs', icon: 'map-search-outline' },
+        { label: t('nav.myBids'),   screen: 'MyBids',   icon: 'format-list-checks' },
+        { label: t('nav.messages'), screen: 'Messages', icon: 'chat-outline' },
+        { label: t('nav.profile'),  screen: 'FixerProfile', icon: 'account-hard-hat-outline' },
       ]
     : [
-        { label: 'Home', screen: 'Dashboard', icon: 'home-outline' },
-        { label: 'My Tasks', screen: 'MyTasks', icon: 'clipboard-list-outline' },
-        { label: 'Messages', screen: 'Messages', icon: 'chat-outline' },
-        { label: 'Account', screen: 'Profile', icon: 'account-circle-outline' },
+        { label: t('nav.home'),     screen: 'Dashboard', icon: 'home-outline' },
+        { label: t('nav.myTasks'),  screen: 'MyTasks',   icon: 'clipboard-list-outline' },
+        { label: t('nav.messages'), screen: 'Messages',  icon: 'chat-outline' },
+        { label: t('nav.account'),  screen: 'Profile',   icon: 'account-circle-outline' },
       ];
 
   return (
@@ -210,7 +212,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                   mode === 'requester' && styles.modeToggleLabelActive,
                 ]}
               >
-                Requester
+                {t('nav.mode.requester')}
               </Text>
             </Pressable>
             <Pressable
@@ -231,7 +233,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                   mode === 'fixer' && styles.modeToggleLabelActive,
                 ]}
               >
-                Fixer
+                {t('nav.mode.fixer')}
               </Text>
             </Pressable>
           </View>
@@ -277,7 +279,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               onPress={openCreateTask}
             >
               <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
-              <Text style={styles.desktopPrimaryActionText}>Post task</Text>
+              <Text style={styles.desktopPrimaryActionText}>{t('nav.postTask')}</Text>
             </Pressable>
           )}
 
