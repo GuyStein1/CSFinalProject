@@ -1012,9 +1012,9 @@ export default function LandingScreen({
                   padding: '4px 8px',
                   borderRadius: 999,
                   border: '1px solid',
-                  borderColor: language === lang ? 'rgba(255,252,246,0.60)' : 'rgba(255,252,246,0.22)',
-                  backgroundColor: language === lang ? 'rgba(255,252,246,0.18)' : 'transparent',
-                  color: language === lang ? '#FFFCF6' : 'rgba(255,252,246,0.60)',
+                  borderColor: language === lang ? 'var(--primary)' : 'rgba(28,60,86,0.22)',
+                  backgroundColor: language === lang ? 'var(--primary)' : 'transparent',
+                  color: language === lang ? '#FFFCF6' : 'var(--text-secondary)',
                   cursor: 'pointer',
                 }}
               >
