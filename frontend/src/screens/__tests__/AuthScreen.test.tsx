@@ -2,6 +2,19 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import AuthScreen from '../AuthScreen';
 
+jest.mock('react-i18next', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const en = require('../../i18n/en.json') as Record<string, unknown>;
+  const resolve = (obj: Record<string, unknown>, key: string): string => {
+    const val = key.split('.').reduce<unknown>((acc, k) => {
+      if (acc && typeof acc === 'object') return (acc as Record<string, unknown>)[k];
+      return undefined;
+    }, obj);
+    return typeof val === 'string' ? val : key;
+  };
+  return { useTranslation: () => ({ t: (key: string) => resolve(en, key) }) };
+});
+
 jest.mock('firebase/auth', () => ({
   createUserWithEmailAndPassword: jest.fn(),
   sendPasswordResetEmail: jest.fn(),

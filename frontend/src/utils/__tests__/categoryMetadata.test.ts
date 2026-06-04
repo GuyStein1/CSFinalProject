@@ -2,6 +2,7 @@ import {
   CATEGORY_LIST,
   CATEGORY_ORDER,
   getCategoryMeta,
+  getCategoryLabel,
 } from '../categoryMetadata';
 
 describe('categoryMetadata', () => {
@@ -29,6 +30,32 @@ describe('categoryMetadata', () => {
       expect(category.detailCopy.length).toBeGreaterThan(24);
       expect(category.commonTasks.length).toBeGreaterThanOrEqual(3);
       expect(category.starterPrompt.length).toBeGreaterThan(24);
+    });
+  });
+});
+
+describe('getCategoryLabel', () => {
+  const mockT = (key: string) => key;
+
+  it('constructs the i18n key from a known category', () => {
+    expect(getCategoryLabel('PLUMBING', mockT)).toBe('categories.plumbing');
+    expect(getCategoryLabel('ASSEMBLY', mockT)).toBe('categories.assembly');
+  });
+
+  it('lowercases the category value to build the key', () => {
+    expect(getCategoryLabel('ELECTRICITY', mockT)).toBe('categories.electricity');
+    expect(getCategoryLabel('CLEANING', mockT)).toBe('categories.cleaning');
+  });
+
+  it('calls t() with the exact constructed key', () => {
+    const spy = jest.fn((key: string) => `TRANSLATED:${key}`);
+    expect(getCategoryLabel('PAINTING', spy)).toBe('TRANSLATED:categories.painting');
+    expect(spy).toHaveBeenCalledWith('categories.painting');
+  });
+
+  it('covers every production category in CATEGORY_LIST', () => {
+    CATEGORY_LIST.forEach(({ value }) => {
+      expect(getCategoryLabel(value, mockT)).toBe(`categories.${value.toLowerCase()}`);
     });
   });
 });
