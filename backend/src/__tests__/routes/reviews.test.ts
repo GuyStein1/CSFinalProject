@@ -54,11 +54,18 @@ async function createTaskAndReview() {
   __setUid('requester-uid');
   await request(app).put(`/api/bids/${bidId}/accept`).set('Authorization', REQUESTER_AUTH);
 
-  // Mark completed
+  // Dual-confirm completion: payment → requester → fixer
   await request(app)
-    .put(`/api/tasks/${taskId}/status`)
-    .set('Authorization', REQUESTER_AUTH)
-    .send({ status: 'COMPLETED' });
+    .put(`/api/tasks/${taskId}/confirm-payment`)
+    .set('Authorization', REQUESTER_AUTH);
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-completion`)
+    .set('Authorization', REQUESTER_AUTH);
+  __setUid('fixer-uid');
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-completion`)
+    .set('Authorization', FIXER_AUTH);
+  __setUid('requester-uid');
 
   // Requester writes review about fixer
   const reviewRes = await request(app)

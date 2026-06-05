@@ -23,7 +23,7 @@ export default function DiscoveryPreviewCard({
 }: DiscoveryPreviewCardProps) {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
-  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'No price specified';
+  const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : t('discoveryCard.noPrice');
   const catMeta = getCategoryMetadata(task.category);
 
   return (
@@ -34,7 +34,7 @@ export default function DiscoveryPreviewCard({
             <MaterialCommunityIcons name={catMeta.icon} size={18} color={catMeta.color} />
           </View>
           <View>
-            <Text style={[typography.caption, { color: brandColors.textMuted }]}>Selected job</Text>
+            <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('discoveryCard.selectedJob')}</Text>
             <Text style={[typography.label, { color: catMeta.color }]}>{getCategoryLabel(task.category, t)}</Text>
           </View>
         </View>
@@ -47,19 +47,19 @@ export default function DiscoveryPreviewCard({
         {hasBid && (
           <View style={styles.bidNotice}>
             <MaterialCommunityIcons name="check-circle-outline" size={15} color={brandColors.success} />
-            <Text style={[typography.caption, styles.bidNoticeText]}>Bid already sent</Text>
+            <Text style={[typography.caption, styles.bidNoticeText]}>{t('discoveryCard.bidAlreadySent')}</Text>
           </View>
         )}
         {task.urgency === 'TODAY' && (
           <View style={[styles.bidNotice, { backgroundColor: brandColors.dangerSoft, borderColor: 'rgba(168,91,91,0.22)' }]}>
             <MaterialCommunityIcons name="clock-alert-outline" size={15} color={brandColors.danger} />
-            <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>Today</Text>
+            <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>{t('createTask.step4.urgency.today')}</Text>
           </View>
         )}
         {task.urgency === 'THIS_WEEK' && (
           <View style={[styles.bidNotice, { backgroundColor: brandColors.warningSoft, borderColor: 'rgba(155,109,42,0.22)' }]}>
             <MaterialCommunityIcons name="calendar-week" size={15} color={brandColors.warning} />
-            <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>This week</Text>
+            <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>{t('createTask.step4.urgency.thisWeek')}</Text>
           </View>
         )}
       </View>
@@ -96,7 +96,7 @@ export default function DiscoveryPreviewCard({
         size="md"
         variant={hasBid ? 'secondary' : 'primary'}
       >
-        {hasBid ? 'View Your Bid' : 'View Details'}
+        {hasBid ? t('discoveryCard.viewYourBid') : t('discoveryCard.viewDetails')}
       </FButton>
     </View>
   );

@@ -1,6 +1,6 @@
 import './src/i18n';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef, type LinkingOptions } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -29,6 +29,55 @@ type SignedOutSurface = 'landing' | 'auth';
 
 const USE_SIGNED_OUT_LANDING = Platform.OS === 'web';
 const DEFAULT_SIGNED_OUT_SURFACE: SignedOutSurface = USE_SIGNED_OUT_LANDING ? 'landing' : 'auth';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const linking: LinkingOptions<any> = {
+  prefixes: [typeof window !== 'undefined' ? window.location.origin : ''],
+  config: {
+    screens: {
+      Main: {
+        path: '',
+        screens: {
+          RequesterMode: {
+            path: 'requester',
+            screens: {
+              Dashboard: 'dashboard',
+              MyTasks: 'my-tasks',
+              Messages: 'messages',
+              Profile: 'profile',
+            },
+          },
+          FixerMode: {
+            path: 'fixer',
+            screens: {
+              FindJobs: 'find-jobs',
+              MyBids: 'my-bids',
+              Messages: 'messages',
+              FixerProfile: 'profile',
+            },
+          },
+        },
+      },
+      CreateTask: 'create-task',
+      TaskDetails: {
+        path: 'task/:taskId',
+      },
+      TaskDetailsFixer: {
+        path: 'job/:taskId',
+      },
+      Settings: 'settings',
+      PublicProfile: {
+        path: 'user/:userId',
+      },
+      NotificationCenter: 'notifications',
+      BecomeFixerOnboarding: 'become-fixer',
+      PastConversations: 'past-conversations',
+      Chat: {
+        path: 'chat/:taskId',
+      },
+    },
+  },
+};
 
 const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
 
@@ -129,6 +178,7 @@ function RootContent() {
     <NotificationProvider>
       <NavigationContainer
         ref={navigationRef}
+        linking={Platform.OS === 'web' ? linking : undefined}
         theme={navigationTheme}
         onReady={() => setNavigationReady(true)}
       >

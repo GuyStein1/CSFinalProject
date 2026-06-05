@@ -428,7 +428,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
     // transition here.
     const validTransitions: Partial<Record<TaskStatus, TaskStatus[]>> = {
       OPEN: ['CANCELED'],
-      IN_PROGRESS: ['COMPLETED', 'CANCELED'],
+      IN_PROGRESS: ['CANCELED'],
     };
 
     if (!validTransitions[task.status]?.includes(newStatus)) {
@@ -464,34 +464,10 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
           'Task',
         );
       }
-    } else if (task.status === 'IN_PROGRESS' && newStatus === 'COMPLETED') {
-      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        await tx.task.update({
-          where: { id: task.id },
-          data: { status: 'COMPLETED', completed_at: new Date() },
-        });
-        // Delete chat messages once the task is completed
-        await tx.message.deleteMany({ where: { task_id: task.id } });
-        // Increment fixer's completed task count
-        if (task.assigned_fixer_id) {
-          await tx.user.update({
-            where: { id: task.assigned_fixer_id },
-            data: { completed_tasks_as_fixer: { increment: 1 } },
-          });
-        }
-      });
-
-      if (task.assigned_fixer_id) {
-        await sendNotification(
-          task.assigned_fixer_id,
-          'Task Completed',
-          `The task "${task.title}" has been marked as completed.`,
-          'TASK_COMPLETED',
-          task.id,
-          'Task',
-        );
-      }
     } else if (task.status === 'IN_PROGRESS' && newStatus === 'CANCELED') {
+      if (task.is_payment_confirmed) {
+        throw new ValidationError('Cannot cancel a task after payment has been confirmed');
+      }
       await prisma.task.update({
         where: { id: task.id },
         data: { status: 'CANCELED' },
@@ -554,13 +530,108 @@ router.put('/:id/confirm-payment', async (req: Request, res: Response, next: Nex
 
     if (!task) throw new NotFoundError('Task not found');
     if (req.user.id !== task.requester_id) throw new ForbiddenError('Only the requester can confirm payment');
-    if (task.status !== 'COMPLETED') throw new ValidationError('Payment can only be confirmed on a completed task');
+    if (task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED') {
+      throw new ValidationError('Payment can only be confirmed on an in-progress or completed task');
+    }
 
     const updated = await prisma.task.update({
       where: { id: task.id },
       data: { is_payment_confirmed: true },
     });
 
+    // Notify fixer that payment was confirmed
+    if (task.assigned_fixer_id) {
+      await sendNotification(
+        task.assigned_fixer_id,
+        'Payment Confirmed',
+        `The requester confirmed payment for "${task.title}". You can now mark the task as completed.`,
+        'TASK_COMPLETED',
+        task.id,
+        'Task',
+      );
+    }
+
+    res.json({ task: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/tasks/:id/confirm-completion — both sides must confirm after payment
+router.put('/:id/confirm-completion', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } });
+
+    if (!task) throw new NotFoundError('Task not found');
+    if (task.status !== 'IN_PROGRESS') throw new ValidationError('Task must be in progress');
+    if (!task.is_payment_confirmed) throw new ValidationError('Payment must be confirmed before marking as completed');
+
+    const isRequester = req.user.id === task.requester_id;
+    const isFixer = req.user.id === task.assigned_fixer_id;
+    if (!isRequester && !isFixer) throw new ForbiddenError('Only the requester or assigned fixer can confirm completion');
+
+    const updateData: Record<string, boolean> = {};
+    if (isRequester) updateData.requester_completed = true;
+    if (isFixer) updateData.fixer_completed = true;
+
+    const newRequesterCompleted = isRequester ? true : task.requester_completed;
+    const newFixerCompleted = isFixer ? true : task.fixer_completed;
+    const bothCompleted = newRequesterCompleted && newFixerCompleted;
+
+    if (bothCompleted) {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await tx.task.update({
+          where: { id: task.id },
+          data: { ...updateData, status: 'COMPLETED', completed_at: new Date() },
+        });
+        if (task.assigned_fixer_id) {
+          await tx.user.update({
+            where: { id: task.assigned_fixer_id },
+            data: { completed_tasks_as_fixer: { increment: 1 } },
+          });
+        }
+      });
+
+      // Notify both sides
+      await sendNotification(
+        task.requester_id,
+        'Task Completed',
+        `The task "${task.title}" has been marked as completed by both sides.`,
+        'TASK_COMPLETED',
+        task.id,
+        'Task',
+      );
+      if (task.assigned_fixer_id) {
+        await sendNotification(
+          task.assigned_fixer_id,
+          'Task Completed',
+          `The task "${task.title}" has been marked as completed by both sides.`,
+          'TASK_COMPLETED',
+          task.id,
+          'Task',
+        );
+      }
+    } else {
+      await prisma.task.update({
+        where: { id: task.id },
+        data: updateData,
+      });
+
+      // Notify the other side
+      const otherUserId = isRequester ? task.assigned_fixer_id : task.requester_id;
+      if (otherUserId) {
+        await sendNotification(
+          otherUserId,
+          'Completion Confirmed',
+          `One side has confirmed completion of "${task.title}". Please confirm on your end.`,
+          'TASK_COMPLETED',
+          task.id,
+          'Task',
+        );
+      }
+    }
+
+    const updated = await prisma.task.findUnique({ where: { id: task.id } });
     res.json({ task: updated });
   } catch (err) {
     next(err);

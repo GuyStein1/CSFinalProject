@@ -126,6 +126,8 @@ model Task {
   assigned_fixer_id     String?
   completion_photos     String[]
   is_payment_confirmed  Boolean    @default(false)
+  requester_completed   Boolean    @default(false)
+  fixer_completed       Boolean    @default(false)
   completed_at          DateTime?
   created_at            DateTime   @default(now())
   updated_at            DateTime   @updatedAt

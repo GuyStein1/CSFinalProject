@@ -58,6 +58,8 @@ interface Task {
   media_urls: string[];
   completion_photos: string[];
   is_payment_confirmed: boolean;
+  requester_completed: boolean;
+  fixer_completed: boolean;
   created_at: string;
   completed_at: string | null;
   my_review: MyReview | null;
@@ -210,7 +212,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
   const markCompleted = async () => {
     try {
-      await api.put(`/api/tasks/${taskId}/status`, { status: 'COMPLETED' });
+      await api.put(`/api/tasks/${taskId}/confirm-completion`);
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
@@ -223,22 +225,22 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         await api.put(`/api/tasks/${taskId}/reopen`);
         fetchData();
       } catch {
-        Alert.alert('Error', 'Failed to reopen task.');
+        Alert.alert(t('common.error'), t('taskDetails.completion.reopenError'));
       }
     };
 
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm('Reopen this task and re-post it to the discovery feed?')) {
+      if (confirm(t('taskDetails.completion.reopenConfirmMessage'))) {
         doReopen();
       }
     } else {
       Alert.alert(
-        'Reopen Task',
-        'Reopen this task and re-post it to the discovery feed for fixers to bid on?',
+        t('taskDetails.completion.reopenConfirmTitle'),
+        t('taskDetails.completion.reopenConfirmMessage'),
         [
-          { text: 'Cancel' },
-          { text: 'Reopen', onPress: doReopen },
+          { text: t('common.cancel') },
+          { text: t('taskDetails.completion.reopenTask'), onPress: doReopen },
         ],
       );
     }
@@ -566,9 +568,58 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           </FCard>
 
           <View style={styles.actionButtons}>
-            <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
-              {t('taskDetails.actions.markCompleted')}
-            </FButton>
+            {/* Step 1: Pay the fixer */}
+            {!task.is_payment_confirmed && (
+              <FCard style={{ marginBottom: spacing.sm }}>
+                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm }]}>
+                  {t('taskDetails.completion.payStep')}
+                </Text>
+                {acceptedBid?.fixer?.payment_link ? (
+                  <>
+                    <FButton
+                      variant="primary"
+                      icon="open-in-new"
+                      onPress={() => Linking.openURL(acceptedBid.fixer!.payment_link!)}
+                      fullWidth
+                    >
+                      {t('taskDetails.actions.payFixer')}
+                    </FButton>
+                    <FButton variant="outline" onPress={confirmPayment} fullWidth style={{ marginTop: spacing.sm }}>
+                      {t('taskDetails.actions.confirmPayment')}
+                    </FButton>
+                  </>
+                ) : (
+                  <View style={styles.noPaymentLink}>
+                    <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
+                    <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                      {t('taskDetails.payment.noPaymentLink')}
+                    </Text>
+                  </View>
+                )}
+              </FCard>
+            )}
+            {/* Step 2: Mark completed (only after payment) */}
+            {task.is_payment_confirmed && !task.requester_completed && (
+              <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
+                {t('taskDetails.actions.markCompleted')}
+              </FButton>
+            )}
+            {task.is_payment_confirmed && task.requester_completed && !task.fixer_completed && (
+              <FCard style={{ marginBottom: spacing.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
+                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                    {t('taskDetails.completion.waitingFixer')}
+                  </Text>
+                </View>
+              </FCard>
+            )}
+            {task.is_payment_confirmed && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
+                <MaterialCommunityIcons name="check-circle" size={16} color={brandColors.success} />
+                <Text style={[typography.caption, { color: brandColors.success }]}>{t('taskDetails.completion.paymentConfirmed')}</Text>
+              </View>
+            )}
             <FButton
               variant="outline"
               icon="chat-outline"
@@ -585,10 +636,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             >
               {t('taskDetails.actions.chatWithFixer')}
             </FButton>
-            <Pressable onPress={cancelTask} style={styles.cancelRow}>
-              <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
-              <Text style={[typography.label, { color: brandColors.danger }]}>{t('taskDetails.actions.cancelTask')}</Text>
-            </Pressable>
+            {!task.is_payment_confirmed && (
+              <Pressable onPress={cancelTask} style={styles.cancelRow}>
+                <MaterialCommunityIcons name="close-circle-outline" size={16} color={brandColors.danger} />
+                <Text style={[typography.label, { color: brandColors.danger }]}>{t('taskDetails.actions.cancelTask')}</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       )}
@@ -667,18 +720,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           contentContainerStyle={styles.editModal}
         >
           <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.md }]}>
-            Decline Bid
+            {t('taskDetails.decline.title')}
           </Text>
           <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
-            Select a reason so the fixer can improve future bids.
+            {t('taskDetails.decline.description')}
           </Text>
-          {([
-            ['PRICE_TOO_HIGH', 'Price too high'],
-            ['BAD_TIMING', 'Bad timing'],
-            ['CHOSE_ANOTHER', 'Chose another fixer'],
-            ['NOT_QUALIFIED', 'Not the right fit'],
-            ['OTHER', 'Other'],
-          ] as const).map(([value, label]) => (
+          {(['PRICE_TOO_HIGH', 'BAD_TIMING', 'CHOSE_ANOTHER', 'NOT_QUALIFIED', 'OTHER'] as const).map((value) => (
             <Pressable
               key={value}
               style={[
@@ -696,18 +743,18 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 typography.body,
                 { color: rejectionReason === value ? brandColors.primary : brandColors.textPrimary },
               ]}>
-                {label}
+                {t(`taskDetails.decline.reasons.${value}`)}
               </Text>
             </Pressable>
           ))}
           <FInput
-            label="Note (optional)"
+            label={t('taskDetails.decline.note')}
             value={rejectionNote}
             onChangeText={setRejectionNote}
             multiline
             numberOfLines={2}
             maxLength={500}
-            placeholder="Add details if you'd like..."
+            placeholder={t('taskDetails.decline.notePlaceholder')}
           />
           <FButton
             onPress={confirmDeclineBid}
@@ -715,10 +762,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             fullWidth
             style={{ marginTop: spacing.md }}
           >
-            Confirm Decline
+            {t('taskDetails.decline.confirm')}
           </FButton>
           <FButton variant="outline" onPress={() => setRejectingBidId(null)} fullWidth style={{ marginTop: spacing.sm }}>
-            Cancel
+            {t('common.cancel')}
           </FButton>
         </Modal>
       </Portal>
@@ -726,7 +773,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {/* Completion Photos (shown for IN_PROGRESS and COMPLETED) */}
       {(task.status === 'IN_PROGRESS' || task.status === 'COMPLETED') && (task.completion_photos?.length ?? 0) > 0 && (
         <View style={styles.section}>
-          <FSectionHeader title="Completion Photos" accentColor={brandColors.primary} />
+          <FSectionHeader title={t('taskDetails.completion.photos')} accentColor={brandColors.primary} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             {task.completion_photos.map((url, i) => (
               <Image key={i} source={{ uri: url }} style={{ width: 100, height: 100, borderRadius: radii.md }} />
@@ -849,7 +896,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       {/* CANCELED: Reopen */}
       {task.status === 'CANCELED' && (
         <View style={styles.section}>
-          <FSectionHeader title="Canceled" accentColor={brandColors.danger} />
+          <FSectionHeader title={t('taskDetails.completion.canceled')} accentColor={brandColors.danger} />
           <FCard>
             <View style={styles.canceledContent}>
               <MaterialCommunityIcons
@@ -858,10 +905,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 color={brandColors.textMuted}
               />
               <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center' }]}>
-                This task was canceled. Reopen it to re-post it to the discovery feed for fixers to bid on again.
+                {t('taskDetails.completion.canceledMessage')}
               </Text>
               <FButton onPress={reopenTask} fullWidth icon="refresh">
-                Reopen Task
+                {t('taskDetails.completion.reopenTask')}
               </FButton>
             </View>
           </FCard>

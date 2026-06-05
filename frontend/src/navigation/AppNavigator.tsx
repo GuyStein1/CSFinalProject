@@ -23,6 +23,7 @@ import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
 import BecomeFixerScreen from '../screens/BecomeFixerScreen';
 import ChatScreen from '../screens/ChatScreen';
+import PastConversationsScreen from '../screens/PastConversationsScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
@@ -244,20 +245,22 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </View>
 
         <View style={styles.desktopActions}>
-          {/* Shared: lang switcher, notifications, settings */}
-          <View style={styles.langSwitcher}>
-            {(['en', 'he'] as const).map((lang) => (
-              <Pressable
-                key={lang}
-                onPress={() => void changeLanguage(lang)}
-                style={[styles.langChip, language === lang && styles.langChipActive]}
-              >
-                <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
-                  {lang === 'en' ? 'EN' : 'עב'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          {/* Shared: globe lang toggle, notifications, settings */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+            style={({ pressed }) => [
+              styles.desktopIconBtn,
+              mode === 'fixer' && styles.desktopIconBtnFixer,
+              pressed && styles.desktopActionPressed,
+            ]}
+            onPress={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
+          >
+            <MaterialCommunityIcons name="web" size={20} color={brandColors.textSecondary} />
+            <Text style={{ fontSize: 10, fontWeight: '700', color: brandColors.textSecondary, marginLeft: 2 }}>
+              {language === 'en' ? 'EN' : 'עב'}
+            </Text>
+          </Pressable>
 
           <Pressable
             accessibilityRole="button"
@@ -446,21 +449,20 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
           </Pressable>
         </View>
 
-        {/* lang + bell — right */}
+        {/* globe + bell — right */}
         <View style={styles.mobileRightActions}>
-          <View style={styles.langSwitcher}>
-            {(['en', 'he'] as const).map((lang) => (
-              <Pressable
-                key={lang}
-                onPress={() => void changeLanguage(lang)}
-                style={[styles.langChipDark, language === lang && styles.langChipDarkActive]}
-              >
-                <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
-                  {lang === 'en' ? 'EN' : 'עב'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+            style={styles.iconBtn}
+            hitSlop={8}
+            onPress={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
+          >
+            <MaterialCommunityIcons name="web" size={22} color={brandColors.textOnDark} />
+            <View style={styles.globeLangBadge}>
+              <Text style={styles.globeLangText}>{language === 'en' ? 'EN' : 'עב'}</Text>
+            </View>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
@@ -546,6 +548,7 @@ export default function AppNavigator() {
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
       <Stack.Screen name="BecomeFixerOnboarding" component={BecomeFixerScreen} options={{ title: 'Become a Fixer', headerShown: false }} />
+      <Stack.Screen name="PastConversations" component={PastConversationsScreen} options={{ title: 'Past Conversations' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>
   );
@@ -802,6 +805,22 @@ const styles = StyleSheet.create({
   },
   langChipTextActive: {
     color: brandColors.white,
+  },
+  globeLangBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -4,
+    backgroundColor: brandColors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 3,
+    minWidth: 16,
+    alignItems: 'center',
+  },
+  globeLangText: {
+    fontSize: 8,
+    fontWeight: '800' as const,
+    color: brandColors.white,
+    lineHeight: 12,
   },
 
   // Notification badge

@@ -518,10 +518,94 @@ describe('GET /api/conversations', () => {
   });
 });
 
+// ── DELETE /api/tasks/:id/messages ───────────────────────────────────────────
+
+async function completeTask(taskId: string) {
+  __setUid('requester-uid');
+  await request(app).put(`/api/tasks/${taskId}/confirm-payment`).set('Authorization', REQUESTER_AUTH);
+  await request(app).put(`/api/tasks/${taskId}/confirm-completion`).set('Authorization', REQUESTER_AUTH);
+  __setUid('fixer-uid');
+  await request(app).put(`/api/tasks/${taskId}/confirm-completion`).set('Authorization', FIXER_AUTH);
+  __setUid('requester-uid');
+}
+
+describe('DELETE /api/tasks/:id/messages', () => {
+  it('deletes all messages for a completed task', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+    await completeTask(task.id);
+
+    __setUid('requester-uid');
+    const res = await request(app)
+      .delete(`/api/tasks/${task.id}/messages`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+
+    const count = await prisma.message.count({ where: { task_id: task.id } });
+    expect(count).toBe(0);
+  });
+
+  it('allows the fixer to delete messages for a completed task', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+    await completeTask(task.id);
+
+    __setUid('fixer-uid');
+    const res = await request(app)
+      .delete(`/api/tasks/${task.id}/messages`)
+      .set('Authorization', FIXER_AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+
+  it('returns 403 for an in-progress task', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+
+    __setUid('requester-uid');
+    const res = await request(app)
+      .delete(`/api/tasks/${task.id}/messages`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 for a non-participant', async () => {
+    const task = await createTaskInProgress();
+    await seedMessages(task.id);
+    await completeTask(task.id);
+
+    __setUid('other-uid');
+    const res = await request(app)
+      .delete(`/api/tasks/${task.id}/messages`)
+      .set('Authorization', OTHER_AUTH);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 404 for a non-existent task', async () => {
+    __setUid('requester-uid');
+    const res = await request(app)
+      .delete('/api/tasks/non-existent-id/messages')
+      .set('Authorization', REQUESTER_AUTH);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 401 without auth header', async () => {
+    const task = await createTaskInProgress();
+    const res = await request(app).delete(`/api/tasks/${task.id}/messages`);
+    expect(res.status).toBe(401);
+  });
+});
+
 // ── Messages deleted on task completion ──────────────────────────────────────
 
-describe('Task completion deletes messages', () => {
-  it('deletes all messages when requester marks task as COMPLETED', async () => {
+describe('Task completion preserves messages', () => {
+  it('keeps messages when task is completed via dual-confirm', async () => {
     const task = await createTaskInProgress();
     await seedMessages(task.id);
 
@@ -529,16 +613,21 @@ describe('Task completion deletes messages', () => {
     const before = await prisma.message.count({ where: { task_id: task.id } });
     expect(before).toBe(3);
 
-    // Complete the task
+    // Complete the task via dual-confirm flow
     __setUid('requester-uid');
-    const res = await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'COMPLETED' });
-    expect(res.status).toBe(200);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', REQUESTER_AUTH);
+    __setUid('fixer-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', FIXER_AUTH);
 
-    // Messages should be gone
+    // Messages should be preserved for past conversations
     const after = await prisma.message.count({ where: { task_id: task.id } });
-    expect(after).toBe(0);
+    expect(after).toBe(3);
   });
 });

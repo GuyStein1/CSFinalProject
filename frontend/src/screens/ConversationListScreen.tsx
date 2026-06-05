@@ -16,13 +16,23 @@ interface OtherParty {
   avatar_url: string | null;
 }
 
-interface Conversation {
+export interface Conversation {
   taskId: string;
   taskTitle: string;
   taskStatus?: string;
   otherParty: OtherParty | null;
   lastMessage: { content: string; timestamp: string } | null;
   unreadCount: number;
+}
+
+export function formatConversationTime(dateStr: string, t: (key: string) => string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (diffDays === 1) return t('conversations.yesterday');
+  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
@@ -33,16 +43,6 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
-
-  const formatTime = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    if (diffDays === 1) return t('conversations.yesterday');
-    if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  };
 
   const load = useCallback(async () => {
     try {
@@ -63,11 +63,18 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
 
   if (loading) return <LoadingScreen label={t('conversations.loading')} />;
 
+  const activeConversations = conversations.filter(
+    (c) => c.taskStatus !== 'COMPLETED' && c.taskStatus !== 'CANCELED',
+  );
+  const pastCount = conversations.filter(
+    (c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED',
+  ).length;
+
   return (
     <FlatList
-      data={conversations}
+      data={activeConversations}
       keyExtractor={(item) => item.taskId}
-      contentContainerStyle={conversations.length === 0 ? styles.emptyContainer : styles.listContent}
+      contentContainerStyle={activeConversations.length === 0 && pastCount === 0 ? styles.emptyContainer : styles.listContent}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={
         <EmptyState
@@ -76,6 +83,18 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
           message={t('conversations.empty.message')}
         />
       }
+      ListFooterComponent={pastCount > 0 ? (
+        <Pressable
+          style={styles.pastButton}
+          onPress={() => navigation.navigate('PastConversations', { mode })}
+        >
+          <MaterialCommunityIcons name="archive-outline" size={20} color={brandColors.textMuted} />
+          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 }]}>
+            {t('conversations.past')} ({pastCount})
+          </Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.outlineLight} />
+        </Pressable>
+      ) : null}
       renderItem={({ item }) => {
         const other = item.otherParty;
         return (
@@ -92,7 +111,6 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
               })
             }
           >
-            {/* Avatar — tap to view public profile */}
             <Pressable
               onPress={(e) => {
                 e.stopPropagation();
@@ -110,7 +128,6 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
               )}
             </Pressable>
 
-            {/* Content */}
             <View style={styles.content}>
               <View style={styles.topRow}>
                 <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
@@ -118,7 +135,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                 </Text>
                 {item.lastMessage && (
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                    {formatTime(item.lastMessage.timestamp)}
+                    {formatConversationTime(item.lastMessage.timestamp, t)}
                   </Text>
                 )}
               </View>
@@ -207,5 +224,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 14,
+  },
+  pastButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: brandColors.outlineLight,
+    marginTop: spacing.sm,
   },
 });

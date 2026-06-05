@@ -162,7 +162,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               <View style={styles.rejectionHeader}>
                 <MaterialCommunityIcons name="information-outline" size={14} color={brandColors.danger} />
                 <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700', textAlign: isRTL ? 'right' : 'left' }]}>
-                  {REJECTION_LABELS[bid.rejection_reason] ?? 'Rejected'}
+                  {t(`taskDetailsFixer.rejectionReasons.${bid.rejection_reason}`, { defaultValue: bid.rejection_reason })}
                 </Text>
               </View>
               {bid.rejection_note ? (
@@ -243,14 +243,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
   );
 }
 
-const REJECTION_LABELS: Record<string, string> = {
-  PRICE_TOO_HIGH: 'Price too high',
-  BAD_TIMING: 'Bad timing',
-  CHOSE_ANOTHER: 'Another fixer was chosen',
-  NOT_QUALIFIED: 'Not the right fit',
-  TASK_CANCELED: 'Task was canceled',
-  OTHER: 'Other reason',
-};
+// Rejection labels now come from i18n: taskDetailsFixer.rejectionReasons.*
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
