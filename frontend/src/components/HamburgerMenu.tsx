@@ -30,7 +30,6 @@ interface HamburgerMenuProps {
   onFixerProfilePress?: () => void;
   onNotificationsPress?: () => void;
   onSettingsPress: () => void;
-  onLandingPress?: () => void;
   notificationCount?: number;
 }
 
@@ -47,7 +46,6 @@ export default function HamburgerMenu({
   onFixerProfilePress,
   onNotificationsPress,
   onSettingsPress,
-  onLandingPress,
   notificationCount = 0,
 }: HamburgerMenuProps) {
   const insets = useSafeAreaInsets();
@@ -102,117 +100,76 @@ export default function HamburgerMenu({
         >
           <View style={styles.brandBlock}>
             <AppLogo compact />
-            <View style={styles.currentModeChip}>
-              <MaterialCommunityIcons
-                name={currentMode === 'fixer' ? 'wrench-outline' : 'home-outline'}
-                size={13}
-                color={brandColors.primary}
-              />
-              <Text style={[typography.caption, styles.currentModeText]}>
-                {currentMode === 'fixer' ? 'Fixer Workspace' : 'Requester Workspace'}
-              </Text>
-            </View>
+            {currentMode === 'fixer' && (
+              <View style={styles.currentModeChip}>
+                <MaterialCommunityIcons name="wrench-outline" size={13} color={brandColors.secondaryDark} />
+                <Text style={[typography.caption, styles.currentModeText]}>Fixer Workspace</Text>
+              </View>
+            )}
           </View>
 
-          <Text style={[typography.eyebrow, styles.sectionLabel]}>Switch workspace</Text>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Switch to requester workspace"
-            accessibilityState={{ selected: currentMode === 'requester' }}
-            style={[styles.modeCard, currentMode === 'requester' && styles.modeCardActive]}
-            onPress={() => { onModeChange('requester'); onClose(); }}
-          >
-            <View style={[styles.modeIcon, currentMode === 'requester' && styles.modeIconActive]}>
-              <MaterialCommunityIcons
-                name="home-outline"
-                size={22}
-                color={currentMode === 'requester' ? '#fff' : brandColors.primaryMuted}
+          {currentMode === 'fixer' ? (
+            <>
+              <MenuRow
+                icon="arrow-left"
+                label="Back to Home"
+                description="Return to your requester dashboard"
+                onPress={() => { onModeChange('requester'); (onRequesterHomePress ?? (() => {}))(); onClose(); }}
               />
-            </View>
-            <View style={styles.modeText}>
-              <Text style={[typography.h3, { color: currentMode === 'requester' ? brandColors.textPrimary : brandColors.textMuted }]}>
-                Requester
-              </Text>
-              <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Post tasks, get help</Text>
-            </View>
-            {currentMode === 'requester' && (
-              <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
-            )}
-          </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Switch to fixer workspace"
-            accessibilityState={{ selected: currentMode === 'fixer' }}
-            style={[styles.modeCard, currentMode === 'fixer' && styles.modeCardActive]}
-            onPress={() => { onModeChange('fixer'); onClose(); }}
-          >
-            <View style={[styles.modeIcon, currentMode === 'fixer' && styles.modeIconActive]}>
-              <MaterialCommunityIcons
-                name="wrench-outline"
-                size={22}
-                color={currentMode === 'fixer' ? '#fff' : brandColors.primaryMuted}
+              <View style={styles.divider} />
+
+              <Text style={[typography.eyebrow, styles.sectionLabel]}>Fixer Workspace</Text>
+
+              <MenuRow
+                icon="map-search-outline"
+                label="Find Jobs"
+                description="Browse and bid on tasks near you"
+                onPress={() => { (onFixerHomePress ?? (() => {}))(); onClose(); }}
               />
-            </View>
-            <View style={styles.modeText}>
-              <Text style={[typography.h3, { color: currentMode === 'fixer' ? brandColors.textPrimary : brandColors.textMuted }]}>
-                Fixer
-              </Text>
-              <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>Find jobs, earn money</Text>
-            </View>
-            {currentMode === 'fixer' && (
-              <MaterialCommunityIcons name="check-circle" size={20} color={brandColors.secondary} />
-            )}
-          </Pressable>
 
-          <View style={styles.divider} />
+              <MenuRow
+                icon="format-list-bulleted"
+                label="My Bids"
+                description="Track pending and accepted offers"
+                onPress={() => { (onFixerBidsPress ?? (() => {}))(); onClose(); }}
+              />
 
-          <Text style={[typography.eyebrow, styles.sectionLabel]}>Workspace</Text>
+              <MenuRow
+                icon="account-hard-hat"
+                label="Fixer Profile"
+                description="Skills, portfolio, and payment details"
+                onPress={() => { (onFixerProfilePress ?? (() => {}))(); onClose(); }}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={[typography.eyebrow, styles.sectionLabel]}>My Workspace</Text>
 
-          <MenuRow
-            icon="view-dashboard-outline"
-            label="Requester Workspace"
-            description="Dashboard, task shortcuts, and active work"
-            onPress={() => { (onRequesterHomePress ?? (() => onModeChange('requester')))(); onClose(); }}
-          />
+              <MenuRow
+                icon="view-dashboard-outline"
+                label="Home"
+                description="Dashboard and task shortcuts"
+                onPress={() => { (onRequesterHomePress ?? (() => {}))(); onClose(); }}
+              />
 
-          <MenuRow
-            icon="clipboard-list-outline"
-            label="My Tasks"
-            description="Review bids and manage posted tasks"
-            onPress={() => { (onRequesterTasksPress ?? (() => onModeChange('requester')))(); onClose(); }}
-          />
+              <MenuRow
+                icon="clipboard-list-outline"
+                label="My Tasks"
+                description="Review bids and manage posted tasks"
+                onPress={() => { (onRequesterTasksPress ?? (() => {}))(); onClose(); }}
+              />
 
-          {onPostTaskPress && (
-            <MenuRow
-              icon="plus-circle-outline"
-              label="Post a Task"
-              description="Create a new requester task"
-              onPress={() => { onPostTaskPress(); onClose(); }}
-            />
+              {onPostTaskPress && (
+                <MenuRow
+                  icon="plus-circle-outline"
+                  label="Post a Task"
+                  description="Create a new task"
+                  onPress={() => { onPostTaskPress(); onClose(); }}
+                />
+              )}
+            </>
           )}
-
-          <MenuRow
-            icon="map-search-outline"
-            label="Find Jobs"
-            description="Open fixer discovery"
-            onPress={() => { (onFixerHomePress ?? (() => onModeChange('fixer')))(); onClose(); }}
-          />
-
-          <MenuRow
-            icon="format-list-bulleted"
-            label="My Bids"
-            description="Track pending and accepted offers"
-            onPress={() => { (onFixerBidsPress ?? (() => onModeChange('fixer')))(); onClose(); }}
-          />
-
-          <MenuRow
-            icon="account-hard-hat"
-            label="Fixer Profile"
-            description="Skills, portfolio, and payment details"
-            onPress={() => { (onFixerProfilePress ?? (() => onModeChange('fixer')))(); onClose(); }}
-          />
 
           {onNotificationsPress && (
             <MenuRow
@@ -231,13 +188,25 @@ export default function HamburgerMenu({
             onPress={() => { onSettingsPress(); onClose(); }}
           />
 
-          {onLandingPress && (
-            <MenuRow
-              icon="home-search-outline"
-              label="Back to Landing"
-              description="Return to the public FixIt home page"
-              onPress={() => { onLandingPress(); onClose(); }}
-            />
+          {currentMode === 'requester' && (
+            <>
+              <View style={styles.divider} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open Fixer Workspace"
+                style={({ pressed }) => [styles.fixerWorkspaceEntry, pressed && styles.fixerWorkspaceEntryPressed]}
+                onPress={() => { onModeChange('fixer'); (onFixerHomePress ?? (() => {}))(); onClose(); }}
+              >
+                <View style={styles.fixerWorkspaceEntryIcon}>
+                  <MaterialCommunityIcons name="wrench-outline" size={20} color={brandColors.secondaryDark} />
+                </View>
+                <View style={styles.modeText}>
+                  <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>Fixer Workspace</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Find jobs and earn money</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+              </Pressable>
+            </>
           )}
 
           <View style={styles.footerNote}>
@@ -328,42 +297,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: brandColors.infoSoft,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: brandColors.secondary,
   },
   currentModeText: {
-    color: brandColors.primary,
+    color: brandColors.secondaryDark,
     fontWeight: '700',
   },
-  sectionLabel: {
-    color: brandColors.textMuted,
-    marginBottom: spacing.md,
-  },
-  modeCard: {
+  fixerWorkspaceEntry: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: radii.lg,
-    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-    backgroundColor: brandColors.background,
-  },
-  modeCardActive: {
     borderColor: brandColors.secondary,
     backgroundColor: brandColors.warningSoft,
   },
-  modeIcon: {
+  fixerWorkspaceEntryPressed: {
+    opacity: 0.82,
+  },
+  fixerWorkspaceEntryIcon: {
     width: 40,
     height: 40,
     borderRadius: radii.md,
-    backgroundColor: brandColors.surfaceAlt,
+    backgroundColor: brandColors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modeIconActive: {
-    backgroundColor: brandColors.primary,
+  sectionLabel: {
+    color: brandColors.textMuted,
+    marginBottom: spacing.md,
   },
   modeText: {
     flex: 1,

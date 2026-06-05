@@ -132,10 +132,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('NotificationCenter');
   };
 
-  const openSettings = () => {
-    openStackScreen('Settings');
-  };
-
   const openCreateTask = () => {
     openStackScreen('CreateTask');
   };
@@ -192,52 +188,14 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
           <AppLogo compact />
         </Pressable>
 
-        <View style={styles.desktopCenter}>
-          <View style={styles.modeToggleWrap}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Switch to requester workspace"
-              accessibilityState={{ selected: mode === 'requester' }}
-              style={[styles.modeToggleBtn, mode === 'requester' && styles.modeToggleBtnActive]}
-              onPress={() => handleModeChange('requester')}
-            >
-              <MaterialCommunityIcons
-                name="home-outline"
-                size={15}
-                color={mode === 'requester' ? brandColors.textOnDark : brandColors.primaryMuted}
-              />
-              <Text
-                style={[
-                  styles.modeToggleLabel,
-                  mode === 'requester' && styles.modeToggleLabelActive,
-                ]}
-              >
-                {t('nav.mode.requester')}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Switch to fixer workspace"
-              accessibilityState={{ selected: mode === 'fixer' }}
-              style={[styles.modeToggleBtn, mode === 'fixer' && styles.modeToggleBtnActive]}
-              onPress={() => handleModeChange('fixer')}
-            >
-              <MaterialCommunityIcons
-                name="wrench-outline"
-                size={15}
-                color={mode === 'fixer' ? brandColors.textOnDark : brandColors.primaryMuted}
-              />
-              <Text
-                style={[
-                  styles.modeToggleLabel,
-                  mode === 'fixer' && styles.modeToggleLabelActive,
-                ]}
-              >
-                {t('nav.mode.fixer')}
-              </Text>
-            </Pressable>
+        {mode === 'fixer' && (
+          <View style={styles.fixerWorkspaceLabel}>
+            <MaterialCommunityIcons name="wrench-outline" size={14} color={brandColors.secondary} />
+            <Text style={styles.fixerWorkspaceLabelText}>Fixer Workspace</Text>
           </View>
+        )}
 
+        <View style={styles.desktopCenter}>
           <View style={styles.desktopPageTabs}>
             {workspaceTabs.map((item) => {
               const selected = activeScreen === item.screen;
@@ -271,57 +229,100 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </View>
 
         <View style={styles.desktopActions}>
-          {mode === 'requester' && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Post a task"
-              style={({ pressed }) => [styles.desktopPrimaryAction, pressed && styles.desktopActionPressed]}
-              onPress={openCreateTask}
-            >
-              <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
-              <Text style={styles.desktopPrimaryActionText}>{t('nav.postTask')}</Text>
-            </Pressable>
-          )}
-
-          <View style={styles.langSwitcher}>
-            {(['en', 'he'] as const).map((lang) => (
+          {mode === 'requester' ? (
+            <>
               <Pressable
-                key={lang}
-                onPress={() => void changeLanguage(lang)}
-                style={[styles.langChip, language === lang && styles.langChipActive]}
+                accessibilityRole="button"
+                accessibilityLabel="Post a task"
+                style={({ pressed }) => [styles.desktopPrimaryAction, pressed && styles.desktopActionPressed]}
+                onPress={openCreateTask}
               >
-                <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
-                  {lang === 'en' ? 'EN' : 'עב'}
-                </Text>
+                <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
+                <Text style={styles.desktopPrimaryActionText}>{t('nav.postTask')}</Text>
               </Pressable>
-            ))}
-          </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              notificationCount > 0
-                ? `Open notifications, ${notificationCount} unread`
-                : 'Open notifications'
-            }
-            style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
-            hitSlop={8}
-            onPress={openNotifications}
-          >
-            <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
-            <NotifBadge count={notificationCount} />
-          </Pressable>
+              <View style={styles.langSwitcher}>
+                {(['en', 'he'] as const).map((lang) => (
+                  <Pressable
+                    key={lang}
+                    onPress={() => void changeLanguage(lang)}
+                    style={[styles.langChip, language === lang && styles.langChipActive]}
+                  >
+                    <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
+                      {lang === 'en' ? 'EN' : 'עב'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-          {mode === 'fixer' && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open settings"
-              style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
-              hitSlop={8}
-              onPress={openSettings}
-            >
-              <MaterialCommunityIcons name="cog-outline" size={20} color={brandColors.primary} />
-            </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  notificationCount > 0
+                    ? `Open notifications, ${notificationCount} unread`
+                    : 'Open notifications'
+                }
+                style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+                hitSlop={8}
+                onPress={openNotifications}
+              >
+                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
+                <NotifBadge count={notificationCount} />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open Fixer Workspace"
+                style={({ pressed }) => [styles.desktopFixerWorkspaceBtn, pressed && styles.desktopActionPressed]}
+                hitSlop={8}
+                onPress={() => handleModeChange('fixer')}
+              >
+                <MaterialCommunityIcons name="wrench-outline" size={15} color={brandColors.secondaryDark} />
+                <Text style={styles.desktopFixerWorkspaceBtnText}>Fixer Workspace</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <View style={styles.langSwitcher}>
+                {(['en', 'he'] as const).map((lang) => (
+                  <Pressable
+                    key={lang}
+                    onPress={() => void changeLanguage(lang)}
+                    style={[styles.langChip, language === lang && styles.langChipActive]}
+                  >
+                    <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
+                      {lang === 'en' ? 'EN' : 'עב'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  notificationCount > 0
+                    ? `Open notifications, ${notificationCount} unread`
+                    : 'Open notifications'
+                }
+                style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+                hitSlop={8}
+                onPress={openNotifications}
+              >
+                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
+                <NotifBadge count={notificationCount} />
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back to Home"
+                style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
+                hitSlop={8}
+                onPress={() => handleModeChange('requester')}
+              >
+                <MaterialCommunityIcons name="arrow-left" size={15} color={brandColors.primaryMuted} />
+                <Text style={styles.desktopBackHomeBtnText}>Back to Home</Text>
+              </Pressable>
+            </>
           )}
         </View>
       </View>
@@ -713,35 +714,58 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  // Mode toggle (desktop)
-  modeToggleWrap: {
-    flexDirection: 'row',
-    backgroundColor: brandColors.surfaceAlt,
-    borderRadius: radii.pill,
-    padding: 3,
-    gap: 2,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-  },
-  modeToggleBtn: {
+  // Fixer workspace label (shown next to logo in fixer mode)
+  fixerWorkspaceLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     borderRadius: radii.pill,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: brandColors.secondary,
   },
-  modeToggleBtnActive: {
-    backgroundColor: brandColors.primary,
+  fixerWorkspaceLabelText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: brandColors.secondaryDark,
   },
-  modeToggleLabel: {
+  // Fixer workspace entry button (requester mode, right actions)
+  desktopFixerWorkspaceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 38,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  desktopFixerWorkspaceBtnText: {
+    color: brandColors.secondaryDark,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
-    color: brandColors.textMuted,
   },
-  modeToggleLabelActive: {
-    color: brandColors.textOnDark,
+  // Back to home button (fixer mode, right actions)
+  desktopBackHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 38,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  desktopBackHomeBtnText: {
+    color: brandColors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   desktopPageTabs: {
     flexDirection: 'row',
