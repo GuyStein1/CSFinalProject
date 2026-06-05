@@ -1,6 +1,8 @@
 import React from 'react';
 import {
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -142,6 +144,24 @@ export default function NotificationCenterScreen() {
     }, [refetch, markAllAsRead]),
   );
 
+  const handleDeleteAll = () => {
+    const title = t('notifications.deleteAllConfirm.title');
+    const message = t('notifications.deleteAllConfirm.message');
+    const confirmLabel = t('notifications.deleteAllConfirm.confirm');
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm(`${title}\n${message}`)) {
+        deleteAll();
+      }
+    } else {
+      Alert.alert(title, message, [
+        { text: t('common.cancel') },
+        { text: confirmLabel, style: 'destructive', onPress: () => deleteAll() },
+      ]);
+    }
+  };
+
   const handlePress = (notification: AppNotification) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
@@ -180,12 +200,9 @@ export default function NotificationCenterScreen() {
           ) : (
             <View />
           )}
-          <Pressable style={styles.deleteAllBtn} onPress={deleteAll}>
-            <MaterialCommunityIcons name="delete-outline" size={18} color={brandColors.danger} />
-            <Text style={[typography.bodySm, { color: brandColors.danger, marginLeft: spacing.xs }]}>
-              {t('notifications.deleteAll')}
-            </Text>
-          </Pressable>
+          <FButton variant="outline" size="sm" icon="delete-sweep-outline" onPress={handleDeleteAll}>
+            {t('notifications.deleteAll')}
+          </FButton>
         </View>
       )}
 
@@ -255,12 +272,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
-  },
-  deleteAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
   },
   itemUnread: {
     backgroundColor: brandColors.infoSoft,
