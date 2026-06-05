@@ -41,6 +41,20 @@ A task marketplace connecting Requesters (people who need small jobs done) with 
 
 ---
 
+## Firebase Auth — Authorized Domains
+
+For login to work on any deployed URL, that domain must be whitelisted in Firebase:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/project/fixit-dev-fd366/authentication/settings)
+2. **Authentication → Settings → Authorized domains**
+3. Add the domain (e.g. `fixit-one-mocha.vercel.app`)
+
+Already added: `fixit-one-mocha.vercel.app`
+
+> If you deploy to a new domain or a teammate's preview URL needs login to work, add it here.
+
+---
+
 ## Branch Protection
 
 The `main` branch is protected:
