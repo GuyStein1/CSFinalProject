@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import RequesterDashboard from '../screens/RequesterDashboard';
 import MyTasksScreen from '../screens/MyTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -31,6 +32,7 @@ function TabIcon({ name, color, size, focused }: { name: string; color: string; 
 
 export default function RequesterTabs() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
   const { unreadCount } = useUnreadMessages();
@@ -52,7 +54,7 @@ export default function RequesterTabs() {
         name="Dashboard"
         component={RequesterDashboard}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('nav.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'home' : 'home-outline'} color={color} size={size} focused={focused} />
           ),
@@ -62,7 +64,7 @@ export default function RequesterTabs() {
         name="MyTasks"
         component={MyTasksScreen}
         options={{
-          tabBarLabel: 'My Tasks',
+          tabBarLabel: t('nav.myTasks'),
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'clipboard-list' : 'clipboard-list-outline'} color={color} size={size} focused={focused} />
           ),
@@ -73,7 +75,7 @@ export default function RequesterTabs() {
         component={ConversationListScreen}
         initialParams={{ mode: 'requester' }}
         options={{
-          tabBarLabel: 'Messages',
+          tabBarLabel: t('nav.messages'),
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
           tabBarBadgeStyle: { backgroundColor: brandColors.primary, fontSize: 10, fontWeight: '700' },
           tabBarIcon: ({ color, size, focused }) => (
@@ -85,7 +87,7 @@ export default function RequesterTabs() {
         name="Profile"
         component={SettingsScreen}
         options={{
-          tabBarLabel: 'Account',
+          tabBarLabel: t('nav.account'),
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon name={focused ? 'account' : 'account-outline'} color={color} size={size} focused={focused} />
           ),

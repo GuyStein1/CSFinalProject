@@ -87,6 +87,7 @@ model User {
   payment_link            String?
   specializations         Category[]
   push_token              String?
+  language                   String             @default("en")
   average_rating_as_fixer    Float              @default(0)
   completed_tasks_as_fixer   Int                @default(0)
   avg_response_time_minutes  Float?

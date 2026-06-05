@@ -8,6 +8,7 @@ import {
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { useNotificationContext, type AppNotification } from '../context/NotificationContext';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -42,18 +43,6 @@ function getAccentColor(type: string): string {
   }
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
 function NotificationItem({
   notification,
   onPress,
@@ -63,8 +52,21 @@ function NotificationItem({
   onPress: (n: AppNotification) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
+
+  const timeAgo = (dateStr: string): string => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1) return t('notifications.justNow');
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
 
   return (
     <View style={styles.itemRow}>
@@ -118,6 +120,7 @@ function NotificationItem({
 
 export default function NotificationCenterScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const {
     notifications,
     unreadCount: unreadCountFn,
@@ -162,7 +165,7 @@ export default function NotificationCenterScreen() {
   };
 
   if (loading && notifications.length === 0) {
-    return <LoadingScreen label="Loading notifications..." />;
+    return <LoadingScreen label={t('notifications.loading')} />;
   }
 
   return (
@@ -172,7 +175,7 @@ export default function NotificationCenterScreen() {
         <View style={styles.topBar}>
           {unreadCount > 0 ? (
             <FButton variant="ghost" size="sm" onPress={markAllAsRead}>
-              Mark all as read
+              {t('notifications.markAllRead')}
             </FButton>
           ) : (
             <View />
@@ -180,7 +183,7 @@ export default function NotificationCenterScreen() {
           <Pressable style={styles.deleteAllBtn} onPress={deleteAll}>
             <MaterialCommunityIcons name="delete-outline" size={18} color={brandColors.danger} />
             <Text style={[typography.bodySm, { color: brandColors.danger, marginLeft: spacing.xs }]}>
-              Delete All
+              {t('notifications.deleteAll')}
             </Text>
           </Pressable>
         </View>
@@ -201,8 +204,8 @@ export default function NotificationCenterScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="bell-off-outline"
-            title="No notifications"
-            message="You're all caught up! Notifications will appear here."
+            title={t('notifications.empty.title')}
+            message={t('notifications.empty.message')}
           />
         }
       />

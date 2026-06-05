@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import Feather from '@expo/vector-icons/Feather';
+import { useTranslation } from 'react-i18next';
 import { FChip } from './ui';
 import { CATEGORY_LIST, type Category } from '../constants/categories';
+import { getCategoryLabel } from '../utils/categoryMetadata';
 import { brandColors, radii, spacing, shadows, typography } from '../theme';
 
 export type ViewMode = 'map' | 'list';
@@ -242,13 +244,14 @@ export default function FilterBar({
   forceExpanded,
 }: FilterBarProps) {
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
   const isCompact = compact ?? (Platform.OS === 'web' && width >= 900);
   const [expanded, setExpanded] = useState(false);
   const isExpanded = forceExpanded || expanded;
   const budgetSummary =
     priceMin === PRICE_MIN && priceMax >= PRICE_MAX
-      ? 'Budget: Any'
-      : `Budget: ₪${priceMin}–₪${priceMax >= PRICE_MAX ? '5000+' : priceMax}`;
+      ? t('discovery.filterBar.budgetAny')
+      : t('discovery.filterBar.budgetRange', { min: priceMin, max: priceMax >= PRICE_MAX ? '5000+' : priceMax });
 
   return (
     <View style={[styles.container, isCompact && styles.containerCompact]}>
@@ -273,7 +276,7 @@ export default function FilterBar({
               color={viewMode === 'map' ? brandColors.primary : brandColors.textMuted}
             />
             <Text style={[typography.caption, { color: viewMode === 'map' ? brandColors.primary : brandColors.textMuted, fontWeight: viewMode === 'map' ? '700' : '500' }]}>
-              Map
+              {t('discovery.filterBar.map')}
             </Text>
           </Pressable>
           <Pressable
@@ -289,7 +292,7 @@ export default function FilterBar({
               color={viewMode === 'list' ? brandColors.primary : brandColors.textMuted}
             />
             <Text style={[typography.caption, { color: viewMode === 'list' ? brandColors.primary : brandColors.textMuted, fontWeight: viewMode === 'list' ? '700' : '500' }]}>
-              List
+              {t('discovery.filterBar.list')}
             </Text>
           </Pressable>
         </View>
@@ -319,16 +322,16 @@ export default function FilterBar({
             accessibilityLabel="Clear filters"
           >
             <Feather name="x-circle" size={14} color={brandColors.danger} />
-            <Text style={[typography.caption, styles.resetText]}>Clear filters</Text>
+            <Text style={[typography.caption, styles.resetText]}>{t('discovery.filterBar.clearFilters')}</Text>
           </Pressable>
         )}
 
         <View style={styles.divider} />
 
-        {CATEGORY_LIST.map(({ value, label, icon }) => (
+        {CATEGORY_LIST.map(({ value, icon }) => (
           <FChip
             key={value}
-            label={label}
+            label={getCategoryLabel(value, t)}
             icon={icon}
             selected={selectedCategories.includes(value)}
             onPress={() => onToggleCategory(value)}

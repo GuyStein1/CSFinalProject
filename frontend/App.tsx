@@ -1,3 +1,4 @@
+import './src/i18n';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
@@ -12,6 +13,7 @@ import AuthScreen from './src/screens/AuthScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
 import GlobalCelebration from './src/components/GlobalCelebration';
 import {
@@ -141,10 +143,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <AccessibilityProvider>
-          <RootContent />
-          <AccessibilityWidget />
-        </AccessibilityProvider>
+        <LanguageProvider>
+          <AccessibilityProvider>
+            <RootContent />
+            <AccessibilityWidget />
+          </AccessibilityProvider>
+        </LanguageProvider>
         <StatusBar style="light" />
       </PaperProvider>
     </SafeAreaProvider>

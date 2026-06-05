@@ -11,6 +11,7 @@ import {
 import { Avatar, Divider, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import useReviews, { reportReview, type Review } from '../hooks/useReviews';
 import LoadingScreen from '../components/LoadingScreen';
@@ -73,6 +74,7 @@ const REPORT_REASON_LABELS: Record<string, string> = {
 
 function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
   const canReport = currentUserId === review.reviewee_id;
+  const { t } = useTranslation();
   const date = new Date(review.created_at).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -141,7 +143,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
           />
           <View style={{ flex: 1 }}>
             <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-              {review.reviewer?.full_name ?? 'Anonymous'}
+              {review.reviewer?.full_name ?? t('publicProfile.anonymous')}
             </Text>
             {review.task?.title && (
               <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
@@ -174,6 +176,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function PublicProfileScreen({ route }: { route: any }) {
   const { userId } = route.params;
+  const { t } = useTranslation();
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
@@ -204,7 +207,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
   );
 
   if (profileLoading || reviewsLoading) {
-    return <LoadingScreen label="Loading profile..." />;
+    return <LoadingScreen label={t('publicProfile.loading')} />;
   }
 
   const avgRating = profile?.average_rating_as_fixer;
@@ -249,7 +252,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
                 {avgRating.toFixed(1)}
               </Text>
               <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
-                ({total} {total === 1 ? 'review' : 'reviews'})
+                ({t('publicProfile.reviewCount', { count: total })})
               </Text>
             </View>
           )}
@@ -279,7 +282,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             <View style={styles.metaRow}>
               <MaterialCommunityIcons name="calendar-outline" size={14} color={brandColors.textMuted} />
               <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
-                Member since {memberSince}
+                {t('publicProfile.memberSince', { date: memberSince })}
               </Text>
             </View>
           )}
@@ -308,7 +311,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primaryMuted} />
                 <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm }]}>
-                  Portfolio ({profile!.portfolio_items.length})
+                  {t('publicProfile.portfolioTitle', { count: profile!.portfolio_items.length })}
                 </Text>
               </View>
               <View style={styles.portfolioGrid}>
@@ -325,7 +328,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="star" size={18} color={brandColors.secondary} />
             <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm }]}>
-              Reviews ({total})
+              {t('publicProfile.reviewsTitle', { count: total })}
             </Text>
           </View>
         </View>
@@ -334,8 +337,8 @@ export default function PublicProfileScreen({ route }: { route: any }) {
       ListEmptyComponent={
         <EmptyState
           icon="star-outline"
-          title="No reviews yet"
-          message="This user hasn't received any reviews."
+          title={t('publicProfile.noReviews')}
+          message={t('publicProfile.noReviewsMessage')}
         />
       }
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}

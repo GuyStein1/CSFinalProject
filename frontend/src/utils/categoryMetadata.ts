@@ -9,3 +9,9 @@ export {
   type CategoryFallbackMetadata,
   type MaterialCommunityIconName,
 } from '../constants/categories';
+
+import type { Category } from '../constants/categories';
+
+export function getCategoryLabel(category: Category, t: (key: string) => string): string {
+  return t(`categories.${category.toLowerCase()}`);
+}

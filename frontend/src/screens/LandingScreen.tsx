@@ -13,10 +13,12 @@ import {
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import AppLogo from '../components/AppLogo';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import { CATEGORY_LIST, type Category } from '../constants/categories';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Props {
   isSignedIn?: boolean;
@@ -62,23 +64,23 @@ const SPARKS = [
 const TICKS = Array.from({ length: 8 }, (_, index) => index);
 
 const STATS = [
-  { value: '2,400+', label: 'Tasks posted' },
-  { value: '1,800+', label: 'Active fixers' },
-  { value: '98%',    label: 'Satisfaction' },
-  { value: '4.9★',   label: 'Avg. rating' },
+  { value: '2,400+', labelKey: 'landing.stats.tasksPosted' },
+  { value: '1,800+', labelKey: 'landing.stats.activeFixers' },
+  { value: '98%',    labelKey: 'landing.stats.satisfaction' },
+  { value: '4.9★',   labelKey: 'landing.stats.avgRating' },
 ];
 
 const STEPS = [
-  { n: '01', icon: 'plus-circle-outline',  title: 'Post your task',  desc: 'Describe the job, set your budget, and pin your location.' },
-  { n: '02', icon: 'account-search',       title: 'Pick a fixer',    desc: 'Browse bids from verified fixers in your neighborhood.' },
-  { n: '03', icon: 'check-circle-outline', title: 'Job done',        desc: 'Your fixer arrives, completes the work, and you pay.' },
+  { n: '01', icon: 'plus-circle-outline',  titleKey: 'landing.steps.post.title',  descKey: 'landing.steps.post.desc' },
+  { n: '02', icon: 'account-search',       titleKey: 'landing.steps.pick.title',  descKey: 'landing.steps.pick.desc' },
+  { n: '03', icon: 'check-circle-outline', titleKey: 'landing.steps.done.title',  descKey: 'landing.steps.done.desc' },
 ];
 
 const FIXER_BENEFITS = [
-  { icon: 'calendar-check',   title: 'Choose your hours',   desc: 'Accept jobs when it suits you.' },
-  { icon: 'map-marker-radius', title: 'Work nearby',         desc: 'Only see jobs close to you.' },
-  { icon: 'cash-multiple',    title: 'Get paid quickly',    desc: 'Payment released when done.' },
-  { icon: 'star-circle',      title: 'Build reputation',    desc: 'Reviews boost your profile.' },
+  { icon: 'calendar-check',    titleKey: 'landing.fixer.benefits.hours.title',      descKey: 'landing.fixer.benefits.hours.desc' },
+  { icon: 'map-marker-radius', titleKey: 'landing.fixer.benefits.nearby.title',     descKey: 'landing.fixer.benefits.nearby.desc' },
+  { icon: 'cash-multiple',     titleKey: 'landing.fixer.benefits.paid.title',       descKey: 'landing.fixer.benefits.paid.desc' },
+  { icon: 'star-circle',       titleKey: 'landing.fixer.benefits.reputation.title', descKey: 'landing.fixer.benefits.reputation.desc' },
 ];
 
 function useLoopProgress(duration: number) {
@@ -100,6 +102,7 @@ function useLoopProgress(duration: number) {
 }
 
 function WorkerHeroAnimation() {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const [launched, setLaunched] = useState(false);
   const isBoosted = hovered || launched;
@@ -216,7 +219,7 @@ function WorkerHeroAnimation() {
       <View style={[styles.workerFrameCorner, styles.workerFrameCornerBottomLeft]} />
       <View style={[styles.workerFrameCorner, styles.workerFrameCornerBottomRight]} />
 
-      <Text style={styles.workerLabel}>Fixer on duty</Text>
+      <Text style={styles.workerLabel}>{t('landing.hero.fixerOnDuty')}</Text>
 
       <View style={styles.workerScene}>
         <View style={styles.workerGround} />
@@ -342,6 +345,8 @@ export default function LandingScreen({
   onBecomeFixer,
   onFixerHome,
 }: Props) {
+  const { t } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const { width } = useWindowDimensions();
   const wide = width >= 860;
   const mid  = width >= 600;
@@ -427,17 +432,17 @@ export default function LandingScreen({
   };
 
   const publicNavItems = [
-    { label: 'How it works', icon: 'progress-check', onPress: () => scrollToSection('how') },
-    { label: 'Categories', icon: 'shape-outline', onPress: () => scrollToSection('categories') },
-    { label: 'For Fixers', icon: 'account-hard-hat-outline', onPress: () => scrollToSection('fixers') },
+    { label: t('landing.nav.howItWorks'), icon: 'progress-check', onPress: () => scrollToSection('how') },
+    { label: t('landing.nav.categories'), icon: 'shape-outline', onPress: () => scrollToSection('categories') },
+    { label: t('landing.nav.forFixers'), icon: 'account-hard-hat-outline', onPress: () => scrollToSection('fixers') },
   ];
   const signedInDashboardItems = [
-    { label: 'Requester Dashboard', shortLabel: 'Requester', icon: 'view-dashboard-outline', onPress: handleRequesterHome },
-    { label: 'Find Jobs', shortLabel: 'Fixer', icon: 'account-hard-hat-outline', onPress: handleFixerCta },
+    { label: t('landing.nav.requesterDashboard'), shortLabel: t('landing.nav.dashboard'), icon: 'view-dashboard-outline', onPress: handleRequesterHome },
+    { label: t('landing.nav.findJobs'), shortLabel: t('landing.nav.fixer'), icon: 'account-hard-hat-outline', onPress: handleFixerCta },
   ];
   const compactDashboardLabels = wide && width < 1040;
-  const postTaskCtaLabel = isSignedIn ? 'Post Task' : 'Sign in to Post Task';
-  const fixerCtaLabel = isSignedIn ? 'Open Fixer Workspace' : hasDedicatedFixerOnboarding ? 'Join as a Fixer' : 'Sign in to Find Jobs';
+  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.signInToPost');
+  const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
 
   return (
     <ScrollView
@@ -485,6 +490,20 @@ export default function LandingScreen({
           )}
 
           <View style={styles.navActions}>
+            <View style={styles.langSwitcher}>
+              {(['en', 'he'] as const).map((lang) => (
+                <Pressable
+                  key={lang}
+                  onPress={() => void changeLanguage(lang)}
+                  accessibilityRole="button"
+                  style={[styles.langToggle, language === lang && styles.langToggleActive]}
+                >
+                  <Text style={[styles.langToggleText, language === lang && styles.langToggleTextActive]}>
+                    {lang === 'en' ? 'EN' : 'עב'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             {isSignedIn && wide ? (
               <View style={styles.navDashboardActions}>
                 {signedInDashboardItems.map((item, index) => (
@@ -523,9 +542,9 @@ export default function LandingScreen({
                     onPress={handleLogin}
                     style={styles.navLogin}
                     accessibilityRole="button"
-                    accessibilityLabel="Log in"
+                    accessibilityLabel={t('landing.nav.login')}
                   >
-                    <Text style={styles.navLoginText}>Log in</Text>
+                    <Text style={styles.navLoginText}>{t('landing.nav.login')}</Text>
                   </Pressable>
                 )}
                 <Pressable
@@ -591,22 +610,22 @@ export default function LandingScreen({
               <Pressable
                 onPress={handleLogin}
                 accessibilityRole="button"
-                accessibilityLabel="Log in"
+                accessibilityLabel={t('landing.nav.login')}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="login" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>Log in</Text>
+                <Text style={styles.mobileMenuText}>{t('landing.nav.login')}</Text>
               </Pressable>
             )}
             {!isSignedIn && onCreateAccount && (
               <Pressable
                 onPress={handleCreateAccount}
                 accessibilityRole="button"
-                accessibilityLabel="Create account"
+                accessibilityLabel={t('landing.nav.createAccount')}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="account-plus-outline" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>Create account</Text>
+                <Text style={styles.mobileMenuText}>{t('landing.nav.createAccount')}</Text>
               </Pressable>
             )}
             {!isSignedIn && (
@@ -635,14 +654,14 @@ export default function LandingScreen({
           <View style={[styles.heroLeft, wide && { flex: 1, maxWidth: 540 }]}>
             <View style={styles.heroBadge}>
               <MaterialCommunityIcons name="map-marker" size={12} color={brandColors.secondary} />
-              <Text style={styles.heroBadgeText}>Available across Israel</Text>
+              <Text style={styles.heroBadgeText}>{t('landing.hero.available')}</Text>
             </View>
             <Text style={styles.heroHeadline}>
-              Let’s fix your problems,{'\n'}
-              <Text style={styles.heroHeadlineAccent}>without the runaround.</Text>
+              {t('landing.hero.headline1')}{'\n'}
+              <Text style={styles.heroHeadlineAccent}>{t('landing.hero.headline2')}</Text>
             </Text>
             <Text style={styles.heroSub}>
-              Post a home task, compare bids from local fixers, and choose who gets the job.
+              {t('landing.hero.body')}
             </Text>
             <View style={styles.heroActions}>
               <FButton onPress={() => handlePostTaskCta()} variant="secondary" size="lg" icon={isSignedIn ? 'plus' : 'login'}>
@@ -679,10 +698,10 @@ export default function LandingScreen({
       {/* ── Stats ────────────────────────────────────────────────── */}
       <View style={[styles.stats, wide && styles.statsWide]}>
         {STATS.map((s, i) => (
-          <React.Fragment key={s.label}>
+          <React.Fragment key={s.labelKey}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={styles.statLabel}>{t(s.labelKey)}</Text>
             </View>
             {i < STATS.length - 1 && <View style={styles.statDivider} />}
           </React.Fragment>
@@ -695,9 +714,9 @@ export default function LandingScreen({
         onLayout={(event) => { sectionOffsets.current.how = event.nativeEvent.layout.y; }}
       >
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionEyebrow}>THE PROCESS</Text>
+          <Text style={styles.sectionEyebrow}>{t('landing.sections.process')}</Text>
           <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
-            From post to done in minutes
+            {t('landing.sections.processTitle')}
           </Text>
         </View>
         <View style={[styles.steps, wide && styles.stepsWide]}>
@@ -709,8 +728,8 @@ export default function LandingScreen({
               <View style={styles.stepIconCircle}>
                 <MaterialCommunityIcons name={step.icon as never} size={24} color={brandColors.primary} />
               </View>
-              <Text style={styles.stepTitle}>{step.title}</Text>
-              <Text style={styles.stepDesc}>{step.desc}</Text>
+              <Text style={styles.stepTitle}>{t(step.titleKey)}</Text>
+              <Text style={styles.stepDesc}>{t(step.descKey)}</Text>
               {i < STEPS.length - 1 && wide && (
                 <View style={styles.stepArrow}>
                   <MaterialCommunityIcons name="arrow-right" size={20} color={brandColors.outline} />
@@ -727,9 +746,9 @@ export default function LandingScreen({
         onLayout={(event) => { sectionOffsets.current.categories = event.nativeEvent.layout.y; }}
       >
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionEyebrow}>SERVICES</Text>
+          <Text style={styles.sectionEyebrow}>{t('landing.sections.services')}</Text>
           <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
-            Every home task, covered
+            {t('landing.sections.servicesTitle')}
           </Text>
         </View>
         <View style={styles.catGrid}>
@@ -793,7 +812,7 @@ export default function LandingScreen({
                         {cat.starterPrompt}
                       </Text>
                       <FButton onPress={() => handleCategoryTask(cat.value)} icon={isSignedIn ? 'plus' : 'login'} fullWidth>
-                        {isSignedIn ? `Post in ${cat.label}` : postTaskCtaLabel}
+                        {isSignedIn ? t('landing.categories.postIn', { label: cat.label }) : postTaskCtaLabel}
                       </FButton>
                     </View>
                   )}
@@ -814,12 +833,12 @@ export default function LandingScreen({
           style={[styles.fixerCtaInner, wide && styles.fixerCtaInnerWide]}
         >
           <View style={[styles.fixerCtaLeft, wide && { flex: 1 }]}>
-            <Text style={styles.fixerEyebrow}>FOR FIXERS</Text>
+            <Text style={styles.fixerEyebrow}>{t('landing.fixer.eyebrow')}</Text>
             <Text style={styles.fixerHeadline}>
-              Earn on your{'\n'}own schedule
+              {t('landing.fixer.headline')}
             </Text>
             <Text style={styles.fixerSub}>
-              Join 1,800+ fixers already earning from tasks near them.
+              {t('landing.fixer.sub')}
             </Text>
             <FButton onPress={handleFixerCta} variant="secondary" size="lg" icon="account-hard-hat">
               {fixerCtaLabel}
@@ -828,11 +847,11 @@ export default function LandingScreen({
 
           <View style={[styles.fixerBenefits, wide && { flex: 1, flexDirection: 'row', flexWrap: 'wrap' }]}>
             {FIXER_BENEFITS.map((b) => (
-              <View key={b.title} style={[styles.benefitTile, wide && { width: '48%' }]}>
+              <View key={b.titleKey} style={[styles.benefitTile, wide && { width: '48%' }]}>
                 <MaterialCommunityIcons name={b.icon as never} size={22} color={brandColors.secondary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.benefitTitle}>{b.title}</Text>
-                  <Text style={styles.benefitDesc}>{b.desc}</Text>
+                  <Text style={styles.benefitTitle}>{t(b.titleKey)}</Text>
+                  <Text style={styles.benefitDesc}>{t(b.descKey)}</Text>
                 </View>
               </View>
             ))}
@@ -846,9 +865,9 @@ export default function LandingScreen({
           <View style={styles.footerBrand}>
             <AppLogo iconOnly />
             <Text style={styles.footerWordmark}>FixIt</Text>
-            <Text style={styles.footerTagline}>Your neighborhood. Fixed.</Text>
+            <Text style={styles.footerTagline}>{t('landing.footer.tagline')}</Text>
           </View>
-          <Text style={styles.footerCopy}>© 2026 FixIt · Tel Aviv, Israel</Text>
+          <Text style={styles.footerCopy}>{t('landing.footer.copyright')}</Text>
         </View>
       </View>
     </ScrollView>
@@ -912,6 +931,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  langSwitcher: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  langToggle: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,252,246,0.22)',
+  },
+  langToggleActive: {
+    backgroundColor: 'rgba(255,252,246,0.18)',
+    borderColor: 'rgba(255,252,246,0.60)',
+  },
+  langToggleText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: brandColors.textOnDarkMuted,
+    letterSpacing: 0.5,
+  },
+  langToggleTextActive: {
+    color: brandColors.textOnDark,
   },
   navLogin: {
     paddingHorizontal: spacing.md,

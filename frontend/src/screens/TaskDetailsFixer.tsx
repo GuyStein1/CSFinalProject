@@ -20,6 +20,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../api/axiosInstance';
 import { uploadImage } from '../utils/uploadImage';
@@ -29,7 +30,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FInput } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import { getCategoryMeta } from '../utils/categoryMetadata';
+import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface DirectionsResult {
   distanceText: string;   // e.g. "12.3 ק״מ"
@@ -95,6 +96,7 @@ interface Props {
 }
 
 export default function TaskDetailsFixer({ route }: Props) {
+  const { t } = useTranslation();
   const taskId = route.params?.taskId;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
@@ -171,7 +173,7 @@ export default function TaskDetailsFixer({ route }: Props) {
       );
       setExistingBid(myBid ?? null);
     } catch {
-      setError('Failed to load task details. Please try again.');
+      setError(t('taskDetailsFixer.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -219,15 +221,15 @@ export default function TaskDetailsFixer({ route }: Props) {
         await api.put(`/api/bids/${existingBid.id}/withdraw`);
         setExistingBid({ ...existingBid, status: 'WITHDRAWN' });
       } catch {
-        Alert.alert('Error', 'Failed to withdraw bid. Please try again.');
+        Alert.alert(t('common.error'), t('taskDetailsFixer.alerts.failedWithdraw'));
       }
     };
     if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to withdraw your bid?')) doWithdraw();
+      if (window.confirm(t('taskDetailsFixer.alerts.withdrawMessage'))) doWithdraw();
     } else {
-      Alert.alert('Withdraw Bid', 'Are you sure you want to withdraw your bid?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Withdraw', style: 'destructive', onPress: doWithdraw },
+      Alert.alert(t('taskDetailsFixer.alerts.withdrawTitle'), t('taskDetailsFixer.alerts.withdrawMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('taskDetailsFixer.alerts.withdrawConfirm'), style: 'destructive', onPress: doWithdraw },
       ]);
     }
   };
@@ -235,11 +237,11 @@ export default function TaskDetailsFixer({ route }: Props) {
   const handleSubmitBid = async () => {
     const price = parseFloat(bidPrice);
     if (isNaN(price) || price <= 0) {
-      setBidError('Enter a valid price greater than ₪0.');
+      setBidError(t('taskDetailsFixer.bidModal.errorPrice'));
       return;
     }
     if (!bidPitch.trim()) {
-      setBidError('Write a short pitch to the requester.');
+      setBidError(t('taskDetailsFixer.bidModal.errorPitch'));
       return;
     }
     setBidSubmitting(true);
@@ -264,9 +266,9 @@ export default function TaskDetailsFixer({ route }: Props) {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } }; status?: number } };
       if (axiosErr.response?.status === 409) {
-        setBidError('This task has reached the maximum number of bids (15).');
+        setBidError(t('taskDetailsFixer.bidModal.maxBids'));
       } else {
-        setBidError(axiosErr.response?.data?.error?.message ?? 'Failed to submit bid. Please try again.');
+        setBidError(axiosErr.response?.data?.error?.message ?? t('taskDetailsFixer.bidModal.errorSubmit'));
       }
     } finally {
       setBidSubmitting(false);
@@ -274,7 +276,7 @@ export default function TaskDetailsFixer({ route }: Props) {
   };
 
   if (loading) {
-    return <LoadingScreen label="Loading job details..." />;
+    return <LoadingScreen label={t('taskDetailsFixer.loading')} />;
   }
 
   if (error || !task) {
@@ -282,16 +284,16 @@ export default function TaskDetailsFixer({ route }: Props) {
       <View style={styles.errorContainer}>
         <EmptyState
           icon="alert-circle-outline"
-          title="Something went wrong"
-          message={error ?? 'Task not found.'}
-          actionLabel="Retry"
+          title={t('taskDetailsFixer.error.title')}
+          message={error ?? t('taskDetailsFixer.notFound')}
+          actionLabel={t('common.retry')}
           onAction={fetchData}
         />
       </View>
     );
   }
 
-  const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : 'No price specified';
+  const budgetLabel = task.suggested_price != null ? `₪${task.suggested_price}` : t('taskDetails.detail.quoteRequired');
   const hasPhotos = task.media_urls && task.media_urls.length > 0;
   const catMeta = getCategoryMeta(task.category);
 
@@ -333,7 +335,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               style={StyleSheet.absoluteFill}
             />
             <MaterialCommunityIcons name="image-off-outline" size={44} color={brandColors.textMuted} />
-            <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>No photos attached</Text>
+            <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{t('taskDetailsFixer.noPhotos')}</Text>
           </View>
         )}
 
@@ -352,7 +354,7 @@ export default function TaskDetailsFixer({ route }: Props) {
             <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
               <View style={[styles.categoryChip, { backgroundColor: catMeta.bg }]}>
                 <MaterialCommunityIcons name={catMeta.icon as never} size={16} color={catMeta.color} />
-                <Text style={[typography.label, { color: catMeta.color }]}>{catMeta.label}</Text>
+                <Text style={[typography.label, { color: catMeta.color }]}>{getCategoryLabel(task.category as never, t)}</Text>
               </View>
               {task.urgency === 'TODAY' && (
                 <View style={[styles.categoryChip, { backgroundColor: brandColors.dangerSoft }]}>
@@ -378,18 +380,18 @@ export default function TaskDetailsFixer({ route }: Props) {
           <Divider style={styles.divider} />
 
           {/* Detail Rows */}
-          <InfoRow icon="map-marker-outline" label="General Area" value={task.general_location_name || 'Not specified'} />
+          <InfoRow icon="map-marker-outline" label={t('taskDetailsFixer.detail.generalArea')} value={task.general_location_name || 'Not specified'} />
           <InfoRow
             icon="calendar-outline"
-            label="Posted"
+            label={t('taskDetailsFixer.detail.posted')}
             value={new Date(task.created_at).toLocaleDateString(undefined, {
               year: 'numeric', month: 'long', day: 'numeric',
             })}
           />
           <InfoRow
             icon="hand-extended-outline"
-            label="Bids"
-            value={`${bidCount} ${bidCount === 1 ? 'bid' : 'bids'} submitted`}
+            label={t('taskDetails.sections.bids')}
+            value={t(bidCount === 1 ? 'taskDetailsFixer.detail.bid' : 'taskDetailsFixer.detail.bids', { count: bidCount })}
           />
 
           {/* Distance & travel time (Google Directions API) */}
@@ -427,7 +429,7 @@ export default function TaskDetailsFixer({ route }: Props) {
                   {task.requester.full_name}
                 </Text>
                 <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                  Task Requester
+                  {t('taskDetailsFixer.requester')}
                 </Text>
               </View>
             </View>
@@ -446,7 +448,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               />
               <View style={{ flex: 1 }}>
                 <Text style={[typography.h3, { color: existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success }]}>
-                  Your Bid: ₪{existingBid.offered_price}
+                  {t('taskDetailsFixer.yourBid', { amount: existingBid.offered_price })}
                 </Text>
                 {existingBid.status === 'REJECTED' && existingBid.rejection_reason && (
                   <View style={{ marginTop: spacing.xs, gap: spacing.xs }}>
@@ -540,7 +542,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               fullWidth
               style={{ marginTop: spacing.sm }}
             >
-              Chat with Requester
+              {t('taskDetailsFixer.actions.chatWithRequester')}
             </FButton>
           )}
         </View>
@@ -555,22 +557,22 @@ export default function TaskDetailsFixer({ route }: Props) {
             icon="hand-extended-outline"
             size="lg"
           >
-            Submit Bid
+            {t('taskDetailsFixer.actions.submitBid')}
           </FButton>
         )}
         {bottomBarState === 'submitted' && (
           <View style={styles.submittedActions}>
             <FButton variant="outline" icon="pencil-outline" size="lg" onPress={handleEditBid} style={{ flex: 1 }}>
-              Edit Bid
+              {t('taskDetailsFixer.actions.editBid')}
             </FButton>
             <FButton variant="danger" icon="close-circle-outline" size="lg" onPress={handleWithdrawBid} style={{ flex: 1 }}>
-              Withdraw
+              {t('taskDetailsFixer.actions.withdraw')}
             </FButton>
           </View>
         )}
         {bottomBarState === 'closed' && (
           <FButton variant="outline" fullWidth disabled icon="lock-outline" size="lg">
-            No longer accepting bids
+            {t('taskDetailsFixer.bidStatus.noLongerAccepting')}
           </FButton>
         )}
       </View>
@@ -586,17 +588,17 @@ export default function TaskDetailsFixer({ route }: Props) {
             <View style={styles.modalIconCircle}>
               <MaterialCommunityIcons name="hand-extended-outline" size={24} color={brandColors.primary} />
             </View>
-            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{isEditing ? 'Edit Your Bid' : 'Submit Your Bid'}</Text>
+            <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{isEditing ? t('taskDetailsFixer.bidModal.editTitle') : t('taskDetailsFixer.bidModal.title')}</Text>
             <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.xs }]}>
               {task.suggested_price != null
-                ? `Suggested budget: ₪${task.suggested_price}`
-                : 'The requester is open to quotes.'}
+                ? t('taskDetailsFixer.suggestedBudget', { amount: task.suggested_price })
+                : t('taskDetailsFixer.openToQuotes')}
             </Text>
           </View>
 
           <FInput
-            label="Your price (₪)"
-            placeholder="e.g. 250"
+            label={t('taskDetailsFixer.bidModal.price')}
+            placeholder={t('taskDetailsFixer.bidModal.pricePlaceholder')}
             value={bidPrice}
             onChangeText={(text: string) => {
               setBidPrice(text.replace(/[^0-9.]/g, ''));
@@ -609,8 +611,8 @@ export default function TaskDetailsFixer({ route }: Props) {
           <View style={{ height: spacing.md }} />
 
           <FInput
-            label="Your pitch"
-            placeholder="Tell the requester why you're the right person..."
+            label={t('taskDetailsFixer.bidModal.pitchLabel')}
+            placeholder={t('taskDetailsFixer.bidModal.pitchPlaceholder')}
             value={bidPitch}
             onChangeText={(text: string) => {
               setBidPitch(text);
@@ -637,7 +639,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               disabled={bidSubmitting}
               style={{ flex: 1 }}
             >
-              Cancel
+              {t('common.cancel')}
             </FButton>
             <FButton
               onPress={handleSubmitBid}
@@ -646,7 +648,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               style={{ flex: 1 }}
               icon={isEditing ? 'check' : 'send'}
             >
-              {isEditing ? 'Update Offer' : 'Send Offer'}
+              {isEditing ? t('taskDetailsFixer.bidModal.updateOffer') : t('taskDetailsFixer.bidModal.submit')}
             </FButton>
           </View>
         </Modal>

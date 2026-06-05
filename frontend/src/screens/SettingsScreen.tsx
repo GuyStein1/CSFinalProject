@@ -3,31 +3,35 @@ import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-
 import { Text, Switch, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { useTranslation } from 'react-i18next';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { auth } from '../config/firebase';
 import api from '../api/axiosInstance';
+import { useLanguage } from '../context/LanguageContext';
 import { FButton, FCard, FInput } from '../components/ui';
 import { brandColors, radii, spacing, typography } from '../theme';
 
 export default function SettingsScreen() {
   const user = auth.currentUser;
+  const { t } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const accountName = user?.displayName?.trim() || 'FixIt account';
   const accountEmail = user?.email || 'Not signed in';
-  const verificationLabel = user?.emailVerified ? 'Verified email' : 'Email not verified';
+  const verificationLabel = user?.emailVerified ? t('settings.hero.verifiedEmail') : t('settings.hero.emailNotVerified');
   const verificationColor = user?.emailVerified ? brandColors.success : brandColors.warning;
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
     try {
       await sendPasswordResetEmail(auth, user.email);
-      Alert.alert('Success', 'Check your inbox for a password reset link.');
+      Alert.alert(t('settings.alerts.passwordReset.successTitle'), t('settings.alerts.passwordReset.success'));
     } catch {
-      Alert.alert('Error', 'Failed to send password reset email.');
+      Alert.alert(t('common.error'), t('settings.alerts.passwordReset.error'));
     }
   };
 
@@ -45,7 +49,7 @@ export default function SettingsScreen() {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Enable notifications in your iPhone Settings to receive updates.');
+        Alert.alert(t('settings.alerts.notifications.deniedTitle'), t('settings.alerts.notifications.denied'));
         setPushLoading(false);
         return;
       }
@@ -53,7 +57,7 @@ export default function SettingsScreen() {
       const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
       await api.post('/api/users/me/push-token', { token: tokenData.data });
       setPushEnabled(true);
-      Alert.alert('Notifications enabled', 'You will now receive push notifications.');
+      Alert.alert(t('settings.alerts.notifications.enabledTitle'), t('settings.alerts.notifications.enabled'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       Alert.alert('Error', msg);
@@ -69,10 +73,10 @@ export default function SettingsScreen() {
         await signOut(auth);
       }
     } else {
-      Alert.alert('Log Out', 'Are you sure you want to log out?', [
-        { text: 'Cancel' },
+      Alert.alert(t('settings.alerts.logOut.title'), t('settings.alerts.logOut.message'), [
+        { text: t('common.cancel') },
         {
-          text: 'Log Out',
+          text: t('settings.alerts.logOut.confirm'),
           style: 'destructive',
           onPress: async () => {
             await signOut(auth);
@@ -91,7 +95,7 @@ export default function SettingsScreen() {
             <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondary} />
           </View>
           <View style={styles.heroText}>
-            <Text style={[typography.eyebrow, styles.heroEyebrow]}>Workspace</Text>
+            <Text style={[typography.eyebrow, styles.heroEyebrow]}>{t('settings.hero.eyebrow')}</Text>
             <Text style={[typography.h2, { color: brandColors.textOnDark }]}>{accountName}</Text>
             <Text style={[typography.bodySm, styles.heroSub]}>{accountEmail}</Text>
           </View>
@@ -103,20 +107,20 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.heroPill}>
             <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondary} />
-            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>Secure session</Text>
+            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{t('settings.hero.secureSession')}</Text>
           </View>
         </View>
       </FCard>
 
       {/* Account Section */}
       <FCard style={styles.sectionCard} shadow="sm">
-        <SectionHeader icon="account-outline" label="Account" />
+        <SectionHeader icon="account-outline" label={t('settings.section.account')} />
 
         <SettingRow
           icon="email-outline"
-          label="Email"
+          label={t('settings.account.email.label')}
           value={accountEmail}
-          description="Used for sign-in and password recovery"
+          description={t('settings.account.email.description')}
         />
 
         <Divider style={styles.divider} />
@@ -124,13 +128,13 @@ export default function SettingsScreen() {
         <View style={styles.phoneSection}>
           <SettingRow
             icon="phone-outline"
-            label="Phone Number"
-            description="Shown only when coordination is needed"
+            label={t('settings.account.phone.label')}
+            description={t('settings.account.phone.description')}
           />
           <FInput
             value={phone}
             onChangeText={setPhone}
-            placeholder="Enter phone number"
+            placeholder={t('settings.account.phone.placeholder')}
             keyboardType="phone-pad"
           />
           <FButton
@@ -138,7 +142,7 @@ export default function SettingsScreen() {
               setSaving(true);
               setTimeout(() => {
                 setSaving(false);
-                Alert.alert('Saved', 'Phone number updated.');
+                Alert.alert(t('settings.alerts.phone.savedTitle'), t('settings.alerts.phone.saved'));
               }, 500);
             }}
             loading={saving}
@@ -146,14 +150,14 @@ export default function SettingsScreen() {
             size="sm"
             style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}
           >
-            Save
+            {t('common.save')}
           </FButton>
         </View>
       </FCard>
 
       {/* Preferences Section */}
       <FCard style={styles.sectionCard} shadow="sm">
-        <SectionHeader icon="tune-variant" label="Preferences" />
+        <SectionHeader icon="tune-variant" label={t('settings.section.preferences')} />
 
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
@@ -162,10 +166,10 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.rowText}>
               <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-                Push Notifications
+                {t('settings.preferences.pushNotifications.label')}
               </Text>
               <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                Bids, messages, payments, and task updates
+                {t('settings.preferences.pushNotifications.description')}
               </Text>
             </View>
           </View>
@@ -180,16 +184,48 @@ export default function SettingsScreen() {
 
         <Divider style={styles.divider} />
 
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleLeft}>
+            <View style={styles.settingIcon}>
+              <MaterialCommunityIcons name="translate" size={18} color={brandColors.primaryMuted} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+                {t('settings.preferences.language.label')}
+              </Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                {t('settings.preferences.language.description')}
+              </Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+            <Pressable
+              onPress={() => void changeLanguage('en')}
+              style={[styles.langChip, language === 'en' && styles.langChipActive]}
+            >
+              <Text style={[typography.caption, { color: language === 'en' ? brandColors.white : brandColors.textMuted, fontWeight: '700' }]}>EN</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => void changeLanguage('he')}
+              style={[styles.langChip, language === 'he' && styles.langChipActive]}
+            >
+              <Text style={[typography.caption, { color: language === 'he' ? brandColors.white : brandColors.textMuted, fontWeight: '700' }]}>עב</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <Divider style={styles.divider} />
+
         <Pressable onPress={handleChangePassword} style={styles.actionRow}>
           <View style={styles.settingIcon}>
             <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
           </View>
           <View style={styles.rowText}>
             <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-              Change Password
+              {t('settings.preferences.changePassword.label')}
             </Text>
             <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-              Send a reset link to your email
+              {t('settings.preferences.changePassword.description')}
             </Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
@@ -198,9 +234,9 @@ export default function SettingsScreen() {
 
       {/* Danger Zone */}
       <FCard style={styles.sectionCard} shadow="sm">
-        <SectionHeader icon="logout" label="Session" />
+        <SectionHeader icon="logout" label={t('settings.section.session')} />
         <Text style={[typography.bodySm, styles.sessionCopy]}>
-          Log out of this device. Your posted tasks, bids, and profile details stay saved.
+          {t('settings.session.copy')}
         </Text>
         <FButton
           variant="danger"
@@ -209,7 +245,7 @@ export default function SettingsScreen() {
           fullWidth
           style={styles.logoutButton}
         >
-          Log Out
+          {t('settings.session.logout')}
         </FButton>
       </FCard>
     </ScrollView>
@@ -382,5 +418,18 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: spacing.xs,
+  },
+  langChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    minWidth: 36,
+    alignItems: 'center',
+  },
+  langChipActive: {
+    backgroundColor: brandColors.primary,
+    borderColor: brandColors.primary,
   },
 });
