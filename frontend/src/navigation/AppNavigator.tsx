@@ -172,6 +172,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     <View
       style={[
         styles.desktopBar,
+        mode === 'fixer' && styles.desktopBarFixer,
         {
           height: topInset + 64,
           paddingTop: topInset,
@@ -190,7 +191,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
         {mode === 'fixer' && (
           <View style={styles.fixerWorkspaceLabel}>
-            <MaterialCommunityIcons name="wrench-outline" size={14} color={brandColors.secondary} />
+            <MaterialCommunityIcons name="wrench-outline" size={14} color="#fff" />
             <Text style={styles.fixerWorkspaceLabelText}>Fixer Workspace</Text>
           </View>
         )}
@@ -209,16 +210,19 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                   onPress={() => openWorkspaceScreen(item.screen)}
                   style={({ pressed }) => [
                     styles.desktopPageTab,
-                    selected && styles.desktopPageTabActive,
+                    selected && (mode === 'fixer' ? styles.desktopPageTabActiveFixer : styles.desktopPageTabActive),
                     pressed && styles.desktopActionPressed,
                   ]}
                 >
                   <MaterialCommunityIcons
                     name={item.icon as never}
                     size={18}
-                    color={selected ? brandColors.primary : brandColors.textMuted}
+                    color={selected ? (mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary) : brandColors.textMuted}
                   />
-                  <Text style={[styles.desktopPageTabText, selected && styles.desktopPageTabTextActive]}>
+                  <Text style={[
+                    styles.desktopPageTabText,
+                    selected && (mode === 'fixer' ? styles.desktopPageTabTextActiveFixer : styles.desktopPageTabTextActive),
+                  ]}>
                     {item.label}
                   </Text>
                   {showMsgBadge && <NotifBadge count={unreadMsgCount} />}
@@ -304,11 +308,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                     ? `Open notifications, ${notificationCount} unread`
                     : 'Open notifications'
                 }
-                style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+                style={({ pressed }) => [styles.desktopIconBtn, styles.desktopIconBtnFixer, pressed && styles.desktopActionPressed]}
                 hitSlop={8}
                 onPress={openNotifications}
               >
-                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
+                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.secondaryDark} />
                 <NotifBadge count={notificationCount} />
               </Pressable>
 
@@ -722,14 +726,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: brandColors.warningSoft,
+    backgroundColor: brandColors.secondaryDark,
     borderWidth: 1,
-    borderColor: brandColors.secondary,
+    borderColor: brandColors.secondaryDark,
   },
   fixerWorkspaceLabelText: {
     fontSize: 11,
     fontWeight: '700',
-    color: brandColors.secondaryDark,
+    color: '#fff',
   },
   // Fixer workspace entry button (requester mode, right actions)
   desktopFixerWorkspaceBtn: {
@@ -758,11 +762,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-    backgroundColor: brandColors.surfaceAlt,
+    borderColor: brandColors.secondaryDark,
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   desktopBackHomeBtnText: {
-    color: brandColors.textMuted,
+    color: brandColors.secondaryDark,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -798,6 +802,22 @@ const styles = StyleSheet.create({
   },
   desktopPageTabTextActive: {
     color: brandColors.primary,
+  },
+  // Fixer-mode tab variants
+  desktopBarFixer: {
+    backgroundColor: '#FDF3E0',
+    borderBottomColor: brandColors.secondary,
+  },
+  desktopPageTabActiveFixer: {
+    backgroundColor: brandColors.warningSoft,
+    borderColor: brandColors.secondary,
+  },
+  desktopPageTabTextActiveFixer: {
+    color: brandColors.secondaryDark,
+  },
+  desktopIconBtnFixer: {
+    backgroundColor: brandColors.warningSoft,
+    borderColor: brandColors.secondary,
   },
 
   // Language switcher chips
