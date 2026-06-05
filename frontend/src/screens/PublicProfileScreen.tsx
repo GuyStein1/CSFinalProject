@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Avatar, Divider, Text } from 'react-native-paper';
+import { Avatar, Divider, Modal, Portal, Text, TextInput } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -57,78 +57,51 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   );
 }
 
-function formatResponseTime(minutes: number): string {
-  if (minutes < 60) return `Responds in ~${Math.round(minutes)} min`;
-  if (minutes < 1440) return `Responds in ~${Math.round(minutes / 60)} hr`;
-  return `Responds in ~${Math.round(minutes / 1440)} days`;
-}
-
 const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
-
-const REPORT_REASON_LABELS: Record<string, string> = {
-  SPAM: 'Spam / ספאם',
-  OFFENSIVE: 'Offensive / פוגעני',
-  MISLEADING: 'Misleading / מטעה',
-  OTHER: 'Other / אחר',
-};
 
 function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
   const canReport = currentUserId === review.reviewee_id;
   const { t } = useTranslation();
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<typeof REPORT_REASONS[number] | null>(null);
+  const [otherDetails, setOtherDetails] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const date = new Date(review.created_at).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
 
-  const handleReport = () => {
-    const buttons = REPORT_REASONS.map((reason) => ({
-      text: REPORT_REASON_LABELS[reason],
-      onPress: async () => {
-        try {
-          await reportReview(review.id, reason);
-          const msg = 'Report submitted / הדיווח נשלח';
-          if (Platform.OS === 'web') {
-            // eslint-disable-next-line no-alert
-            window.alert(msg);
-          } else {
-            Alert.alert('Thank you', msg);
-          }
-        } catch (err: unknown) {
-          const axiosErr = err as {
-            response?: { data?: { error?: { message?: string } }; status?: number };
-          };
-          const message =
-            axiosErr.response?.status === 409
-              ? 'You have already reported this review / כבר דיווחת על ביקורת זו'
-              : axiosErr.response?.data?.error?.message ?? 'Failed to submit report';
-          if (Platform.OS === 'web') {
-            // eslint-disable-next-line no-alert
-            window.alert(message);
-          } else {
-            Alert.alert('Error', message);
-          }
-        }
-      },
-    }));
-    buttons.push({ text: 'Cancel', onPress: async () => {} });
-
-    if (Platform.OS === 'web') {
-      // On web, Alert.alert doesn't support multiple buttons well — use a simple prompt
-      const choice = // eslint-disable-next-line no-alert
-        window.prompt(
-          'Report reason / סיבת הדיווח:\n1. Spam\n2. Offensive\n3. Misleading\n4. Other\n\nEnter number (1-4):',
-        );
-      const idx = parseInt(choice ?? '', 10) - 1;
-      if (idx >= 0 && idx < REPORT_REASONS.length) {
-        buttons[idx].onPress();
+  const submitReport = async () => {
+    if (!selectedReason) return;
+    setSubmitting(true);
+    try {
+      await reportReview(review.id, selectedReason, otherDetails.trim() || undefined);
+      setReportModalVisible(false);
+      setSelectedReason(null);
+      setOtherDetails('');
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(t('publicProfile.report.submitted'));
+      } else {
+        Alert.alert(t('publicProfile.report.thankYou'), t('publicProfile.report.submitted'));
       }
-    } else {
-      Alert.alert(
-        'Report Review / דיווח על ביקורת',
-        'Why are you reporting this review?\nלמה את/ה מדווח/ת על ביקורת זו?',
-        buttons,
-      );
+    } catch (err: unknown) {
+      const axiosErr = err as {
+        response?: { data?: { error?: { message?: string } }; status?: number };
+      };
+      const message =
+        axiosErr.response?.status === 409
+          ? t('publicProfile.report.alreadyReported')
+          : axiosErr.response?.data?.error?.message ?? t('publicProfile.report.failedSubmit');
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(message);
+      } else {
+        Alert.alert(t('common.error'), message);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -155,7 +128,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
         <View style={styles.reviewHeaderRight}>
           <Text style={[typography.caption, { color: brandColors.textMuted }]}>{date}</Text>
           {canReport && (
-            <Pressable onPress={handleReport} hitSlop={8}>
+            <Pressable onPress={() => setReportModalVisible(true)} hitSlop={8}>
               <MaterialCommunityIcons name="flag-outline" size={16} color={brandColors.textMuted} />
             </Pressable>
           )}
@@ -169,6 +142,69 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
           {review.comment}
         </Text>
       ) : null}
+
+      {/* Report Modal */}
+      <Portal>
+        <Modal
+          visible={reportModalVisible}
+          onDismiss={() => { setReportModalVisible(false); setSelectedReason(null); setOtherDetails(''); }}
+          contentContainerStyle={styles.reportModal}
+        >
+          <Text style={[typography.h3, { color: brandColors.textPrimary, marginBottom: spacing.xs }]}>
+            {t('publicProfile.report.title')}
+          </Text>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+            {t('publicProfile.report.prompt')}
+          </Text>
+          {REPORT_REASONS.map((reason) => (
+            <Pressable
+              key={reason}
+              style={[styles.reportOption, selectedReason === reason && styles.reportOptionSelected]}
+              onPress={() => setSelectedReason(reason)}
+            >
+              <MaterialCommunityIcons
+                name={selectedReason === reason ? 'radiobox-marked' : 'radiobox-blank'}
+                size={20}
+                color={selectedReason === reason ? brandColors.primary : brandColors.textMuted}
+              />
+              <Text style={[typography.body, { color: selectedReason === reason ? brandColors.primary : brandColors.textPrimary }]}>
+                {t(`publicProfile.report.reasons.${reason}`)}
+              </Text>
+            </Pressable>
+          ))}
+          <TextInput
+            mode="outlined"
+            placeholder={t('publicProfile.report.detailsPlaceholder')}
+            value={otherDetails}
+            onChangeText={setOtherDetails}
+            multiline
+            numberOfLines={3}
+            style={{ marginTop: spacing.sm, backgroundColor: brandColors.surface }}
+          />
+          {selectedReason === 'OTHER' && !otherDetails.trim() && (
+            <Text style={[typography.caption, { color: brandColors.danger, marginTop: spacing.xs }]}>
+              {t('publicProfile.report.detailsRequired')}
+            </Text>
+          )}
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+            <Pressable
+              style={[styles.reportBtn, styles.reportBtnCancel]}
+              onPress={() => { setReportModalVisible(false); setSelectedReason(null); setOtherDetails(''); }}
+            >
+              <Text style={[typography.label, { color: brandColors.textMuted }]}>{t('common.cancel')}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.reportBtn, styles.reportBtnSubmit, (!selectedReason || (selectedReason === 'OTHER' && !otherDetails.trim())) && { opacity: 0.5 }]}
+              onPress={() => void submitReport()}
+              disabled={!selectedReason || (selectedReason === 'OTHER' && !otherDetails.trim()) || submitting}
+            >
+              <Text style={[typography.label, { color: brandColors.white }]}>
+                {submitting ? t('common.loading') : t('common.submit')}
+              </Text>
+            </Pressable>
+          </View>
+        </Modal>
+      </Portal>
     </FCard>
   );
 }
@@ -209,6 +245,12 @@ export default function PublicProfileScreen({ route }: { route: any }) {
   if (profileLoading || reviewsLoading) {
     return <LoadingScreen label={t('publicProfile.loading')} />;
   }
+
+  const formatResponseTime = (minutes: number): string => {
+    if (minutes < 60) return t('publicProfile.respondsIn', { value: Math.round(minutes), unit: 'min' });
+    if (minutes < 1440) return t('publicProfile.respondsIn', { value: Math.round(minutes / 60), unit: 'hr' });
+    return t('publicProfile.respondsIn', { value: Math.round(minutes / 1440), unit: 'days' });
+  };
 
   const avgRating = profile?.average_rating_as_fixer;
   const memberSince = profile?.created_at
@@ -441,5 +483,34 @@ const styles = StyleSheet.create({
   reviewHeaderRight: {
     alignItems: 'flex-end',
     gap: spacing.xs,
+  },
+  reportModal: {
+    backgroundColor: brandColors.surface,
+    margin: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+  },
+  reportOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+  },
+  reportOptionSelected: {
+    backgroundColor: brandColors.primaryMuted + '20',
+  },
+  reportBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.md,
+  },
+  reportBtnCancel: {
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  reportBtnSubmit: {
+    backgroundColor: brandColors.primary,
   },
 });

@@ -488,7 +488,18 @@
     },
     "yesterday": "אתמול",
     "unread": "לא נקרא",
-    "noMessages": "אין הודעות עדיין"
+    "noMessages": "אין הודעות עדיין",
+    "active": "פעיל",
+    "past": "שיחות קודמות"
+  },
+  "pastConversations": {
+    "empty": {
+      "title": "אין שיחות קודמות",
+      "message": "שיחות ממשימות שהושלמו או בוטלו יופיעו כאן."
+    },
+    "deleteConfirmTitle": "למחוק שיחה?",
+    "deleteConfirmMessage": "למחוק את השיחה של \"{{title}}\"? פעולה זו מסירה את כל ההודעות לצמיתות.",
+    "deleteFailed": "מחיקת השיחה נכשלה."
   },
   "notifications": {
     "loading": "טוען התראות...",
@@ -552,6 +563,32 @@
         "title": "לדחות את ההצעה הזו?",
         "confirm": "דחה הצעה"
       }
+    },
+    "decline": {
+      "title": "דחיית הצעה",
+      "description": "בחר סיבה כדי שהמתקן יוכל לשפר הצעות עתידיות.",
+      "reasons": {
+        "PRICE_TOO_HIGH": "מחיר גבוה מדי",
+        "BAD_TIMING": "תזמון לא מתאים",
+        "CHOSE_ANOTHER": "בחרתי מתקן אחר",
+        "NOT_QUALIFIED": "לא מתאים",
+        "OTHER": "אחר"
+      },
+      "note": "הערה (אופציונלי)",
+      "notePlaceholder": "הוסף פרטים אם תרצה...",
+      "confirm": "אשר דחייה"
+    },
+    "completion": {
+      "photos": "תמונות השלמה",
+      "payStep": "שלב 1: שלם למתקן",
+      "paymentConfirmed": "התשלום אושר",
+      "waitingFixer": "ממתין לאישור השלמה מהמתקן",
+      "canceled": "בוטל",
+      "canceledMessage": "משימה זו בוטלה. פתח אותה מחדש כדי לפרסם אותה שוב בפיד הגילוי.",
+      "reopenTask": "פתח מחדש",
+      "reopenError": "פתיחת המשימה מחדש נכשלה.",
+      "reopenConfirmTitle": "לפתוח מחדש?",
+      "reopenConfirmMessage": "זה יפרסם את המשימה מחדש בפיד הגילוי."
     },
     "fixerReviews": {
       "title": "ביקורות על המתקן",
@@ -635,6 +672,25 @@
       "errorPitch": "כתוב תיאור קצר למזמין.",
       "maxBids": "המשימה הגיעה למספר המקסימלי של הצעות (15).",
       "errorSubmit": "הגשת ההצעה נכשלה. נסה שוב."
+    },
+    "rejectionReasons": {
+      "PRICE_TOO_HIGH": "מחיר גבוה מדי",
+      "BAD_TIMING": "תזמון לא מתאים",
+      "CHOSE_ANOTHER": "נבחר מתקן אחר",
+      "NOT_QUALIFIED": "לא מתאים",
+      "OTHER": "אחר"
+    },
+    "completion": {
+      "photos": "תמונות השלמה",
+      "addPhotos": "הוסף תמונות השלמה",
+      "uploaded": "הועלה",
+      "uploadedMessage": "תמונות ההשלמה נוספו ונשמרו בתיק העבודות שלך.",
+      "uploadError": "העלאת תמונות ההשלמה נכשלה.",
+      "waitingPayment": "ממתין לאישור תשלום מהמזמין לפני שתוכל לסמן כהושלם",
+      "paymentConfirmed": "התשלום אושר",
+      "markCompleted": "סמן כהושלם",
+      "waitingRequester": "ממתין לאישור השלמה מהמזמין",
+      "reason": "סיבה"
     },
     "actions": {
       "submitBid": "הגש הצעה",
@@ -874,7 +930,25 @@
     "portfolioTitle": "תיק עבודות ({{count}})",
     "reviewsTitle": "ביקורות ({{count}})",
     "review": "ביקורת",
-    "reviews": "ביקורות"
+    "reviews": "ביקורות",
+    "respondsIn": "מגיב תוך ~{{value}} {{unit}}",
+    "report": {
+      "title": "דיווח על ביקורת",
+      "prompt": "למה את/ה מדווח/ת על ביקורת זו?",
+      "webPrompt": "סיבת הדיווח:\n1. ספאם\n2. פוגעני\n3. מטעה\n4. אחר\n\nהכנס מספר (1-4):",
+      "submitted": "הדיווח נשלח",
+      "thankYou": "תודה",
+      "alreadyReported": "כבר דיווחת על ביקורת זו",
+      "failedSubmit": "שליחת הדיווח נכשלה",
+      "reasons": {
+        "SPAM": "ספאם",
+        "OFFENSIVE": "פוגעני",
+        "MISLEADING": "מטעה",
+        "OTHER": "אחר"
+      },
+      "detailsPlaceholder": "אנא תאר/י את הבעיה...",
+      "detailsRequired": "נדרש פירוט כשבוחרים אחר."
+    }
   },
   "landing": {
     "hero": {
@@ -1132,6 +1206,27 @@
   "placeholder": {
     "title": "בקרוב",
     "message": "תכונה זו נמצאת בפיתוח."
+  },
+  "timeAgo": {
+    "justNow": "עכשיו",
+    "minuteAgo": "לפני דקה",
+    "minutesAgo": "לפני {{count}} דקות",
+    "hourAgo": "לפני שעה",
+    "hoursAgo": "לפני {{count}} שעות",
+    "yesterday": "אתמול",
+    "daysAgo": "לפני {{count}} ימים",
+    "weekAgo": "לפני שבוע",
+    "weeksAgo": "לפני {{count}} שבועות"
+  },
+  "discoveryCard": {
+    "noPrice": "ללא מחיר מצוין",
+    "bidSent": "הצעה נשלחה",
+    "viewBid": "ראה הצעה",
+    "details": "פרטים",
+    "selectedJob": "עבודה נבחרת",
+    "bidAlreadySent": "הצעה כבר נשלחה",
+    "viewYourBid": "ראה את ההצעה שלך",
+    "viewDetails": "ראה פרטים"
   },
   "status": {
     "open": "פתוח",

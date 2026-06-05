@@ -68,6 +68,22 @@ async function acceptBid(taskId: string) {
   return bidId;
 }
 
+// Full dual-confirm completion: confirm payment → requester confirms → fixer confirms
+async function completeTaskFull(taskId: string) {
+  __setUid('test-uid');
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-payment`)
+    .set('Authorization', REQUESTER_AUTH);
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-completion`)
+    .set('Authorization', REQUESTER_AUTH);
+  __setUid('fixer-uid');
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-completion`)
+    .set('Authorization', FIXER_AUTH);
+  __setUid('test-uid');
+}
+
 // ── POST /api/tasks ───────────────────────────────────────────────────────────
 
 describe('POST /api/tasks', () => {
@@ -295,15 +311,22 @@ describe('PUT /api/tasks/:id/status', () => {
     expect(bids.every((b) => b.status === 'REJECTED')).toBe(true);
   });
 
-  it('requester can mark an IN_PROGRESS task as COMPLETED', async () => {
+  it('dual-confirm completes an IN_PROGRESS task', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await completeTaskFull(task.id);
+    const updated = await prisma.task.findUnique({ where: { id: task.id } });
+    expect(updated!.status).toBe('COMPLETED');
+  });
+
+  it('rejects direct IN_PROGRESS → COMPLETED transition', async () => {
     const task = await createTask();
     await acceptBid(task.id);
     const res = await request(app)
       .put(`/api/tasks/${task.id}/status`)
       .set('Authorization', REQUESTER_AUTH)
       .send({ status: 'COMPLETED' });
-    expect(res.status).toBe(200);
-    expect(res.body.task.status).toBe('COMPLETED');
+    expect(res.status).toBe(400);
   });
 
   it('requester can cancel an IN_PROGRESS task', async () => {
@@ -340,14 +363,9 @@ describe('PUT /api/tasks/:id/status', () => {
 // ── PUT /api/tasks/:id/confirm-payment ────────────────────────────────────────
 
 describe('PUT /api/tasks/:id/confirm-payment', () => {
-  it('requester can confirm payment on a COMPLETED task', async () => {
+  it('requester can confirm payment on an IN_PROGRESS task', async () => {
     const task = await createTask();
     await acceptBid(task.id);
-    await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'COMPLETED' });
-
     const res = await request(app)
       .put(`/api/tasks/${task.id}/confirm-payment`)
       .set('Authorization', REQUESTER_AUTH);
@@ -370,10 +388,7 @@ describe('POST /api/tasks/:id/reviews', () => {
   async function completeTask() {
     const task = await createTask();
     await acceptBid(task.id);
-    await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'COMPLETED' });
+    await completeTaskFull(task.id);
     return task;
   }
 
@@ -588,10 +603,7 @@ describe('POST /api/tasks/:id/reviews (forbidden)', () => {
   it('returns 403 when a non-requester tries to submit a review', async () => {
     const task = await createTask();
     await acceptBid(task.id);
-    await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'COMPLETED' });
+    await completeTaskFull(task.id);
 
     __setUid('fixer-uid');
     const res = await request(app)
@@ -718,10 +730,7 @@ describe('POST /api/tasks/:id/reviews (edge cases)', () => {
   async function completeTask() {
     const task = await createTask();
     await acceptBid(task.id);
-    await request(app)
-      .put(`/api/tasks/${task.id}/status`)
-      .set('Authorization', REQUESTER_AUTH)
-      .send({ status: 'COMPLETED' });
+    await completeTaskFull(task.id);
     return task;
   }
 

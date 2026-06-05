@@ -52,7 +52,12 @@ async function setupFlaggedReview() {
   // Accept bid, complete task
   __setUid('requester-uid');
   await request(app).put(`/api/bids/${bidRes.body.bid.id}/accept`).set('Authorization', REQUESTER_AUTH);
-  await request(app).put(`/api/tasks/${taskId}/status`).set('Authorization', REQUESTER_AUTH).send({ status: 'COMPLETED' });
+  // Dual-confirm completion
+  await request(app).put(`/api/tasks/${taskId}/confirm-payment`).set('Authorization', REQUESTER_AUTH);
+  await request(app).put(`/api/tasks/${taskId}/confirm-completion`).set('Authorization', REQUESTER_AUTH);
+  __setUid('fixer-uid');
+  await request(app).put(`/api/tasks/${taskId}/confirm-completion`).set('Authorization', FIXER_AUTH);
+  __setUid('requester-uid');
 
   // Write review
   const reviewRes = await request(app)

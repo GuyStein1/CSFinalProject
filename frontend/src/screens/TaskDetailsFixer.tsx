@@ -58,6 +58,9 @@ interface Task {
   media_urls: string[];
   completion_photos: string[];
   general_location_name: string;
+  is_payment_confirmed: boolean;
+  requester_completed: boolean;
+  fixer_completed: boolean;
   created_at: string;
   requester_id: string;
   assigned_fixer_id?: string | null;
@@ -78,14 +81,7 @@ interface ExistingBid {
   auto_rejected_winning_rating?: number | null;
 }
 
-const REJECTION_LABELS: Record<string, string> = {
-  PRICE_TOO_HIGH: 'Price too high',
-  BAD_TIMING: 'Bad timing',
-  CHOSE_ANOTHER: 'Another fixer was chosen',
-  NOT_QUALIFIED: 'Not the right fit',
-  TASK_CANCELED: 'Task was canceled',
-  OTHER: 'Other reason',
-};
+// Rejection labels now come from i18n: taskDetailsFixer.rejectionReasons.*
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CAROUSEL_HEIGHT = 260;
@@ -453,7 +449,7 @@ export default function TaskDetailsFixer({ route }: Props) {
                 {existingBid.status === 'REJECTED' && existingBid.rejection_reason && (
                   <View style={{ marginTop: spacing.xs, gap: spacing.xs }}>
                     <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
-                      Reason: {REJECTION_LABELS[existingBid.rejection_reason] ?? 'Rejected'}
+                      {t('taskDetailsFixer.completion.reason')}: {t(`taskDetailsFixer.rejectionReasons.${existingBid.rejection_reason}`, { defaultValue: existingBid.rejection_reason })}
                     </Text>
                     {existingBid.rejection_note ? (
                       <Text style={[typography.bodySm, { color: brandColors.textMuted, fontStyle: 'italic' }]}>
@@ -479,7 +475,7 @@ export default function TaskDetailsFixer({ route }: Props) {
           {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
             <View style={{ gap: spacing.md }}>
               <Divider style={styles.divider} />
-              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Completion Photos</Text>
+              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('taskDetailsFixer.completion.photos')}</Text>
               {(task.completion_photos?.length ?? 0) > 0 && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
                   {task.completion_photos.map((url, i) => (
@@ -512,17 +508,63 @@ export default function TaskDetailsFixer({ route }: Props) {
                       completion_photos: allPhotos,
                     });
                     setTask((prev) => prev ? { ...prev, completion_photos: allPhotos } : prev);
-                    Alert.alert('Uploaded', 'Completion photos added and saved to your portfolio.');
+                    Alert.alert(t('taskDetailsFixer.completion.uploaded'), t('taskDetailsFixer.completion.uploadedMessage'));
                   } catch {
-                    Alert.alert('Error', 'Failed to upload completion photos.');
+                    Alert.alert(t('common.error'), t('taskDetailsFixer.completion.uploadError'));
                   } finally {
                     setUploadingPhotos(false);
                   }
                 }}
                 fullWidth
               >
-                Add Completion Photos
+                {t('taskDetailsFixer.completion.addPhotos')}
               </FButton>
+            </View>
+          )}
+
+          {/* Mark Completed — only after payment confirmed */}
+          {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
+            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+              <Divider style={styles.divider} />
+              {!task.is_payment_confirmed && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.textMuted} />
+                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                    {t('taskDetailsFixer.completion.waitingPayment')}
+                  </Text>
+                </View>
+              )}
+              {task.is_payment_confirmed && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs }}>
+                  <MaterialCommunityIcons name="check-circle" size={16} color={brandColors.success} />
+                  <Text style={[typography.caption, { color: brandColors.success }]}>{t('taskDetailsFixer.completion.paymentConfirmed')}</Text>
+                </View>
+              )}
+              {task.is_payment_confirmed && !task.fixer_completed && (
+                <FButton
+                  variant="primary"
+                  icon="check-circle-outline"
+                  onPress={async () => {
+                    try {
+                      await api.put(`/api/tasks/${task.id}/confirm-completion`);
+                      fetchData();
+                    } catch {
+                      Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
+                    }
+                  }}
+                  fullWidth
+                >
+                  {t('taskDetailsFixer.completion.markCompleted')}
+                </FButton>
+              )}
+              {task.is_payment_confirmed && task.fixer_completed && !task.requester_completed && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
+                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                    {t('taskDetailsFixer.completion.waitingRequester')}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 

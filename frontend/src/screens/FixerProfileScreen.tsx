@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -83,6 +84,14 @@ export default function FixerProfileScreen() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      AsyncStorage.getItem('pushEnabled').then((v) => setPushEnabled(v === 'true'));
+    } else {
+      Notifications.getPermissionsAsync().then(({ status }) => setPushEnabled(status === 'granted'));
+    }
+  }, []);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -492,8 +501,8 @@ export default function FixerProfileScreen() {
                   value={pushEnabled}
                   onValueChange={async (value) => {
                     if (Platform.OS === 'web') {
-                      // On web, toggle locally (push tokens only work on mobile)
                       setPushEnabled(value);
+                      void AsyncStorage.setItem('pushEnabled', String(value));
                       return;
                     }
                     if (!value) { setPushEnabled(false); return; }
@@ -521,52 +530,46 @@ export default function FixerProfileScreen() {
               </View>
             </FCard>
 
-            {/* Verification section */}
-            <FCard style={styles.section} shadow="sm">
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionIcon}>
-                  <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
+            {/* Verification section — hidden once approved */}
+            {profile?.verification_status !== 'APPROVED' && (
+              <FCard style={styles.section} shadow="sm">
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
+                  </View>
+                  <View>
+                    <Text style={styles.sectionKicker}>{t('fixerProfile.verification.kicker')}</Text>
+                    <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.verification.title')}</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.sectionKicker}>{t('fixerProfile.verification.kicker')}</Text>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.verification.title')}</Text>
-                </View>
-              </View>
 
-              {profile?.verification_status === 'APPROVED' ? (
-                <View style={styles.verificationBanner}>
-                  <MaterialCommunityIcons name="check-decagram" size={20} color={brandColors.primary} />
-                  <Text style={[typography.bodyMedium, { color: brandColors.primary }]}>{t('fixerProfile.verification.verified')}</Text>
-                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                    {t('fixerProfile.verification.verifiedMsg')}
-                  </Text>
-                </View>
-              ) : profile?.verification_status === 'PENDING' ? (
-                <View style={styles.verificationBanner}>
-                  <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
-                  <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>{t('fixerProfile.verification.pending')}</Text>
-                  <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                    {t('fixerProfile.verification.pendingMsg')}
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
-                    {t('fixerProfile.verification.uploadMsg')}
-                  </Text>
-                  <FButton
-                    variant="secondary"
-                    icon="camera-outline"
-                    onPress={() => void handleSubmitVerification()}
-                    loading={uploadingVerification}
-                    disabled={uploadingVerification}
-                    fullWidth
-                  >
-                    {t('fixerProfile.verification.uploadBtn')}
-                  </FButton>
-                </>
-              )}
-            </FCard>
+                {profile?.verification_status === 'PENDING' ? (
+                  <View style={styles.verificationBanner}>
+                    <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
+                    <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>{t('fixerProfile.verification.pending')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                      {t('fixerProfile.verification.pendingMsg')}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+                      {t('fixerProfile.verification.uploadMsg')}
+                    </Text>
+                    <FButton
+                      variant="secondary"
+                      icon="camera-outline"
+                      onPress={() => void handleSubmitVerification()}
+                      loading={uploadingVerification}
+                      disabled={uploadingVerification}
+                      fullWidth
+                    >
+                      {t('fixerProfile.verification.uploadBtn')}
+                    </FButton>
+                  </>
+                )}
+              </FCard>
+            )}
 
             <FCard style={styles.section} shadow="sm">
               <View style={styles.portfolioHeader}>

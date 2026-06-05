@@ -326,7 +326,7 @@
     "header": {
       "kicker": "Fixer Workspace",
       "title": "Bid pipeline",
-      "sub": "{{tab}} bids Â· {{pending}} pending Â· {{active}} active jobs"
+      "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs"
     },
     "tabs": {
       "active": "Active",
@@ -356,7 +356,7 @@
     },
     "editModal": {
       "title": "Edit Bid",
-      "offer": "Offer (â‚ª)",
+      "offer": "Offer (₪)",
       "description": "Description",
       "save": "Save Changes",
       "cancel": "Cancel"
@@ -408,7 +408,7 @@
     "header": {
       "kicker": "Fixer Workspace",
       "title": "Find jobs",
-      "sub": "Open jobs near {{location}} Â· {{categories}} Â· {{budget}}"
+      "sub": "Open jobs near {{location}} · {{categories}} · {{budget}}"
     },
     "stats": {
       "openJobs": "Open jobs",
@@ -464,7 +464,7 @@
       "map": "Map",
       "list": "List",
       "budgetAny": "Budget: Any",
-      "budgetRange": "Budget: â‚ª{{min}}â€“â‚ª{{max}}",
+      "budgetRange": "Budget: ₪{{min}}–₪{{max}}",
       "clearFilters": "Clear filters",
       "currentLocation": "Current location"
     }
@@ -477,18 +477,29 @@
       "subtitle": "Say hello!"
     },
     "input": {
-      "placeholder": "Type a messageâ€¦"
+      "placeholder": "Type a message…"
     }
   },
   "conversations": {
-    "loading": "Loading messagesâ€¦",
+    "loading": "Loading messages…",
     "empty": {
       "title": "No conversations yet",
       "message": "Start a chat from a task once a bid is accepted."
     },
     "yesterday": "Yesterday",
     "unread": "unread",
-    "noMessages": "No messages yet"
+    "noMessages": "No messages yet",
+    "active": "Active",
+    "past": "Past Conversations"
+  },
+  "pastConversations": {
+    "empty": {
+      "title": "No past conversations",
+      "message": "Completed and canceled task conversations will appear here."
+    },
+    "deleteConfirmTitle": "Delete conversation?",
+    "deleteConfirmMessage": "Delete the conversation for \"{{title}}\"? This removes all messages permanently.",
+    "deleteFailed": "Failed to delete conversation."
   },
   "notifications": {
     "loading": "Loading notifications...",
@@ -553,6 +564,32 @@
         "confirm": "Reject bid"
       }
     },
+    "decline": {
+      "title": "Decline Bid",
+      "description": "Select a reason so the fixer can improve future bids.",
+      "reasons": {
+        "PRICE_TOO_HIGH": "Price too high",
+        "BAD_TIMING": "Bad timing",
+        "CHOSE_ANOTHER": "Chose another fixer",
+        "NOT_QUALIFIED": "Not the right fit",
+        "OTHER": "Other"
+      },
+      "note": "Note (optional)",
+      "notePlaceholder": "Add details if you'd like...",
+      "confirm": "Confirm Decline"
+    },
+    "completion": {
+      "photos": "Completion Photos",
+      "payStep": "Step 1: Pay the fixer",
+      "paymentConfirmed": "Payment confirmed",
+      "waitingFixer": "Waiting for the fixer to confirm completion",
+      "canceled": "Canceled",
+      "canceledMessage": "This task was canceled. Reopen it to re-post it to the discovery feed for fixers to bid on again.",
+      "reopenTask": "Reopen Task",
+      "reopenError": "Failed to reopen task.",
+      "reopenConfirmTitle": "Reopen task?",
+      "reopenConfirmMessage": "This will re-post the task to the discovery feed for fixers to bid on."
+    },
     "fixerReviews": {
       "title": "Fixer Reviews",
       "noReviews": "No reviews yet."
@@ -561,7 +598,7 @@
       "title": "Edit Task",
       "titleLabel": "Title",
       "descriptionLabel": "Description",
-      "budgetLabel": "Budget (â‚ª)",
+      "budgetLabel": "Budget (₪)",
       "locationLabel": "General location",
       "addressLabel": "Exact address",
       "saveChanges": "Save Changes"
@@ -603,8 +640,8 @@
     "notFound": "Task not found.",
     "noPhotos": "No photos attached",
     "requester": "Task Requester",
-    "yourBid": "Your Bid: â‚ª{{amount}}",
-    "suggestedBudget": "Suggested budget: â‚ª{{amount}}",
+    "yourBid": "Your Bid: ₪{{amount}}",
+    "suggestedBudget": "Suggested budget: ₪{{amount}}",
     "openToQuotes": "The requester is open to quotes.",
     "error": {
       "title": "Something went wrong",
@@ -628,7 +665,7 @@
       "chatWithRequester": "Chat with Requester"
     },
     "bidStatus": {
-      "submitted": "Bid Submitted âœ“",
+      "submitted": "Bid Submitted ✓",
       "accepted": "Bid Accepted",
       "noLongerAccepting": "No longer accepting bids"
     },
@@ -641,7 +678,7 @@
     "bidModal": {
       "title": "Submit Your Bid",
       "editTitle": "Edit Your Bid",
-      "price": "Your price (â‚ª)",
+      "price": "Your price (₪)",
       "pricePlaceholder": "e.g. 250",
       "pitchLabel": "Your pitch",
       "pitchPlaceholder": "Tell the requester why you're the right person...",
@@ -649,10 +686,29 @@
       "submit": "Send Offer",
       "updateOffer": "Update Offer",
       "cancel": "Cancel",
-      "errorPrice": "Enter a valid price greater than â‚ª0.",
+      "errorPrice": "Enter a valid price greater than ₪0.",
       "errorPitch": "Write a short pitch to the requester.",
       "maxBids": "This task has reached the maximum number of bids (15).",
       "errorSubmit": "Failed to submit bid. Please try again."
+    },
+    "rejectionReasons": {
+      "PRICE_TOO_HIGH": "Price too high",
+      "BAD_TIMING": "Bad timing",
+      "CHOSE_ANOTHER": "Chose another fixer",
+      "NOT_QUALIFIED": "Not the right fit",
+      "OTHER": "Other"
+    },
+    "completion": {
+      "photos": "Completion Photos",
+      "addPhotos": "Add Completion Photos",
+      "uploaded": "Uploaded",
+      "uploadedMessage": "Completion photos added and saved to your portfolio.",
+      "uploadError": "Failed to upload completion photos.",
+      "waitingPayment": "Waiting for the requester to confirm payment before you can mark as completed",
+      "paymentConfirmed": "Payment confirmed",
+      "markCompleted": "Mark as Completed",
+      "waitingRequester": "Waiting for the requester to confirm completion",
+      "reason": "Reason"
     }
   },
   "createTask": {
@@ -685,7 +741,7 @@
       "subtitle": "Choose a fixed price or let fixers quote",
       "fixedPrice": "Fixed Price",
       "quoteRequired": "Quote Required",
-      "budgetLabel": "Budget (â‚ª)",
+      "budgetLabel": "Budget (₪)",
       "enterBudget": "Enter your budget",
       "quoteNote": "Fixers will propose their own price when bidding on your task.",
       "urgency": {
@@ -732,7 +788,7 @@
       "budget": {
         "fixed": "Fixed Price",
         "quote": "Quote Required",
-        "amount": "Amount (â‚ª)"
+        "amount": "Amount (₪)"
       },
       "location": {
         "generalArea": "General Area",
@@ -874,7 +930,25 @@
     "portfolioTitle": "Portfolio ({{count}})",
     "reviewsTitle": "Reviews ({{count}})",
     "review": "review",
-    "reviews": "reviews"
+    "reviews": "reviews",
+    "respondsIn": "Responds in ~{{value}} {{unit}}",
+    "report": {
+      "title": "Report Review",
+      "prompt": "Why are you reporting this review?",
+      "webPrompt": "Report reason:\n1. Spam\n2. Offensive\n3. Misleading\n4. Other\n\nEnter number (1-4):",
+      "submitted": "Report submitted",
+      "thankYou": "Thank you",
+      "alreadyReported": "You have already reported this review",
+      "failedSubmit": "Failed to submit report",
+      "reasons": {
+        "SPAM": "Spam",
+        "OFFENSIVE": "Offensive",
+        "MISLEADING": "Misleading",
+        "OTHER": "Other"
+      },
+      "detailsPlaceholder": "Please describe the issue...",
+      "detailsRequired": "Details are required when selecting Other."
+    }
   },
   "landing": {
     "hero": {
@@ -982,7 +1056,7 @@
     },
     "footer": {
       "tagline": "Your neighborhood. Fixed.",
-      "copyright": "Â© 2026 FixIt Â· Tel Aviv, Israel",
+      "copyright": "© 2026 FixIt · Tel Aviv, Israel",
       "footerTagline": "Your neighborhood. Fixed. A task marketplace for homeowners and skilled local pros.",
       "madeby": "Made for neighbors who get things done.",
       "product": "Product",
@@ -1132,6 +1206,27 @@
   "placeholder": {
     "title": "Coming Soon",
     "message": "This feature is under construction."
+  },
+  "timeAgo": {
+    "justNow": "Just now",
+    "minuteAgo": "1 minute ago",
+    "minutesAgo": "{{count}} minutes ago",
+    "hourAgo": "1 hour ago",
+    "hoursAgo": "{{count}} hours ago",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago",
+    "weekAgo": "1 week ago",
+    "weeksAgo": "{{count}} weeks ago"
+  },
+  "discoveryCard": {
+    "noPrice": "No price specified",
+    "bidSent": "Bid sent",
+    "viewBid": "View bid",
+    "details": "Details",
+    "selectedJob": "Selected job",
+    "bidAlreadySent": "Bid already sent",
+    "viewYourBid": "View Your Bid",
+    "viewDetails": "View Details"
   },
   "status": {
     "open": "Open",

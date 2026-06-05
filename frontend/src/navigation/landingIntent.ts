@@ -52,6 +52,7 @@ export type RootStackParamList = {
   PublicProfile: { userId?: string } | undefined;
   NotificationCenter: undefined;
   BecomeFixerOnboarding: undefined;
+  PastConversations: { mode?: string } | undefined;
   Chat: {
     taskId: string;
     myDbId?: string;
