@@ -1,8 +1,17 @@
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
+import type { ExpoPushMessage } from 'expo-server-sdk';
 import { NotificationType } from '@prisma/client';
 import { prisma } from '../config/prisma';
 
-const expo = new Expo();
+// expo-server-sdk is ESM-only; use dynamic import to stay compatible with CommonJS output
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let expoInstance: any;
+async function getExpo() {
+  if (!expoInstance) {
+    const { Expo } = await import('expo-server-sdk');
+    expoInstance = new Expo();
+  }
+  return expoInstance;
+}
 
 /**
  * Creates a notification record in the DB and sends an Expo push notification
@@ -37,6 +46,7 @@ export async function sendNotification(
       select: { push_token: true },
     });
 
+    const { Expo } = await import('expo-server-sdk');
     if (!user?.push_token || !Expo.isExpoPushToken(user.push_token)) return;
 
     const message: ExpoPushMessage = {
@@ -46,6 +56,7 @@ export async function sendNotification(
       data: { type, relatedEntityId, relatedEntityType },
     };
 
+    const expo = await getExpo();
     await expo.sendPushNotificationsAsync([message]);
   } catch (err) {
     // Log but don't throw — notification failure shouldn't break the main operation
