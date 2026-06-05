@@ -40,7 +40,6 @@ export default function RequesterDashboard({ navigation }: Props) {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
-  const rowDirection = isRTL ? 'row-reverse' : 'row';
 
   const wide = width >= 900;
   const tablet = width >= 680;
@@ -104,21 +103,21 @@ export default function RequesterDashboard({ navigation }: Props) {
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <View style={[styles.heroInner, wide && styles.heroInnerWide, wide && { flexDirection: rowDirection }, { paddingHorizontal: horizontalPadding }]}>
+        <View style={[styles.heroInner, wide && styles.heroInnerWide, { paddingHorizontal: horizontalPadding }]}>
           <View style={[styles.heroCopy, wide && styles.heroCopyWide]}>
-            <View style={[styles.workspacePill, { flexDirection: rowDirection }]}>
+            <View style={styles.workspacePill}>
               <View style={styles.liveDot} />
               <Text style={styles.workspacePillText}>{t('dashboard.hero.workspace')}</Text>
             </View>
 
-            <Text style={styles.greeting}>
+            <Text style={[styles.greeting, { textAlign: isRTL ? 'right' : 'left' }]}>
               {firstName ? `${greeting}, ${firstName}.` : `${greeting}.`}
             </Text>
-            <Text style={styles.heroSub}>
+            <Text style={[styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>
               {t('dashboard.hero.sub')}
             </Text>
 
-            <View style={[styles.heroActions, !tablet && styles.heroActionsStacked, tablet && { flexDirection: rowDirection }]}>
+            <View style={[styles.heroActions, !tablet && styles.heroActionsStacked]}>
               <FButton
                 onPress={() => navigateToCreate()}
                 variant="secondary"
@@ -135,7 +134,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 style={({ pressed }) => [
                   styles.heroGhostBtn,
                   !tablet && styles.fullWidthButton,
-                  { opacity: pressed ? 0.78 : 1, flexDirection: rowDirection },
+                  { opacity: pressed ? 0.78 : 1 },
                 ]}
               >
                 <MaterialCommunityIcons
@@ -149,25 +148,25 @@ export default function RequesterDashboard({ navigation }: Props) {
           </View>
 
           <View style={[styles.heroPanel, wide && styles.heroPanelWide]}>
-            <Text style={styles.panelEyebrow}>{t('dashboard.panel.eyebrow')}</Text>
-            <Text style={styles.panelTitle}>{t('dashboard.panel.title')}</Text>
+            <Text style={[styles.panelEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.eyebrow')}</Text>
+            <Text style={[styles.panelTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.title')}</Text>
             <View style={styles.panelDivider} />
-            <View style={[styles.panelRow, { flexDirection: rowDirection }]}>
+            <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
                 <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>{t('dashboard.panel.photosTitle')}</Text>
-                <Text style={styles.panelRowCopy}>{t('dashboard.panel.photosCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosCopy')}</Text>
               </View>
             </View>
-            <View style={[styles.panelRow, { flexDirection: rowDirection }]}>
+            <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
                 <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>{t('dashboard.panel.historyTitle')}</Text>
-                <Text style={styles.panelRowCopy}>{t('dashboard.panel.historyCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyCopy')}</Text>
               </View>
             </View>
           </View>
@@ -176,7 +175,7 @@ export default function RequesterDashboard({ navigation }: Props) {
 
       <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
         {!emailVerified && (
-          <View style={[styles.verifyBanner, { flexDirection: rowDirection }]}>
+          <View style={styles.verifyBanner}>
             <View style={styles.verifyIcon}>
               <MaterialCommunityIcons
                 name="alert-circle-outline"
@@ -185,8 +184,8 @@ export default function RequesterDashboard({ navigation }: Props) {
               />
             </View>
             <View style={styles.verifyCopy}>
-              <Text style={[typography.label, { color: brandColors.textPrimary }]}>{t('dashboard.verify.title')}</Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.verify.title')}</Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                 {verificationSent ? t('dashboard.verify.sent') : t('dashboard.verify.pending')}
               </Text>
             </View>
@@ -204,10 +203,10 @@ export default function RequesterDashboard({ navigation }: Props) {
         )}
 
         <View style={styles.section}>
-          <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
+          <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>{t('dashboard.section.controls')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.controlsTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.controls')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.controlsTitle')}</Text>
             </View>
             <Pressable
               onPress={() => navigation.navigate('Profile')}
@@ -220,7 +219,7 @@ export default function RequesterDashboard({ navigation }: Props) {
             </Pressable>
           </View>
 
-          <View style={[styles.quickGrid, wide && styles.quickGridWide, wide && { flexDirection: rowDirection }]}>
+          <View style={[styles.quickGrid, wide && styles.quickGridWide]}>
             {quickActions.map((action) => (
               <Pressable
                 key={action.title}
@@ -233,7 +232,6 @@ export default function RequesterDashboard({ navigation }: Props) {
                   {
                     opacity: pressed ? 0.9 : 1,
                     transform: [{ scale: pressed ? 0.985 : 1 }],
-                    flexDirection: rowDirection,
                   },
                 ]}
               >
@@ -241,8 +239,8 @@ export default function RequesterDashboard({ navigation }: Props) {
                   <MaterialCommunityIcons name={action.icon as never} size={22} color={action.tone} />
                 </View>
                 <View style={styles.quickText}>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{action.title}</Text>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{action.copy}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{action.title}</Text>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{action.copy}</Text>
                 </View>
                 <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
               </Pressable>
@@ -251,10 +249,10 @@ export default function RequesterDashboard({ navigation }: Props) {
         </View>
 
         <View style={styles.section}>
-          <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
+          <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>{t('dashboard.section.services')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.servicesTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.services')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.servicesTitle')}</Text>
             </View>
           </View>
 
@@ -293,24 +291,24 @@ export default function RequesterDashboard({ navigation }: Props) {
         </View>
 
         <View style={styles.section}>
-          <View style={[styles.sectionHeader, { flexDirection: rowDirection }]}>
+          <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>{t('dashboard.section.flow')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.flowTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flow')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flowTitle')}</Text>
             </View>
           </View>
 
-          <View style={[styles.stepGrid, wide && styles.stepGridWide, wide && { flexDirection: rowDirection }]}>
+          <View style={[styles.stepGrid, wide && styles.stepGridWide]}>
             {WORKSPACE_STEPS.map((step, index) => (
               <View key={step.key} style={[styles.stepItem, wide && styles.stepItemWide]}>
-                <View style={[styles.stepTopRow, { flexDirection: rowDirection }]}>
+                <View style={styles.stepTopRow}>
                   <View style={styles.stepIcon}>
                     <MaterialCommunityIcons name={step.icon as never} size={20} color={brandColors.primary} />
                   </View>
                   <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
                 </View>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
               </View>
             ))}
           </View>

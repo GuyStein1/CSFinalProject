@@ -9,6 +9,7 @@ import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { useNotificationContext, type AppNotification } from '../context/NotificationContext';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -53,6 +54,7 @@ function NotificationItem({
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
 
@@ -86,7 +88,7 @@ function NotificationItem({
           <Text
             style={[
               typography.bodyMedium,
-              { color: brandColors.textPrimary },
+              { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               !notification.is_read && { fontWeight: '700' },
             ]}
             numberOfLines={1}
@@ -94,7 +96,7 @@ function NotificationItem({
             {notification.title}
           </Text>
           <Text
-            style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2 }]}
+            style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}
             numberOfLines={2}
           >
             {notification.body}

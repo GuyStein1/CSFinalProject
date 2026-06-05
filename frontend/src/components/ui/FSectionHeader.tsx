@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
 import { brandColors, spacing, typography } from '../../theme';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface FSectionHeaderProps {
   title: string;
@@ -23,6 +24,7 @@ export default function FSectionHeader({
   style,
 }: FSectionHeaderProps) {
   const accent = accentColor ?? (muted ? brandColors.outline : brandColors.secondary);
+  const { isRTL } = useLanguage();
 
   return (
     <View style={[styles.container, style]}>
@@ -31,7 +33,7 @@ export default function FSectionHeader({
         <Text
           style={[
             typography.h3,
-            { color: muted ? brandColors.textMuted : brandColors.textPrimary },
+            { color: muted ? brandColors.textMuted : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
           {title}

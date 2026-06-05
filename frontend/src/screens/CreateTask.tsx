@@ -19,6 +19,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import { auth } from '../config/firebase';
 import { uploadImage } from '../utils/uploadImage';
@@ -37,6 +38,7 @@ interface Props {
 
 export default function CreateTask({ navigation, route }: Props) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -397,8 +399,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 1:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step1.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step1.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step1.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step1.subtitle')}</Text>
             <FInput
               label={t('createTask.step1.titleLabel')}
               value={title}
@@ -422,8 +424,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 2:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step2.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step2.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step2.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step2.subtitle')}</Text>
             <View style={styles.photoGrid}>
               {photos.map((uri, index) => (
                 <View key={index} style={styles.photoContainer}>
@@ -453,8 +455,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 3:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step3.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step3.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step3.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step3.subtitle')}</Text>
             <View style={styles.categoryGrid}>
               {CATEGORY_LIST.map((cat) => {
                 const isSelected = category === cat.value;
@@ -487,8 +489,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 4:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step4.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>{t('createTask.step4.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step4.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step4.subtitle')}</Text>
             <SegmentedButtons
               value={budgetType}
               onValueChange={(v) => setBudgetType(v as 'fixed' | 'quote')}
@@ -510,14 +512,14 @@ export default function CreateTask({ navigation, route }: Props) {
             ) : (
               <View style={styles.quoteNote}>
                 <MaterialCommunityIcons name="information-outline" size={18} color={brandColors.primaryMuted} />
-                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
                   {t('createTask.step4.quoteNote')}
                 </Text>
               </View>
             )}
 
             <View style={{ marginTop: spacing.xl }}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('createTask.step4.urgency.title')}
               </Text>
               <View style={styles.urgencyRow}>
@@ -556,8 +558,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 5:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle]}>{t('createTask.step5.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle]}>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step5.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
               {t('createTask.step5.subtitle')}
             </Text>
 
@@ -730,7 +732,7 @@ export default function CreateTask({ navigation, route }: Props) {
           onDismiss={() => setShowReview(false)}
           contentContainerStyle={styles.modal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
             {t('createTask.review.title')}
           </Text>
 

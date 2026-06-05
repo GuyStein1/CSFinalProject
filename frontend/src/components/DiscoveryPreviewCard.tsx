@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { FButton } from './ui';
 import type { DiscoveryTask } from '../hooks/useTasks';
 import { getCategoryMetadata } from '../constants/categories';
@@ -21,6 +22,7 @@ export default function DiscoveryPreviewCard({
   onViewDetails,
 }: DiscoveryPreviewCardProps) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : 'No price specified';
   const catMeta = getCategoryMetadata(task.category);
 
@@ -62,12 +64,12 @@ export default function DiscoveryPreviewCard({
         )}
       </View>
 
-      <Text style={[typography.h2, styles.title]} numberOfLines={2}>
+      <Text style={[typography.h2, styles.title, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
         {task.title}
       </Text>
 
       {!!task.description && (
-        <Text style={[typography.bodySm, styles.description]} numberOfLines={2}>
+        <Text style={[typography.bodySm, styles.description, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
           {task.description}
         </Text>
       )}
@@ -75,13 +77,13 @@ export default function DiscoveryPreviewCard({
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
-          <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
             {task.generalLocationName} · {task.distanceKm.toFixed(1)} km
           </Text>
         </View>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="hand-extended-outline" size={14} color={brandColors.textMuted} />
-          <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
             {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
           </Text>
         </View>

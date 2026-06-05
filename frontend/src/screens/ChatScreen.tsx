@@ -11,6 +11,7 @@ import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import { getSocket } from '../utils/socket';
 import { useNotificationContext } from '../context/NotificationContext';
@@ -57,6 +58,7 @@ export default function ChatScreen({ route }: { route: any }) {
 
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { refetch: refetchNotifications } = useNotificationContext();
   const [myDbId, setMyDbId] = useState<string | undefined>(myDbIdParam);
 
@@ -270,7 +272,7 @@ export default function ChatScreen({ route }: { route: any }) {
                 </Pressable>
               )}
               <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary }]}>
+                <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {item.content}
                 </Text>
                 <View style={styles.bubbleMeta}>

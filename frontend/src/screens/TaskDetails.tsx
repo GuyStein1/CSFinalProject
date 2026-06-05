@@ -9,6 +9,7 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import CelebrationOverlay from '../components/CelebrationOverlay';
@@ -95,6 +96,7 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TaskDetails({ route, navigation }: { route: any; navigation: any }) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { taskId, openEdit } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -396,8 +398,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
       {/* Title & Details Card */}
       <FCard style={styles.mainCard}>
-        <Text style={[typography.h1, styles.title]}>{task.title}</Text>
-        <Text style={[typography.body, styles.description]}>{task.description}</Text>
+        <Text style={[typography.h1, styles.title, { textAlign: isRTL ? 'right' : 'left' }]}>{task.title}</Text>
+        <Text style={[typography.body, styles.description, { textAlign: isRTL ? 'right' : 'left' }]}>{task.description}</Text>
 
         <View style={styles.detailsDivider} />
 
@@ -446,7 +448,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   >
                   <Avatar.Icon size={44} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
                   <View style={styles.bidInfo}>
-                    <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                    <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                       {bid.fixer?.full_name || 'Fixer'}
                     </Text>
                     {bid.fixer?.average_rating_as_fixer != null ? (
@@ -530,7 +532,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
               >
               <Avatar.Icon size={52} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
               <View style={styles.bidInfo}>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {acceptedBid.fixer?.full_name || 'Fixer'}
                 </Text>
                 {acceptedBid.fixer?.average_rating_as_fixer != null ? (
@@ -598,7 +600,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           onDismiss={() => setShowEditModal(false)}
           contentContainerStyle={styles.editModal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
             {t('taskDetails.editModal.title')}
           </Text>
           <FInput label={t('taskDetails.editModal.titleLabel')} value={editTitle} onChangeText={setEditTitle} maxLength={200} />
@@ -622,7 +624,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           onDismiss={() => setShowFixerReviews(false)}
           contentContainerStyle={styles.reviewsModal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
             {t('taskDetails.fixerReviews.title')}
           </Text>
           {fixerReviews.length === 0 ? (
@@ -638,7 +640,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     </Text>
                   </View>
                   {review.comment && (
-                    <Text style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: spacing.xs }]}>
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: spacing.xs, textAlign: isRTL ? 'right' : 'left' }]}>
                       {review.comment}
                     </Text>
                   )}
@@ -806,7 +808,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     {t('taskDetails.review.daysLeft', { count: daysRemaining })}
                   </Text>
                 </View>
-                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{t('taskDetails.review.rateFixer')}</Text>
+                <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('taskDetails.review.rateFixer')}</Text>
                 <View style={styles.stars}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Pressable
@@ -880,14 +882,15 @@ function DetailRow({
   label: string;
   value: string;
 }) {
+  const { isRTL } = useLanguage();
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIconShell}>
         <MaterialCommunityIcons name={icon as never} size={18} color={iconColor} />
       </View>
       <View style={styles.detailText}>
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
-        <Text style={[typography.body, { color: brandColors.textPrimary }]}>{value}</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+        <Text style={[typography.body, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
       </View>
     </View>
   );
