@@ -6,3 +6,5 @@ dist/
 firebase-service-account.json
 *.js.map
 .claude/
+
+.vercel
