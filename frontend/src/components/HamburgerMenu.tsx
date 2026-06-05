@@ -25,6 +25,7 @@ interface HamburgerMenuProps {
   onRequesterHomePress?: () => void;
   onRequesterTasksPress?: () => void;
   onPostTaskPress?: () => void;
+  onFixerWorkspacePress?: () => void;
   onFixerHomePress?: () => void;
   onFixerBidsPress?: () => void;
   onFixerProfilePress?: () => void;
@@ -41,6 +42,7 @@ export default function HamburgerMenu({
   onRequesterHomePress,
   onRequesterTasksPress,
   onPostTaskPress,
+  onFixerWorkspacePress,
   onFixerHomePress,
   onFixerBidsPress,
   onFixerProfilePress,
@@ -195,7 +197,7 @@ export default function HamburgerMenu({
                 accessibilityRole="button"
                 accessibilityLabel="Open Fixer Workspace"
                 style={({ pressed }) => [styles.fixerWorkspaceEntry, pressed && styles.fixerWorkspaceEntryPressed]}
-                onPress={() => { onModeChange('fixer'); (onFixerHomePress ?? (() => {}))(); onClose(); }}
+                onPress={() => { (onFixerWorkspacePress ?? (() => { onModeChange('fixer'); (onFixerHomePress ?? (() => {}))(); }))(); onClose(); }}
               >
                 <View style={styles.fixerWorkspaceEntryIcon}>
                   <MaterialCommunityIcons name="wrench-outline" size={20} color={brandColors.secondaryDark} />

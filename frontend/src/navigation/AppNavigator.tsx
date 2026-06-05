@@ -21,6 +21,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
 import LandingScreen from '../screens/LandingScreen';
+import BecomeFixerScreen from '../screens/BecomeFixerScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
@@ -134,6 +135,10 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
   const openCreateTask = () => {
     openStackScreen('CreateTask');
+  };
+
+  const openFixerOnboarding = () => {
+    openStackScreen('BecomeFixerOnboarding');
   };
 
   const openWorkspaceScreen = (screen: string) => {
@@ -279,7 +284,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                 accessibilityLabel="Open Fixer Workspace"
                 style={({ pressed }) => [styles.desktopFixerWorkspaceBtn, pressed && styles.desktopActionPressed]}
                 hitSlop={8}
-                onPress={() => handleModeChange('fixer')}
+                onPress={openFixerOnboarding}
               >
                 <MaterialCommunityIcons name="wrench-outline" size={15} color={brandColors.secondaryDark} />
                 <Text style={styles.desktopFixerWorkspaceBtnText}>Fixer Workspace</Text>
@@ -389,6 +394,15 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate('FixerMode', { screen: 'FindJobs' });
   };
 
+  const openFixerOnboarding = () => {
+    const parentNavigation = navigation.getParent();
+    if (parentNavigation) {
+      parentNavigation.navigate('BecomeFixerOnboarding' as never);
+    } else {
+      navigation.navigate('BecomeFixerOnboarding' as never);
+    }
+  };
+
   const openFixerBids = () => {
     navigation.navigate('FixerMode', { screen: 'MyBids' });
   };
@@ -476,6 +490,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onRequesterHomePress={openRequesterHome}
         onRequesterTasksPress={openRequesterTasks}
         onPostTaskPress={openCreateTask}
+        onFixerWorkspacePress={openFixerOnboarding}
         onFixerHomePress={openFixerHome}
         onFixerBidsPress={openFixerBids}
         onFixerProfilePress={openFixerProfile}
@@ -617,6 +632,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
+      <Stack.Screen name="BecomeFixerOnboarding" component={BecomeFixerScreen} options={{ title: 'Become a Fixer', headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>
   );
