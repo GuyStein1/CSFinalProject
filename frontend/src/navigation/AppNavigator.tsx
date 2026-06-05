@@ -128,8 +128,8 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('NotificationCenter');
   };
 
-  const openCreateTask = () => {
-    openStackScreen('CreateTask');
+  const openSettings = () => {
+    openStackScreen('Settings');
   };
 
   const openFixerOnboarding = () => {
@@ -243,107 +243,80 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </View>
 
         <View style={styles.desktopActions}>
-          {mode === 'requester' ? (
-            <>
+          {/* Shared: lang switcher, notifications, settings */}
+          <View style={styles.langSwitcher}>
+            {(['en', 'he'] as const).map((lang) => (
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Post a task"
-                style={({ pressed }) => [styles.desktopPrimaryAction, pressed && styles.desktopActionPressed]}
-                onPress={openCreateTask}
+                key={lang}
+                onPress={() => void changeLanguage(lang)}
+                style={[styles.langChip, language === lang && styles.langChipActive]}
               >
-                <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
-                <Text style={styles.desktopPrimaryActionText}>{t('nav.postTask')}</Text>
-              </Pressable>
-
-              <View style={styles.langSwitcher}>
-                {(['en', 'he'] as const).map((lang) => (
-                  <Pressable
-                    key={lang}
-                    onPress={() => void changeLanguage(lang)}
-                    style={[styles.langChip, language === lang && styles.langChipActive]}
-                  >
-                    <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
-                      {lang === 'en' ? 'EN' : 'עב'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  notificationCount > 0
-                    ? `Open notifications, ${notificationCount} unread`
-                    : 'Open notifications'
-                }
-                style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
-                hitSlop={8}
-                onPress={openNotifications}
-              >
-                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
-                <NotifBadge count={notificationCount} />
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
-                style={({ pressed }) => [
-                  styles.desktopFixerWorkspaceBtn,
-                  !fixerActivated && styles.desktopBecomeFixerBtn,
-                  pressed && styles.desktopActionPressed,
-                ]}
-                hitSlop={8}
-                onPress={openFixerOnboarding}
-              >
-                <MaterialCommunityIcons name="wrench-outline" size={14} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
-                <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
-                  {fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+                <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
+                  {lang === 'en' ? 'EN' : 'עב'}
                 </Text>
-                {fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
               </Pressable>
-            </>
+            ))}
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={notificationCount > 0 ? `Open notifications, ${notificationCount} unread` : 'Open notifications'}
+            style={({ pressed }) => [
+              styles.desktopIconBtn,
+              mode === 'fixer' && styles.desktopIconBtnFixer,
+              pressed && styles.desktopActionPressed,
+            ]}
+            hitSlop={8}
+            onPress={openNotifications}
+          >
+            <MaterialCommunityIcons name="bell-outline" size={20} color={mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary} />
+            <NotifBadge count={notificationCount} />
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            style={({ pressed }) => [
+              styles.desktopIconBtn,
+              mode === 'fixer' && styles.desktopIconBtnFixer,
+              pressed && styles.desktopActionPressed,
+            ]}
+            hitSlop={8}
+            onPress={openSettings}
+          >
+            <MaterialCommunityIcons name="cog-outline" size={20} color={mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary} />
+          </Pressable>
+
+          {/* Workspace switcher */}
+          {mode === 'requester' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+              style={({ pressed }) => [
+                styles.desktopFixerWorkspaceBtn,
+                !fixerActivated && styles.desktopBecomeFixerBtn,
+                pressed && styles.desktopActionPressed,
+              ]}
+              hitSlop={8}
+              onPress={openFixerOnboarding}
+            >
+              <MaterialCommunityIcons name="wrench-outline" size={14} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
+              <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
+                {fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+              </Text>
+              {fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
+            </Pressable>
           ) : (
-            <>
-              <View style={styles.langSwitcher}>
-                {(['en', 'he'] as const).map((lang) => (
-                  <Pressable
-                    key={lang}
-                    onPress={() => void changeLanguage(lang)}
-                    style={[styles.langChip, language === lang && styles.langChipActive]}
-                  >
-                    <Text style={[styles.langChipText, language === lang && styles.langChipTextActive]}>
-                      {lang === 'en' ? 'EN' : 'עב'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  notificationCount > 0
-                    ? `Open notifications, ${notificationCount} unread`
-                    : 'Open notifications'
-                }
-                style={({ pressed }) => [styles.desktopIconBtn, styles.desktopIconBtnFixer, pressed && styles.desktopActionPressed]}
-                hitSlop={8}
-                onPress={openNotifications}
-              >
-                <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.secondaryDark} />
-                <NotifBadge count={notificationCount} />
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open Requester Workspace"
-                style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
-                hitSlop={8}
-                onPress={() => handleModeChange('requester')}
-              >
-                <MaterialCommunityIcons name="chevron-left" size={14} color={brandColors.secondaryDark} />
-                <Text style={styles.desktopBackHomeBtnText}>Open Requester</Text>
-              </Pressable>
-            </>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open Requester Workspace"
+              style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
+              hitSlop={8}
+              onPress={() => handleModeChange('requester')}
+            >
+              <MaterialCommunityIcons name="chevron-left" size={14} color={brandColors.secondaryDark} />
+              <Text style={styles.desktopBackHomeBtnText}>Open Requester Workspace</Text>
+            </Pressable>
           )}
         </View>
       </View>
