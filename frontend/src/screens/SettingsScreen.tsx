@@ -15,7 +15,8 @@ import { brandColors, radii, spacing, typography } from '../theme';
 export default function SettingsScreen() {
   const user = auth.currentUser;
   const { t } = useTranslation();
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, isRTL } = useLanguage();
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -90,7 +91,7 @@ export default function SettingsScreen() {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Hero */}
       <FCard style={styles.heroCard} shadow="sm">
-        <View style={styles.heroRow}>
+        <View style={[styles.heroRow, { flexDirection: rowDirection }]}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondary} />
           </View>
@@ -100,12 +101,12 @@ export default function SettingsScreen() {
             <Text style={[typography.bodySm, styles.heroSub]}>{accountEmail}</Text>
           </View>
         </View>
-        <View style={styles.heroMetaRow}>
-          <View style={styles.heroPill}>
+        <View style={[styles.heroMetaRow, { flexDirection: rowDirection }]}>
+          <View style={[styles.heroPill, { flexDirection: rowDirection }]}>
             <View style={[styles.statusDot, { backgroundColor: verificationColor }]} />
             <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{verificationLabel}</Text>
           </View>
-          <View style={styles.heroPill}>
+          <View style={[styles.heroPill, { flexDirection: rowDirection }]}>
             <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondary} />
             <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{t('settings.hero.secureSession')}</Text>
           </View>
@@ -148,7 +149,7 @@ export default function SettingsScreen() {
             loading={saving}
             disabled={saving || phone.trim().length === 0}
             size="sm"
-            style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}
+            style={{ alignSelf: isRTL ? 'flex-end' : 'flex-start', marginTop: spacing.sm }}
           >
             {t('common.save')}
           </FButton>
@@ -159,8 +160,8 @@ export default function SettingsScreen() {
       <FCard style={styles.sectionCard} shadow="sm">
         <SectionHeader icon="tune-variant" label={t('settings.section.preferences')} />
 
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleLeft}>
+        <View style={[styles.toggleRow, { flexDirection: rowDirection }]}>
+          <View style={[styles.toggleLeft, { flexDirection: rowDirection }]}>
             <View style={styles.settingIcon}>
               <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primaryMuted} />
             </View>
@@ -184,8 +185,8 @@ export default function SettingsScreen() {
 
         <Divider style={styles.divider} />
 
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleLeft}>
+        <View style={[styles.toggleRow, { flexDirection: rowDirection }]}>
+          <View style={[styles.toggleLeft, { flexDirection: rowDirection }]}>
             <View style={styles.settingIcon}>
               <MaterialCommunityIcons name="translate" size={18} color={brandColors.primaryMuted} />
             </View>
@@ -198,7 +199,7 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+          <View style={{ flexDirection: rowDirection, gap: spacing.xs }}>
             <Pressable
               onPress={() => void changeLanguage('en')}
               style={[styles.langChip, language === 'en' && styles.langChipActive]}
@@ -216,7 +217,7 @@ export default function SettingsScreen() {
 
         <Divider style={styles.divider} />
 
-        <Pressable onPress={handleChangePassword} style={styles.actionRow}>
+        <Pressable onPress={handleChangePassword} style={[styles.actionRow, { flexDirection: rowDirection }]}>
           <View style={styles.settingIcon}>
             <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
           </View>
@@ -228,7 +229,7 @@ export default function SettingsScreen() {
               {t('settings.preferences.changePassword.description')}
             </Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+          <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
         </Pressable>
       </FCard>
 
@@ -253,8 +254,9 @@ export default function SettingsScreen() {
 }
 
 function SectionHeader({ icon, label }: { icon: string; label: string }) {
+  const { isRTL } = useLanguage();
   return (
-    <View style={styles.sectionHeader}>
+    <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       <View style={styles.sectionHeaderIcon}>
         <MaterialCommunityIcons name={icon as never} size={16} color={brandColors.primary} />
       </View>
@@ -274,8 +276,9 @@ function SettingRow({
   value?: string;
   description?: string;
 }) {
+  const { isRTL } = useLanguage();
   return (
-    <View style={styles.settingRow}>
+    <View style={[styles.settingRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       <View style={styles.settingIcon}>
         <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
       </View>
