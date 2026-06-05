@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../config/firebase';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   BottomTabHeaderProps,
@@ -68,7 +69,7 @@ function NotifBadge({ count }: { count: number }) {
 }
 
 // ─── Desktop header (wide screens / web) ─────────────────────────────────────
-const FIXER_ONBOARDING_KEY = 'fixerOnboardingSeen';
+const getFixerOnboardingKey = () => `fixerOnboardingSeen_${auth.currentUser?.uid ?? 'anon'}`;
 
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -95,7 +96,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   }, [route.name]);
 
   const checkFixerActivated = () => {
-    AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+    AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
   };
 
   const isMountedRef = useRef(true);
@@ -337,7 +338,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const { language, changeLanguage } = useLanguage();
 
   useEffect(() => {
-    AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+    AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
   }, []);
 
   const handleModeChange = (value: Mode) => {
@@ -392,7 +393,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
       navigation.navigate('BecomeFixerOnboarding' as never);
     }
     const unsubscribe = navigation.addListener('focus' as never, () => {
-      AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+      AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
       unsubscribe();
     });
   };

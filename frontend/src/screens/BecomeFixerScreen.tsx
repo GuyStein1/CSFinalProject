@@ -16,8 +16,9 @@ import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type RootStackParamList } from '../navigation/landingIntent';
 import { FButton } from '../components/ui';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
+import { auth } from '../config/firebase';
 
-const STORAGE_KEY = 'fixerOnboardingSeen';
+const getOnboardingKey = () => `fixerOnboardingSeen_${auth.currentUser?.uid ?? 'anon'}`;
 
 const BENEFITS = [
   {
@@ -54,7 +55,7 @@ export default function BecomeFixerScreen({ navigation }: Props) {
   navigationRef.current = navigation;
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((seen) => {
+    AsyncStorage.getItem(getOnboardingKey()).then((seen) => {
       if (seen === 'true') {
         navigationRef.current.replace('Main', { screen: 'FixerMode', params: { screen: 'FindJobs' } });
       } else {
@@ -67,7 +68,7 @@ export default function BecomeFixerScreen({ navigation }: Props) {
   }, [fadeAnim, slideAnim]);
 
   const markSeenAndNavigate = async (dest: 'profile' | 'jobs') => {
-    await AsyncStorage.setItem(STORAGE_KEY, 'true');
+    await AsyncStorage.setItem(getOnboardingKey(), 'true');
     if (dest === 'profile') {
       navigation.replace('Main', { screen: 'FixerMode', params: { screen: 'FixerProfile' } });
     } else {
