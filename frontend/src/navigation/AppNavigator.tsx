@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
@@ -20,7 +19,6 @@ import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
-import LandingScreen from '../screens/LandingScreen';
 import BecomeFixerScreen from '../screens/BecomeFixerScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AppLogo from '../components/AppLogo';
@@ -29,9 +27,7 @@ import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useLanguage } from '../context/LanguageContext';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import type { Category } from '../constants/categories';
 import {
-  asLandingScreenWithNavigationProps,
   type RootStackParamList,
 } from './landingIntent';
 
@@ -41,8 +37,6 @@ const DESKTOP_BREAKPOINT = 900;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
-const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
-
 type NestedRouteSnapshot = {
   name?: string;
   params?: { screen?: unknown };
@@ -60,21 +54,6 @@ function getActiveWorkspaceScreen(route: NestedRouteSnapshot): string | undefine
   }
 
   return typeof route.params?.screen === 'string' ? route.params.screen : undefined;
-}
-
-function resetToLanding(navigation: BottomTabHeaderProps['navigation']) {
-  const parentNavigation = navigation.getParent();
-  if (parentNavigation) {
-    parentNavigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'Landing' }],
-      }),
-    );
-    return;
-  }
-
-  navigation.navigate('Landing' as never);
 }
 
 // ─── Shared notification badge ───────────────────────────────────────────────
@@ -125,8 +104,10 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate(screen as never);
   };
 
-  const openLanding = () => {
-    resetToLanding(navigation);
+  const openDashboard = () => {
+    navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', {
+      screen: mode === 'fixer' ? 'FindJobs' : 'Dashboard',
+    });
   };
 
   const openNotifications = () => {
@@ -188,7 +169,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go to FixIt home"
-          onPress={openLanding}
+          onPress={openDashboard}
           style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
         >
           <AppLogo compact />
@@ -364,7 +345,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate(screen as never);
   };
 
-  const openLanding = () => {
+  const openHome = () => {
     navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', {
       screen: mode === 'fixer' ? 'FindJobs' : 'Dashboard',
     });
@@ -442,7 +423,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go to workspace home"
-            onPress={openLanding}
+            onPress={openHome}
             hitSlop={8}
             style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
           >
@@ -530,84 +511,11 @@ function MainNavigator() {
 function SignedInLanding({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'Landing'>) {
-  const { width } = useWindowDimensions();
-
   useEffect(() => {
-    if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
-      navigation.replace('Main');
-    }
-  }, [navigation, width]);
+    navigation.replace('Main');
+  }, [navigation]);
 
-  const openRequesterDashboard = () => {
-    navigation.navigate('Main', {
-      screen: 'RequesterMode',
-      params: { screen: 'Dashboard' },
-    });
-  };
-
-  const openRequesterTasks = () => {
-    navigation.navigate('Main', {
-      screen: 'RequesterMode',
-      params: { screen: 'MyTasks' },
-    });
-  };
-
-  const openFixerWorkspace = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'FindJobs' },
-    });
-  };
-
-  const openFixerBids = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'MyBids' },
-    });
-  };
-
-  const openFixerProfile = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'FixerProfile' },
-    });
-  };
-
-  const openPostTask = (category?: Category) => {
-    navigation.navigate('CreateTask', category ? { category } : undefined);
-  };
-
-  const openSettings = () => {
-    navigation.navigate('Settings');
-  };
-
-  const openNotifications = () => {
-    navigation.navigate('NotificationCenter');
-  };
-
-  if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
-    return null;
-  }
-
-  return (
-    <LandingScreenWithNavigationProps
-      isSignedIn
-      onLogin={openRequesterDashboard}
-      onDashboard={openRequesterDashboard}
-      onRequesterHome={openRequesterDashboard}
-      onRequesterTasks={openRequesterTasks}
-      onPostTask={openPostTask}
-      onCategoryPress={openPostTask}
-      onCategorySelect={openPostTask}
-      onBecomeFixer={openFixerWorkspace}
-      onFixerHome={openFixerWorkspace}
-      onFixerBids={openFixerBids}
-      onFixerProfile={openFixerProfile}
-      onNotifications={openNotifications}
-      onProfile={openSettings}
-      onSettings={openSettings}
-    />
-  );
+  return null;
 }
 
 export default function AppNavigator() {
