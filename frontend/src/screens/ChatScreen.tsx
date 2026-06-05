@@ -69,7 +69,7 @@ export default function ChatScreen({ route }: { route: any }) {
   const socketRef = useRef<Awaited<ReturnType<typeof getSocket>> | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
 
-  const isReadOnly = taskStatus === 'COMPLETED';
+  const isReadOnly = taskStatus === 'COMPLETED' || taskStatus === 'CANCELED';
 
   // Set header dynamically — title tap opens task, avatar tap navigates to public profile
   useEffect(() => {

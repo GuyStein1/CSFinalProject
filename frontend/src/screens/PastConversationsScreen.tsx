@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -7,34 +7,10 @@ import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
+import { Conversation, formatConversationTime } from './ConversationListScreen';
 import { brandColors, radii, spacing, typography } from '../theme';
 
-interface OtherParty {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-}
-
-export interface Conversation {
-  taskId: string;
-  taskTitle: string;
-  taskStatus?: string;
-  otherParty: OtherParty | null;
-  lastMessage: { content: string; timestamp: string } | null;
-  unreadCount: number;
-}
-
-export function formatConversationTime(dateStr: string, t: (key: string) => string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  if (diffDays === 1) return t('conversations.yesterday');
-  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
+export default function PastConversationsScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
@@ -46,7 +22,10 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
     try {
       const params = mode ? { mode } : {};
       const res = await api.get('/api/conversations', { params });
-      setConversations(res.data.conversations ?? []);
+      const all: Conversation[] = res.data.conversations ?? [];
+      setConversations(
+        all.filter((c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED'),
+      );
     } catch {
       // non-fatal
     } finally {
@@ -54,45 +33,58 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
     }
   }, [mode]);
 
-  useFocusEffect(useCallback(() => {
-    setLoading(true);
-    void load();
-  }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      void load();
+    }, [load]),
+  );
+
+  const deleteConversation = (taskId: string, taskTitle: string) => {
+    const doDelete = async () => {
+      try {
+        await api.delete(`/api/tasks/${taskId}/messages`);
+        setConversations((prev) => prev.filter((c) => c.taskId !== taskId));
+      } catch {
+        if (Platform.OS === 'web') {
+          window.alert(t('pastConversations.deleteFailed'));
+        } else {
+          Alert.alert(t('common.error'), t('pastConversations.deleteFailed'));
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm(t('pastConversations.deleteConfirmMessage', { title: taskTitle }))) {
+        void doDelete();
+      }
+    } else {
+      Alert.alert(
+        t('pastConversations.deleteConfirmTitle'),
+        t('pastConversations.deleteConfirmMessage', { title: taskTitle }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.delete'), style: 'destructive', onPress: () => void doDelete() },
+        ],
+      );
+    }
+  };
 
   if (loading) return <LoadingScreen label={t('conversations.loading')} />;
 
-  const activeConversations = conversations.filter(
-    (c) => c.taskStatus !== 'COMPLETED' && c.taskStatus !== 'CANCELED',
-  );
-  const pastCount = conversations.filter(
-    (c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED',
-  ).length;
-
   return (
     <FlatList
-      data={activeConversations}
+      data={conversations}
       keyExtractor={(item) => item.taskId}
-      contentContainerStyle={activeConversations.length === 0 && pastCount === 0 ? styles.emptyContainer : styles.listContent}
+      contentContainerStyle={conversations.length === 0 ? styles.emptyContainer : styles.listContent}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={
         <EmptyState
-          icon="chat-outline"
-          title={t('conversations.empty.title')}
-          message={t('conversations.empty.message')}
+          icon="archive-outline"
+          title={t('pastConversations.empty.title')}
+          message={t('pastConversations.empty.message')}
         />
       }
-      ListFooterComponent={pastCount > 0 ? (
-        <Pressable
-          style={styles.pastButton}
-          onPress={() => navigation.navigate('PastConversations', { mode })}
-        >
-          <MaterialCommunityIcons name="archive-outline" size={20} color={brandColors.textMuted} />
-          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 }]}>
-            {t('conversations.past')} ({pastCount})
-          </Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.outlineLight} />
-        </Pressable>
-      ) : null}
       renderItem={({ item }) => {
         const other = item.otherParty;
         return (
@@ -140,25 +132,24 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
               <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
                 {item.taskTitle}
               </Text>
-              <View style={styles.bottomRow}>
-                <Text
-                  style={[
-                    typography.bodySm,
-                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1 },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.lastMessage?.content || t('conversations.noMessages')}
-                </Text>
-                {item.unreadCount > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.unreadCount > 99 ? '99+' : item.unreadCount}</Text>
-                  </View>
-                )}
-              </View>
+              <Text
+                style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}
+                numberOfLines={1}
+              >
+                {item.lastMessage?.content || t('conversations.noMessages')}
+              </Text>
             </View>
 
-            <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.outlineLight} />
+            <Pressable
+              style={styles.deleteBtn}
+              hitSlop={8}
+              onPress={(e) => {
+                e.stopPropagation();
+                deleteConversation(item.taskId, item.taskTitle);
+              }}
+            >
+              <MaterialCommunityIcons name="trash-can-outline" size={20} color={brandColors.danger} />
+            </Pressable>
           </Pressable>
         );
       }}
@@ -203,34 +194,11 @@ const styles = StyleSheet.create({
     color: brandColors.textPrimary,
     marginRight: spacing.sm,
   },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  badge: {
-    backgroundColor: brandColors.primary,
-    borderRadius: radii.pill,
-    minWidth: 20,
-    height: 20,
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  badgeText: {
-    color: brandColors.white,
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 14,
-  },
-  pastButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.outlineLight,
-    marginTop: spacing.sm,
   },
 });

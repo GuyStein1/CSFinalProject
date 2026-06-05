@@ -305,15 +305,22 @@ export default function AdminScreen() {
                 Reports ({item.reports.length}):
               </Text>
               {item.reports.map((report) => (
-                <View key={report.id} style={styles.reportRow}>
-                  <View style={[styles.reasonBadge, { backgroundColor: brandColors.dangerSoft }]}>
-                    <Text style={[typography.caption, { color: brandColors.danger }]}>
-                      {REASON_LABELS[report.reason] ?? report.reason}
+                <View key={report.id} style={{ marginBottom: spacing.xs }}>
+                  <View style={styles.reportRow}>
+                    <View style={[styles.reasonBadge, { backgroundColor: brandColors.dangerSoft }]}>
+                      <Text style={[typography.caption, { color: brandColors.danger }]}>
+                        {REASON_LABELS[report.reason] ?? report.reason}
+                      </Text>
+                    </View>
+                    <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
+                      by {report.reporter.full_name}
                     </Text>
                   </View>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
-                    by {report.reporter.full_name}
-                  </Text>
+                  {report.details ? (
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary, marginLeft: spacing.sm, marginTop: 2 }]}>
+                      &ldquo;{report.details}&rdquo;
+                    </Text>
+                  ) : null}
                 </View>
               ))}
             </View>

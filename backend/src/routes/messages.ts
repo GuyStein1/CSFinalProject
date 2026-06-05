@@ -141,6 +141,31 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
   }
 });
 
+// DELETE /api/tasks/:id/messages — delete all messages for a completed/canceled task (participant only)
+router.delete('/tasks/:id/messages', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const taskId = req.params.id;
+    const userId = req.user!.id;
+
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) throw new NotFoundError('Task not found');
+
+    const isMember =
+      task.requester_id === userId || task.assigned_fixer_id === userId;
+    if (!isMember) throw new ForbiddenError('Not a participant in this task');
+
+    if (task.status !== 'COMPLETED' && task.status !== 'CANCELED') {
+      throw new ForbiddenError('Can only delete messages for completed or canceled tasks');
+    }
+
+    await prisma.message.deleteMany({ where: { task_id: taskId } });
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PUT /api/tasks/:id/messages/read — mark all unread messages received by the caller in this task as read
 router.put('/tasks/:id/messages/read', async (req: Request, res: Response, next: NextFunction) => {
   try {

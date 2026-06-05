@@ -23,8 +23,10 @@ const DECAY_LAMBDA = Math.LN2 / 180;
 
 // Bayesian confidence parameter — number of "virtual" reviews pulling toward
 // the platform average. With m=3, a fixer needs ~3 real reviews before their
-// personal average starts to dominate.
-const BAYESIAN_M = 3;
+// personal average starts to dominate. With m=1, a fixer needs just
+// ~1 real review before their personal average starts to dominate.
+// Can be increased as the platform scales.
+const BAYESIAN_M = 1;
 
 export async function recalculateFixerRating(fixerId: string): Promise<void> {
   const reviews = await prisma.review.findMany({
