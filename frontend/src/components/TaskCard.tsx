@@ -2,8 +2,10 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import StatusBadge from './StatusBadge';
 import { getCategoryMetadata, type Category } from '../constants/categories';
+import { getCategoryLabel } from '../utils/categoryMetadata';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -43,15 +45,16 @@ export default function TaskCard({
   onReview,
   muted = false,
 }: TaskCardProps) {
+  const { t } = useTranslation();
   const meta = getCategoryMetadata(category);
-  const budgetLabel = suggestedPrice != null ? `₪${suggestedPrice}` : 'Open to quotes';
+  const budgetLabel = suggestedPrice != null ? `₪${suggestedPrice}` : t('taskCard.openToQuotes');
   const hasOffers = bidCount != null && bidCount > 0 && status === 'OPEN';
   const waitingForOffers = bidCount != null && bidCount === 0 && status === 'OPEN';
   const assigned = fixerName && status === 'IN_PROGRESS';
   const hasActions = Boolean(
     onPress || onDelete || onReactivate || onCancel || onMarkCompleted || onEdit || onReview
   );
-  const detailsActionLabel = hasOffers ? 'Review bids' : 'View details';
+  const detailsActionLabel = hasOffers ? t('taskCard.reviewBids') : t('taskCard.viewDetails');
   const detailsActionIcon = hasOffers ? 'hand-extended-outline' : 'text-box-search-outline';
   const detailsActionTone: 'warning' | 'default' = hasOffers ? 'warning' : 'default';
 
@@ -81,7 +84,7 @@ export default function TaskCard({
         <View style={styles.titleBlock}>
           <View style={styles.categoryRow}>
             <Text style={[typography.caption, styles.categoryLabel]} numberOfLines={1}>
-              {meta.label}
+              {getCategoryLabel(category, t)}
             </Text>
           </View>
           <Text style={[typography.h3, styles.title]} numberOfLines={2}>
@@ -96,35 +99,35 @@ export default function TaskCard({
         <InfoChip icon="cash" label={budgetLabel} emphasized />
         <InfoChip
           icon="map-marker-outline"
-          label={locationName || 'Location not set'}
+          label={locationName || t('taskCard.locationNotSet')}
         />
       </View>
 
       {hasOffers && (
         <TaskSignal
           icon="hand-extended-outline"
-          label={`${bidCount} ${bidCount === 1 ? 'new offer' : 'new offers'} ready to review`}
+          label={t('taskCard.newOffers', { count: bidCount })}
           tone="warning"
         />
       )}
       {waitingForOffers && (
         <TaskSignal
           icon="clock-outline"
-          label="Awaiting the first bid"
+          label={t('taskCard.awaitingFirstBid')}
           tone="neutral"
         />
       )}
       {assigned && (
         <TaskSignal
           icon="account-check-outline"
-          label={`Assigned to ${fixerName}`}
+          label={t('taskCard.assignedTo', { name: fixerName })}
           tone="success"
         />
       )}
       {onReview && (
         <TaskSignal
           icon="star-outline"
-          label="Review this completed task"
+          label={t('taskCard.reviewCompleted')}
           tone="warning"
         />
       )}
@@ -142,7 +145,7 @@ export default function TaskCard({
           {onReview && (
             <ActionButton
               icon="star-outline"
-              label="Leave review"
+              label={t('taskCard.leaveReview')}
               tone="warning"
               onPress={onReview}
             />
@@ -150,7 +153,7 @@ export default function TaskCard({
           {onReactivate && status === 'CANCELED' && (
             <ActionButton
               icon="refresh"
-              label="Reopen"
+              label={t('taskCard.reopen')}
               tone="success"
               onPress={onReactivate}
             />
@@ -158,7 +161,7 @@ export default function TaskCard({
           {onEdit && (
             <ActionButton
               icon="pencil-outline"
-              label="Edit"
+              label={t('common.edit')}
               tone="default"
               onPress={onEdit}
             />
@@ -166,7 +169,7 @@ export default function TaskCard({
           {onMarkCompleted && (
             <ActionButton
               icon="check-circle-outline"
-              label="Mark complete"
+              label={t('taskCard.markComplete')}
               tone="success"
               onPress={onMarkCompleted}
             />
@@ -174,7 +177,7 @@ export default function TaskCard({
           {onCancel && (
             <ActionButton
               icon="close-circle-outline"
-              label="Cancel"
+              label={t('common.cancel')}
               tone="danger"
               onPress={onCancel}
             />
@@ -182,7 +185,7 @@ export default function TaskCard({
           {onDelete && (
             <ActionButton
               icon="delete-outline"
-              label="Delete"
+              label={t('common.delete')}
               tone="danger"
               onPress={onDelete}
             />

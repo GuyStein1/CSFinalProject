@@ -22,7 +22,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
 import LoadingScreen from '../components/LoadingScreen';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
-import { CATEGORY_LIST } from '../utils/categoryMetadata';
+import { CATEGORY_LIST, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
   id: string;
@@ -528,31 +528,31 @@ export default function FixerProfileScreen() {
                   <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
                 </View>
                 <View>
-                  <Text style={styles.sectionKicker}>Identity</Text>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>Verification</Text>
+                  <Text style={styles.sectionKicker}>{t('fixerProfile.verification.kicker')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.verification.title')}</Text>
                 </View>
               </View>
 
               {profile?.verification_status === 'APPROVED' ? (
                 <View style={styles.verificationBanner}>
                   <MaterialCommunityIcons name="check-decagram" size={20} color={brandColors.primary} />
-                  <Text style={[typography.bodyMedium, { color: brandColors.primary }]}>Verified</Text>
+                  <Text style={[typography.bodyMedium, { color: brandColors.primary }]}>{t('fixerProfile.verification.verified')}</Text>
                   <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                    Your identity has been verified. A badge appears on your public profile.
+                    {t('fixerProfile.verification.verifiedMsg')}
                   </Text>
                 </View>
               ) : profile?.verification_status === 'PENDING' ? (
                 <View style={styles.verificationBanner}>
                   <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
-                  <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>Pending review</Text>
+                  <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>{t('fixerProfile.verification.pending')}</Text>
                   <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
-                    Your verification photo is being reviewed by an admin.
+                    {t('fixerProfile.verification.pendingMsg')}
                   </Text>
                 </View>
               ) : (
                 <>
                   <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
-                    Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.
+                    {t('fixerProfile.verification.uploadMsg')}
                   </Text>
                   <FButton
                     variant="secondary"
@@ -562,7 +562,7 @@ export default function FixerProfileScreen() {
                     disabled={uploadingVerification}
                     fullWidth
                   >
-                    Upload ID Photo
+                    {t('fixerProfile.verification.uploadBtn')}
                   </FButton>
                 </>
               )}
@@ -602,7 +602,7 @@ export default function FixerProfileScreen() {
                 {CATEGORY_LIST.map(s => (
                   <FChip
                     key={s.value}
-                    label={s.label}
+                    label={getCategoryLabel(s.value, t)}
                     icon={s.icon}
                     selected={specializations.includes(s.value)}
                     onPress={() => toggleSpecialization(s.value)}

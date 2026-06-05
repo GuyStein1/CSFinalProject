@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 import { brandColors, radii, spacing, typography } from '../theme';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -8,15 +9,26 @@ type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 
 type Status = TaskStatus | BidStatus;
 
-const STATUS_CONFIG: Record<Status, { label: string; bg: string; text: string; dotColor: string; border: string }> = {
-  OPEN:        { label: 'Open',        bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
-  IN_PROGRESS: { label: 'In progress', bg: brandColors.infoSoft,     text: brandColors.primaryMuted, dotColor: brandColors.primaryMuted, border: brandColors.outlineLight },
-  COMPLETED:   { label: 'Completed',   bg: brandColors.surfaceAlt,   text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
-  CANCELED:    { label: 'Canceled',    bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
-  PENDING:     { label: 'Pending',     bg: brandColors.warningSoft,  text: brandColors.warning,      dotColor: brandColors.warning,      border: brandColors.outlineLight },
-  ACCEPTED:    { label: 'Accepted',    bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
-  REJECTED:    { label: 'Rejected',    bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
-  WITHDRAWN:   { label: 'Withdrawn',   bg: brandColors.neutralSoft,  text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
+const STATUS_CONFIG: Record<Status, { bg: string; text: string; dotColor: string; border: string }> = {
+  OPEN:        { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
+  IN_PROGRESS: { bg: brandColors.infoSoft,     text: brandColors.primaryMuted, dotColor: brandColors.primaryMuted, border: brandColors.outlineLight },
+  COMPLETED:   { bg: brandColors.surfaceAlt,   text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
+  CANCELED:    { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
+  PENDING:     { bg: brandColors.warningSoft,  text: brandColors.warning,      dotColor: brandColors.warning,      border: brandColors.outlineLight },
+  ACCEPTED:    { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
+  REJECTED:    { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
+  WITHDRAWN:   { bg: brandColors.neutralSoft,  text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
+};
+
+const STATUS_KEY: Record<Status, string> = {
+  OPEN:        'status.open',
+  IN_PROGRESS: 'status.inProgress',
+  COMPLETED:   'status.completed',
+  CANCELED:    'status.canceled',
+  PENDING:     'status.pending',
+  ACCEPTED:    'status.accepted',
+  REJECTED:    'status.rejected',
+  WITHDRAWN:   'status.withdrawn',
 };
 
 interface StatusBadgeProps {
@@ -24,13 +36,14 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
+  const { t } = useTranslation();
   const config = STATUS_CONFIG[status];
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg, borderColor: config.border }]}>
       <View style={[styles.dot, { backgroundColor: config.dotColor }]} />
       <Text style={[typography.caption, styles.label, { color: config.text }]} numberOfLines={1}>
-        {config.label}
+        {t(STATUS_KEY[status])}
       </Text>
     </View>
   );
