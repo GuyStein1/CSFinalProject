@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -83,6 +84,14 @@ export default function FixerProfileScreen() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      AsyncStorage.getItem('pushEnabled').then((v) => setPushEnabled(v === 'true'));
+    } else {
+      Notifications.getPermissionsAsync().then(({ status }) => setPushEnabled(status === 'granted'));
+    }
+  }, []);
 
   const fetchProfile = React.useCallback(async () => {
     try {
@@ -492,8 +501,8 @@ export default function FixerProfileScreen() {
                   value={pushEnabled}
                   onValueChange={async (value) => {
                     if (Platform.OS === 'web') {
-                      // On web, toggle locally (push tokens only work on mobile)
                       setPushEnabled(value);
+                      void AsyncStorage.setItem('pushEnabled', String(value));
                       return;
                     }
                     if (!value) { setPushEnabled(false); return; }

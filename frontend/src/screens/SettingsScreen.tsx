@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, Switch, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendPasswordResetEmail, signOut } from 'firebase/auth';
@@ -25,6 +26,14 @@ export default function SettingsScreen() {
   const verificationLabel = user?.emailVerified ? t('settings.hero.verifiedEmail') : t('settings.hero.emailNotVerified');
   const verificationColor = user?.emailVerified ? brandColors.success : brandColors.warning;
 
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      AsyncStorage.getItem('pushEnabled').then((v) => setPushEnabled(v === 'true'));
+    } else {
+      Notifications.getPermissionsAsync().then(({ status }) => setPushEnabled(status === 'granted'));
+    }
+  }, []);
+
   const handleChangePassword = async () => {
     if (!user?.email) return;
     try {
@@ -37,8 +46,8 @@ export default function SettingsScreen() {
 
   const handlePushToggle = async (value: boolean) => {
     if (Platform.OS === 'web') {
-      // On web, toggle locally (push tokens only work on mobile)
       setPushEnabled(value);
+      void AsyncStorage.setItem('pushEnabled', String(value));
       return;
     }
     if (!value) {
