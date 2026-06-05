@@ -58,7 +58,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
-  const [bidFilter, setBidFilter] = useState<'has_bid' | 'no_bid' | null>(null);
+  const [bidFilter, setBidFilter] = useState<'all' | 'has_bid' | 'no_bid'>('all');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -111,6 +111,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     } else if (bidFilter === 'no_bid') {
       filtered = filtered.filter((t) => !bidTaskIds.has(t.id));
     }
+    // 'all' shows everything — no additional filtering
     return filtered;
   }, [rawTasks, selectedCategories, currentUserId, bidFilter, bidTaskIds]);
 
@@ -453,20 +454,23 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         </View>
 
         <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
-          <View style={styles.workspaceStat}>
+          <Pressable
+            style={[styles.workspaceStat, bidFilter === 'all' && styles.workspaceStatActive]}
+            onPress={() => setBidFilter('all')}
+          >
             <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => !currentUserId || t.requesterId !== currentUserId).length}</Text>
             <Text style={styles.workspaceStatLabel}>Open jobs</Text>
-          </View>
+          </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'no_bid' && styles.workspaceStatActive]}
-            onPress={() => setBidFilter(bidFilter === 'no_bid' ? null : 'no_bid')}
+            onPress={() => setBidFilter('no_bid')}
           >
             <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => (!currentUserId || t.requesterId !== currentUserId) && !bidTaskIds.has(t.id)).length}</Text>
             <Text style={styles.workspaceStatLabel}>New</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'has_bid' && styles.workspaceStatActive]}
-            onPress={() => setBidFilter(bidFilter === 'has_bid' ? null : 'has_bid')}
+            onPress={() => setBidFilter('has_bid')}
           >
             <Text style={styles.workspaceStatValue}>{bidTaskIds.size}</Text>
             <Text style={styles.workspaceStatLabel}>Already bid</Text>
