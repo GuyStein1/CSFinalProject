@@ -740,7 +740,18 @@ export default function CreateTask({ navigation, route }: Props) {
             <ReviewRow icon="cash-multiple" label={t('createTask.review.budgetLabel')} value={budgetType === 'fixed' ? `₪${price}` : t('createTask.step4.quoteRequired')} />
             <ReviewRow icon="clock-alert-outline" label={t('createTask.review.urgencyLabel')} value={urgency === 'TODAY' ? t('createTask.step4.urgency.today') : urgency === 'THIS_WEEK' ? t('createTask.step4.urgency.thisWeek') : t('createTask.step4.urgency.flexible')} />
             <ReviewRow icon="map-marker-outline" label={t('createTask.review.locationLabel')} value={address} />
-            <ReviewRow icon="camera-outline" label={t('createTask.review.photosLabel')} value={t('createTask.review.photoCount', { count: photos.length })} />
+            {photos.length === 0 ? (
+              <ReviewRow icon="camera-outline" label={t('createTask.review.photosLabel')} value={t('createTask.review.photoCount', { count: 0 })} />
+            ) : (
+              <View style={styles.reviewPhotoSection}>
+                <Text style={styles.reviewPhotoLabel}>{t('createTask.review.photosLabel')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewPhotoScroll}>
+                  {photos.map((uri, idx) => (
+                    <Image key={idx} source={{ uri }} style={styles.reviewThumb} />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
 
           <FButton
@@ -1099,5 +1110,22 @@ const styles = StyleSheet.create({
   },
   reviewRows: {
     marginBottom: spacing.xxl,
+  },
+  reviewPhotoSection: {
+    marginBottom: spacing.md,
+  },
+  reviewPhotoLabel: {
+    ...typography.caption,
+    color: brandColors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  reviewPhotoScroll: {
+    flexGrow: 0,
+  },
+  reviewThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.md,
+    marginRight: spacing.sm,
   },
 });

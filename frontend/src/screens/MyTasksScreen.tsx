@@ -55,7 +55,7 @@ export default function MyTasksScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'in_progress' | 'review' | null>(null);
+  const [filter, setFilter] = useState<'in_progress' | 'review' | 'open' | 'bids' | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const { width } = useWindowDimensions();
@@ -255,9 +255,13 @@ export default function MyTasksScreen({ navigation }: Props) {
   // Apply pill filter
   const filteredActiveTasks = filter === 'in_progress'
     ? activeTasks.filter((t) => t.status === 'IN_PROGRESS')
-    : filter === 'review'
-      ? []
-      : activeTasks;
+    : filter === 'open'
+      ? activeTasks.filter((t) => t.status === 'OPEN')
+      : filter === 'bids'
+        ? activeTasks.filter((t) => (t.bid_count ?? 0) > 0)
+        : filter === 'review'
+          ? []
+          : activeTasks;
 
   const filteredPastTasksBase = filter === 'review'
     ? pastTasks.filter((t) => t.status === 'COMPLETED' && !t.has_review)
@@ -534,8 +538,8 @@ function WorkspaceHeader({
   inProgressCount: number;
   pendingBidCount: number;
   reviewCount: number;
-  activeFilter: 'in_progress' | 'review' | null;
-  onPillPress: (filter: 'in_progress' | 'review') => void;
+  activeFilter: 'in_progress' | 'review' | 'open' | 'bids' | null;
+  onPillPress: (filter: 'in_progress' | 'review' | 'open' | 'bids') => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -560,6 +564,8 @@ function WorkspaceHeader({
           value={openTasksCount}
           color={brandColors.success}
           wide={wide}
+          active={activeFilter === 'open'}
+          onPress={() => onPillPress('open')}
         />
         <SummaryPill
           icon="progress-wrench"
@@ -572,10 +578,12 @@ function WorkspaceHeader({
         />
         <SummaryPill
           icon="hand-extended-outline"
-          label={t('myTasks.pills.pendingBids')}
+          label={t('myTasks.pills.hasBids')}
           value={pendingBidCount}
           color={brandColors.secondaryLight}
           wide={wide}
+          active={activeFilter === 'bids'}
+          onPress={() => onPillPress('bids')}
         />
         <SummaryPill
           icon="star-outline"
