@@ -194,10 +194,15 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
           <AppLogo compact />
         </Pressable>
 
-        {mode === 'fixer' && (
-          <View style={styles.fixerWorkspaceLabel}>
-            <MaterialCommunityIcons name="wrench-outline" size={14} color="#fff" />
-            <Text style={styles.fixerWorkspaceLabelText}>Fixer Workspace</Text>
+        {mode === 'fixer' ? (
+          <View style={styles.modeLabel}>
+            <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
+            <Text style={styles.modeLabelText}>Fixer Workspace</Text>
+          </View>
+        ) : (
+          <View style={[styles.modeLabel, styles.modeLabelRequester]}>
+            <MaterialCommunityIcons name="home-outline" size={13} color={brandColors.primary} />
+            <Text style={[styles.modeLabelText, styles.modeLabelRequesterText]}>Requester</Text>
           </View>
         )}
 
@@ -290,10 +295,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                 hitSlop={8}
                 onPress={openFixerOnboarding}
               >
-                <MaterialCommunityIcons name="wrench-outline" size={15} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
+                <MaterialCommunityIcons name="wrench-outline" size={14} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
                 <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
-                  {fixerActivated ? 'Fixer Workspace' : 'Become a Fixer'}
+                  {fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
                 </Text>
+                {fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
               </Pressable>
             </>
           ) : (
@@ -329,13 +335,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Exit Fixer Workspace"
+                accessibilityLabel="Back to home"
                 style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
                 hitSlop={8}
                 onPress={() => handleModeChange('requester')}
               >
-                <MaterialCommunityIcons name="close" size={15} color={brandColors.secondaryDark} />
-                <Text style={styles.desktopBackHomeBtnText}>Exit Fixer Workspace</Text>
+                <MaterialCommunityIcons name="arrow-left" size={14} color={brandColors.secondaryDark} />
+                <Text style={styles.desktopBackHomeBtnText}>Home</Text>
               </Pressable>
             </>
           )}
@@ -666,8 +672,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  // Fixer workspace label (shown next to logo in fixer mode)
-  fixerWorkspaceLabel: {
+  // "You are here" badge — next to logo, shared base style
+  modeLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -678,10 +684,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: brandColors.secondaryDark,
   },
-  fixerWorkspaceLabelText: {
+  modeLabelText: {
     fontSize: 11,
     fontWeight: '700',
     color: '#fff',
+  },
+  modeLabelRequester: {
+    backgroundColor: brandColors.infoSoft,
+    borderColor: brandColors.primary,
+  },
+  modeLabelRequesterText: {
+    color: brandColors.primary,
   },
   // "Become a Fixer" CTA variant (first-time, filled amber)
   desktopBecomeFixerBtn: {

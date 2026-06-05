@@ -116,7 +116,7 @@ export default function HamburgerMenu({
             <>
               <MenuRow
                 icon="arrow-left"
-                label="Back to Home"
+                label="← Home"
                 description="Return to your requester dashboard"
                 onPress={() => { onModeChange('requester'); (onRequesterHomePress ?? (() => {}))(); onClose(); }}
               />
@@ -210,7 +210,7 @@ export default function HamburgerMenu({
                 </View>
                 <View style={styles.modeText}>
                   <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-                    {fixerActivated ? 'Fixer Workspace' : 'Become a Fixer'}
+                    {fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
                   </Text>
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>
                     {fixerActivated ? 'Find jobs and earn money' : 'Set up your profile and start earning'}
