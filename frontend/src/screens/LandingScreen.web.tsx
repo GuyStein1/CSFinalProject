@@ -998,30 +998,29 @@ export default function LandingScreen({
           </div>
         )}
         <div className="actions">
-          <div style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-            {(['en', 'he'] as const).map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => void changeLanguage(lang)}
-                aria-label={`Switch to ${lang === 'en' ? 'English' : 'Hebrew'}`}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 0.5,
-                  padding: '4px 8px',
-                  borderRadius: 999,
-                  border: '1px solid',
-                  borderColor: language === lang ? 'var(--primary)' : 'rgba(28,60,86,0.22)',
-                  backgroundColor: language === lang ? 'var(--primary)' : 'transparent',
-                  color: language === lang ? '#FFFCF6' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                }}
-              >
-                {lang === 'en' ? 'EN' : 'עב'}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
+            aria-label={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              backgroundColor: '#E9E2D5',
+              border: '1px solid #DDD6CB',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3D5467" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#3D5467', lineHeight: '12px', marginTop: -2 }}>
+              {language === 'en' ? 'EN' : 'עב'}
+            </span>
+          </button>
           {isSignedIn ? (
             <>
               <button type="button" className="dashboard-link" onClick={() => runAndClose(handleRequesterHome)}>

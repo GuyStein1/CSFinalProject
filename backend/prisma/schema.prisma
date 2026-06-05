@@ -159,6 +159,9 @@ model Bid {
   fixer User @relation(fields: [fixer_id], references: [id])
 
   @@unique([task_id, fixer_id])
+  @@index([task_id])
+  @@index([fixer_id])
+  @@index([status])
 }
 
 model Review {
@@ -178,6 +181,7 @@ model Review {
   reports  ReviewReport[]
 
   @@unique([task_id, reviewer_id])
+  @@index([reviewee_id])
 }
 
 model ReviewReport {
@@ -206,6 +210,8 @@ model Message {
   task      Task @relation(fields: [task_id], references: [id])
   sender    User @relation("MessagesSent", fields: [sender_id], references: [id])
   recipient User @relation("MessagesReceived", fields: [recipient_id], references: [id])
+
+  @@index([task_id])
 }
 
 model Notification {
@@ -220,6 +226,8 @@ model Notification {
   created_at          DateTime         @default(now())
 
   user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, is_read])
 }
 
 model PortfolioItem {
