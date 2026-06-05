@@ -181,6 +181,15 @@ router.put('/:id/cancel-accepted', async (req: Request, res: Response, next: Nex
       });
     });
 
+    await sendNotification(
+      bid.task.requester_id,
+      'Fixer Canceled',
+      `The assigned fixer has canceled their bid on "${bid.task.title}". Your task is now open for new bids.`,
+      'BID_WITHDRAWN',
+      bid.task_id,
+      'Task',
+    );
+
     res.json({ message: 'Bid canceled, task reopened' });
   } catch (err) {
     next(err);

@@ -520,7 +520,12 @@
       "message": "פעולה זו תמחק את כל ההתראות שלך לצמיתות.",
       "confirm": "מחק הכל"
     },
-    "justNow": "הרגע"
+    "justNow": "הרגע",
+    "timeAgo": {
+      "minutes": "לפני {{count}} ד׳",
+      "hours": "לפני {{count}} שע׳",
+      "days": "לפני {{count}} ימים"
+    }
   },
   "taskDetails": {
     "loading": "טוען פרטי משימה...",

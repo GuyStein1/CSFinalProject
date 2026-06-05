@@ -520,7 +520,12 @@
       "message": "This will permanently remove all your notifications.",
       "confirm": "Delete All"
     },
-    "justNow": "Just now"
+    "justNow": "Just now",
+    "timeAgo": {
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
+    }
   },
   "taskDetails": {
     "loading": "Loading task details...",
