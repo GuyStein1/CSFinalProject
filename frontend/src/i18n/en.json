@@ -401,6 +401,12 @@
         "title": "Delete bid?",
         "message": "Delete your bid history for \"{{title}}\" permanently? This cannot be undone.",
         "confirm": "Delete bid"
+      },
+      "deleteAll": {
+        "button": "Delete All",
+        "title": "Delete all bids?",
+        "message": "Delete {{count}} bid(s) permanently? This cannot be undone.",
+        "confirm": "Delete All"
       }
     }
   },
@@ -509,6 +515,11 @@
     },
     "markAllRead": "Mark all as read",
     "deleteAll": "Delete All",
+    "deleteAllConfirm": {
+      "title": "Delete all notifications?",
+      "message": "This will permanently remove all your notifications.",
+      "confirm": "Delete All"
+    },
     "justNow": "Just now"
   },
   "taskDetails": {
