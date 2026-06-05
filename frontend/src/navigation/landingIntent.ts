@@ -36,7 +36,6 @@ export interface LandingScreenNavigationProps {
 }
 
 export type RootStackParamList = {
-  Landing: undefined;
   Main:
     | {
         screen?: 'RequesterMode' | 'FixerMode';

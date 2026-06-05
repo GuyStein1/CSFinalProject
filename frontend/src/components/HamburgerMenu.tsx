@@ -25,6 +25,7 @@ interface HamburgerMenuProps {
   onRequesterHomePress?: () => void;
   onRequesterTasksPress?: () => void;
   onPostTaskPress?: () => void;
+  fixerActivated?: boolean;
   onFixerWorkspacePress?: () => void;
   onFixerHomePress?: () => void;
   onFixerBidsPress?: () => void;
@@ -42,6 +43,7 @@ export default function HamburgerMenu({
   onRequesterHomePress,
   onRequesterTasksPress,
   onPostTaskPress,
+  fixerActivated = true,
   onFixerWorkspacePress,
   onFixerHomePress,
   onFixerBidsPress,
@@ -195,16 +197,24 @@ export default function HamburgerMenu({
               <View style={styles.divider} />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Open Fixer Workspace"
-                style={({ pressed }) => [styles.fixerWorkspaceEntry, pressed && styles.fixerWorkspaceEntryPressed]}
+                accessibilityLabel={fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+                style={({ pressed }) => [
+                  styles.fixerWorkspaceEntry,
+                  !fixerActivated && styles.fixerWorkspaceEntryPrimary,
+                  pressed && styles.fixerWorkspaceEntryPressed,
+                ]}
                 onPress={() => { (onFixerWorkspacePress ?? (() => { onModeChange('fixer'); (onFixerHomePress ?? (() => {}))(); }))(); onClose(); }}
               >
-                <View style={styles.fixerWorkspaceEntryIcon}>
-                  <MaterialCommunityIcons name="wrench-outline" size={20} color={brandColors.secondaryDark} />
+                <View style={[styles.fixerWorkspaceEntryIcon, !fixerActivated && styles.fixerWorkspaceEntryIconPrimary]}>
+                  <MaterialCommunityIcons name="wrench-outline" size={20} color="#fff" />
                 </View>
                 <View style={styles.modeText}>
-                  <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>Fixer Workspace</Text>
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>Find jobs and earn money</Text>
+                  <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+                    {fixerActivated ? 'Fixer Workspace' : 'Become a Fixer'}
+                  </Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                    {fixerActivated ? 'Find jobs and earn money' : 'Set up your profile and start earning'}
+                  </Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
               </Pressable>
@@ -318,6 +328,10 @@ const styles = StyleSheet.create({
     borderColor: brandColors.secondary,
     backgroundColor: brandColors.warningSoft,
   },
+  fixerWorkspaceEntryPrimary: {
+    borderColor: brandColors.secondaryDark,
+    backgroundColor: brandColors.warningSoft,
+  },
   fixerWorkspaceEntryPressed: {
     opacity: 0.82,
   },
@@ -328,6 +342,9 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fixerWorkspaceEntryIconPrimary: {
+    backgroundColor: brandColors.secondaryDark,
   },
   sectionLabel: {
     color: brandColors.textMuted,

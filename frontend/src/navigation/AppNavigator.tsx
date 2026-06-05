@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,11 +68,14 @@ function NotifBadge({ count }: { count: number }) {
 }
 
 // ─── Desktop header (wide screens / web) ─────────────────────────────────────
+const FIXER_ONBOARDING_KEY = 'fixerOnboardingSeen';
+
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const topInset = insets.top > 0 ? insets.top : spacing.sm;
   const [navStateVersion, setNavStateVersion] = useState(0);
   const [activeScreenOverride, setActiveScreenOverride] = useState<string | null>(null);
+  const [fixerActivated, setFixerActivated] = useState(true); // default true avoids flicker
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
@@ -90,6 +94,17 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     setActiveScreenOverride(null);
   }, [route.name]);
 
+  const checkFixerActivated = () => {
+    AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+  };
+
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    checkFixerActivated();
+    return () => { isMountedRef.current = false; };
+  }, []); // intentionally empty — run once on mount
+
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
     if (route.name !== nextRoute) navigation.navigate(nextRoute);
@@ -105,9 +120,8 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openDashboard = () => {
-    navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', {
-      screen: mode === 'fixer' ? 'FindJobs' : 'Dashboard',
-    });
+    // Logo always means "go home" — the requester dashboard is home regardless of current mode
+    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
   };
 
   const openNotifications = () => {
@@ -120,6 +134,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
   const openFixerOnboarding = () => {
     openStackScreen('BecomeFixerOnboarding');
+    // Re-check after returning (onboarding screen sets the flag)
+    const unsubscribe = navigation.addListener('focus' as never, () => {
+      checkFixerActivated();
+      unsubscribe();
+    });
   };
 
   const openWorkspaceScreen = (screen: string) => {
@@ -202,7 +221,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                 >
                   <MaterialCommunityIcons
                     name={item.icon as never}
-                    size={18}
+                    size={16}
                     color={selected ? (mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary) : brandColors.textMuted}
                   />
                   <Text style={[
@@ -262,13 +281,19 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Open Fixer Workspace"
-                style={({ pressed }) => [styles.desktopFixerWorkspaceBtn, pressed && styles.desktopActionPressed]}
+                accessibilityLabel={fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+                style={({ pressed }) => [
+                  styles.desktopFixerWorkspaceBtn,
+                  !fixerActivated && styles.desktopBecomeFixerBtn,
+                  pressed && styles.desktopActionPressed,
+                ]}
                 hitSlop={8}
                 onPress={openFixerOnboarding}
               >
-                <MaterialCommunityIcons name="wrench-outline" size={15} color={brandColors.secondaryDark} />
-                <Text style={styles.desktopFixerWorkspaceBtnText}>Fixer Workspace</Text>
+                <MaterialCommunityIcons name="wrench-outline" size={15} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
+                <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
+                  {fixerActivated ? 'Fixer Workspace' : 'Become a Fixer'}
+                </Text>
               </Pressable>
             </>
           ) : (
@@ -304,13 +329,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Back to Home"
+                accessibilityLabel="Exit Fixer Workspace"
                 style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
                 hitSlop={8}
                 onPress={() => handleModeChange('requester')}
               >
-                <MaterialCommunityIcons name="arrow-left" size={15} color={brandColors.primaryMuted} />
-                <Text style={styles.desktopBackHomeBtnText}>Back to Home</Text>
+                <MaterialCommunityIcons name="close" size={15} color={brandColors.secondaryDark} />
+                <Text style={styles.desktopBackHomeBtnText}>Exit Fixer Workspace</Text>
               </Pressable>
             </>
           )}
@@ -325,11 +350,16 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const topInset = insets.top + spacing.sm;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [fixerActivated, setFixerActivated] = useState(true);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
   const { language, changeLanguage } = useLanguage();
+
+  useEffect(() => {
+    AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+  }, []);
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -382,6 +412,10 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     } else {
       navigation.navigate('BecomeFixerOnboarding' as never);
     }
+    const unsubscribe = navigation.addListener('focus' as never, () => {
+      AsyncStorage.getItem(FIXER_ONBOARDING_KEY).then((v) => setFixerActivated(v === 'true'));
+      unsubscribe();
+    });
   };
 
   const openFixerBids = () => {
@@ -471,6 +505,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onRequesterHomePress={openRequesterHome}
         onRequesterTasksPress={openRequesterTasks}
         onPostTaskPress={openCreateTask}
+        fixerActivated={fixerActivated}
         onFixerWorkspacePress={openFixerOnboarding}
         onFixerHomePress={openFixerHome}
         onFixerBidsPress={openFixerBids}
@@ -508,22 +543,12 @@ function MainNavigator() {
   );
 }
 
-function SignedInLanding({
-  navigation,
-}: NativeStackScreenProps<RootStackParamList, 'Landing'>) {
-  useEffect(() => {
-    navigation.replace('Main');
-  }, [navigation]);
-
-  return null;
-}
-
 export default function AppNavigator() {
   const theme = useTheme();
 
   return (
     <Stack.Navigator
-      initialRouteName={Platform.OS === 'web' ? 'Landing' : 'Main'}
+      initialRouteName="Main"
       screenOptions={{
         headerTintColor: theme.colors.primary,
         headerStyle: { backgroundColor: theme.colors.surface },
@@ -532,7 +557,6 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
-      <Stack.Screen name="Landing" component={SignedInLanding} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: 'Create Task' }} />
       <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: 'Task Details' }} />
@@ -659,6 +683,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  // "Become a Fixer" CTA variant (first-time, filled amber)
+  desktopBecomeFixerBtn: {
+    backgroundColor: brandColors.secondaryDark,
+    borderColor: brandColors.secondaryDark,
+  },
+  desktopBecomeFixerBtnText: {
+    color: '#fff',
+  },
   // Fixer workspace entry button (requester mode, right actions)
   desktopFixerWorkspaceBtn: {
     flexDirection: 'row',
@@ -703,29 +735,28 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   desktopPageTab: {
-    minHeight: 38,
-    flexDirection: 'column',
+    minHeight: 48,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
   },
   desktopPageTabActive: {
-    backgroundColor: brandColors.infoSoft,
-    borderColor: brandColors.outlineLight,
+    borderBottomColor: brandColors.primary,
   },
   desktopPageTabText: {
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 13,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
     color: brandColors.textMuted,
   },
   desktopPageTabTextActive: {
     color: brandColors.primary,
+    fontWeight: '700',
   },
   // Fixer-mode tab variants
   desktopBarFixer: {
@@ -733,11 +764,11 @@ const styles = StyleSheet.create({
     borderBottomColor: brandColors.secondary,
   },
   desktopPageTabActiveFixer: {
-    backgroundColor: brandColors.warningSoft,
-    borderColor: brandColors.secondary,
+    borderBottomColor: brandColors.secondaryDark,
   },
   desktopPageTabTextActiveFixer: {
     color: brandColors.secondaryDark,
+    fontWeight: '700',
   },
   desktopIconBtnFixer: {
     backgroundColor: brandColors.warningSoft,
