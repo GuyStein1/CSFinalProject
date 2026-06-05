@@ -36,7 +36,6 @@ export interface LandingScreenNavigationProps {
 }
 
 export type RootStackParamList = {
-  Landing: undefined;
   Main:
     | {
         screen?: 'RequesterMode' | 'FixerMode';
@@ -52,6 +51,7 @@ export type RootStackParamList = {
   Settings: undefined;
   PublicProfile: { userId?: string } | undefined;
   NotificationCenter: undefined;
+  BecomeFixerOnboarding: undefined;
   Chat: {
     taskId: string;
     myDbId?: string;

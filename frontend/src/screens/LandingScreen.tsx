@@ -396,11 +396,7 @@ export default function LandingScreen({
     setSelectedCategory((current) => (current === category ? null : category));
   };
 
-  const handleLogin = () => {
-    runAndClose(onLogin ?? (() => onPostTask()));
-  };
-
-  const handleCreateAccount = () => {
+  const handleGetStarted = () => {
     runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()));
   };
 
@@ -441,7 +437,7 @@ export default function LandingScreen({
     { label: t('landing.nav.findJobs'), shortLabel: t('landing.nav.fixer'), icon: 'account-hard-hat-outline', onPress: handleFixerCta },
   ];
   const compactDashboardLabels = wide && width < 1040;
-  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.signInToPost');
+  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.getStarted');
   const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
 
   return (
@@ -537,27 +533,17 @@ export default function LandingScreen({
               </View>
             ) : (
               <>
-                {!isSignedIn && wide && (
-                  <Pressable
-                    onPress={handleLogin}
-                    style={styles.navLogin}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('landing.nav.login')}
-                  >
-                    <Text style={styles.navLoginText}>{t('landing.nav.login')}</Text>
-                  </Pressable>
-                )}
                 <Pressable
-                  onPress={isSignedIn ? handleRequesterHome : () => handlePostTaskCta()}
+                  onPress={isSignedIn ? handleRequesterHome : handleGetStarted}
                   accessibilityRole="button"
-                  accessibilityLabel={isSignedIn ? 'Requester Dashboard' : postTaskCtaLabel}
+                  accessibilityLabel={isSignedIn ? t('landing.nav.requesterDashboard') : 'Get Started'}
                   style={({ pressed }) => [
                     styles.navCta,
                     { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
                   ]}
                 >
                   <Text style={styles.navCtaText} numberOfLines={1}>
-                    {isSignedIn ? 'Requester Dashboard' : postTaskCtaLabel}
+                    {isSignedIn ? t('landing.nav.requesterDashboard') : 'Get Started'}
                   </Text>
                 </Pressable>
               </>
@@ -608,24 +594,13 @@ export default function LandingScreen({
             ))}
             {!isSignedIn && (
               <Pressable
-                onPress={handleLogin}
+                onPress={handleGetStarted}
                 accessibilityRole="button"
-                accessibilityLabel={t('landing.nav.login')}
-                style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
-              >
-                <MaterialCommunityIcons name="login" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>{t('landing.nav.login')}</Text>
-              </Pressable>
-            )}
-            {!isSignedIn && onCreateAccount && (
-              <Pressable
-                onPress={handleCreateAccount}
-                accessibilityRole="button"
-                accessibilityLabel={t('landing.nav.createAccount')}
+                accessibilityLabel={t('landing.nav.getStarted')}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="account-plus-outline" size={18} color={brandColors.textOnDark} />
-                <Text style={styles.mobileMenuText}>{t('landing.nav.createAccount')}</Text>
+                <Text style={styles.mobileMenuText}>Get Started</Text>
               </Pressable>
             )}
             {!isSignedIn && (
@@ -664,7 +639,7 @@ export default function LandingScreen({
               {t('landing.hero.body')}
             </Text>
             <View style={styles.heroActions}>
-              <FButton onPress={() => handlePostTaskCta()} variant="secondary" size="lg" icon={isSignedIn ? 'plus' : 'login'}>
+              <FButton onPress={() => handlePostTaskCta()} variant="secondary" size="lg" icon={isSignedIn ? 'plus' : 'arrow-right'}>
                 {postTaskCtaLabel}
               </FButton>
               <Pressable
@@ -811,7 +786,7 @@ export default function LandingScreen({
                       <Text style={styles.catInlinePrompt} numberOfLines={3}>
                         {cat.starterPrompt}
                       </Text>
-                      <FButton onPress={() => handleCategoryTask(cat.value)} icon={isSignedIn ? 'plus' : 'login'} fullWidth>
+                      <FButton onPress={() => handleCategoryTask(cat.value)} icon={isSignedIn ? 'plus' : 'arrow-right'} fullWidth>
                         {isSignedIn ? t('landing.categories.postIn', { label: cat.label }) : postTaskCtaLabel}
                       </FButton>
                     </View>

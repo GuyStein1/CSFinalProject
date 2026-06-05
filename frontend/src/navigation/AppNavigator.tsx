@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../config/firebase';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
 import {
   BottomTabHeaderProps,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +21,7 @@ import TaskDetailsFixer from '../screens/TaskDetailsFixer';
 import SettingsScreen from '../screens/SettingsScreen';
 import PublicProfileScreen from '../screens/PublicProfileScreen';
 import NotificationCenterScreen from '../screens/NotificationCenterScreen';
-import LandingScreen from '../screens/LandingScreen';
+import BecomeFixerScreen from '../screens/BecomeFixerScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
@@ -28,9 +29,7 @@ import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useLanguage } from '../context/LanguageContext';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
-import type { Category } from '../constants/categories';
 import {
-  asLandingScreenWithNavigationProps,
   type RootStackParamList,
 } from './landingIntent';
 
@@ -40,8 +39,6 @@ const DESKTOP_BREAKPOINT = 900;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const ModeTabs = createBottomTabNavigator();
-const LandingScreenWithNavigationProps = asLandingScreenWithNavigationProps(LandingScreen);
-
 type NestedRouteSnapshot = {
   name?: string;
   params?: { screen?: unknown };
@@ -61,21 +58,6 @@ function getActiveWorkspaceScreen(route: NestedRouteSnapshot): string | undefine
   return typeof route.params?.screen === 'string' ? route.params.screen : undefined;
 }
 
-function resetToLanding(navigation: BottomTabHeaderProps['navigation']) {
-  const parentNavigation = navigation.getParent();
-  if (parentNavigation) {
-    parentNavigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'Landing' }],
-      }),
-    );
-    return;
-  }
-
-  navigation.navigate('Landing' as never);
-}
-
 // ─── Shared notification badge ───────────────────────────────────────────────
 function NotifBadge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -87,17 +69,20 @@ function NotifBadge({ count }: { count: number }) {
 }
 
 // ─── Desktop header (wide screens / web) ─────────────────────────────────────
+const getFixerOnboardingKey = () => `fixerOnboardingSeen_${auth.currentUser?.uid ?? 'anon'}`;
+
 function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const topInset = insets.top > 0 ? insets.top : spacing.sm;
   const [navStateVersion, setNavStateVersion] = useState(0);
   const [activeScreenOverride, setActiveScreenOverride] = useState<string | null>(null);
+  const [fixerActivated, setFixerActivated] = useState(true); // default true avoids flicker
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
   const { unreadCount: unreadMsgCount } = useUnreadMessages();
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, isRTL } = useLanguage();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -109,6 +94,17 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   useEffect(() => {
     setActiveScreenOverride(null);
   }, [route.name]);
+
+  const checkFixerActivated = () => {
+    AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
+  };
+
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    checkFixerActivated();
+    return () => { isMountedRef.current = false; };
+  }, []); // intentionally empty — run once on mount
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -124,8 +120,9 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate(screen as never);
   };
 
-  const openLanding = () => {
-    resetToLanding(navigation);
+  const openDashboard = () => {
+    // Logo always means "go home" — the requester dashboard is home regardless of current mode
+    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
   };
 
   const openNotifications = () => {
@@ -136,8 +133,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     openStackScreen('Settings');
   };
 
-  const openCreateTask = () => {
-    openStackScreen('CreateTask');
+  const openFixerOnboarding = () => {
+    openStackScreen('BecomeFixerOnboarding');
+    // Re-check after returning (onboarding screen sets the flag)
+    const unsubscribe = navigation.addListener('focus' as never, () => {
+      checkFixerActivated();
+      unsubscribe();
+    });
   };
 
   const openWorkspaceScreen = (screen: string) => {
@@ -176,6 +178,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     <View
       style={[
         styles.desktopBar,
+        mode === 'fixer' && styles.desktopBarFixer,
         {
           height: topInset + 64,
           paddingTop: topInset,
@@ -186,58 +189,25 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go to FixIt home"
-          onPress={openLanding}
+          onPress={openDashboard}
           style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
         >
           <AppLogo compact />
         </Pressable>
 
-        <View style={styles.desktopCenter}>
-          <View style={styles.modeToggleWrap}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Switch to requester workspace"
-              accessibilityState={{ selected: mode === 'requester' }}
-              style={[styles.modeToggleBtn, mode === 'requester' && styles.modeToggleBtnActive]}
-              onPress={() => handleModeChange('requester')}
-            >
-              <MaterialCommunityIcons
-                name="home-outline"
-                size={15}
-                color={mode === 'requester' ? brandColors.textOnDark : brandColors.primaryMuted}
-              />
-              <Text
-                style={[
-                  styles.modeToggleLabel,
-                  mode === 'requester' && styles.modeToggleLabelActive,
-                ]}
-              >
-                {t('nav.mode.requester')}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Switch to fixer workspace"
-              accessibilityState={{ selected: mode === 'fixer' }}
-              style={[styles.modeToggleBtn, mode === 'fixer' && styles.modeToggleBtnActive]}
-              onPress={() => handleModeChange('fixer')}
-            >
-              <MaterialCommunityIcons
-                name="wrench-outline"
-                size={15}
-                color={mode === 'fixer' ? brandColors.textOnDark : brandColors.primaryMuted}
-              />
-              <Text
-                style={[
-                  styles.modeToggleLabel,
-                  mode === 'fixer' && styles.modeToggleLabelActive,
-                ]}
-              >
-                {t('nav.mode.fixer')}
-              </Text>
-            </Pressable>
+        {mode === 'fixer' ? (
+          <View style={[styles.modeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
+            <Text style={styles.modeLabelText}>{t('nav.workspace.fixerBadge')}</Text>
           </View>
+        ) : (
+          <View style={[styles.modeLabel, styles.modeLabelRequester, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <MaterialCommunityIcons name="home-outline" size={13} color={brandColors.primary} />
+            <Text style={[styles.modeLabelText, styles.modeLabelRequesterText]}>{t('nav.workspace.requesterBadge')}</Text>
+          </View>
+        )}
 
+        <View style={styles.desktopCenter}>
           <View style={styles.desktopPageTabs}>
             {workspaceTabs.map((item) => {
               const selected = activeScreen === item.screen;
@@ -251,16 +221,19 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                   onPress={() => openWorkspaceScreen(item.screen)}
                   style={({ pressed }) => [
                     styles.desktopPageTab,
-                    selected && styles.desktopPageTabActive,
+                    selected && (mode === 'fixer' ? styles.desktopPageTabActiveFixer : styles.desktopPageTabActive),
                     pressed && styles.desktopActionPressed,
                   ]}
                 >
                   <MaterialCommunityIcons
                     name={item.icon as never}
-                    size={18}
-                    color={selected ? brandColors.primary : brandColors.textMuted}
+                    size={16}
+                    color={selected ? (mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary) : brandColors.textMuted}
                   />
-                  <Text style={[styles.desktopPageTabText, selected && styles.desktopPageTabTextActive]}>
+                  <Text style={[
+                    styles.desktopPageTabText,
+                    selected && (mode === 'fixer' ? styles.desktopPageTabTextActiveFixer : styles.desktopPageTabTextActive),
+                  ]}>
                     {item.label}
                   </Text>
                   {showMsgBadge && <NotifBadge count={unreadMsgCount} />}
@@ -271,18 +244,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </View>
 
         <View style={styles.desktopActions}>
-          {mode === 'requester' && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Post a task"
-              style={({ pressed }) => [styles.desktopPrimaryAction, pressed && styles.desktopActionPressed]}
-              onPress={openCreateTask}
-            >
-              <MaterialCommunityIcons name="plus" size={17} color={brandColors.primaryDark} />
-              <Text style={styles.desktopPrimaryActionText}>{t('nav.postTask')}</Text>
-            </Pressable>
-          )}
-
+          {/* Shared: lang switcher, notifications, settings */}
           <View style={styles.langSwitcher}>
             {(['en', 'he'] as const).map((lang) => (
               <Pressable
@@ -299,28 +261,63 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={
-              notificationCount > 0
-                ? `Open notifications, ${notificationCount} unread`
-                : 'Open notifications'
-            }
-            style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+            accessibilityLabel={notificationCount > 0 ? `Open notifications, ${notificationCount} unread` : 'Open notifications'}
+            style={({ pressed }) => [
+              styles.desktopIconBtn,
+              mode === 'fixer' && styles.desktopIconBtnFixer,
+              pressed && styles.desktopActionPressed,
+            ]}
             hitSlop={8}
             onPress={openNotifications}
           >
-            <MaterialCommunityIcons name="bell-outline" size={20} color={brandColors.primary} />
+            <MaterialCommunityIcons name="bell-outline" size={20} color={mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary} />
             <NotifBadge count={notificationCount} />
           </Pressable>
 
-          {mode === 'fixer' && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            style={({ pressed }) => [
+              styles.desktopIconBtn,
+              mode === 'fixer' && styles.desktopIconBtnFixer,
+              pressed && styles.desktopActionPressed,
+            ]}
+            hitSlop={8}
+            onPress={openSettings}
+          >
+            <MaterialCommunityIcons name="cog-outline" size={20} color={mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary} />
+          </Pressable>
+
+          {/* Workspace switcher */}
+          {mode === 'requester' ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open settings"
-              style={({ pressed }) => [styles.desktopIconBtn, pressed && styles.desktopActionPressed]}
+              accessibilityLabel={fixerActivated ? t('nav.workspace.openFixer') : t('nav.workspace.becomeFixer')}
+              style={({ pressed }) => [
+                styles.desktopFixerWorkspaceBtn,
+                !fixerActivated && styles.desktopBecomeFixerBtn,
+                pressed && styles.desktopActionPressed,
+              ]}
               hitSlop={8}
-              onPress={openSettings}
+              onPress={openFixerOnboarding}
             >
-              <MaterialCommunityIcons name="cog-outline" size={20} color={brandColors.primary} />
+              {isRTL && fixerActivated && <MaterialCommunityIcons name="chevron-left" size={13} color={brandColors.secondaryDark} />}
+              <MaterialCommunityIcons name="wrench-outline" size={14} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
+              <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
+                {fixerActivated ? t('nav.workspace.openFixer') : t('nav.workspace.becomeFixer')}
+              </Text>
+              {!isRTL && fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('nav.workspace.openRequester')}
+              style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
+              hitSlop={8}
+              onPress={() => handleModeChange('requester')}
+            >
+              <MaterialCommunityIcons name={isRTL ? 'chevron-right' : 'chevron-left'} size={14} color={brandColors.secondaryDark} />
+              <Text style={styles.desktopBackHomeBtnText}>{t('nav.workspace.openRequester')}</Text>
             </Pressable>
           )}
         </View>
@@ -334,11 +331,16 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const insets = useSafeAreaInsets();
   const topInset = insets.top + spacing.sm;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [fixerActivated, setFixerActivated] = useState(true);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
   const { language, changeLanguage } = useLanguage();
+
+  useEffect(() => {
+    AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
+  }, []);
 
   const handleModeChange = (value: Mode) => {
     const nextRoute = value === 'fixer' ? 'FixerMode' : 'RequesterMode';
@@ -354,7 +356,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate(screen as never);
   };
 
-  const openLanding = () => {
+  const openHome = () => {
     navigation.navigate(mode === 'fixer' ? 'FixerMode' : 'RequesterMode', {
       screen: mode === 'fixer' ? 'FindJobs' : 'Dashboard',
     });
@@ -382,6 +384,19 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
 
   const openFixerHome = () => {
     navigation.navigate('FixerMode', { screen: 'FindJobs' });
+  };
+
+  const openFixerOnboarding = () => {
+    const parentNavigation = navigation.getParent();
+    if (parentNavigation) {
+      parentNavigation.navigate('BecomeFixerOnboarding' as never);
+    } else {
+      navigation.navigate('BecomeFixerOnboarding' as never);
+    }
+    const unsubscribe = navigation.addListener('focus' as never, () => {
+      AsyncStorage.getItem(getFixerOnboardingKey()).then((v) => setFixerActivated(v === 'true'));
+      unsubscribe();
+    });
   };
 
   const openFixerBids = () => {
@@ -423,7 +438,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go to workspace home"
-            onPress={openLanding}
+            onPress={openHome}
             hitSlop={8}
             style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
           >
@@ -471,6 +486,8 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onRequesterHomePress={openRequesterHome}
         onRequesterTasksPress={openRequesterTasks}
         onPostTaskPress={openCreateTask}
+        fixerActivated={fixerActivated}
+        onFixerWorkspacePress={openFixerOnboarding}
         onFixerHomePress={openFixerHome}
         onFixerBidsPress={openFixerBids}
         onFixerProfilePress={openFixerProfile}
@@ -507,95 +524,12 @@ function MainNavigator() {
   );
 }
 
-function SignedInLanding({
-  navigation,
-}: NativeStackScreenProps<RootStackParamList, 'Landing'>) {
-  const { width } = useWindowDimensions();
-
-  useEffect(() => {
-    if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
-      navigation.replace('Main');
-    }
-  }, [navigation, width]);
-
-  const openRequesterDashboard = () => {
-    navigation.navigate('Main', {
-      screen: 'RequesterMode',
-      params: { screen: 'Dashboard' },
-    });
-  };
-
-  const openRequesterTasks = () => {
-    navigation.navigate('Main', {
-      screen: 'RequesterMode',
-      params: { screen: 'MyTasks' },
-    });
-  };
-
-  const openFixerWorkspace = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'FindJobs' },
-    });
-  };
-
-  const openFixerBids = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'MyBids' },
-    });
-  };
-
-  const openFixerProfile = () => {
-    navigation.navigate('Main', {
-      screen: 'FixerMode',
-      params: { screen: 'FixerProfile' },
-    });
-  };
-
-  const openPostTask = (category?: Category) => {
-    navigation.navigate('CreateTask', category ? { category } : undefined);
-  };
-
-  const openSettings = () => {
-    navigation.navigate('Settings');
-  };
-
-  const openNotifications = () => {
-    navigation.navigate('NotificationCenter');
-  };
-
-  if (Platform.OS !== 'web' || width < DESKTOP_BREAKPOINT) {
-    return null;
-  }
-
-  return (
-    <LandingScreenWithNavigationProps
-      isSignedIn
-      onLogin={openRequesterDashboard}
-      onDashboard={openRequesterDashboard}
-      onRequesterHome={openRequesterDashboard}
-      onRequesterTasks={openRequesterTasks}
-      onPostTask={openPostTask}
-      onCategoryPress={openPostTask}
-      onCategorySelect={openPostTask}
-      onBecomeFixer={openFixerWorkspace}
-      onFixerHome={openFixerWorkspace}
-      onFixerBids={openFixerBids}
-      onFixerProfile={openFixerProfile}
-      onNotifications={openNotifications}
-      onProfile={openSettings}
-      onSettings={openSettings}
-    />
-  );
-}
-
 export default function AppNavigator() {
   const theme = useTheme();
 
   return (
     <Stack.Navigator
-      initialRouteName={Platform.OS === 'web' ? 'Landing' : 'Main'}
+      initialRouteName="Main"
       screenOptions={{
         headerTintColor: theme.colors.primary,
         headerStyle: { backgroundColor: theme.colors.surface },
@@ -604,7 +538,6 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
-      <Stack.Screen name="Landing" component={SignedInLanding} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: 'Create Task' }} />
       <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: 'Task Details' }} />
@@ -612,6 +545,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
+      <Stack.Screen name="BecomeFixerOnboarding" component={BecomeFixerScreen} options={{ title: 'Become a Fixer', headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
     </Stack.Navigator>
   );
@@ -713,35 +647,73 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  // Mode toggle (desktop)
-  modeToggleWrap: {
-    flexDirection: 'row',
-    backgroundColor: brandColors.surfaceAlt,
-    borderRadius: radii.pill,
-    padding: 3,
-    gap: 2,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-  },
-  modeToggleBtn: {
+  // "You are here" badge — next to logo, shared base style
+  modeLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     borderRadius: radii.pill,
+    backgroundColor: brandColors.secondaryDark,
+    borderWidth: 1,
+    borderColor: brandColors.secondaryDark,
   },
-  modeToggleBtnActive: {
-    backgroundColor: brandColors.primary,
+  modeLabelText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
   },
-  modeToggleLabel: {
+  modeLabelRequester: {
+    backgroundColor: brandColors.infoSoft,
+    borderColor: brandColors.primary,
+  },
+  modeLabelRequesterText: {
+    color: brandColors.primary,
+  },
+  // "Become a Fixer" CTA variant (first-time, filled amber)
+  desktopBecomeFixerBtn: {
+    backgroundColor: brandColors.secondaryDark,
+    borderColor: brandColors.secondaryDark,
+  },
+  desktopBecomeFixerBtnText: {
+    color: '#fff',
+  },
+  // Fixer workspace entry button (requester mode, right actions)
+  desktopFixerWorkspaceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 38,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  desktopFixerWorkspaceBtnText: {
+    color: brandColors.secondaryDark,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
-    color: brandColors.textMuted,
   },
-  modeToggleLabelActive: {
-    color: brandColors.textOnDark,
+  // Back to home button (fixer mode, right actions)
+  desktopBackHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 38,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.secondaryDark,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  desktopBackHomeBtnText: {
+    color: brandColors.secondaryDark,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   desktopPageTabs: {
     flexDirection: 'row',
@@ -751,29 +723,44 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   desktopPageTab: {
-    minHeight: 38,
-    flexDirection: 'column',
+    minHeight: 48,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
   },
   desktopPageTabActive: {
-    backgroundColor: brandColors.infoSoft,
-    borderColor: brandColors.outlineLight,
+    borderBottomColor: brandColors.primary,
   },
   desktopPageTabText: {
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 13,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
     color: brandColors.textMuted,
   },
   desktopPageTabTextActive: {
     color: brandColors.primary,
+    fontWeight: '700',
+  },
+  // Fixer-mode tab variants
+  desktopBarFixer: {
+    backgroundColor: '#FDF3E0',
+    borderBottomColor: brandColors.secondary,
+  },
+  desktopPageTabActiveFixer: {
+    borderBottomColor: brandColors.secondaryDark,
+  },
+  desktopPageTabTextActiveFixer: {
+    color: brandColors.secondaryDark,
+    fontWeight: '700',
+  },
+  desktopIconBtnFixer: {
+    backgroundColor: brandColors.warningSoft,
+    borderColor: brandColors.secondary,
   },
 
   // Language switcher chips

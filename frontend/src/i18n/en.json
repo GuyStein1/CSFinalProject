@@ -11,6 +11,13 @@
     "mode": {
       "requester": "Requester",
       "fixer": "Fixer"
+    },
+    "workspace": {
+      "requesterBadge": "Requester",
+      "fixerBadge": "Fixer Workspace",
+      "openFixer": "Open Fixer Workspace",
+      "openRequester": "Open Requester Workspace",
+      "becomeFixer": "Become a Fixer"
     }
   },
   "categories": {
@@ -95,7 +102,7 @@
       "emailPlaceholder": "Please enter your email address",
       "submit": "Send Reset Link",
       "backToSignIn": "Back to Sign In",
-      "sentDescription": "Check your inbox — we sent a reset link to {{email}}.",
+      "sentDescription": "Check your inbox â€” we sent a reset link to {{email}}.",
       "failed": "Failed to send reset email"
     },
     "needsSync": {
@@ -319,7 +326,7 @@
     "header": {
       "kicker": "Fixer Workspace",
       "title": "Bid pipeline",
-      "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs"
+      "sub": "{{tab}} bids Â· {{pending}} pending Â· {{active}} active jobs"
     },
     "tabs": {
       "active": "Active",
@@ -349,7 +356,7 @@
     },
     "editModal": {
       "title": "Edit Bid",
-      "offer": "Offer (₪)",
+      "offer": "Offer (â‚ª)",
       "description": "Description",
       "save": "Save Changes",
       "cancel": "Cancel"
@@ -401,7 +408,7 @@
     "header": {
       "kicker": "Fixer Workspace",
       "title": "Find jobs",
-      "sub": "Open jobs near {{location}} · {{categories}} · {{budget}}"
+      "sub": "Open jobs near {{location}} Â· {{categories}} Â· {{budget}}"
     },
     "stats": {
       "openJobs": "Open jobs",
@@ -449,7 +456,7 @@
     "error": {
       "couldNotLoad": "Could not load jobs",
       "retry": "Try Again",
-      "mapsNotReady": "Maps not ready — please try again.",
+      "mapsNotReady": "Maps not ready â€” please try again.",
       "couldNotResolve": "Could not resolve that place. Please try again.",
       "noResults": "No results found for that area."
     },
@@ -457,7 +464,7 @@
       "map": "Map",
       "list": "List",
       "budgetAny": "Budget: Any",
-      "budgetRange": "Budget: ₪{{min}}–₪{{max}}",
+      "budgetRange": "Budget: â‚ª{{min}}â€“â‚ª{{max}}",
       "clearFilters": "Clear filters",
       "currentLocation": "Current location"
     }
@@ -470,11 +477,11 @@
       "subtitle": "Say hello!"
     },
     "input": {
-      "placeholder": "Type a message…"
+      "placeholder": "Type a messageâ€¦"
     }
   },
   "conversations": {
-    "loading": "Loading messages…",
+    "loading": "Loading messagesâ€¦",
     "empty": {
       "title": "No conversations yet",
       "message": "Start a chat from a task once a bid is accepted."
@@ -554,7 +561,7 @@
       "title": "Edit Task",
       "titleLabel": "Title",
       "descriptionLabel": "Description",
-      "budgetLabel": "Budget (₪)",
+      "budgetLabel": "Budget (â‚ª)",
       "locationLabel": "General location",
       "addressLabel": "Exact address",
       "saveChanges": "Save Changes"
@@ -596,8 +603,8 @@
     "notFound": "Task not found.",
     "noPhotos": "No photos attached",
     "requester": "Task Requester",
-    "yourBid": "Your Bid: ₪{{amount}}",
-    "suggestedBudget": "Suggested budget: ₪{{amount}}",
+    "yourBid": "Your Bid: â‚ª{{amount}}",
+    "suggestedBudget": "Suggested budget: â‚ª{{amount}}",
     "openToQuotes": "The requester is open to quotes.",
     "error": {
       "title": "Something went wrong",
@@ -621,7 +628,7 @@
       "chatWithRequester": "Chat with Requester"
     },
     "bidStatus": {
-      "submitted": "Bid Submitted ✓",
+      "submitted": "Bid Submitted âœ“",
       "accepted": "Bid Accepted",
       "noLongerAccepting": "No longer accepting bids"
     },
@@ -634,7 +641,7 @@
     "bidModal": {
       "title": "Submit Your Bid",
       "editTitle": "Edit Your Bid",
-      "price": "Your price (₪)",
+      "price": "Your price (â‚ª)",
       "pricePlaceholder": "e.g. 250",
       "pitchLabel": "Your pitch",
       "pitchPlaceholder": "Tell the requester why you're the right person...",
@@ -642,7 +649,7 @@
       "submit": "Send Offer",
       "updateOffer": "Update Offer",
       "cancel": "Cancel",
-      "errorPrice": "Enter a valid price greater than ₪0.",
+      "errorPrice": "Enter a valid price greater than â‚ª0.",
       "errorPitch": "Write a short pitch to the requester.",
       "maxBids": "This task has reached the maximum number of bids (15).",
       "errorSubmit": "Failed to submit bid. Please try again."
@@ -678,7 +685,7 @@
       "subtitle": "Choose a fixed price or let fixers quote",
       "fixedPrice": "Fixed Price",
       "quoteRequired": "Quote Required",
-      "budgetLabel": "Budget (₪)",
+      "budgetLabel": "Budget (â‚ª)",
       "enterBudget": "Enter your budget",
       "quoteNote": "Fixers will propose their own price when bidding on your task.",
       "urgency": {
@@ -693,7 +700,7 @@
       "subtitle": "Enter the address and verify the pin on the map",
       "taskLocation": "Task location",
       "locationPlaceholder": "e.g., Dizengoff 120, Tel Aviv",
-      "pinPlaced": "Pin placed — drag it or tap the map to adjust",
+      "pinPlaced": "Pin placed â€” drag it or tap the map to adjust",
       "enterAddress": "Enter an address above to place the pin",
       "locationDenied": "Location access was denied. Enter the address above and we'll find it on the map.",
       "privacyNote": "Fixers see only an approximate location. The exact address is shared only after you accept a bid."
@@ -725,7 +732,7 @@
       "budget": {
         "fixed": "Fixed Price",
         "quote": "Quote Required",
-        "amount": "Amount (₪)"
+        "amount": "Amount (â‚ª)"
       },
       "location": {
         "generalArea": "General Area",
@@ -745,7 +752,7 @@
       "locationRequired": "Location is required",
       "failedCreate": "Failed to create task. Please try again.",
       "noResults": "No results found. Try a more specific address.",
-      "mapsNotReady": "Maps not ready — please try again.",
+      "mapsNotReady": "Maps not ready â€” please try again.",
       "couldNotFind": "Could not find this location. Please try again.",
       "photoPermissionTitle": "Permission required",
       "photoPermission": "Please allow access to your photo library to add images."
@@ -872,7 +879,7 @@
   "landing": {
     "hero": {
       "title": "Local fixes, trusted Fixers.",
-      "subtitle": "Post a task, compare bids from verified local pros, and get the job done — on your terms.",
+      "subtitle": "Post a task, compare bids from verified local pros, and get the job done â€” on your terms.",
       "postTask": "Post a Task",
       "becomeFixer": "Become a Fixer",
       "available": "Available across Israel",
@@ -921,7 +928,8 @@
       "signInToPost": "Sign in to Post Task",
       "openFixerWorkspace": "Open Fixer Workspace",
       "joinAsFixer": "Join as a Fixer",
-      "signInToFind": "Sign in to Find Jobs"
+      "signInToFind": "Sign in to Find Jobs",
+      "getStarted": "Get Started"
     },
     "stats": {
       "tasksPosted": "Tasks posted",
@@ -974,7 +982,7 @@
     },
     "footer": {
       "tagline": "Your neighborhood. Fixed.",
-      "copyright": "© 2026 FixIt · Tel Aviv, Israel",
+      "copyright": "Â© 2026 FixIt Â· Tel Aviv, Israel",
       "footerTagline": "Your neighborhood. Fixed. A task marketplace for homeowners and skilled local pros.",
       "madeby": "Made for neighbors who get things done.",
       "product": "Product",
@@ -994,7 +1002,7 @@
       "termsLink": "Terms"
     },
     "language": {
-      "toggle": "EN | עב"
+      "toggle": "EN | ×¢×‘"
     },
     "hero2": {
       "eyebrowDefault": "Trusted by 12,000+ neighbors in Israel",
@@ -1099,7 +1107,7 @@
     "fixerSection": {
       "eyebrow": "For Fixers",
       "title": "Turn your skills into local work.",
-      "body": "Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees — we take a small cut only when you're hired.",
+      "body": "Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees â€” we take a small cut only when you're hired.",
       "learnMore": "Learn more",
       "tiles": {
         "rate": {
@@ -1108,7 +1116,7 @@
         },
         "nearby": {
           "title": "Work nearby",
-          "desc": "Filter by distance — keep your commute short."
+          "desc": "Filter by distance â€” keep your commute short."
         },
         "trust": {
           "title": "Build trust",
@@ -1148,5 +1156,72 @@
     "leaveReview": "Leave review",
     "reopen": "Reopen",
     "markComplete": "Mark complete"
+  },
+  "becomeFixer": {
+    "hero": {
+      "title": "Become a Fixer",
+      "subtitle": "Earn money on your own terms by helping people with tasks in your area."
+    },
+    "benefits": {
+      "flexibleHours": {
+        "title": "Flexible Hours",
+        "body": "Work when you want — accept jobs that fit your schedule."
+      },
+      "findWork": {
+        "title": "Find Work Nearby",
+        "body": "Browse tasks posted in your area with a live map."
+      },
+      "earnMore": {
+        "title": "Earn More",
+        "body": "Set your own price on every bid. No middleman cut."
+      },
+      "reputation": {
+        "title": "Build Your Reputation",
+        "body": "Collect reviews and grow a profile clients trust."
+      }
+    },
+    "steps": {
+      "heading": "How to get started",
+      "profile": {
+        "label": "Complete your profile",
+        "detail": "Add a bio and your specialisations so requesters know who you are."
+      },
+      "browse": {
+        "label": "Browse open tasks",
+        "detail": "Find jobs near you on the map or list view."
+      },
+      "bid": {
+        "label": "Place a bid",
+        "detail": "Name your price and send a short note. The requester picks their favourite."
+      }
+    },
+    "cta": {
+      "setupProfile": "Set Up My Profile",
+      "browseFirst": "Browse jobs first"
+    }
+  },
+  "menu": {
+    "fixerWorkspace": "Fixer Workspace",
+    "openRequester": "Open Requester",
+    "backToRequester": "Switch to your requester dashboard",
+    "requesterSection": "My Workspace",
+    "requesterHome": "Home",
+    "requesterHomeDesc": "Dashboard and task shortcuts",
+    "requesterTasks": "My Tasks",
+    "requesterTasksDesc": "Review bids and manage posted tasks",
+    "postTask": "Post a Task",
+    "postTaskDesc": "Create a new task",
+    "fixerSection": "Fixer Workspace",
+    "findJobs": "Find Jobs",
+    "findJobsDesc": "Browse and bid on tasks near you",
+    "myBids": "My Bids",
+    "myBidsDesc": "Track pending and accepted offers",
+    "fixerProfile": "Fixer Profile",
+    "fixerProfileDesc": "Skills, portfolio, and payment details",
+    "openFixerWorkspace": "Open Fixer Workspace",
+    "becomeFixer": "Become a Fixer",
+    "fixerWorkspaceDesc": "Find jobs and earn money",
+    "becomeFixerDesc": "Set up your profile and start earning",
+    "footer": "Your workspace, payments, and alerts stay tied to this account."
   }
 }
