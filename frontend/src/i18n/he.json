@@ -252,7 +252,7 @@
     "pills": {
       "open": "פתוח",
       "inProgress": "בביצוע",
-      "pendingBids": "הצעות ממתינות",
+      "hasBids": "הצעות פתוחות",
       "toReview": "לביקורת"
     },
     "sections": {

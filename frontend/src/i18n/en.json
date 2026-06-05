@@ -252,7 +252,7 @@
     "pills": {
       "open": "Open",
       "inProgress": "In progress",
-      "pendingBids": "Pending bids",
+      "hasBids": "Open bids",
       "toReview": "To review"
     },
     "sections": {
