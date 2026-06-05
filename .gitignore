@@ -8,3 +8,6 @@ firebase-service-account.json
 .claude/
 
 .vercel
+
+.vercel
+.env*
