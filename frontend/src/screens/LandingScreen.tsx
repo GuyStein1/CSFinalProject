@@ -437,7 +437,7 @@ export default function LandingScreen({
     { label: t('landing.nav.findJobs'), shortLabel: t('landing.nav.fixer'), icon: 'account-hard-hat-outline', onPress: handleFixerCta },
   ];
   const compactDashboardLabels = wide && width < 1040;
-  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : 'Get Started';
+  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.getStarted');
   const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
 
   return (
@@ -536,14 +536,14 @@ export default function LandingScreen({
                 <Pressable
                   onPress={isSignedIn ? handleRequesterHome : handleGetStarted}
                   accessibilityRole="button"
-                  accessibilityLabel={isSignedIn ? 'Requester Dashboard' : 'Get Started'}
+                  accessibilityLabel={isSignedIn ? t('landing.nav.requesterDashboard') : 'Get Started'}
                   style={({ pressed }) => [
                     styles.navCta,
                     { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] },
                   ]}
                 >
                   <Text style={styles.navCtaText} numberOfLines={1}>
-                    {isSignedIn ? 'Requester Dashboard' : 'Get Started'}
+                    {isSignedIn ? t('landing.nav.requesterDashboard') : 'Get Started'}
                   </Text>
                 </Pressable>
               </>
@@ -596,7 +596,7 @@ export default function LandingScreen({
               <Pressable
                 onPress={handleGetStarted}
                 accessibilityRole="button"
-                accessibilityLabel="Get Started"
+                accessibilityLabel={t('landing.nav.getStarted')}
                 style={({ pressed }) => [styles.mobileMenuItem, pressed && styles.mobileMenuItemPressed]}
               >
                 <MaterialCommunityIcons name="account-plus-outline" size={18} color={brandColors.textOnDark} />

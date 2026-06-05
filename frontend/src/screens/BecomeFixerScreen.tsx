@@ -12,41 +12,33 @@ import { Text } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type RootStackParamList } from '../navigation/landingIntent';
 import { FButton } from '../components/ui';
+import { useLanguage } from '../context/LanguageContext';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 import { auth } from '../config/firebase';
 
 const getOnboardingKey = () => `fixerOnboardingSeen_${auth.currentUser?.uid ?? 'anon'}`;
 
-const BENEFITS = [
-  {
-    icon: 'clock-fast' as const,
-    title: 'Flexible Hours',
-    body: 'Work when you want — accept jobs that fit your schedule.',
-  },
-  {
-    icon: 'map-marker-radius-outline' as const,
-    title: 'Find Work Nearby',
-    body: 'Browse tasks posted in your area with a live map.',
-  },
-  {
-    icon: 'cash-multiple' as const,
-    title: 'Earn More',
-    body: 'Set your own price on every bid. No middleman cut.',
-  },
-  {
-    icon: 'star-circle-outline' as const,
-    title: 'Build Your Reputation',
-    body: 'Collect reviews and grow a profile clients trust.',
-  },
-];
+type BenefitKey = 'flexibleHours' | 'findWork' | 'earnMore' | 'reputation';
+
+const BENEFIT_ICONS: Record<BenefitKey, string> = {
+  flexibleHours: 'clock-fast',
+  findWork: 'map-marker-radius-outline',
+  earnMore: 'cash-multiple',
+  reputation: 'star-circle-outline',
+};
+
+const STEP_KEYS = ['profile', 'browse', 'bid'] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BecomeFixerOnboarding'>;
 
 export default function BecomeFixerScreen({ navigation }: Props) {
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const wide = width >= 900 && Platform.OS === 'web';
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -72,13 +64,11 @@ export default function BecomeFixerScreen({ navigation }: Props) {
     if (dest === 'profile') {
       navigation.replace('Main', { screen: 'FixerMode', params: { screen: 'FixerProfile' } });
     } else {
-      goToFixerHome();
+      navigation.replace('Main', { screen: 'FixerMode', params: { screen: 'FindJobs' } });
     }
   };
 
-  const goToFixerHome = () => {
-    navigation.replace('Main', { screen: 'FixerMode', params: { screen: 'FindJobs' } });
-  };
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
 
   return (
     <Animated.View style={[styles.root, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -96,22 +86,24 @@ export default function BecomeFixerScreen({ navigation }: Props) {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="wrench" size={40} color="#fff" />
           </View>
-          <Text style={[typography.h1, styles.heroTitle]}>Become a Fixer</Text>
-          <Text style={[typography.body, styles.heroSubtitle]}>
-            Earn money on your own terms by helping people with tasks in your area.
-          </Text>
+          <Text style={[typography.h1, styles.heroTitle]}>{t('becomeFixer.hero.title')}</Text>
+          <Text style={[typography.body, styles.heroSubtitle]}>{t('becomeFixer.hero.subtitle')}</Text>
         </LinearGradient>
 
         {/* Benefits grid */}
         <View style={[styles.benefitsGrid, wide && styles.benefitsGridWide]}>
-          {BENEFITS.map((b) => (
-            <View key={b.icon} style={[styles.benefitCard, wide && styles.benefitCardWide]}>
+          {(Object.keys(BENEFIT_ICONS) as BenefitKey[]).map((key) => (
+            <View key={key} style={[styles.benefitCard, { flexDirection: rowDirection }, wide && styles.benefitCardWide]}>
               <View style={styles.benefitIcon}>
-                <MaterialCommunityIcons name={b.icon} size={24} color={brandColors.secondaryDark} />
+                <MaterialCommunityIcons name={BENEFIT_ICONS[key] as never} size={24} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.benefitText}>
-                <Text style={[typography.bodyMedium, styles.benefitTitle]}>{b.title}</Text>
-                <Text style={[typography.bodySm, styles.benefitBody]}>{b.body}</Text>
+                <Text style={[typography.bodyMedium, styles.benefitTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {t(`becomeFixer.benefits.${key}.title`)}
+                </Text>
+                <Text style={[typography.bodySm, styles.benefitBody, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {t(`becomeFixer.benefits.${key}.body`)}
+                </Text>
               </View>
             </View>
           ))}
@@ -119,20 +111,22 @@ export default function BecomeFixerScreen({ navigation }: Props) {
 
         {/* Steps */}
         <View style={[styles.stepsSection, wide && styles.stepsSectionWide]}>
-          <Text style={[typography.h3, styles.stepsHeading]}>How to get started</Text>
+          <Text style={[typography.h3, styles.stepsHeading, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('becomeFixer.steps.heading')}
+          </Text>
           <View style={styles.steps}>
-            {[
-              { n: '1', label: 'Complete your profile', detail: 'Add a bio and your specialisations so requesters know who you are.' },
-              { n: '2', label: 'Browse open tasks', detail: 'Find jobs near you on the map or list view.' },
-              { n: '3', label: 'Place a bid', detail: 'Name your price and send a short note. The requester picks their favourite.' },
-            ].map((step) => (
-              <View key={step.n} style={styles.step}>
+            {STEP_KEYS.map((key, idx) => (
+              <View key={key} style={[styles.step, { flexDirection: rowDirection }]}>
                 <View style={styles.stepBadge}>
-                  <Text style={styles.stepBadgeText}>{step.n}</Text>
+                  <Text style={styles.stepBadgeText}>{idx + 1}</Text>
                 </View>
                 <View style={styles.stepText}>
-                  <Text style={[typography.bodyMedium, styles.stepLabel]}>{step.label}</Text>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{step.detail}</Text>
+                  <Text style={[typography.bodyMedium, styles.stepLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t(`becomeFixer.steps.${key}.label`)}
+                  </Text>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t(`becomeFixer.steps.${key}.detail`)}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -146,14 +140,16 @@ export default function BecomeFixerScreen({ navigation }: Props) {
             size="lg"
             onPress={() => void markSeenAndNavigate('profile')}
           >
-            Set Up My Profile
+            {t('becomeFixer.cta.setupProfile')}
           </FButton>
           <Pressable
             accessibilityRole="button"
             style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
             onPress={() => void markSeenAndNavigate('jobs')}
           >
-            <Text style={styles.skipText}>Browse jobs first →</Text>
+            <Text style={styles.skipText}>
+              {isRTL ? `← ${t('becomeFixer.cta.browseFirst')}` : `${t('becomeFixer.cta.browseFirst')} →`}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -217,7 +213,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   benefitCard: {
-    flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
     backgroundColor: brandColors.surface,
@@ -265,7 +260,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   step: {
-    flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
   },

@@ -1035,7 +1035,7 @@ export default function LandingScreen({
             </>
           ) : null}
           <button type="button" className="cta" onClick={isSignedIn ? () => handlePostTaskCta() : () => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}>
-            {isSignedIn ? postTaskCtaLabel : 'Get Started'} <span className="arr">→</span>
+            {isSignedIn ? postTaskCtaLabel : t('landing.nav.getStarted')} <span className="arr">→</span>
           </button>
           <button
             type="button"
@@ -1062,7 +1062,7 @@ export default function LandingScreen({
               <a href="#how" onClick={closeMenus}>{t('landing.nav.howItWorks')}</a>
               <a href="#categories" onClick={closeMenus}>{t('landing.nav.categories')}</a>
               <a href="#fixers" onClick={closeMenus}>{t('landing.nav.forFixers')}</a>
-              <button type="button" onClick={() => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}><LandingIcon name="account-plus-outline" size={18} />Get Started</button>
+              <button type="button" onClick={() => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}><LandingIcon name="account-plus-outline" size={18} />{t('landing.nav.getStarted')}</button>
               <button type="button" onClick={handleFixerCta}><LandingIcon name="account-hard-hat-outline" size={18} />{fixerCtaLabel}</button>
             </>
           )}

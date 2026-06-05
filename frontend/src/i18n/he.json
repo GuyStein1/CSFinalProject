@@ -11,6 +11,13 @@
     "mode": {
       "requester": "מזמין",
       "fixer": "מתקן"
+    },
+    "workspace": {
+      "requesterBadge": "מזמין",
+      "fixerBadge": "סביבת מתקן",
+      "openFixer": "פתח סביבת מתקן",
+      "openRequester": "פתח סביבת מזמין",
+      "becomeFixer": "הפוך למתקן"
     }
   },
   "categories": {
@@ -921,7 +928,8 @@
       "signInToPost": "התחבר לפרסום משימה",
       "openFixerWorkspace": "פתח סביבת עבודה",
       "joinAsFixer": "הצטרף כמתקן",
-      "signInToFind": "התחבר למציאת עבודות"
+      "signInToFind": "התחבר למציאת עבודות",
+      "getStarted": "התחל עכשיו"
     },
     "stats": {
       "tasksPosted": "משימות שפורסמו",
@@ -1148,5 +1156,72 @@
     "leaveReview": "השאר ביקורת",
     "reopen": "פתח מחדש",
     "markComplete": "סמן כהושלם"
+  },
+  "becomeFixer": {
+    "hero": {
+      "title": "הפוך למתקן",
+      "subtitle": "הרוויח כסף בתנאים שלך על ידי עזרה לאנשים עם משימות באזורך."
+    },
+    "benefits": {
+      "flexibleHours": {
+        "title": "שעות גמישות",
+        "body": "עבוד מתי שנוח לך — קבל עבודות שמתאימות ללוח הזמנים שלך."
+      },
+      "findWork": {
+        "title": "מצא עבודה קרוב",
+        "body": "עיין במשימות שפורסמו באזורך עם מפה חיה."
+      },
+      "earnMore": {
+        "title": "הרוויח יותר",
+        "body": "קבע את המחיר שלך בכל הצעה. ללא עמלת ביניים."
+      },
+      "reputation": {
+        "title": "בנה מוניטין",
+        "body": "אסוף ביקורות וצור פרופיל שלקוחות סומכים עליו."
+      }
+    },
+    "steps": {
+      "heading": "איך מתחילים",
+      "profile": {
+        "label": "השלם את הפרופיל",
+        "detail": "הוסף ביו והתמחויות שלך כדי שמזמינים יידעו מי אתה."
+      },
+      "browse": {
+        "label": "עיין במשימות פתוחות",
+        "detail": "מצא עבודות קרוב אליך במפה או בתצוגת רשימה."
+      },
+      "bid": {
+        "label": "הגש הצעה",
+        "detail": "קבע את המחיר ושלח הערה קצרה. המזמין בוחר את המועדף עליו."
+      }
+    },
+    "cta": {
+      "setupProfile": "הגדר את הפרופיל שלי",
+      "browseFirst": "עיין בעבודות קודם"
+    }
+  },
+  "menu": {
+    "fixerWorkspace": "סביבת מתקן",
+    "openRequester": "פתח סביבת מזמין",
+    "backToRequester": "עבור ללוח המחוונים שלך כמזמין",
+    "requesterSection": "סביבת העבודה שלי",
+    "requesterHome": "בית",
+    "requesterHomeDesc": "לוח מחוונים וקיצורי דרך למשימות",
+    "requesterTasks": "המשימות שלי",
+    "requesterTasksDesc": "בחן הצעות ונהל משימות שפורסמו",
+    "postTask": "פרסם משימה",
+    "postTaskDesc": "צור משימה חדשה",
+    "fixerSection": "סביבת מתקן",
+    "findJobs": "מצא עבודות",
+    "findJobsDesc": "עיין והגש הצעות על משימות קרובות",
+    "myBids": "ההצעות שלי",
+    "myBidsDesc": "עקוב אחר הצעות ממתינות ומקובלות",
+    "fixerProfile": "פרופיל מתקן",
+    "fixerProfileDesc": "כישורים, תיק עבודות ופרטי תשלום",
+    "openFixerWorkspace": "פתח סביבת מתקן",
+    "becomeFixer": "הפוך למתקן",
+    "fixerWorkspaceDesc": "מצא עבודות והרוויח כסף",
+    "becomeFixerDesc": "הגדר את הפרופיל שלך והתחל להרוויח",
+    "footer": "סביבת העבודה, התשלומות וההתראות שלך קשורות לחשבון זה."
   }
 }

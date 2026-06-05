@@ -82,7 +82,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const { unreadCount } = useNotificationContext();
   const notificationCount = unreadCount(typeFilter);
   const { unreadCount: unreadMsgCount } = useUnreadMessages();
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, isRTL } = useLanguage();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -196,14 +196,14 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         </Pressable>
 
         {mode === 'fixer' ? (
-          <View style={styles.modeLabel}>
+          <View style={[styles.modeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
-            <Text style={styles.modeLabelText}>Fixer Workspace</Text>
+            <Text style={styles.modeLabelText}>{t('nav.workspace.fixerBadge')}</Text>
           </View>
         ) : (
-          <View style={[styles.modeLabel, styles.modeLabelRequester]}>
+          <View style={[styles.modeLabel, styles.modeLabelRequester, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <MaterialCommunityIcons name="home-outline" size={13} color={brandColors.primary} />
-            <Text style={[styles.modeLabelText, styles.modeLabelRequesterText]}>Requester</Text>
+            <Text style={[styles.modeLabelText, styles.modeLabelRequesterText]}>{t('nav.workspace.requesterBadge')}</Text>
           </View>
         )}
 
@@ -292,7 +292,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
           {mode === 'requester' ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+              accessibilityLabel={fixerActivated ? t('nav.workspace.openFixer') : t('nav.workspace.becomeFixer')}
               style={({ pressed }) => [
                 styles.desktopFixerWorkspaceBtn,
                 !fixerActivated && styles.desktopBecomeFixerBtn,
@@ -301,22 +301,23 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               hitSlop={8}
               onPress={openFixerOnboarding}
             >
+              {isRTL && fixerActivated && <MaterialCommunityIcons name="chevron-left" size={13} color={brandColors.secondaryDark} />}
               <MaterialCommunityIcons name="wrench-outline" size={14} color={fixerActivated ? brandColors.secondaryDark : '#fff'} />
               <Text style={[styles.desktopFixerWorkspaceBtnText, !fixerActivated && styles.desktopBecomeFixerBtnText]}>
-                {fixerActivated ? 'Open Fixer Workspace' : 'Become a Fixer'}
+                {fixerActivated ? t('nav.workspace.openFixer') : t('nav.workspace.becomeFixer')}
               </Text>
-              {fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
+              {!isRTL && fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
             </Pressable>
           ) : (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open Requester Workspace"
+              accessibilityLabel={t('nav.workspace.openRequester')}
               style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
               hitSlop={8}
               onPress={() => handleModeChange('requester')}
             >
-              <MaterialCommunityIcons name="chevron-left" size={14} color={brandColors.secondaryDark} />
-              <Text style={styles.desktopBackHomeBtnText}>Open Requester Workspace</Text>
+              <MaterialCommunityIcons name={isRTL ? 'chevron-right' : 'chevron-left'} size={14} color={brandColors.secondaryDark} />
+              <Text style={styles.desktopBackHomeBtnText}>{t('nav.workspace.openRequester')}</Text>
             </Pressable>
           )}
         </View>
