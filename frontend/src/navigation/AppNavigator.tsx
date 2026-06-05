@@ -335,13 +335,13 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Back to home"
+                accessibilityLabel="Open Requester Workspace"
                 style={({ pressed }) => [styles.desktopBackHomeBtn, pressed && styles.desktopActionPressed]}
                 hitSlop={8}
                 onPress={() => handleModeChange('requester')}
               >
-                <MaterialCommunityIcons name="arrow-left" size={14} color={brandColors.secondaryDark} />
-                <Text style={styles.desktopBackHomeBtnText}>Home</Text>
+                <MaterialCommunityIcons name="chevron-left" size={14} color={brandColors.secondaryDark} />
+                <Text style={styles.desktopBackHomeBtnText}>Open Requester</Text>
               </Pressable>
             </>
           )}

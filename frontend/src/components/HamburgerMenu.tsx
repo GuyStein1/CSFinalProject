@@ -115,9 +115,9 @@ export default function HamburgerMenu({
           {currentMode === 'fixer' ? (
             <>
               <MenuRow
-                icon="arrow-left"
-                label="← Home"
-                description="Return to your requester dashboard"
+                icon="chevron-left"
+                label="Open Requester"
+                description="Switch to your requester dashboard"
                 onPress={() => { onModeChange('requester'); (onRequesterHomePress ?? (() => {}))(); onClose(); }}
               />
 
