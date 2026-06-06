@@ -12,7 +12,10 @@ jest.mock('react-i18next', () => {
     }, obj);
     return typeof val === 'string' ? val : key;
   };
-  return { useTranslation: () => ({ t: (key: string) => resolve(en, key) }) };
+  return {
+    useTranslation: () => ({ t: (key: string) => resolve(en, key) }),
+    initReactI18next: { type: '3rdParty', init: jest.fn() },
+  };
 });
 
 jest.mock('firebase/auth', () => ({
