@@ -1,3 +1,7 @@
+jest.mock('../../config/firebase', () => ({
+  auth: { currentUser: { uid: 'test-uid' } },
+}));
+
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useUnreadMessages } from '../useUnreadMessages';
 import api from '../../api/axiosInstance';
@@ -30,13 +34,13 @@ describe('useUnreadMessages', () => {
     expect(result.current.unreadCount).toBe(0);
   });
 
-  it('sums unreadCount across all conversations', async () => {
+  it('sums unreadCount across active (IN_PROGRESS) conversations only', async () => {
     mockApi.get.mockResolvedValue({
       data: {
         conversations: [
-          { taskId: 't1', unreadCount: 3 },
-          { taskId: 't2', unreadCount: 5 },
-          { taskId: 't3', unreadCount: 0 },
+          { taskId: 't1', unreadCount: 3, taskStatus: 'IN_PROGRESS' },
+          { taskId: 't2', unreadCount: 5, taskStatus: 'IN_PROGRESS' },
+          { taskId: 't3', unreadCount: 2, taskStatus: 'COMPLETED' },
         ],
       },
     });
@@ -46,7 +50,7 @@ describe('useUnreadMessages', () => {
   });
 
   it('refetch function updates the count', async () => {
-    mockApi.get.mockResolvedValue({ data: { conversations: [{ taskId: 't1', unreadCount: 2 }] } });
+    mockApi.get.mockResolvedValue({ data: { conversations: [{ taskId: 't1', unreadCount: 2, taskStatus: 'IN_PROGRESS' }] } });
 
     const { result } = renderHook(() => useUnreadMessages());
     await waitFor(() => expect(result.current.unreadCount).toBe(2));
