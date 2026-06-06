@@ -15,7 +15,11 @@ import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+    : '*',
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());

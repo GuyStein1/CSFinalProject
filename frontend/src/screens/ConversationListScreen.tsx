@@ -64,11 +64,9 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
   if (loading) return <LoadingScreen label={t('conversations.loading')} />;
 
   const activeConversations = conversations.filter(
-    (c) => c.taskStatus !== 'COMPLETED' && c.taskStatus !== 'CANCELED',
+    (c) => c.taskStatus === 'IN_PROGRESS',
   );
-  const pastCount = conversations.filter(
-    (c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED',
-  ).length;
+  const pastCount = conversations.length - activeConversations.length;
 
   return (
     <FlatList

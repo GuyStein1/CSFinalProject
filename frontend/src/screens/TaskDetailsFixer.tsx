@@ -108,6 +108,7 @@ export default function TaskDetailsFixer({ route }: Props) {
   const [bidPrice, setBidPrice] = useState('');
   const [bidPitch, setBidPitch] = useState('');
   const [bidSubmitting, setBidSubmitting] = useState(false);
+  const [completionLoading, setCompletionLoading] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
 
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -546,12 +547,17 @@ export default function TaskDetailsFixer({ route }: Props) {
                 <FButton
                   variant="primary"
                   icon="check-circle-outline"
+                  loading={completionLoading}
+                  disabled={completionLoading}
                   onPress={async () => {
+                    setCompletionLoading(true);
                     try {
                       await api.put(`/api/tasks/${task.id}/confirm-completion`);
                       fetchData();
                     } catch {
                       Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
+                    } finally {
+                      setCompletionLoading(false);
                     }
                   }}
                   fullWidth

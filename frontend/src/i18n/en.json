@@ -483,7 +483,10 @@
   },
   "chat": {
     "loading": "Loading chat...",
-    "readonly": "This task is completed. Chat is archived.",
+    "readonly": "Chat is read-only.",
+    "readonlyCompleted": "This task is completed. Chat is archived.",
+    "readonlyCanceled": "This task was canceled. Chat is archived.",
+    "readonlyFixerLeft": "The fixer withdrew from this task. Chat is closed.",
     "empty": {
       "title": "No messages yet.",
       "subtitle": "Say hello!"
@@ -637,7 +640,9 @@
       "confirmed": "Payment Confirmed",
       "notConfirmed": "Payment not confirmed",
       "payFixer": "Pay Fixer",
-      "noPaymentLink": "This Fixer hasn't set up a payment link. Contact them directly."
+      "noPaymentLink": "This Fixer hasn't set up a payment link. Contact them directly.",
+      "confirmHint": "Tap after you've completed payment in the external app",
+      "paymentSent": "Payment sent"
     },
     "review": {
       "rating": "Rating",
@@ -1348,5 +1353,11 @@
     "fixerWorkspaceDesc": "Find jobs and earn money",
     "becomeFixerDesc": "Set up your profile and start earning",
     "footer": "Your workspace, payments, and alerts stay tied to this account."
+  },
+  "onboarding": {
+    "title": "Welcome to FixIt!",
+    "message": "Complete your profile to get the most out of the app. Add a photo, phone number, and bio so others can get to know you.",
+    "completeProfile": "Complete Profile",
+    "later": "Maybe Later"
   }
 }

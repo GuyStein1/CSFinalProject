@@ -11,6 +11,7 @@ import {
   ValidationError,
   ConflictError,
 } from '../utils/errors';
+import { getIO } from '../socket';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -485,6 +486,15 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
       }
     }
 
+    // Notify open chat rooms about the status change
+    const io = getIO();
+    if (io) {
+      io.to(`task_chat_${task.id}`).emit('task_status_changed', {
+        taskId: task.id,
+        status: 'CANCELED',
+      });
+    }
+
     const updated = await prisma.task.findUnique({ where: { id: task.id } });
     res.json({ task: updated });
   } catch (err) {
@@ -570,28 +580,52 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
     const isFixer = req.user.id === task.assigned_fixer_id;
     if (!isRequester && !isFixer) throw new ForbiddenError('Only the requester or assigned fixer can confirm completion');
 
-    const updateData: Record<string, boolean> = {};
-    if (isRequester) updateData.requester_completed = true;
-    if (isFixer) updateData.fixer_completed = true;
+    // Use a transaction with re-check to prevent race conditions
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const freshTask = await tx.task.findUnique({ where: { id: task.id } });
+      if (!freshTask || freshTask.status !== 'IN_PROGRESS') {
+        throw new ConflictError('Task is no longer in progress');
+      }
+      if (isRequester && freshTask.requester_completed) {
+        throw new ConflictError('You have already confirmed completion');
+      }
+      if (isFixer && freshTask.fixer_completed) {
+        throw new ConflictError('You have already confirmed completion');
+      }
 
-    const newRequesterCompleted = isRequester ? true : task.requester_completed;
-    const newFixerCompleted = isFixer ? true : task.fixer_completed;
-    const bothCompleted = newRequesterCompleted && newFixerCompleted;
+      const updateData: Record<string, boolean | Date> = {};
+      if (isRequester) updateData.requester_completed = true;
+      if (isFixer) {
+        updateData.fixer_completed = true;
+        updateData.fixer_completed_at = new Date();
+      }
 
-    if (bothCompleted) {
-      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const newRequesterCompleted = isRequester ? true : freshTask.requester_completed;
+      const newFixerCompleted = isFixer ? true : freshTask.fixer_completed;
+      const bothCompleted = newRequesterCompleted && newFixerCompleted;
+
+      if (bothCompleted) {
         await tx.task.update({
           where: { id: task.id },
           data: { ...updateData, status: 'COMPLETED', completed_at: new Date() },
         });
-        if (task.assigned_fixer_id) {
+        if (freshTask.assigned_fixer_id) {
           await tx.user.update({
-            where: { id: task.assigned_fixer_id },
+            where: { id: freshTask.assigned_fixer_id },
             data: { completed_tasks_as_fixer: { increment: 1 } },
           });
         }
-      });
+        return 'COMPLETED' as const;
+      } else {
+        await tx.task.update({
+          where: { id: task.id },
+          data: updateData,
+        });
+        return 'PARTIAL' as const;
+      }
+    });
 
+    if (result === 'COMPLETED') {
       // Notify both sides
       await sendNotification(
         task.requester_id,
@@ -611,12 +645,25 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
           'Task',
         );
       }
-    } else {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: updateData,
+      // Review nudge — only if the requester hasn't already left a review
+      const existingReview = await prisma.review.findUnique({
+        where: { task_id_reviewer_id: { task_id: task.id, reviewer_id: task.requester_id } },
       });
-
+      if (!existingReview) {
+        const fixer = await prisma.user.findUnique({
+          where: { id: task.assigned_fixer_id! },
+          select: { full_name: true },
+        });
+        await sendNotification(
+          task.requester_id,
+          'Leave a Review',
+          `Task "${task.title}" is complete! Let ${fixer?.full_name || 'the fixer'} know how they did.`,
+          'TASK_COMPLETED',
+          task.id,
+          'Task',
+        );
+      }
+    } else {
       // Notify the other side
       const otherUserId = isRequester ? task.assigned_fixer_id : task.requester_id;
       if (otherUserId) {
@@ -628,6 +675,17 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
           task.id,
           'Task',
         );
+      }
+    }
+
+    // Notify open chat rooms about the status change
+    if (result === 'COMPLETED') {
+      const io = getIO();
+      if (io) {
+        io.to(`task_chat_${task.id}`).emit('task_status_changed', {
+          taskId: task.id,
+          status: 'COMPLETED',
+        });
       }
     }
 

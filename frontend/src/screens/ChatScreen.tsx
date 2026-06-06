@@ -68,10 +68,24 @@ export default function ChatScreen({ route }: { route: any }) {
   const [sending, setSending] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [liveTaskStatus, setLiveTaskStatus] = useState(taskStatus);
   const socketRef = useRef<Awaited<ReturnType<typeof getSocket>> | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
 
-  const isReadOnly = taskStatus === 'COMPLETED' || taskStatus === 'CANCELED';
+  const isReadOnly = liveTaskStatus === 'COMPLETED' || liveTaskStatus === 'CANCELED' || liveTaskStatus === 'OPEN';
+
+  // Fetch live task status on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/api/tasks/${taskId}`);
+        const status = res.data.task?.status;
+        if (status) setLiveTaskStatus(status);
+      } catch {
+        // non-fatal
+      }
+    })();
+  }, [taskId]);
 
   // Set header dynamically — title tap opens task, avatar tap navigates to public profile
   useEffect(() => {
@@ -186,11 +200,19 @@ export default function ChatScreen({ route }: { route: any }) {
           ),
         );
       });
+
+      // Listen for task status changes (cancel, complete) — lock the chat in real-time
+      socket.on('task_status_changed', (payload: { taskId: string; status: string }) => {
+        if (payload.taskId === taskId) {
+          setLiveTaskStatus(payload.status);
+        }
+      });
     })();
 
     return () => {
       socketRef.current?.off('receive_message');
       socketRef.current?.off('messages_read');
+      socketRef.current?.off('task_status_changed');
     };
   }, [taskId, loadMessages]);
 
@@ -306,7 +328,7 @@ export default function ChatScreen({ route }: { route: any }) {
         <View style={styles.readOnlyBar}>
           <MaterialCommunityIcons name="lock-outline" size={14} color={brandColors.textMuted} />
           <Text style={[typography.caption, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
-            {t('chat.readonly')}
+            {liveTaskStatus === 'CANCELED' ? t('chat.readonlyCanceled') : liveTaskStatus === 'OPEN' ? t('chat.readonlyFixerLeft') : t('chat.readonlyCompleted')}
           </Text>
         </View>
       ) : (

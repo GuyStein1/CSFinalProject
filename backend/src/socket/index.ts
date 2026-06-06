@@ -17,8 +17,11 @@ export function getIO(): SocketServer | null {
 }
 
 export function initSocket(httpServer: HttpServer): SocketServer {
+  const corsOrigin = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+    : '*';
   const io = new SocketServer(httpServer, {
-    cors: { origin: '*', methods: ['GET', 'POST'] },
+    cors: { origin: corsOrigin, methods: ['GET', 'POST'] },
   });
   ioInstance = io;
 
@@ -44,27 +47,23 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   io.on('connection', (socket: Socket) => {
     const authedSocket = socket as AuthenticatedSocket;
 
-    // join_chat — validate membership then join isolated room for this task
+    // join_chat — only the task requester or the accepted fixer may join
     socket.on('join_chat', async (taskId: string) => {
       try {
         const task = await prisma.task.findUnique({ where: { id: taskId } });
-        if (!task) return;
+        if (!task) {
+          socket.emit('error', { message: 'Task not found' });
+          return;
+        }
 
-        const isTaskMember =
+        const isParticipant =
           task.requester_id === authedSocket.userId ||
           task.assigned_fixer_id === authedSocket.userId;
 
-        const hasBid = isTaskMember
-          ? true
-          : !!(await prisma.bid.findFirst({
-              where: {
-                task_id: taskId,
-                fixer_id: authedSocket.userId,
-                status: { in: ['PENDING', 'ACCEPTED'] },
-              },
-            }));
-
-        if (!isTaskMember && !hasBid) return;
+        if (!isParticipant) {
+          socket.emit('error', { message: 'Not a participant in this task' });
+          return;
+        }
 
         socket.join(`task_chat_${taskId}`);
       } catch (err) {

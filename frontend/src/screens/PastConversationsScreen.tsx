@@ -25,7 +25,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
       const res = await api.get('/api/conversations', { params });
       const all: Conversation[] = res.data.conversations ?? [];
       setConversations(
-        all.filter((c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED'),
+        all.filter((c) => c.taskStatus !== 'IN_PROGRESS'),
       );
     } catch {
       // non-fatal
