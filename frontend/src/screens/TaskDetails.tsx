@@ -118,6 +118,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   const [rejectingBidId, setRejectingBidId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const showReviewsForFixer = async (fixerId: string) => {
     try {
@@ -158,12 +159,15 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   );
 
   const acceptBid = async (bidId: string) => {
+    setActionLoading(`accept-${bidId}`);
     try {
       await api.put(`/api/bids/${bidId}/accept`);
       setShowCelebration(true);
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('common.tryAgain'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -175,6 +179,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
   const confirmDeclineBid = async () => {
     if (!rejectingBidId || !rejectionReason) return;
+    setActionLoading('decline');
     try {
       await api.put(`/api/bids/${rejectingBidId}/reject`, {
         rejection_reason: rejectionReason,
@@ -184,6 +189,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('common.tryAgain'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -211,11 +218,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   const markCompleted = async () => {
+    setActionLoading('complete');
     try {
       await api.put(`/api/tasks/${taskId}/confirm-completion`);
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -247,17 +257,21 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
   };
 
   const confirmPayment = async () => {
+    setActionLoading('payment');
     try {
       await api.put(`/api/tasks/${taskId}/confirm-payment`);
       setShowCelebration(true);
       fetchData();
     } catch {
       Alert.alert(t('common.error'), t('taskDetails.alerts.failedPayment'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const submitReview = async () => {
     if (reviewRating === 0) return;
+    setActionLoading('review');
     const trimmed = reviewComment.trim();
     if (trimmed && containsProfanity(trimmed)) {
       if (Platform.OS === 'web') {
@@ -294,6 +308,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
       } else {
         Alert.alert(t('common.error'), message);
       }
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -486,10 +502,10 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 </Text>
 
                 <View style={styles.bidActions}>
-                  <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} style={{ flex: 1 }}>
+                  <FButton variant="primary" size="sm" icon="check" onPress={() => acceptBid(bid.id)} loading={actionLoading === `accept-${bid.id}`} disabled={actionLoading !== null} style={{ flex: 1 }}>
                     {t('taskDetails.actions.acceptBid')}
                   </FButton>
-                  <FButton variant="outline" size="sm" icon="close" onPress={() => openDeclineModal(bid.id)} style={{ flex: 1 }}>
+                  <FButton variant="outline" size="sm" icon="close" onPress={() => openDeclineModal(bid.id)} disabled={actionLoading !== null} style={{ flex: 1 }}>
                     {t('taskDetails.actions.decline')}
                   </FButton>
                 </View>
@@ -584,9 +600,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     >
                       {t('taskDetails.actions.payFixer')}
                     </FButton>
-                    <FButton variant="outline" onPress={confirmPayment} fullWidth style={{ marginTop: spacing.sm }}>
+                    <FButton variant="outline" onPress={confirmPayment} loading={actionLoading === 'payment'} disabled={actionLoading !== null} fullWidth style={{ marginTop: spacing.sm }}>
                       {t('taskDetails.actions.confirmPayment')}
                     </FButton>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                      {t('taskDetails.payment.confirmHint')}
+                    </Text>
                   </>
                 ) : (
                   <View style={styles.noPaymentLink}>
@@ -600,7 +619,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
             )}
             {/* Step 2: Mark completed (only after payment) */}
             {task.is_payment_confirmed && !task.requester_completed && (
-              <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} fullWidth>
+              <FButton variant="primary" icon="check-circle-outline" onPress={markCompleted} loading={actionLoading === 'complete'} disabled={actionLoading !== null} fullWidth>
                 {t('taskDetails.actions.markCompleted')}
               </FButton>
             )}
@@ -758,7 +777,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           />
           <FButton
             onPress={confirmDeclineBid}
-            disabled={!rejectionReason}
+            disabled={!rejectionReason || actionLoading === 'decline'}
+            loading={actionLoading === 'decline'}
             fullWidth
             style={{ marginTop: spacing.md }}
           >
@@ -807,9 +827,12 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     >
                       {t('taskDetails.actions.payFixer')}
                     </FButton>
-                    <FButton variant="outline" onPress={confirmPayment} fullWidth>
+                    <FButton variant="outline" onPress={confirmPayment} loading={actionLoading === 'payment'} disabled={actionLoading !== null} fullWidth>
                       {t('taskDetails.actions.confirmPayment')}
                     </FButton>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                      {t('taskDetails.payment.confirmHint')}
+                    </Text>
                   </>
                 ) : (
                   <View style={styles.noPaymentLink}>
@@ -881,7 +904,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 />
                 <FButton
                   onPress={submitReview}
-                  disabled={reviewRating === 0}
+                  disabled={reviewRating === 0 || actionLoading === 'review'}
+                  loading={actionLoading === 'review'}
                   fullWidth
                   icon="send"
                 >

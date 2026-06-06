@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
+import { FButton } from '../components/ui';
 import { Conversation, formatConversationTime } from './ConversationListScreen';
 import { brandColors, radii, spacing, typography } from '../theme';
 
@@ -24,7 +25,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
       const res = await api.get('/api/conversations', { params });
       const all: Conversation[] = res.data.conversations ?? [];
       setConversations(
-        all.filter((c) => c.taskStatus === 'COMPLETED' || c.taskStatus === 'CANCELED'),
+        all.filter((c) => c.taskStatus !== 'IN_PROGRESS'),
       );
     } catch {
       // non-fatal
@@ -70,6 +71,37 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
     }
   };
 
+  const handleDeleteAll = () => {
+    const title = t('pastConversations.deleteAllConfirm.title');
+    const message = t('pastConversations.deleteAllConfirm.message');
+    const confirmLabel = t('pastConversations.deleteAllConfirm.confirm');
+
+    const doDeleteAll = async () => {
+      try {
+        await Promise.all(conversations.map((c) => api.delete(`/api/tasks/${c.taskId}/messages`)));
+        setConversations([]);
+      } catch {
+        if (Platform.OS === 'web') {
+          window.alert(t('pastConversations.deleteFailed'));
+        } else {
+          Alert.alert(t('common.error'), t('pastConversations.deleteFailed'));
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm(`${title}\n${message}`)) {
+        void doDeleteAll();
+      }
+    } else {
+      Alert.alert(title, message, [
+        { text: t('common.cancel') },
+        { text: confirmLabel, style: 'destructive', onPress: () => void doDeleteAll() },
+      ]);
+    }
+  };
+
   if (loading) return <LoadingScreen label={t('conversations.loading')} />;
 
   return (
@@ -78,6 +110,14 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
       keyExtractor={(item) => item.taskId}
       contentContainerStyle={conversations.length === 0 ? styles.emptyContainer : styles.listContent}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListHeaderComponent={conversations.length > 0 ? (
+        <View style={styles.topBar}>
+          <View />
+          <FButton variant="outline" size="sm" icon="delete-sweep-outline" onPress={handleDeleteAll}>
+            {t('pastConversations.deleteAll')}
+          </FButton>
+        </View>
+      ) : null}
       ListEmptyComponent={
         <EmptyState
           icon="archive-outline"
@@ -158,6 +198,13 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   listContent: {
     paddingVertical: spacing.xs,
   },

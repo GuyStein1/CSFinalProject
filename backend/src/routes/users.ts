@@ -47,7 +47,7 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
         where,
         include: {
           _count: { select: { bids: { where: { status: 'PENDING' } } } },
-          fixer: { select: { full_name: true } },
+          fixer: { select: { id: true, full_name: true, avatar_url: true } },
           reviews: { where: { reviewer_id: req.user.id }, select: { id: true }, take: 1 },
         },
         orderBy: { created_at: 'desc' },
@@ -61,6 +61,8 @@ router.get('/me/tasks', async (req: Request, res: Response, next: NextFunction) 
       ...t,
       bid_count: t._count.bids,
       assigned_fixer_name: t.fixer?.full_name ?? null,
+      assigned_fixer_id: t.fixer?.id ?? null,
+      assigned_fixer_avatar: t.fixer?.avatar_url ?? null,
       has_review: t.reviews.length > 0,
       _count: undefined,
       fixer: undefined,
@@ -94,7 +96,15 @@ router.get('/me/bids', async (req: Request, res: Response, next: NextFunction) =
     const [bids, total] = await prisma.$transaction([
       prisma.bid.findMany({
         where,
-        include: { task: true },
+        include: {
+          task: {
+            include: {
+              requester: {
+                select: { id: true, full_name: true, avatar_url: true },
+              },
+            },
+          },
+        },
         orderBy: { created_at: 'desc' },
         skip: offset,
         take: limitNum,

@@ -174,7 +174,8 @@
       },
       "phone": {
         "savedTitle": "Saved",
-        "saved": "Phone number updated."
+        "saved": "Phone number updated.",
+        "saveError": "Could not save phone number."
       },
       "notifications": {
         "enabledTitle": "Notifications enabled",
@@ -326,7 +327,11 @@
     "header": {
       "kicker": "Fixer Workspace",
       "title": "Bid pipeline",
-      "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs"
+      "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs",
+      "subAll": "{{pending}} pending · {{active}} active jobs",
+      "subPending": "{{pending}} pending bids",
+      "subAccepted": "{{active}} active jobs",
+      "subTab": "{{tab}} bids"
     },
     "tabs": {
       "active": "Active",
@@ -344,6 +349,7 @@
       "withdraw": "Withdraw",
       "edit": "Edit",
       "cancelJob": "Cancel job",
+      "chat": "Chat",
       "reactivate": "Reactivate",
       "locationNotSet": "Location not set"
     },
@@ -477,7 +483,10 @@
   },
   "chat": {
     "loading": "Loading chat...",
-    "readonly": "This task is completed. Chat is archived.",
+    "readonly": "Chat is read-only.",
+    "readonlyCompleted": "This task is completed. Chat is archived.",
+    "readonlyCanceled": "This task was canceled. Chat is archived.",
+    "readonlyFixerLeft": "The fixer withdrew from this task. Chat is closed.",
     "empty": {
       "title": "No messages yet.",
       "subtitle": "Say hello!"
@@ -505,7 +514,13 @@
     },
     "deleteConfirmTitle": "Delete conversation?",
     "deleteConfirmMessage": "Delete the conversation for \"{{title}}\"? This removes all messages permanently.",
-    "deleteFailed": "Failed to delete conversation."
+    "deleteFailed": "Failed to delete conversation.",
+    "deleteAll": "Delete All",
+    "deleteAllConfirm": {
+      "title": "Delete all conversations?",
+      "message": "This will permanently delete all past conversations.",
+      "confirm": "Delete All"
+    }
   },
   "notifications": {
     "loading": "Loading notifications...",
@@ -625,7 +640,9 @@
       "confirmed": "Payment Confirmed",
       "notConfirmed": "Payment not confirmed",
       "payFixer": "Pay Fixer",
-      "noPaymentLink": "This Fixer hasn't set up a payment link. Contact them directly."
+      "noPaymentLink": "This Fixer hasn't set up a payment link. Contact them directly.",
+      "confirmHint": "Tap after you've completed payment in the external app",
+      "paymentSent": "Payment sent"
     },
     "review": {
       "rating": "Rating",
@@ -843,7 +860,8 @@
       "rating": "Rating",
       "trades": "Trades",
       "photos": "Photos",
-      "profileCompletion": "Profile"
+      "profileCompletion": "Profile",
+      "tapToView": "Tap to view reviews"
     },
     "pushNotifications": {
       "label": "Push Notifications",
@@ -1266,7 +1284,8 @@
     "reviewCompleted": "Review this completed task",
     "leaveReview": "Leave review",
     "reopen": "Reopen",
-    "markComplete": "Mark complete"
+    "markComplete": "Mark complete",
+    "chat": "Chat"
   },
   "becomeFixer": {
     "hero": {
@@ -1334,5 +1353,11 @@
     "fixerWorkspaceDesc": "Find jobs and earn money",
     "becomeFixerDesc": "Set up your profile and start earning",
     "footer": "Your workspace, payments, and alerts stay tied to this account."
+  },
+  "onboarding": {
+    "title": "Welcome to FixIt!",
+    "message": "Complete your profile to get the most out of the app. Add a photo, phone number, and bio so others can get to know you.",
+    "completeProfile": "Complete Profile",
+    "later": "Maybe Later"
   }
 }

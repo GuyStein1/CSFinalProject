@@ -174,7 +174,8 @@
       },
       "phone": {
         "savedTitle": "נשמר",
-        "saved": "מספר הטלפון עודכן."
+        "saved": "מספר הטלפון עודכן.",
+        "saveError": "לא ניתן לשמור את מספר הטלפון."
       },
       "notifications": {
         "enabledTitle": "התראות הופעלו",
@@ -326,7 +327,11 @@
     "header": {
       "kicker": "סביבת עבודה למתקן",
       "title": "צינור הצעות",
-      "sub": "הצעות {{tab}} · {{pending}} ממתינות · {{active}} עבודות פעילות"
+      "sub": "הצעות {{tab}} · {{pending}} ממתינות · {{active}} עבודות פעילות",
+      "subAll": "{{pending}} ממתינות · {{active}} עבודות פעילות",
+      "subPending": "{{pending}} הצעות ממתינות",
+      "subAccepted": "{{active}} עבודות פעילות",
+      "subTab": "הצעות {{tab}}"
     },
     "tabs": {
       "active": "פעיל",
@@ -344,6 +349,7 @@
       "withdraw": "משוך חזרה",
       "edit": "ערוך",
       "cancelJob": "בטל עבודה",
+      "chat": "צ׳אט",
       "reactivate": "הפעל מחדש",
       "locationNotSet": "מיקום לא הוגדר"
     },
@@ -477,7 +483,10 @@
   },
   "chat": {
     "loading": "טוען צ'אט...",
-    "readonly": "משימה זו הושלמה. הצ'אט בארכיון.",
+    "readonly": "הצ'אט לקריאה בלבד.",
+    "readonlyCompleted": "המשימה הושלמה. הצ'אט בארכיון.",
+    "readonlyCanceled": "המשימה בוטלה. הצ'אט בארכיון.",
+    "readonlyFixerLeft": "הפיקסר יצא מהמשימה. הצ'אט סגור.",
     "empty": {
       "title": "אין הודעות עדיין.",
       "subtitle": "אמור שלום!"
@@ -505,7 +514,13 @@
     },
     "deleteConfirmTitle": "למחוק שיחה?",
     "deleteConfirmMessage": "למחוק את השיחה של \"{{title}}\"? פעולה זו מסירה את כל ההודעות לצמיתות.",
-    "deleteFailed": "מחיקת השיחה נכשלה."
+    "deleteFailed": "מחיקת השיחה נכשלה.",
+    "deleteAll": "מחק הכל",
+    "deleteAllConfirm": {
+      "title": "למחוק את כל השיחות?",
+      "message": "פעולה זו תמחק לצמיתות את כל השיחות הקודמות.",
+      "confirm": "מחק הכל"
+    }
   },
   "notifications": {
     "loading": "טוען התראות...",
@@ -625,7 +640,9 @@
       "confirmed": "תשלום אושר",
       "notConfirmed": "תשלום לא אושר",
       "payFixer": "שלם למתקן",
-      "noPaymentLink": "למתקן זה אין קישור לתשלום. פנה אליו ישירות."
+      "noPaymentLink": "למתקן זה אין קישור לתשלום. פנה אליו ישירות.",
+      "confirmHint": "לחץ לאחר שביצעת תשלום באפליקציה החיצונית",
+      "paymentSent": "התשלום נשלח"
     },
     "review": {
       "rating": "דירוג",
@@ -843,7 +860,8 @@
       "rating": "דירוג",
       "trades": "מקצועות",
       "photos": "תמונות",
-      "profileCompletion": "פרופיל"
+      "profileCompletion": "פרופיל",
+      "tapToView": "לחץ לצפייה בביקורות"
     },
     "pushNotifications": {
       "label": "התראות דחיפה",
@@ -1266,7 +1284,8 @@
     "reviewCompleted": "בדוק את המשימה שהושלמה",
     "leaveReview": "השאר ביקורת",
     "reopen": "פתח מחדש",
-    "markComplete": "סמן כהושלם"
+    "markComplete": "סמן כהושלם",
+    "chat": "צ׳אט"
   },
   "becomeFixer": {
     "hero": {
@@ -1334,5 +1353,11 @@
     "fixerWorkspaceDesc": "מצא עבודות והרוויח כסף",
     "becomeFixerDesc": "הגדר את הפרופיל שלך והתחל להרוויח",
     "footer": "סביבת העבודה, התשלומות וההתראות שלך קשורות לחשבון זה."
+  },
+  "onboarding": {
+    "title": "!ברוכים הבאים ל-FixIt",
+    "message": "השלם את הפרופיל שלך כדי להפיק את המרב מהאפליקציה. הוסף תמונה, מספר טלפון וביוגרפיה כדי שאחרים יוכלו להכיר אותך.",
+    "completeProfile": "השלם פרופיל",
+    "later": "אולי מאוחר יותר"
   }
 }
