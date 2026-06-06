@@ -123,6 +123,22 @@ export function applyLandingIntent(
     );
     return;
   }
+  if (intent.kind === 'fixerWorkspace' || intent.kind === 'fixerBids' || intent.kind === 'fixerProfile') {
+    const returnScreen =
+      intent.kind === 'fixerBids' ? 'MyBids'
+      : intent.kind === 'fixerProfile' ? 'FixerProfile'
+      : 'FindJobs';
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 1,
+        routes: [
+          { name: 'Main' },
+          { name: 'BecomeFixerOnboarding', params: { returnScreen } },
+        ],
+      }),
+    );
+    return;
+  }
   routeLandingIntent(
     {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
