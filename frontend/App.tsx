@@ -16,6 +16,8 @@ import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
 import GlobalCelebration from './src/components/GlobalCelebration';
+import OnboardingNudge from './src/components/OnboardingNudge';
+import LoadingScreen from './src/components/LoadingScreen';
 import {
   applyLandingIntent,
   asLandingScreenWithNavigationProps,
@@ -146,6 +148,12 @@ function RootContent() {
     );
   }
 
+  // On web, show the standard loading screen while auth is checking so the user
+  // doesn't see a flash of the AuthScreen before the landing page appears.
+  if (USE_SIGNED_OUT_LANDING && authState.status === 'checking') {
+    return <LoadingScreen />;
+  }
+
   const authInitialMode: LandingAuthMode | 'welcome' = USE_SIGNED_OUT_LANDING
     ? signedOutSurface === 'auth' ? authMode : 'welcome'
     : 'login';
@@ -183,6 +191,7 @@ function RootContent() {
         onReady={() => setNavigationReady(true)}
       >
         <AppNavigator />
+        <OnboardingNudge />
       </NavigationContainer>
       <GlobalCelebration />
     </NotificationProvider>

@@ -504,6 +504,7 @@ export default function LandingScreen({
 }: Props) {
   const { t } = useTranslation();
   const { language, changeLanguage } = useLanguage();
+  const [cssReady, setCssReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -557,6 +558,8 @@ export default function LandingScreen({
     if (!document.getElementById('fixit-landing-css')) {
       document.head.appendChild(style);
     }
+    // Allow one frame for the browser to parse the injected stylesheet
+    requestAnimationFrame(() => setCssReady(true));
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
@@ -573,6 +576,11 @@ export default function LandingScreen({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Prevent flash of unstyled content — render nothing until CSS is injected
+  if (!cssReady) {
+    return <div id="fixit-landing" style={{ background: '#F5F1E8', minHeight: '100vh' }} />;
+  }
 
   const logoSrc = assetSrc(imgLogo);
   const workerSrc = assetSrc(imgWorker);

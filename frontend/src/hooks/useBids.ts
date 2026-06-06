@@ -19,6 +19,11 @@ export interface BidTask {
   suggested_price: number | null;
   general_location_name: string;
   completed_at: string | null;
+  requester?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  };
 }
 
 export interface UserBid {

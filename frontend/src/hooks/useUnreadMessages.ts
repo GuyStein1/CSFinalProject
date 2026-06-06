@@ -17,8 +17,11 @@ export function useUnreadMessages() {
     if (!auth.currentUser) return;
     try {
       const res = await api.get('/api/conversations');
-      const conversations: { unreadCount: number }[] = res.data.conversations ?? [];
-      const total = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+      const conversations: { unreadCount: number; taskStatus?: string }[] = res.data.conversations ?? [];
+      // Only count unread messages from active (IN_PROGRESS) conversations
+      const total = conversations
+        .filter((c) => c.taskStatus === 'IN_PROGRESS')
+        .reduce((sum, c) => sum + c.unreadCount, 0);
       setUnreadCount(total);
     } catch {
       // non-fatal

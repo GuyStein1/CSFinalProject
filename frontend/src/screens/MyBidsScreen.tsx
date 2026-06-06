@@ -61,9 +61,10 @@ interface BidCardProps {
   onReactivate: (bidId: string) => void;
   onEdit: (bid: UserBid) => void;
   onCancelAccepted: (bid: UserBid) => void;
+  onChat: (bid: UserBid) => void;
 }
 
-function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted }: BidCardProps) {
+function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted, onChat }: BidCardProps) {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
   const translateX = useRef(new Animated.Value(0)).current;
@@ -214,15 +215,26 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                 </>
               )}
               {bid.status === 'ACCEPTED' && bid.task.status !== 'COMPLETED' && (
-                <Pressable
-                  style={[styles.actionBtn, styles.dangerActionBtn]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Cancel accepted job for ${bid.task.title}`}
-                  onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}
-                >
-                  <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
-                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.cancelJob')}</Text>
-                </Pressable>
+                <>
+                  <Pressable
+                    style={[styles.actionBtn, styles.chatActionBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Chat with requester for ${bid.task.title}`}
+                    onPress={(e) => { e.stopPropagation(); onChat(bid); }}
+                  >
+                    <MaterialCommunityIcons name="chat-outline" size={13} color={brandColors.primary} />
+                    <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>{t('myBids.card.chat')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.actionBtn, styles.dangerActionBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Cancel accepted job for ${bid.task.title}`}
+                    onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}
+                  >
+                    <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
+                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.cancelJob')}</Text>
+                  </Pressable>
+                </>
               )}
               {bid.status === 'WITHDRAWN' && (
                 <Pressable
@@ -333,8 +345,7 @@ export default function MyBidsScreen() {
   const pipelineSummary = useMemo(() => {
     const activeJobs = bids.filter((b) => b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED').length;
     const pendingOffers = bids.filter((b) => b.status === 'PENDING').length;
-    const visibleValue = bids.reduce((sum, b) => sum + b.offered_price, 0);
-    return { activeJobs, pendingOffers, visibleValue };
+    return { activeJobs, pendingOffers };
   }, [bids]);
 
   useFocusEffect(
@@ -551,6 +562,21 @@ export default function MyBidsScreen() {
     [navigation],
   );
 
+  const handleChat = useCallback(
+    (bid: UserBid) => {
+      (navigation as { navigate: (screen: string, params: Record<string, unknown>) => void })
+        .navigate('Chat', {
+          taskId: bid.task_id,
+          recipientId: bid.task.requester?.id,
+          recipientName: bid.task.requester?.full_name || 'Requester',
+          recipientAvatar: bid.task.requester?.avatar_url || null,
+          taskTitle: bid.task.title,
+          taskStatus: bid.task.status,
+        });
+    },
+    [navigation],
+  );
+
   const handleFindJobs = useCallback(() => {
     (navigation as { navigate: (screen: string) => void }).navigate('FindJobs');
   }, [navigation]);
@@ -574,7 +600,13 @@ export default function MyBidsScreen() {
           </View>
           <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.title')}</Text>
           <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
-            {t('myBids.header.sub', { tab: activeTabLabel, pending: pipelineSummary.pendingOffers, active: pipelineSummary.activeJobs })}
+            {activeTab === 'ALL'
+              ? t('myBids.header.subAll', { pending: pipelineSummary.pendingOffers, active: pipelineSummary.activeJobs })
+              : activeTab === 'PENDING'
+                ? t('myBids.header.subPending', { pending: pipelineSummary.pendingOffers })
+                : activeTab === 'ACCEPTED'
+                  ? t('myBids.header.subAccepted', { active: pipelineSummary.activeJobs })
+                  : t('myBids.header.subTab', { tab: activeTabLabel })}
           </Text>
         </View>
 
@@ -582,10 +614,6 @@ export default function MyBidsScreen() {
           <View style={styles.workspaceStat}>
             <Text style={styles.workspaceStatValue}>{loading ? '...' : bids.length}</Text>
             <Text style={styles.workspaceStatLabel}>{t('myBids.stats.inView')}</Text>
-          </View>
-          <View style={styles.workspaceStat}>
-            <Text style={styles.workspaceStatValue}>₪{pipelineSummary.visibleValue.toLocaleString()}</Text>
-            <Text style={styles.workspaceStatLabel}>{t('myBids.stats.offerValue')}</Text>
           </View>
           <FButton variant="secondary" size="sm" icon="map-search-outline" onPress={handleFindJobs} style={styles.headerAction}>
             {t('myBids.stats.findJobs')}
@@ -721,6 +749,7 @@ export default function MyBidsScreen() {
                   onReactivate={handleReactivate}
                   onEdit={handleEdit}
                   onCancelAccepted={handleCancelAccepted}
+                  onChat={handleChat}
                 />
               </View>
               {(item.status === 'REJECTED' || item.status === 'WITHDRAWN') && (
@@ -863,11 +892,9 @@ const styles = StyleSheet.create({
     minWidth: 320,
   },
   workspaceStat: {
-    minWidth: 98,
-    flexGrow: 1,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
     backgroundColor: 'rgba(255,252,246,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255,252,246,0.14)',
@@ -1034,6 +1061,10 @@ const styles = StyleSheet.create({
   dangerActionBtn: {
     borderColor: brandColors.danger,
     backgroundColor: brandColors.dangerSoft,
+  },
+  chatActionBtn: {
+    borderColor: brandColors.primary,
+    backgroundColor: brandColors.infoSoft,
   },
   successActionBtn: {
     borderColor: brandColors.success,

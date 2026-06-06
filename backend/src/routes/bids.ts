@@ -5,10 +5,12 @@ import { validate } from '../middleware/validate';
 import { rejectBidSchema } from '../schemas';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
+import { getIO } from '../socket';
 import {
   NotFoundError,
   ForbiddenError,
   ValidationError,
+  ConflictError,
 } from '../utils/errors';
 
 const router = Router();
@@ -33,8 +35,14 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
       select: { average_rating_as_fixer: true },
     });
 
-    // Run DB changes atomically — all tx calls must use tx. not prisma.
+    // Run DB changes atomically — re-check task status inside the transaction
+    // to prevent a double-accept race condition.
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const freshTask = await tx.task.findUnique({ where: { id: bid.task_id } });
+      if (!freshTask || freshTask.status !== 'OPEN') {
+        throw new ConflictError('Task is no longer open — another bid may have been accepted');
+      }
+
       await tx.task.update({
         where: { id: bid.task_id },
         data: { status: 'IN_PROGRESS', assigned_fixer_id: bid.fixer_id },
@@ -189,6 +197,15 @@ router.put('/:id/cancel-accepted', async (req: Request, res: Response, next: Nex
       bid.task_id,
       'Task',
     );
+
+    // Notify open chat rooms so the chat updates in real-time
+    const io = getIO();
+    if (io) {
+      io.to(`task_chat_${bid.task_id}`).emit('task_status_changed', {
+        taskId: bid.task_id,
+        status: 'OPEN',
+      });
+    }
 
     res.json({ message: 'Bid canceled, task reopened' });
   } catch (err) {
