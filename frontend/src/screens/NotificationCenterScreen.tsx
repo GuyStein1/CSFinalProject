@@ -107,7 +107,7 @@ function NotificationItem({
           </Text>
           {role && (
             <View style={[styles.rolePill, { backgroundColor: role === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-              <Text style={styles.rolePillText}>{t(`mode.${role}`)}</Text>
+              <Text style={styles.rolePillText}>{t(`nav.mode.${role}`)}</Text>
             </View>
           )}
           <Text
