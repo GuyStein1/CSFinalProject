@@ -140,11 +140,13 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                   </Text>
                 )}
               </View>
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
-                {item.taskTitle}
-              </Text>
-              <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-                <Text style={styles.rolePillText}>{t(`mode.${item.userRole}`)}</Text>
+              <View style={styles.titleRow}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                  {item.taskTitle}
+                </Text>
+                <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
+                  <Text style={styles.rolePillText}>{t(`nav.mode.${item.userRole}`)}</Text>
+                </View>
               </View>
               <View style={styles.bottomRow}>
                 <Text
@@ -229,12 +231,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 14,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   rolePill: {
     alignSelf: 'flex-start',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: radii.sm,
-    marginTop: 2,
   },
   rolePillText: {
     color: brandColors.white,
