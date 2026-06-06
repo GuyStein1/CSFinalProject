@@ -26,6 +26,7 @@ export async function sendNotification(
   type: NotificationType,
   relatedEntityId: string,
   relatedEntityType: string,
+  userRole?: string,
 ): Promise<void> {
   try {
     // 1. Always persist to DB
@@ -37,6 +38,7 @@ export async function sendNotification(
         type,
         related_entity_id: relatedEntityId,
         related_entity_type: relatedEntityType,
+        user_role: userRole ?? null,
       },
     });
 

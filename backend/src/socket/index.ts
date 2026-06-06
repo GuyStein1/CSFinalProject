@@ -134,6 +134,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             : false;
 
           if (!recipientInRoom) {
+            const recipientRole = recipientId === task.requester_id ? 'requester' : 'fixer';
             await sendNotification(
               recipientId,
               'New message',
@@ -141,6 +142,7 @@ export function initSocket(httpServer: HttpServer): SocketServer {
               NotificationType.NEW_MESSAGE,
               taskId,
               'Task',
+              recipientRole,
             );
           }
         } catch (err) {

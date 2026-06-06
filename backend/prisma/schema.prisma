@@ -222,6 +222,7 @@ model Notification {
   type                NotificationType
   related_entity_id   String
   related_entity_type String
+  user_role           String?
   is_read             Boolean          @default(false)
   created_at          DateTime         @default(now())
 

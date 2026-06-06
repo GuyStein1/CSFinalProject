@@ -12,7 +12,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
-import { useNotificationContext, type AppNotification } from '../context/NotificationContext';
+import { useNotificationContext, type AppNotification, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton } from '../components/ui';
@@ -30,6 +30,13 @@ const NOTIFICATION_ICONS: Record<string, string> = {
 
 function getIcon(type: string): string {
   return NOTIFICATION_ICONS[type] ?? 'bell-outline';
+}
+
+function getNotificationRole(n: AppNotification): 'requester' | 'fixer' | null {
+  if (n.user_role === 'requester' || n.user_role === 'fixer') return n.user_role;
+  if (FIXER_NOTIF_TYPES.includes(n.type)) return 'fixer';
+  if (REQUESTER_NOTIF_TYPES.includes(n.type)) return 'requester';
+  return null;
 }
 
 function getAccentColor(type: string): string {
@@ -59,6 +66,7 @@ function NotificationItem({
   const { isRTL } = useLanguage();
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
+  const role = getNotificationRole(notification);
 
   const timeAgo = (dateStr: string): string => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -97,6 +105,11 @@ function NotificationItem({
           >
             {notification.title}
           </Text>
+          {role && (
+            <View style={[styles.rolePill, { backgroundColor: role === 'requester' ? brandColors.primary : brandColors.secondary }]}>
+              <Text style={styles.rolePillText}>{t(`mode.${role}`)}</Text>
+            </View>
+          )}
           <Text
             style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}
             numberOfLines={2}
@@ -301,5 +314,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: brandColors.outlineLight,
     marginLeft: spacing.lg + 40 + spacing.md, // aligned with content
+  },
+  rolePill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 3,
+    marginBottom: 2,
+  },
+  rolePillText: {
+    color: brandColors.white,
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
   },
 });
