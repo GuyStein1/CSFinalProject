@@ -122,8 +122,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   };
 
   const openDashboard = () => {
-    // Logo always means "go home" — the requester dashboard is home regardless of current mode
-    navigation.navigate('RequesterMode', { screen: 'Dashboard' });
+    if (mode === 'fixer') {
+      navigation.navigate('FixerMode', { screen: 'FindJobs' });
+    } else {
+      navigation.navigate('RequesterMode', { screen: 'Dashboard' });
+    }
   };
 
   const openNotifications = () => {

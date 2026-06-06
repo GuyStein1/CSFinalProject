@@ -174,7 +174,8 @@
       },
       "phone": {
         "savedTitle": "נשמר",
-        "saved": "מספר הטלפון עודכן."
+        "saved": "מספר הטלפון עודכן.",
+        "saveError": "לא ניתן לשמור את מספר הטלפון."
       },
       "notifications": {
         "enabledTitle": "התראות הופעלו",
@@ -326,7 +327,11 @@
     "header": {
       "kicker": "סביבת עבודה למתקן",
       "title": "צינור הצעות",
-      "sub": "הצעות {{tab}} · {{pending}} ממתינות · {{active}} עבודות פעילות"
+      "sub": "הצעות {{tab}} · {{pending}} ממתינות · {{active}} עבודות פעילות",
+      "subAll": "{{pending}} ממתינות · {{active}} עבודות פעילות",
+      "subPending": "{{pending}} הצעות ממתינות",
+      "subAccepted": "{{active}} עבודות פעילות",
+      "subTab": "הצעות {{tab}}"
     },
     "tabs": {
       "active": "פעיל",
@@ -344,6 +349,7 @@
       "withdraw": "משוך חזרה",
       "edit": "ערוך",
       "cancelJob": "בטל עבודה",
+      "chat": "צ׳אט",
       "reactivate": "הפעל מחדש",
       "locationNotSet": "מיקום לא הוגדר"
     },
@@ -505,7 +511,13 @@
     },
     "deleteConfirmTitle": "למחוק שיחה?",
     "deleteConfirmMessage": "למחוק את השיחה של \"{{title}}\"? פעולה זו מסירה את כל ההודעות לצמיתות.",
-    "deleteFailed": "מחיקת השיחה נכשלה."
+    "deleteFailed": "מחיקת השיחה נכשלה.",
+    "deleteAll": "מחק הכל",
+    "deleteAllConfirm": {
+      "title": "למחוק את כל השיחות?",
+      "message": "פעולה זו תמחק לצמיתות את כל השיחות הקודמות.",
+      "confirm": "מחק הכל"
+    }
   },
   "notifications": {
     "loading": "טוען התראות...",
@@ -843,7 +855,8 @@
       "rating": "דירוג",
       "trades": "מקצועות",
       "photos": "תמונות",
-      "profileCompletion": "פרופיל"
+      "profileCompletion": "פרופיל",
+      "tapToView": "לחץ לצפייה בביקורות"
     },
     "pushNotifications": {
       "label": "התראות דחיפה",
@@ -1266,7 +1279,8 @@
     "reviewCompleted": "בדוק את המשימה שהושלמה",
     "leaveReview": "השאר ביקורת",
     "reopen": "פתח מחדש",
-    "markComplete": "סמן כהושלם"
+    "markComplete": "סמן כהושלם",
+    "chat": "צ׳אט"
   },
   "becomeFixer": {
     "hero": {

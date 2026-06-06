@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Alert, View, Pressable, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Alert, View, Pressable, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, Switch, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -18,9 +18,18 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { language, changeLanguage, isRTL } = useLanguage();
   const [phone, setPhone] = useState('');
+  const [savedPhone, setSavedPhone] = useState('');
+  const [editingPhone, setEditingPhone] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [phoneSavedSuccess, setPhoneSavedSuccess] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const dismissEditing = () => {
+    Keyboard.dismiss();
+    if (phone.trim() === savedPhone) setEditingPhone(false);
+  };
+
+  const [langOpen, setLangOpen] = useState(false);
   const accountName = user?.displayName?.trim() || 'FixIt account';
   const accountEmail = user?.email || 'Not signed in';
   const verificationLabel = user?.emailVerified ? t('settings.hero.verifiedEmail') : t('settings.hero.emailNotVerified');
@@ -32,6 +41,12 @@ export default function SettingsScreen() {
     } else {
       Notifications.getPermissionsAsync().then(({ status }) => setPushEnabled(status === 'granted'));
     }
+    api.get('/api/users/me').then((res) => {
+      const p = res.data.user?.phone_number ?? '';
+      setPhone(p);
+      setSavedPhone(p);
+      setEditingPhone(!p);
+    }).catch(() => {});
   }, []);
 
   const handleChangePassword = async () => {
@@ -96,7 +111,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" onScrollBeginDrag={dismissEditing}>
       {/* Hero */}
       <FCard style={styles.heroCard} shadow="sm">
         <View style={styles.heroRow}>
@@ -140,27 +155,59 @@ export default function SettingsScreen() {
             label={t('settings.account.phone.label')}
             description={t('settings.account.phone.description')}
           />
-          <FInput
-            value={phone}
-            onChangeText={setPhone}
-            placeholder={t('settings.account.phone.placeholder')}
-            keyboardType="phone-pad"
-          />
-          <FButton
-            onPress={() => {
-              setSaving(true);
-              setTimeout(() => {
-                setSaving(false);
-                Alert.alert(t('settings.alerts.phone.savedTitle'), t('settings.alerts.phone.saved'));
-              }, 500);
-            }}
-            loading={saving}
-            disabled={saving || phone.trim().length === 0}
-            size="sm"
-            style={{ alignSelf: isRTL ? 'flex-end' : 'flex-start', marginTop: spacing.sm }}
-          >
-            {t('common.save')}
-          </FButton>
+          {editingPhone ? (
+            <FInput
+              autoFocus
+              value={phone}
+              onChangeText={setPhone}
+              placeholder={t('settings.account.phone.placeholder')}
+              keyboardType="phone-pad"
+              onBlur={() => { if (phone.trim() === savedPhone) setEditingPhone(false); }}
+            />
+          ) : (
+            <View style={styles.savedValueRow}>
+              <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]}>{savedPhone}</Text>
+              <Pressable
+                onPress={() => setEditingPhone(true)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.edit')}
+              >
+                <MaterialCommunityIcons name="pencil-outline" size={18} color={brandColors.primaryMuted} />
+              </Pressable>
+            </View>
+          )}
+          {phoneSavedSuccess ? (
+            <View style={styles.savedBanner}>
+              <MaterialCommunityIcons name="check-circle-outline" size={16} color={brandColors.success} />
+              <Text style={[typography.bodySm, { color: brandColors.success }]}>
+                {t('settings.alerts.phone.saved')}
+              </Text>
+            </View>
+          ) : editingPhone && phone.trim() !== savedPhone && phone.trim().length > 0 ? (
+            <FButton
+              onPress={async () => {
+                setSaving(true);
+                try {
+                  await api.put('/api/users/me', { phone_number: phone.trim() });
+                  setSavedPhone(phone.trim());
+                  setEditingPhone(false);
+                  setPhoneSavedSuccess(true);
+                  setTimeout(() => setPhoneSavedSuccess(false), 2500);
+                } catch {
+                  Alert.alert(t('common.error'), t('settings.alerts.phone.saveError'));
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              loading={saving}
+              disabled={saving}
+              size="sm"
+              style={{ alignSelf: isRTL ? 'flex-end' : 'flex-start', marginTop: spacing.sm }}
+            >
+              {t('common.save')}
+            </FButton>
+          ) : null}
         </View>
       </FCard>
 
@@ -207,19 +254,33 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
-          <View style={{ gap: spacing.xs }}>
+          <View>
             <Pressable
-              onPress={() => void changeLanguage('en')}
-              style={[styles.langChip, language === 'en' && styles.langChipActive]}
+              onPress={() => setLangOpen(!langOpen)}
+              style={styles.langSelected}
             >
-              <Text style={[typography.caption, { color: language === 'en' ? brandColors.white : brandColors.textMuted, fontWeight: '700' }]}>EN</Text>
+              <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' }]}>
+                {language === 'en' ? 'EN' : 'עב'}
+              </Text>
+              <MaterialCommunityIcons
+                name={langOpen ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={brandColors.white}
+              />
             </Pressable>
-            <Pressable
-              onPress={() => void changeLanguage('he')}
-              style={[styles.langChip, language === 'he' && styles.langChipActive]}
-            >
-              <Text style={[typography.caption, { color: language === 'he' ? brandColors.white : brandColors.textMuted, fontWeight: '700' }]}>עב</Text>
-            </Pressable>
+            {langOpen && (
+              <Pressable
+                onPress={() => {
+                  void changeLanguage(language === 'en' ? 'he' : 'en');
+                  setLangOpen(false);
+                }}
+                style={styles.langOption}
+              >
+                <Text style={[typography.caption, { color: brandColors.textPrimary, fontWeight: '700' }]}>
+                  {language === 'en' ? 'עב' : 'EN'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -430,17 +491,45 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: spacing.xs,
   },
-  langChip: {
+  savedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  savedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
     borderWidth: 1,
     borderColor: brandColors.outlineLight,
-    minWidth: 36,
-    alignItems: 'center',
   },
-  langChipActive: {
+  langSelected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
     backgroundColor: brandColors.primary,
-    borderColor: brandColors.primary,
+    minWidth: 56,
+    justifyContent: 'center',
+  },
+  langOption: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    minWidth: 56,
+    justifyContent: 'center',
   },
 });
