@@ -35,7 +35,7 @@ const STEP_KEYS = ['profile', 'browse', 'bid'] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BecomeFixerOnboarding'>;
 
-export default function BecomeFixerScreen({ navigation }: Props) {
+export default function BecomeFixerScreen({ navigation, route }: Props) {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
@@ -49,7 +49,8 @@ export default function BecomeFixerScreen({ navigation }: Props) {
   useEffect(() => {
     AsyncStorage.getItem(getOnboardingKey()).then((seen) => {
       if (seen === 'true') {
-        navigationRef.current.replace('Main', { screen: 'FixerMode', params: { screen: 'FindJobs' } });
+        const dest = route.params?.returnScreen ?? 'FindJobs';
+        navigationRef.current.replace('Main', { screen: 'FixerMode', params: { screen: dest } });
       } else {
         Animated.parallel([
           Animated.timing(fadeAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
