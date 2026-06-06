@@ -25,7 +25,8 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#F5F1E8"
     },
     "extra": {
       "eas": {

@@ -108,6 +108,7 @@ export default function TaskDetailsFixer({ route }: Props) {
   const [bidPrice, setBidPrice] = useState('');
   const [bidPitch, setBidPitch] = useState('');
   const [bidSubmitting, setBidSubmitting] = useState(false);
+  const [completionLoading, setCompletionLoading] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
 
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -473,8 +474,8 @@ export default function TaskDetailsFixer({ route }: Props) {
             </View>
           )}
 
-          {/* Completion Photos — only for assigned fixer on in-progress tasks */}
-          {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
+          {/* Completion Photos — only after fixer confirmed completion */}
+          {existingBid?.status === 'ACCEPTED' && (task.status === 'COMPLETED' || (task.status === 'IN_PROGRESS' && task.fixer_completed)) && (
             <View style={{ gap: spacing.md }}>
               <Divider style={styles.divider} />
               <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('taskDetailsFixer.completion.photos')}</Text>
@@ -546,12 +547,17 @@ export default function TaskDetailsFixer({ route }: Props) {
                 <FButton
                   variant="primary"
                   icon="check-circle-outline"
+                  loading={completionLoading}
+                  disabled={completionLoading}
                   onPress={async () => {
+                    setCompletionLoading(true);
                     try {
                       await api.put(`/api/tasks/${task.id}/confirm-completion`);
                       fetchData();
                     } catch {
                       Alert.alert(t('common.error'), t('taskDetails.alerts.failedComplete'));
+                    } finally {
+                      setCompletionLoading(false);
                     }
                   }}
                   fullWidth

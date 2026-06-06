@@ -32,6 +32,8 @@ interface Task {
   general_location_name: string;
   bid_count?: number;
   assigned_fixer_name?: string;
+  assigned_fixer_id?: string;
+  assigned_fixer_avatar?: string | null;
   has_review?: boolean;
   completed_at?: string;
   created_at: string;
@@ -430,6 +432,18 @@ export default function MyTasksScreen({ navigation }: Props) {
                   }
                   onMarkCompleted={
                     task.status === 'IN_PROGRESS' ? () => markCompleted(task) : undefined
+                  }
+                  onChat={
+                    task.status === 'IN_PROGRESS' && task.assigned_fixer_id
+                      ? () => navigation.navigate('Chat', {
+                          taskId: task.id,
+                          recipientId: task.assigned_fixer_id,
+                          recipientName: task.assigned_fixer_name || 'Fixer',
+                          recipientAvatar: task.assigned_fixer_avatar || null,
+                          taskTitle: task.title,
+                          taskStatus: task.status,
+                        })
+                      : undefined
                   }
                 />
               ))

@@ -26,6 +26,7 @@ interface TaskCardProps {
   onMarkCompleted?: () => void;
   onEdit?: () => void;
   onReview?: () => void;
+  onChat?: () => void;
   muted?: boolean;
 }
 
@@ -44,6 +45,7 @@ export default function TaskCard({
   onMarkCompleted,
   onEdit,
   onReview,
+  onChat,
   muted = false,
 }: TaskCardProps) {
   const { t } = useTranslation();
@@ -54,7 +56,7 @@ export default function TaskCard({
   const waitingForOffers = bidCount != null && bidCount === 0 && status === 'OPEN';
   const assigned = fixerName && status === 'IN_PROGRESS';
   const hasActions = Boolean(
-    onPress || onDelete || onReactivate || onCancel || onMarkCompleted || onEdit || onReview
+    onPress || onDelete || onReactivate || onCancel || onMarkCompleted || onEdit || onReview || onChat
   );
   const detailsActionLabel = hasOffers ? t('taskCard.reviewBids') : t('taskCard.viewDetails');
   const detailsActionIcon = hasOffers ? 'hand-extended-outline' : 'text-box-search-outline';
@@ -166,6 +168,14 @@ export default function TaskCard({
               label={t('common.edit')}
               tone="default"
               onPress={onEdit}
+            />
+          )}
+          {onChat && (
+            <ActionButton
+              icon="chat-outline"
+              label={t('taskCard.chat')}
+              tone="default"
+              onPress={onChat}
             />
           )}
           {onMarkCompleted && (

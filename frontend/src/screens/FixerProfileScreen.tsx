@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -66,7 +67,7 @@ export default function FixerProfileScreen() {
   const navigation = useNavigation<{ navigate: (screen: string, params: object) => void }>();
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { language, changeLanguage, isRTL } = useLanguage();
   const isWide = width >= 900;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,14 +79,32 @@ export default function FixerProfileScreen() {
   const [paymentLink, setPaymentLink] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [editingName, setEditingName] = useState(false);
+  const [editingBio, setEditingBio] = useState(false);
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [savingSpecializations, setSavingSpecializations] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  // Original values for change detection
+  const [origName, setOrigName] = useState('');
+  const [origBio, setOrigBio] = useState('');
+  const [origPhone, setOrigPhone] = useState('');
+  const [origPayment, setOrigPayment] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
   const [viewingAvatar, setViewingAvatar] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+
+  const dismissEditing = () => {
+    Keyboard.dismiss();
+    if (fullName.trim() === origName) setEditingName(false);
+    if (bio.trim() === origBio) setEditingBio(false);
+    if (phone.trim() === origPhone) setEditingPhone(false);
+    if (paymentLink.trim() === origPayment) setEditingPayment(false);
+  };
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -100,10 +119,22 @@ export default function FixerProfileScreen() {
       const res = await api.get('/api/users/me');
       const u: Profile = res.data.user;
       setProfile(u);
-      setFullName(u.full_name ?? '');
-      setBio(u.bio ?? '');
-      setPhone(u.phone_number ?? '');
-      setPaymentLink(u.payment_link ?? '');
+      const n = u.full_name ?? '';
+      const b = u.bio ?? '';
+      const p = u.phone_number ?? '';
+      const pl = u.payment_link ?? '';
+      setFullName(n);
+      setBio(b);
+      setPhone(p);
+      setPaymentLink(pl);
+      setOrigName(n);
+      setOrigBio(b);
+      setOrigPhone(p);
+      setOrigPayment(pl);
+      setEditingName(!n);
+      setEditingBio(!b);
+      setEditingPhone(!p);
+      setEditingPayment(!pl);
       setSpecializations(u.specializations ?? []);
       setPortfolioItems(u.portfolio_items ?? []);
     } catch {
@@ -160,10 +191,21 @@ export default function FixerProfileScreen() {
       setProfile(prev => prev ? { ...prev, ...updated, portfolio_items: portfolioItems } : prev);
       setFullName(updated.full_name ?? fullName.trim());
       setBio(updated.bio ?? bio.trim());
-      setPhone(updated.phone_number ?? phone.trim());
-      setPaymentLink(updated.payment_link ?? '');
+      const savedPhoneVal = updated.phone_number ?? phone.trim();
+      const savedPaymentVal = updated.payment_link ?? '';
+      setPhone(savedPhoneVal);
+      setPaymentLink(savedPaymentVal);
+      setEditingName(false);
+      setEditingBio(false);
+      setEditingPhone(!savedPhoneVal);
+      setEditingPayment(!savedPaymentVal);
       setSpecializations(updated.specializations ?? specializations);
-      Alert.alert(t('fixerProfile.alerts.savedTitle'), t('fixerProfile.alerts.saved'));
+      setOrigName(updated.full_name ?? fullName.trim());
+      setOrigBio(updated.bio ?? bio.trim());
+      setOrigPhone(savedPhoneVal);
+      setOrigPayment(savedPaymentVal);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
     } catch {
       Alert.alert(t('common.error'), t('fixerProfile.alerts.saveError'));
     } finally {
@@ -177,23 +219,6 @@ export default function FixerProfileScreen() {
     );
   };
 
-  const handleSaveSpecializations = async () => {
-    setSavingSpecializations(true);
-    try {
-      const res = await api.put('/api/users/me', { specializations });
-      const updated = res.data.user as Partial<Profile>;
-      setProfile(prev => prev ? {
-        ...prev,
-        specializations: updated.specializations ?? specializations,
-      } : prev);
-      setSpecializations(updated.specializations ?? specializations);
-      Alert.alert(t('fixerProfile.alerts.savedTitle'), t('fixerProfile.alerts.tradesSaved'));
-    } catch {
-      Alert.alert(t('common.error'), t('fixerProfile.alerts.tradesSaveError'));
-    } finally {
-      setSavingSpecializations(false);
-    }
-  };
 
   const handleAddPortfolio = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -259,78 +284,18 @@ export default function FixerProfileScreen() {
 
   const avgRating = profile?.average_rating_as_fixer;
   const displayName = fullName.trim() || profile?.full_name || 'Fixer profile';
-  const savedPaymentLink = profile?.payment_link?.trim() ?? '';
   const currentPaymentLink = paymentLink.trim();
   const currentPaymentLinkValid = currentPaymentLink.length > 0 && isValidUrl(currentPaymentLink);
-  const savedPaymentLinkValid = savedPaymentLink.length > 0 && isValidUrl(savedPaymentLink);
-  const paymentLinkChanged = currentPaymentLink !== savedPaymentLink;
-  const paymentStatus =
-    currentPaymentLink.length === 0 && savedPaymentLink.length > 0
-      ? {
-          icon: 'content-save-alert-outline',
-          label: t('fixerProfile.payment.unsavedLabel'),
-          color: brandColors.warning,
-          style: styles.paymentMissing,
-          message: t('fixerProfile.payment.unsavedMessage'),
-        }
-      : currentPaymentLink.length === 0
-      ? {
-          icon: 'alert-circle-outline',
-          label: t('fixerProfile.payment.missing'),
-          color: brandColors.warning,
-          style: styles.paymentMissing,
-          message: t('fixerProfile.payment.missingMessage'),
-        }
-      : !currentPaymentLinkValid
-        ? {
-            icon: 'alert-circle-outline',
-            label: t('fixerProfile.payment.invalid'),
-            color: brandColors.danger,
-            style: styles.paymentInvalid,
-            message: t('fixerProfile.payment.invalidMessage'),
-          }
-        : paymentLinkChanged
-          ? {
-              icon: 'content-save-alert-outline',
-              label: t('fixerProfile.payment.unsavedLabel'),
-              color: brandColors.warning,
-              style: styles.paymentMissing,
-              message: t('fixerProfile.payment.unsavedMessage'),
-            }
-          : savedPaymentLinkValid
-            ? {
-                icon: 'check-circle-outline',
-                label: t('fixerProfile.payment.ready'),
-                color: brandColors.success,
-                style: styles.paymentReady,
-                message: null,
-              }
-            : {
-                icon: 'alert-circle-outline',
-                label: t('fixerProfile.payment.checkLink'),
-                color: brandColors.warning,
-                style: styles.paymentMissing,
-                message: t('fixerProfile.payment.reviewMessage'),
-              };
   const hasSpecializationChanges = !sameStringSet(specializations, profile?.specializations ?? []);
-  const completionItems = [
-    fullName.trim(),
-    bio.trim(),
-    phone.trim(),
-    savedPaymentLinkValid,
-    specializations.length > 0,
-    portfolioItems.length > 0,
-    profile?.avatar_url,
-  ];
-  const completionPercent = Math.round(
-    (completionItems.filter(Boolean).length / completionItems.length) * 100,
-  );
+
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={dismissEditing}
     >
       <View style={[styles.workspaceShell, isWide && styles.workspaceShellWide]}>
         <View style={[styles.profileHero, isWide && styles.profileHeroWide]}>
@@ -380,51 +345,25 @@ export default function FixerProfileScreen() {
               )}
             </View>
             <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{profile?.email}</Text>
-
-            <View style={styles.heroStats}>
-              <Pressable
-                style={styles.heroStat}
-                onPress={() => {
-                  if (profile?.id) {
-                    navigation.navigate('PublicProfile', { userId: profile.id });
-                  }
-                }}
-              >
-                <Text style={styles.heroStatValue}>
-                  {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
-                </Text>
-                <Text style={[styles.heroStatLabel, { textDecorationLine: 'underline' }]}>{t('fixerProfile.stats.rating')}</Text>
-              </Pressable>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{specializations.length}</Text>
-                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.trades')}</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{portfolioItems.length}</Text>
-                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.photos')}</Text>
-              </View>
-              <View style={styles.heroStat}>
-                <Text style={styles.heroStatValue}>{completionPercent}%</Text>
-                <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.profileCompletion')}</Text>
-              </View>
-            </View>
           </View>
 
-          <View style={[styles.paymentStatus, paymentStatus.style]}>
-            <MaterialCommunityIcons
-              name={paymentStatus.icon as never}
-              size={16}
-              color={paymentStatus.color}
-            />
-            <Text
-              style={[
-                typography.caption,
-                { color: paymentStatus.color, fontWeight: '700' },
-              ]}
-            >
-              {paymentStatus.label}
+          <Pressable
+            style={styles.heroStat}
+            onPress={() => {
+              if (profile?.id) {
+                navigation.navigate('PublicProfile', { userId: profile.id });
+              }
+            }}
+          >
+            <Text style={styles.heroStatValue}>
+              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
             </Text>
-          </View>
+            <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.rating')}</Text>
+            <Text style={[typography.caption, { color: brandColors.secondary, marginTop: spacing.xs, textDecorationLine: 'underline' }]}>
+              {t('fixerProfile.stats.tapToView')}
+            </Text>
+          </Pressable>
+
         </View>
 
         <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
@@ -440,48 +379,101 @@ export default function FixerProfileScreen() {
                 </View>
               </View>
 
-              <FInput label={t('fixerProfile.fields.fullName')} value={fullName} onChangeText={setFullName} returnKeyType="next" />
-              <FInput
-                label={t('fixerProfile.fields.bio')}
-                value={bio}
-                onChangeText={setBio}
-                multiline
-                numberOfLines={3}
-                returnKeyType="next"
-              />
-              <FInput
-                label={t('fixerProfile.fields.phone')}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                returnKeyType="next"
-              />
-              <FInput
-                label={t('fixerProfile.fields.paymentLink')}
-                value={paymentLink}
-                onChangeText={setPaymentLink}
-                keyboardType="url"
-                autoCapitalize="none"
-                returnKeyType="done"
-              />
-              {paymentStatus.message && (
-                <View style={[styles.warningRow, paymentStatus.color === brandColors.danger && styles.dangerRow]}>
-                  <MaterialCommunityIcons name="alert-outline" size={14} color={paymentStatus.color} />
-                  <Text style={[typography.caption, { color: paymentStatus.color, marginLeft: spacing.xs, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
-                    {paymentStatus.message}
+              <View>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.fullName')}</Text>
+                {editingName ? (
+                  <FInput autoFocus value={fullName} onChangeText={setFullName} returnKeyType="next" onBlur={() => { if (fullName.trim() === origName) setEditingName(false); }} />
+                ) : (
+                  <View style={styles.savedValueRow}>
+                    <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]}>{fullName}</Text>
+                    <Pressable onPress={() => setEditingName(true)} hitSlop={8}>
+                      <MaterialCommunityIcons name="pencil-outline" size={18} color={brandColors.primaryMuted} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+              <View>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.bio')}</Text>
+                {editingBio ? (
+                  <FInput autoFocus value={bio} onChangeText={setBio} multiline numberOfLines={3} returnKeyType="next" onBlur={() => { if (bio.trim() === origBio) setEditingBio(false); }} />
+                ) : (
+                  <View style={styles.savedValueRow}>
+                    <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]}>{bio}</Text>
+                    <Pressable onPress={() => setEditingBio(true)} hitSlop={8}>
+                      <MaterialCommunityIcons name="pencil-outline" size={18} color={brandColors.primaryMuted} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+              <View>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.phone')}</Text>
+                {editingPhone ? (
+                  <FInput
+                    autoFocus
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    returnKeyType="next"
+                    onBlur={() => { if (phone.trim() === origPhone) setEditingPhone(false); }}
+                  />
+                ) : (
+                  <View style={styles.savedValueRow}>
+                    <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]}>{phone}</Text>
+                    <Pressable onPress={() => setEditingPhone(true)} hitSlop={8}>
+                      <MaterialCommunityIcons name="pencil-outline" size={18} color={brandColors.primaryMuted} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+              <View>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.paymentLink')}</Text>
+                {editingPayment ? (
+                  <FInput
+                    autoFocus
+                    value={paymentLink}
+                    onChangeText={setPaymentLink}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    returnKeyType="done"
+                    onBlur={() => { if (paymentLink.trim() === origPayment) setEditingPayment(false); }}
+                  />
+                ) : (
+                  <View style={styles.savedValueRow}>
+                    <Text style={[typography.body, { color: brandColors.textPrimary, flex: 1 }]} numberOfLines={1}>{paymentLink}</Text>
+                    <Pressable onPress={() => setEditingPayment(true)} hitSlop={8}>
+                      <MaterialCommunityIcons name="pencil-outline" size={18} color={brandColors.primaryMuted} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+
+              <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
+
+              <View style={styles.portfolioHeader}>
+                <View style={styles.sectionHeaderCompact}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
+                  </View>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
+                </View>
+                <View style={styles.countChip}>
+                  <Text style={[typography.caption, { color: brandColors.primary }]}>
+                    {t('fixerProfile.tradeCoverage.selectedCount', { count: specializations.length })}
                   </Text>
                 </View>
-              )}
-
-              <FButton
-                onPress={() => void handleSaveProfile()}
-                loading={saving}
-                disabled={saving || (currentPaymentLink.length > 0 && !currentPaymentLinkValid)}
-                fullWidth
-                style={{ marginTop: spacing.sm }}
-              >
-                {t('fixerProfile.actions.save')}
-              </FButton>
+              </View>
+              <View style={styles.chipsWrap}>
+                {CATEGORY_LIST.map(s => (
+                  <FChip
+                    key={s.value}
+                    label={getCategoryLabel(s.value, t)}
+                    icon={s.icon}
+                    selected={specializations.includes(s.value)}
+                    onPress={() => toggleSpecialization(s.value)}
+                    compact
+                  />
+                ))}
+              </View>
 
               <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
 
@@ -530,6 +522,71 @@ export default function FixerProfileScreen() {
                   thumbColor={brandColors.white}
                 />
               </View>
+
+              <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 }}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="translate" size={18} color={brandColors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                      {t('settings.preferences.language.label')}
+                    </Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                      {t('settings.preferences.language.description')}
+                    </Text>
+                  </View>
+                </View>
+                <View>
+                  <Pressable
+                    onPress={() => setLangOpen(!langOpen)}
+                    style={styles.langSelected}
+                  >
+                    <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' }]}>
+                      {language === 'en' ? 'EN' : 'עב'}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name={langOpen ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={brandColors.white}
+                    />
+                  </Pressable>
+                  {langOpen && (
+                    <Pressable
+                      onPress={() => {
+                        void changeLanguage(language === 'en' ? 'he' : 'en');
+                        setLangOpen(false);
+                      }}
+                      style={styles.langOption}
+                    >
+                      <Text style={[typography.caption, { color: brandColors.textPrimary, fontWeight: '700' }]}>
+                        {language === 'en' ? 'עב' : 'EN'}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+
+              {savedSuccess ? (
+                <View style={styles.savedBanner}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={18} color={brandColors.success} />
+                  <Text style={[typography.bodyMedium, { color: brandColors.success }]}>
+                    {t('fixerProfile.alerts.savedTitle')}
+                  </Text>
+                </View>
+              ) : (fullName.trim() !== origName || bio.trim() !== origBio || phone.trim() !== origPhone || paymentLink.trim() !== origPayment || hasSpecializationChanges) ? (
+                <FButton
+                  onPress={() => void handleSaveProfile()}
+                  loading={saving}
+                  disabled={saving || (currentPaymentLink.length > 0 && !currentPaymentLinkValid)}
+                  fullWidth
+                  style={{ marginTop: spacing.lg }}
+                >
+                  {t('fixerProfile.actions.save')}
+                </FButton>
+              ) : null}
             </FCard>
 
             {/* Verification section — hidden once approved */}
@@ -573,49 +630,6 @@ export default function FixerProfileScreen() {
               </FCard>
             )}
 
-            <FCard style={styles.section} shadow="sm">
-              <View style={styles.portfolioHeader}>
-                <View style={styles.sectionHeaderCompact}>
-                  <View style={styles.sectionIcon}>
-                    <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
-                  </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
-                </View>
-                <View style={styles.countChip}>
-                  <Text style={[typography.caption, { color: brandColors.primary }]}>
-                    {t('fixerProfile.tradeCoverage.selectedCount', { count: specializations.length })}
-                  </Text>
-                </View>
-                {hasSpecializationChanges && (
-                  <View style={styles.unsavedChip}>
-                    <MaterialCommunityIcons name="content-save-alert-outline" size={12} color={brandColors.warning} />
-                    <Text style={[typography.caption, styles.unsavedChipText]}>{t('fixerProfile.tradeCoverage.unsaved')}</Text>
-                  </View>
-                )}
-                <FButton
-                  size="sm"
-                  variant={hasSpecializationChanges ? 'secondary' : 'outline'}
-                  icon={hasSpecializationChanges ? 'content-save-outline' : 'check-circle-outline'}
-                  disabled={!hasSpecializationChanges || saving || savingSpecializations}
-                  loading={savingSpecializations}
-                  onPress={() => void handleSaveSpecializations()}
-                >
-                  {hasSpecializationChanges ? t('fixerProfile.tradeCoverage.save') : t('fixerProfile.tradeCoverage.saved')}
-                </FButton>
-              </View>
-              <View style={styles.chipsWrap}>
-                {CATEGORY_LIST.map(s => (
-                  <FChip
-                    key={s.value}
-                    label={getCategoryLabel(s.value, t)}
-                    icon={s.icon}
-                    selected={specializations.includes(s.value)}
-                    onPress={() => toggleSpecialization(s.value)}
-                    compact
-                  />
-                ))}
-              </View>
-            </FCard>
           </View>
 
           <View style={styles.profileSideColumn}>
@@ -696,6 +710,50 @@ export default function FixerProfileScreen() {
 const TILE_SIZE = '31%' as const;
 
 const styles = StyleSheet.create({
+  savedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(52,168,83,0.08)',
+  },
+  langSelected: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.primary,
+    minWidth: 56,
+    justifyContent: 'center' as const,
+  },
+  langOption: {
+    alignItems: 'center' as const,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    minWidth: 56,
+    justifyContent: 'center' as const,
+  },
+  savedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+  },
   container: {
     flex: 1,
     backgroundColor: brandColors.background,
@@ -719,14 +777,14 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     flexGrow: 0,
     flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,
     ...shadows.md,
   },
   profileHeroWide: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: spacing.xl,
   },
   avatarWrapper: {
@@ -786,7 +844,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
   heroStat: {
     minWidth: 82,
@@ -808,28 +865,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: brandColors.textOnDarkMuted,
     marginTop: 1,
-  },
-  paymentStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-  },
-  paymentReady: {
-    backgroundColor: brandColors.successSoft,
-    borderColor: 'rgba(81,122,88,0.24)',
-  },
-  paymentMissing: {
-    backgroundColor: brandColors.warningSoft,
-    borderColor: 'rgba(155,109,42,0.24)',
-  },
-  paymentInvalid: {
-    backgroundColor: brandColors.dangerSoft,
-    borderColor: 'rgba(168,91,91,0.24)',
   },
   profileGrid: {
     gap: spacing.lg,
@@ -876,17 +911,6 @@ const styles = StyleSheet.create({
     color: brandColors.textMuted,
     marginBottom: 2,
   },
-  warningRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    backgroundColor: brandColors.warningSoft,
-    marginTop: spacing.xs,
-  },
-  dangerRow: {
-    backgroundColor: brandColors.dangerSoft,
-  },
   verificationBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -913,21 +937,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
     backgroundColor: brandColors.infoSoft,
-  },
-  unsavedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: brandColors.warningSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(155,109,42,0.22)',
-  },
-  unsavedChipText: {
-    color: brandColors.warning,
-    fontWeight: '700',
   },
   portfolioGrid: {
     flexDirection: 'row',
