@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { sendEmailVerification } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
@@ -38,6 +39,7 @@ export default function RequesterDashboard({ navigation }: Props) {
   const [verificationSent, setVerificationSent] = useState(false);
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
 
   const wide = width >= 900;
   const tablet = width >= 680;
@@ -89,10 +91,10 @@ export default function RequesterDashboard({ navigation }: Props) {
               <Text style={styles.workspacePillText}>{t('dashboard.hero.workspace')}</Text>
             </View>
 
-            <Text style={styles.greeting}>
+            <Text style={[styles.greeting, { textAlign: isRTL ? 'right' : 'left' }]}>
               {firstName ? `${greeting}, ${firstName}.` : `${greeting}.`}
             </Text>
-            <Text style={styles.heroSub}>
+            <Text style={[styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>
               {t('dashboard.hero.sub')}
             </Text>
 
@@ -127,16 +129,16 @@ export default function RequesterDashboard({ navigation }: Props) {
           </View>
 
           <View style={[styles.heroPanel, wide && styles.heroPanelWide]}>
-            <Text style={styles.panelEyebrow}>{t('dashboard.panel.eyebrow')}</Text>
-            <Text style={styles.panelTitle}>{t('dashboard.panel.title')}</Text>
+            <Text style={[styles.panelEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.eyebrow')}</Text>
+            <Text style={[styles.panelTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.title')}</Text>
             <View style={styles.panelDivider} />
             <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
                 <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>{t('dashboard.panel.photosTitle')}</Text>
-                <Text style={styles.panelRowCopy}>{t('dashboard.panel.photosCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosCopy')}</Text>
               </View>
             </View>
             <View style={styles.panelRow}>
@@ -144,8 +146,8 @@ export default function RequesterDashboard({ navigation }: Props) {
                 <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondary} />
               </View>
               <View style={styles.panelText}>
-                <Text style={styles.panelRowTitle}>{t('dashboard.panel.historyTitle')}</Text>
-                <Text style={styles.panelRowCopy}>{t('dashboard.panel.historyCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyCopy')}</Text>
               </View>
             </View>
           </View>
@@ -163,8 +165,8 @@ export default function RequesterDashboard({ navigation }: Props) {
               />
             </View>
             <View style={styles.verifyCopy}>
-              <Text style={[typography.label, { color: brandColors.textPrimary }]}>{t('dashboard.verify.title')}</Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.verify.title')}</Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                 {verificationSent ? t('dashboard.verify.sent') : t('dashboard.verify.pending')}
               </Text>
             </View>
@@ -184,8 +186,8 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>{t('dashboard.section.services')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.servicesTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.services')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.servicesTitle')}</Text>
             </View>
           </View>
 
@@ -226,8 +228,8 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>{t('dashboard.section.flow')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{t('dashboard.section.flowTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flow')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flowTitle')}</Text>
             </View>
           </View>
 
@@ -240,8 +242,8 @@ export default function RequesterDashboard({ navigation }: Props) {
                   </View>
                   <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
                 </View>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
               </View>
             ))}
           </View>

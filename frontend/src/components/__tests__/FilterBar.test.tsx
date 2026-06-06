@@ -3,6 +3,7 @@ jest.mock('react-i18next', () => ({
     t: (key: string, opts?: Record<string, unknown>) =>
       opts ? `${key}(${JSON.stringify(opts)})` : key,
   }),
+  initReactI18next: { type: '3rdParty', init: jest.fn() },
 }));
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({

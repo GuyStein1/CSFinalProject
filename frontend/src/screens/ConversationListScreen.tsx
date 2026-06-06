@@ -4,6 +4,7 @@ import { Avatar, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -38,6 +39,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
@@ -128,7 +130,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
 
             <View style={styles.content}>
               <View style={styles.topRow}>
-                <Text style={[typography.label, styles.name]} numberOfLines={1}>
+                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                   {other?.full_name || 'User'}
                 </Text>
                 {item.lastMessage && (
@@ -137,14 +139,14 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                   </Text>
                 )}
               </View>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                 {item.taskTitle}
               </Text>
               <View style={styles.bottomRow}>
                 <Text
                   style={[
                     typography.bodySm,
-                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1 },
+                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                   numberOfLines={1}
                 >

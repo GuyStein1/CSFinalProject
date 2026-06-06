@@ -12,6 +12,7 @@ import { Avatar, Divider, Modal, Portal, Text, TextInput } from 'react-native-pa
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import useReviews, { reportReview, type Review } from '../hooks/useReviews';
 import LoadingScreen from '../components/LoadingScreen';
@@ -62,6 +63,7 @@ const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
 function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
   const canReport = currentUserId === review.reviewee_id;
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REPORT_REASONS[number] | null>(null);
   const [otherDetails, setOtherDetails] = useState('');
@@ -115,11 +117,11 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
             style={{ backgroundColor: brandColors.primaryMuted }}
           />
           <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
               {review.reviewer?.full_name ?? t('publicProfile.anonymous')}
             </Text>
             {review.task?.title && (
-              <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                 {review.task.title}
               </Text>
             )}
@@ -138,7 +140,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
       <StarRating rating={review.rating} size={14} />
 
       {review.comment ? (
-        <Text style={[typography.body, { color: brandColors.textSecondary, marginTop: spacing.sm }]}>
+        <Text style={[typography.body, { color: brandColors.textSecondary, marginTop: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
           {review.comment}
         </Text>
       ) : null}
@@ -213,6 +215,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
 export default function PublicProfileScreen({ route }: { route: any }) {
   const { userId } = route.params;
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
@@ -304,7 +307,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             {(profile?.completed_tasks_as_fixer ?? 0) > 0 && (
               <View style={styles.statChip}>
                 <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {profile!.completed_tasks_as_fixer} tasks completed
                 </Text>
               </View>
@@ -312,7 +315,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             {profile?.avg_response_time_minutes != null && (
               <View style={styles.statChip}>
                 <MaterialCommunityIcons name="clock-fast" size={14} color={brandColors.primary} />
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {formatResponseTime(profile.avg_response_time_minutes)}
                 </Text>
               </View>
@@ -323,7 +326,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {memberSince && (
             <View style={styles.metaRow}>
               <MaterialCommunityIcons name="calendar-outline" size={14} color={brandColors.textMuted} />
-              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('publicProfile.memberSince', { date: memberSince })}
               </Text>
             </View>
@@ -352,7 +355,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
               <Divider style={styles.divider} />
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primaryMuted} />
-                <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm }]}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
                   {t('publicProfile.portfolioTitle', { count: profile!.portfolio_items.length })}
                 </Text>
               </View>
@@ -369,7 +372,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {/* Reviews section header */}
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="star" size={18} color={brandColors.secondary} />
-            <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm }]}>
+            <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
               {t('publicProfile.reviewsTitle', { count: total })}
             </Text>
           </View>

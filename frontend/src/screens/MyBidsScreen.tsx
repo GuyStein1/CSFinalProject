@@ -14,6 +14,7 @@ import { Portal, Modal, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
@@ -64,6 +65,7 @@ interface BidCardProps {
 
 function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted }: BidCardProps) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const translateX = useRef(new Animated.Value(0)).current;
   const isPending = bid.status === 'PENDING';
   const catMeta = getCategoryMeta(bid.task.category);
@@ -127,12 +129,12 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               <MaterialCommunityIcons name={catMeta.icon as never} size={18} color={catMeta.color} />
             </View>
             <View style={styles.titleBlock}>
-              <Text style={[typography.h3, { color: brandColors.textPrimary }]} numberOfLines={1}>
+              <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                 {bid.task.title}
               </Text>
               <View style={styles.metaRow}>
                 <MaterialCommunityIcons name="map-marker-outline" size={12} color={brandColors.textMuted} />
-                <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                   {bid.task.general_location_name || t('myBids.card.locationNotSet')} · {budgetLabel}
                 </Text>
               </View>
@@ -143,14 +145,14 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
           <View style={styles.bidDetails}>
             <View style={styles.priceRow}>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.card.yourOffer')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.card.yourOffer')}</Text>
                 <Text style={styles.offerValue}>₪{bid.offered_price}</Text>
               </View>
               <View style={styles.priceTag}>
                 <Text style={[typography.caption, styles.priceTagText]}>{t('myBids.card.budget', { value: budgetLabel })}</Text>
               </View>
             </View>
-            <Text style={[typography.bodySm, styles.pitch]} numberOfLines={2}>
+            <Text style={[typography.bodySm, styles.pitch, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
               {bid.description}
             </Text>
           </View>
@@ -159,18 +161,18 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             <View style={styles.rejectionBanner}>
               <View style={styles.rejectionHeader}>
                 <MaterialCommunityIcons name="information-outline" size={14} color={brandColors.danger} />
-                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>
+                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700', textAlign: isRTL ? 'right' : 'left' }]}>
                   {t(`taskDetailsFixer.rejectionReasons.${bid.rejection_reason}`, { defaultValue: bid.rejection_reason })}
                 </Text>
               </View>
               {bid.rejection_note ? (
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary }]} numberOfLines={3}>
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={3}>
                   &quot;{bid.rejection_note}&quot;
                 </Text>
               ) : null}
               {bid.auto_rejected_winning_price != null && (
                 <View style={styles.rejectionContext}>
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                     Winning bid: ₪{bid.auto_rejected_winning_price}
                     {bid.auto_rejected_winning_rating != null && bid.auto_rejected_winning_rating > 0
                       ? ` · Rating: ${bid.auto_rejected_winning_rating.toFixed(1)}★`
@@ -258,6 +260,7 @@ function formatMonthLabel(key: string): string {
 
 export default function MyBidsScreen() {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
@@ -567,10 +570,10 @@ export default function MyBidsScreen() {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondary} />
             </View>
-            <Text style={styles.headerKicker}>{t('myBids.header.kicker')}</Text>
+            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.kicker')}</Text>
           </View>
-          <Text style={styles.headerTitle}>{t('myBids.header.title')}</Text>
-          <Text style={styles.headerSub} numberOfLines={2}>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.title')}</Text>
+          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
             {t('myBids.header.sub', { tab: activeTabLabel, pending: pipelineSummary.pendingOffers, active: pipelineSummary.activeJobs })}
           </Text>
         </View>
@@ -755,7 +758,7 @@ export default function MyBidsScreen() {
           onDismiss={() => setEditingBid(null)}
           contentContainerStyle={styles.editModal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
             {t('myBids.editModal.title')}
           </Text>
           <FInput

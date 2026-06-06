@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../api/axiosInstance';
 import { uploadImage } from '../utils/uploadImage';
@@ -93,6 +94,7 @@ interface Props {
 
 export default function TaskDetailsFixer({ route }: Props) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const taskId = route.params?.taskId;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
@@ -339,7 +341,7 @@ export default function TaskDetailsFixer({ route }: Props) {
         <View style={styles.infoSection}>
           {/* Title + Status */}
           <View style={styles.titleRow}>
-            <Text style={[typography.h1, styles.title]} numberOfLines={3}>
+            <Text style={[typography.h1, styles.title, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={3}>
               {task.title}
             </Text>
             <StatusBadge status={task.status} />
@@ -371,7 +373,7 @@ export default function TaskDetailsFixer({ route }: Props) {
           <Divider style={styles.divider} />
 
           {/* Description */}
-          <Text style={[typography.body, styles.description]}>{task.description}</Text>
+          <Text style={[typography.body, styles.description, { textAlign: isRTL ? 'right' : 'left' }]}>{task.description}</Text>
 
           <Divider style={styles.divider} />
 
@@ -397,10 +399,10 @@ export default function TaskDetailsFixer({ route }: Props) {
                 <MaterialCommunityIcons name="map-marker-distance" size={20} color={brandColors.primary} />
               </View>
               <View style={styles.distanceInfo}>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {directions.distanceText}
                 </Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                   {directions.durationInTraffic ?? directions.durationText}
                 </Text>
               </View>
@@ -421,10 +423,10 @@ export default function TaskDetailsFixer({ route }: Props) {
                 <Avatar.Icon size={48} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
               )}
               <View style={styles.requesterInfo}>
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                   {task.requester.full_name}
                 </Text>
-                <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                   {t('taskDetailsFixer.requester')}
                 </Text>
               </View>
@@ -443,21 +445,21 @@ export default function TaskDetailsFixer({ route }: Props) {
                 color={existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success}
               />
               <View style={{ flex: 1 }}>
-                <Text style={[typography.h3, { color: existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success }]}>
+                <Text style={[typography.h3, { color: existingBid.status === 'REJECTED' ? brandColors.danger : brandColors.success, textAlign: isRTL ? 'right' : 'left' }]}>
                   {t('taskDetailsFixer.yourBid', { amount: existingBid.offered_price })}
                 </Text>
                 {existingBid.status === 'REJECTED' && existingBid.rejection_reason && (
                   <View style={{ marginTop: spacing.xs, gap: spacing.xs }}>
-                    <Text style={[typography.bodySm, { color: brandColors.textSecondary }]}>
+                    <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
                       {t('taskDetailsFixer.completion.reason')}: {t(`taskDetailsFixer.rejectionReasons.${existingBid.rejection_reason}`, { defaultValue: existingBid.rejection_reason })}
                     </Text>
                     {existingBid.rejection_note ? (
-                      <Text style={[typography.bodySm, { color: brandColors.textMuted, fontStyle: 'italic' }]}>
+                      <Text style={[typography.bodySm, { color: brandColors.textMuted, fontStyle: 'italic', textAlign: isRTL ? 'right' : 'left' }]}>
                         &quot;{existingBid.rejection_note}&quot;
                       </Text>
                     ) : null}
                     {existingBid.auto_rejected_winning_price != null && (
-                      <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                      <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                         Winning bid: ₪{existingBid.auto_rejected_winning_price}
                         {existingBid.auto_rejected_winning_rating != null && existingBid.auto_rejected_winning_rating > 0
                           ? ` · Rating: ${existingBid.auto_rejected_winning_rating.toFixed(1)}★`
@@ -475,7 +477,7 @@ export default function TaskDetailsFixer({ route }: Props) {
           {existingBid?.status === 'ACCEPTED' && task.status === 'IN_PROGRESS' && (
             <View style={{ gap: spacing.md }}>
               <Divider style={styles.divider} />
-              <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('taskDetailsFixer.completion.photos')}</Text>
+              <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('taskDetailsFixer.completion.photos')}</Text>
               {(task.completion_photos?.length ?? 0) > 0 && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
                   {task.completion_photos.map((url, i) => (
@@ -529,7 +531,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               {!task.is_payment_confirmed && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.textMuted} />
-                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('taskDetailsFixer.completion.waitingPayment')}
                   </Text>
                 </View>
@@ -537,7 +539,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               {task.is_payment_confirmed && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs }}>
                   <MaterialCommunityIcons name="check-circle" size={16} color={brandColors.success} />
-                  <Text style={[typography.caption, { color: brandColors.success }]}>{t('taskDetailsFixer.completion.paymentConfirmed')}</Text>
+                  <Text style={[typography.caption, { color: brandColors.success, textAlign: isRTL ? 'right' : 'left' }]}>{t('taskDetailsFixer.completion.paymentConfirmed')}</Text>
                 </View>
               )}
               {task.is_payment_confirmed && !task.fixer_completed && (
@@ -560,7 +562,7 @@ export default function TaskDetailsFixer({ route }: Props) {
               {task.is_payment_confirmed && task.fixer_completed && !task.requester_completed && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
-                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 }]}>
+                  <Text style={[typography.body, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('taskDetailsFixer.completion.waitingRequester')}
                   </Text>
                 </View>
@@ -700,14 +702,15 @@ export default function TaskDetailsFixer({ route }: Props) {
 }
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  const { isRTL } = useLanguage();
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoIconShell}>
         <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
       </View>
       <View style={styles.infoText}>
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
-        <Text style={[typography.body, { color: brandColors.textPrimary }]}>{value}</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+        <Text style={[typography.body, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
       </View>
     </View>
   );

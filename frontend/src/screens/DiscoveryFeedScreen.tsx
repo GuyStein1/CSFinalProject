@@ -20,6 +20,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
 import useTasks, { type Category } from '../hooks/useTasks';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 
@@ -46,6 +47,7 @@ const PRICE_SLIDER_MAX = 5000;
 
 export default function DiscoveryFeedScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const supportsWorkAreaSearch = Platform.OS === 'web';
@@ -446,10 +448,10 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondary} />
             </View>
-            <Text style={styles.headerKicker}>{t('discovery.header.kicker')}</Text>
+            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('discovery.header.kicker')}</Text>
           </View>
-          <Text style={styles.headerTitle}>{t('discovery.header.title')}</Text>
-          <Text style={styles.headerSub} numberOfLines={2}>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('discovery.header.title')}</Text>
+          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
             {t('discovery.header.sub', { location: center?.label ?? t('discovery.location.workArea'), categories: categorySummary, budget: priceSummary })}
           </Text>
         </View>
