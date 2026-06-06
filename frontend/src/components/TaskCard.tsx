@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import StatusBadge from './StatusBadge';
 import { getCategoryMetadata, type Category } from '../constants/categories';
 import { getCategoryLabel } from '../utils/categoryMetadata';
@@ -46,6 +47,7 @@ export default function TaskCard({
   muted = false,
 }: TaskCardProps) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const meta = getCategoryMetadata(category);
   const budgetLabel = suggestedPrice != null ? `₪${suggestedPrice}` : t('taskCard.openToQuotes');
   const hasOffers = bidCount != null && bidCount > 0 && status === 'OPEN';
@@ -83,11 +85,11 @@ export default function TaskCard({
 
         <View style={styles.titleBlock}>
           <View style={styles.categoryRow}>
-            <Text style={[typography.caption, styles.categoryLabel]} numberOfLines={1}>
+            <Text style={[typography.caption, styles.categoryLabel, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
               {getCategoryLabel(category, t)}
             </Text>
           </View>
-          <Text style={[typography.h3, styles.title]} numberOfLines={2}>
+          <Text style={[typography.h3, styles.title, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
             {title}
           </Text>
         </View>

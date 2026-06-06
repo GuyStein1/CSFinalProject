@@ -15,6 +15,7 @@ import { Avatar, Divider, Switch, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -65,6 +66,7 @@ export default function FixerProfileScreen() {
   const navigation = useNavigation<{ navigate: (screen: string, params: object) => void }>();
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const isWide = width >= 900;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -369,15 +371,15 @@ export default function FixerProfileScreen() {
               <View style={styles.headerIconShell}>
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondary} />
               </View>
-              <Text style={styles.headerKicker}>{t('fixerProfile.headerKicker')}</Text>
+              <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Text style={styles.heroName} numberOfLines={2}>{displayName}</Text>
+              <Text style={[styles.heroName, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>{displayName}</Text>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
             </View>
-            <Text style={styles.heroEmail} numberOfLines={1}>{profile?.email}</Text>
+            <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{profile?.email}</Text>
 
             <View style={styles.heroStats}>
               <Pressable
@@ -433,8 +435,8 @@ export default function FixerProfileScreen() {
                   <MaterialCommunityIcons name="account-edit-outline" size={18} color={brandColors.primary} />
                 </View>
                 <View>
-                  <Text style={styles.sectionKicker}>{t('fixerProfile.sectionKicker')}</Text>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.sectionTitle')}</Text>
+                  <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.sectionKicker')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.sectionTitle')}</Text>
                 </View>
               </View>
 
@@ -465,7 +467,7 @@ export default function FixerProfileScreen() {
               {paymentStatus.message && (
                 <View style={[styles.warningRow, paymentStatus.color === brandColors.danger && styles.dangerRow]}>
                   <MaterialCommunityIcons name="alert-outline" size={14} color={paymentStatus.color} />
-                  <Text style={[typography.caption, { color: paymentStatus.color, marginLeft: spacing.xs, flex: 1 }]}>
+                  <Text style={[typography.caption, { color: paymentStatus.color, marginLeft: spacing.xs, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
                     {paymentStatus.message}
                   </Text>
                 </View>
@@ -489,10 +491,10 @@ export default function FixerProfileScreen() {
                     <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                       {t('fixerProfile.pushNotifications.label')}
                     </Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                       {t('fixerProfile.pushNotifications.description')}
                     </Text>
                   </View>
@@ -538,22 +540,22 @@ export default function FixerProfileScreen() {
                     <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
                   </View>
                   <View>
-                    <Text style={styles.sectionKicker}>{t('fixerProfile.verification.kicker')}</Text>
-                    <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.verification.title')}</Text>
+                    <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.kicker')}</Text>
+                    <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.title')}</Text>
                   </View>
                 </View>
 
                 {profile?.verification_status === 'PENDING' ? (
                   <View style={styles.verificationBanner}>
                     <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
-                    <Text style={[typography.bodyMedium, { color: brandColors.warning }]}>{t('fixerProfile.verification.pending')}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.warning, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.pending')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
                       {t('fixerProfile.verification.pendingMsg')}
                     </Text>
                   </View>
                 ) : (
                   <>
-                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left' }]}>
                       {t('fixerProfile.verification.uploadMsg')}
                     </Text>
                     <FButton
@@ -577,7 +579,7 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
                   <Text style={[typography.caption, { color: brandColors.primary }]}>
@@ -623,7 +625,7 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('fixerProfile.portfolio.title')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.portfolio.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
                   <Text style={[typography.caption, { color: brandColors.primary }]}>

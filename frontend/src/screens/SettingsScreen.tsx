@@ -16,7 +16,7 @@ import { brandColors, radii, spacing, typography } from '../theme';
 export default function SettingsScreen() {
   const user = auth.currentUser;
   const { t } = useTranslation();
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, isRTL } = useLanguage();
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -104,9 +104,9 @@ export default function SettingsScreen() {
             <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondary} />
           </View>
           <View style={styles.heroText}>
-            <Text style={[typography.eyebrow, styles.heroEyebrow]}>{t('settings.hero.eyebrow')}</Text>
-            <Text style={[typography.h2, { color: brandColors.textOnDark }]}>{accountName}</Text>
-            <Text style={[typography.bodySm, styles.heroSub]}>{accountEmail}</Text>
+            <Text style={[typography.eyebrow, styles.heroEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('settings.hero.eyebrow')}</Text>
+            <Text style={[typography.h2, { color: brandColors.textOnDark, textAlign: isRTL ? 'right' : 'left' }]}>{accountName}</Text>
+            <Text style={[typography.bodySm, styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>{accountEmail}</Text>
           </View>
         </View>
         <View style={styles.heroMetaRow}>
@@ -157,7 +157,7 @@ export default function SettingsScreen() {
             loading={saving}
             disabled={saving || phone.trim().length === 0}
             size="sm"
-            style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}
+            style={{ alignSelf: isRTL ? 'flex-end' : 'flex-start', marginTop: spacing.sm }}
           >
             {t('common.save')}
           </FButton>
@@ -174,10 +174,10 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primaryMuted} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('settings.preferences.pushNotifications.label')}
               </Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('settings.preferences.pushNotifications.description')}
               </Text>
             </View>
@@ -199,15 +199,15 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="translate" size={18} color={brandColors.primaryMuted} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('settings.preferences.language.label')}
               </Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
                 {t('settings.preferences.language.description')}
               </Text>
             </View>
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+          <View style={{ gap: spacing.xs }}>
             <Pressable
               onPress={() => void changeLanguage('en')}
               style={[styles.langChip, language === 'en' && styles.langChipActive]}
@@ -230,21 +230,21 @@ export default function SettingsScreen() {
             <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
           </View>
           <View style={styles.rowText}>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
               {t('settings.preferences.changePassword.label')}
             </Text>
-            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+            <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
               {t('settings.preferences.changePassword.description')}
             </Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.textMuted} />
+          <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
         </Pressable>
       </FCard>
 
       {/* Danger Zone */}
       <FCard style={styles.sectionCard} shadow="sm">
         <SectionHeader icon="logout" label={t('settings.section.session')} />
-        <Text style={[typography.bodySm, styles.sessionCopy]}>
+        <Text style={[typography.bodySm, styles.sessionCopy, { textAlign: isRTL ? 'right' : 'left' }]}>
           {t('settings.session.copy')}
         </Text>
         <FButton
@@ -262,12 +262,13 @@ export default function SettingsScreen() {
 }
 
 function SectionHeader({ icon, label }: { icon: string; label: string }) {
+  const { isRTL } = useLanguage();
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeaderIcon}>
         <MaterialCommunityIcons name={icon as never} size={16} color={brandColors.primary} />
       </View>
-      <Text style={[typography.eyebrow, { color: brandColors.textMuted }]}>{label}</Text>
+      <Text style={[typography.eyebrow, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
     </View>
   );
 }
@@ -283,18 +284,19 @@ function SettingRow({
   value?: string;
   description?: string;
 }) {
+  const { isRTL } = useLanguage();
   return (
     <View style={styles.settingRow}>
       <View style={styles.settingIcon}>
         <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
       </View>
       <View style={styles.rowText}>
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{label}</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
         {value && (
-          <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2 }]}>{value}</Text>
+          <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
         )}
         {description && (
-          <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: 2 }]}>{description}</Text>
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}>{description}</Text>
         )}
       </View>
     </View>
