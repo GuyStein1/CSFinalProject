@@ -122,6 +122,7 @@ router.get('/conversations', async (req: Request, res: Response, next: NextFunct
           taskId: task.id,
           taskTitle: task.title,
           taskStatus: task.status,
+          userRole: task.requester_id === userId ? 'requester' : 'fixer',
           otherParty,
           lastMessage: lastMessage
             ? { content: lastMessage.content, timestamp: lastMessage.created_at }

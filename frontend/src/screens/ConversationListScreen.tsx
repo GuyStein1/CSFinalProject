@@ -20,6 +20,7 @@ export interface Conversation {
   taskId: string;
   taskTitle: string;
   taskStatus?: string;
+  userRole: 'requester' | 'fixer';
   otherParty: OtherParty | null;
   lastMessage: { content: string; timestamp: string } | null;
   unreadCount: number;
@@ -142,6 +143,9 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
               <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                 {item.taskTitle}
               </Text>
+              <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
+                <Text style={styles.rolePillText}>{t(`mode.${item.userRole}`)}</Text>
+              </View>
               <View style={styles.bottomRow}>
                 <Text
                   style={[
@@ -222,6 +226,19 @@ const styles = StyleSheet.create({
   badgeText: {
     color: brandColors.white,
     fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  rolePill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.sm,
+    marginTop: 2,
+  },
+  rolePillText: {
+    color: brandColors.white,
+    fontSize: 10,
     fontWeight: '700',
     lineHeight: 14,
   },

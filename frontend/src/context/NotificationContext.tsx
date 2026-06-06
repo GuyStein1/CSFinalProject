@@ -11,6 +11,7 @@ export interface AppNotification {
   type: string;
   related_entity_id: string | null;
   related_entity_type: string | null;
+  user_role: string | null;
   is_read: boolean;
   created_at: string;
   updated_at: string;
