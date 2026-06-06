@@ -87,17 +87,17 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             task.requester_id === authedSocket.userId ||
             task.assigned_fixer_id === authedSocket.userId;
 
-          const hasBid = isTaskMember
-            ? true
-            : !!(await prisma.bid.findFirst({
+          const activeBid = isTaskMember
+            ? null
+            : await prisma.bid.findFirst({
                 where: {
                   task_id: taskId,
                   fixer_id: authedSocket.userId,
                   status: { in: ['PENDING', 'ACCEPTED'] },
                 },
-              }));
+              });
 
-          if (!isTaskMember && !hasBid) return;
+          if (!isTaskMember && !activeBid) return;
 
           let recipientId: string | null;
           if (task.requester_id === authedSocket.userId) {

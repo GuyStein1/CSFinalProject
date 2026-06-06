@@ -72,25 +72,6 @@ export default function RequesterDashboard({ navigation }: Props) {
     navigation.navigate('CreateTask', category ? { category } : undefined);
   };
 
-  const quickActions = [
-    {
-      icon: 'plus-circle-outline',
-      title: t('dashboard.quickActions.postTask.title'),
-      copy: t('dashboard.quickActions.postTask.copy'),
-      action: () => navigateToCreate(),
-      tone: brandColors.secondary,
-      soft: brandColors.warningSoft,
-    },
-    {
-      icon: 'clipboard-list-outline',
-      title: t('dashboard.quickActions.myTasks.title'),
-      copy: t('dashboard.quickActions.myTasks.copy'),
-      action: () => navigation.navigate('MyTasks'),
-      tone: brandColors.primaryMuted,
-      soft: brandColors.infoSoft,
-    },
-  ];
-
   return (
     <ScrollView
       style={styles.root}
@@ -201,52 +182,6 @@ export default function RequesterDashboard({ navigation }: Props) {
             )}
           </View>
         )}
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.controls')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.controlsTitle')}</Text>
-            </View>
-            <Pressable
-              onPress={() => navigation.navigate('Profile')}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Open profile settings"
-              style={({ pressed }) => [styles.profileShortcut, { opacity: pressed ? 0.72 : 1 }]}
-            >
-              <MaterialCommunityIcons name="account-cog-outline" size={18} color={brandColors.primary} />
-            </Pressable>
-          </View>
-
-          <View style={[styles.quickGrid, wide && styles.quickGridWide]}>
-            {quickActions.map((action) => (
-              <Pressable
-                key={action.title}
-                onPress={action.action}
-                accessibilityRole="button"
-                accessibilityLabel={action.title}
-                style={({ pressed }) => [
-                  styles.quickTile,
-                  wide && styles.quickTileWide,
-                  {
-                    opacity: pressed ? 0.9 : 1,
-                    transform: [{ scale: pressed ? 0.985 : 1 }],
-                  },
-                ]}
-              >
-                <View style={[styles.quickIcon, { backgroundColor: action.soft }]}>
-                  <MaterialCommunityIcons name={action.icon as never} size={22} color={action.tone} />
-                </View>
-                <View style={styles.quickText}>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{action.title}</Text>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{action.copy}</Text>
-                </View>
-                <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
-              </Pressable>
-            ))}
-          </View>
-        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

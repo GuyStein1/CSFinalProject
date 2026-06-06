@@ -486,20 +486,17 @@ export default function LandingScreen({
           )}
 
           <View style={styles.navActions}>
-            <View style={styles.langSwitcher}>
-              {(['en', 'he'] as const).map((lang) => (
-                <Pressable
-                  key={lang}
-                  onPress={() => void changeLanguage(lang)}
-                  accessibilityRole="button"
-                  style={[styles.langToggle, language === lang && styles.langToggleActive]}
-                >
-                  <Text style={[styles.langToggleText, language === lang && styles.langToggleTextActive]}>
-                    {lang === 'en' ? 'EN' : 'עב'}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+              style={({ pressed }) => [styles.langBtn, pressed && { opacity: 0.82 }]}
+              onPress={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
+            >
+              <MaterialCommunityIcons name="web" size={20} color={brandColors.textSecondary} />
+              <Text style={styles.langBtnText}>
+                {language === 'en' ? 'EN' : 'עב'}
+              </Text>
+            </Pressable>
             {isSignedIn && wide ? (
               <View style={styles.navDashboardActions}>
                 {signedInDashboardItems.map((item, index) => (
@@ -907,29 +904,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  langSwitcher: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  langToggle: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
+  langBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brandColors.surfaceAlt,
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.22)',
+    borderColor: brandColors.outlineLight,
   },
-  langToggleActive: {
-    backgroundColor: 'rgba(255,252,246,0.18)',
-    borderColor: 'rgba(255,252,246,0.60)',
-  },
-  langToggleText: {
-    fontSize: 11,
+  langBtnText: {
+    fontSize: 10,
     fontWeight: '700' as const,
-    color: brandColors.textOnDarkMuted,
-    letterSpacing: 0.5,
-  },
-  langToggleTextActive: {
-    color: brandColors.textOnDark,
+    color: brandColors.textSecondary,
+    marginTop: -2,
+    lineHeight: 12,
   },
   navLogin: {
     paddingHorizontal: spacing.md,

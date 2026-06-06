@@ -766,11 +766,12 @@ router.post('/:id/reviews', validate(createReviewSchema), async (req: Request, r
     }
 
     // Enforce 14-day review window
-    if (task.completed_at) {
-      const daysSinceCompleted = (Date.now() - task.completed_at.getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceCompleted > 14) {
-        throw new ForbiddenError('Review window has expired (14 days after completion)');
-      }
+    if (!task.completed_at) {
+      throw new ValidationError('Task completion date is missing');
+    }
+    const daysSinceCompleted = (Date.now() - task.completed_at.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceCompleted > 14) {
+      throw new ForbiddenError('Review window has expired (14 days after completion)');
     }
 
     // Check for duplicate review

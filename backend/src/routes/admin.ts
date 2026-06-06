@@ -13,25 +13,34 @@ router.use(adminOnly);
 // GET /api/admin/flagged-reviews — list all flagged reviews with reports
 router.get(
   '/flagged-reviews',
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const reviews = await prisma.review.findMany({
-        where: { is_flagged: true, is_hidden: false },
-        include: {
-          reviewer: { select: { id: true, full_name: true, email: true } },
-          reviewee: { select: { id: true, full_name: true, email: true } },
-          task: { select: { id: true, title: true } },
-          reports: {
-            include: {
-              reporter: { select: { id: true, full_name: true } },
-            },
-            orderBy: { created_at: 'desc' },
-          },
-        },
-        orderBy: { created_at: 'desc' },
-      });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
 
-      res.json({ reviews });
+      const [reviews, total] = await Promise.all([
+        prisma.review.findMany({
+          where: { is_flagged: true, is_hidden: false },
+          include: {
+            reviewer: { select: { id: true, full_name: true, email: true } },
+            reviewee: { select: { id: true, full_name: true, email: true } },
+            task: { select: { id: true, title: true } },
+            reports: {
+              include: {
+                reporter: { select: { id: true, full_name: true } },
+              },
+              orderBy: { created_at: 'desc' },
+            },
+          },
+          orderBy: { created_at: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.review.count({ where: { is_flagged: true, is_hidden: false } }),
+      ]);
+
+      res.json({ reviews, total, page, limit });
     } catch (err) {
       next(err);
     }
@@ -93,21 +102,30 @@ router.post(
 // GET /api/admin/pending-verifications — list fixers awaiting verification
 router.get(
   '/pending-verifications',
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await prisma.user.findMany({
-        where: { verification_status: 'PENDING' },
-        select: {
-          id: true,
-          full_name: true,
-          email: true,
-          avatar_url: true,
-          verification_photo_url: true,
-          created_at: true,
-        },
-        orderBy: { updated_at: 'asc' },
-      });
-      res.json({ users });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          where: { verification_status: 'PENDING' },
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            avatar_url: true,
+            verification_photo_url: true,
+            created_at: true,
+          },
+          orderBy: { updated_at: 'asc' },
+          skip,
+          take: limit,
+        }),
+        prisma.user.count({ where: { verification_status: 'PENDING' } }),
+      ]);
+      res.json({ users, total, page, limit });
     } catch (err) {
       next(err);
     }

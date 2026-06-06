@@ -511,6 +511,38 @@ export default function MyBidsScreen() {
     }
   }, [editingBid, editPrice, editDescription, refetch]);
 
+  const handleDeleteAll = useCallback(() => {
+    const targetBids = bids.filter(
+      (b) => b.status === 'REJECTED' || b.status === 'WITHDRAWN',
+    );
+    if (targetBids.length === 0) return;
+
+    const doDeleteAll = async () => {
+      for (const b of targetBids) {
+        removeBidLocally(b.id);
+      }
+      try {
+        await Promise.all(targetBids.map((b) => api.delete(`/api/bids/${b.id}`)));
+      } catch {
+        refetch();
+      }
+    };
+
+    const title = t('myBids.actions.deleteAll.title');
+    const message = t('myBids.actions.deleteAll.message', { count: targetBids.length });
+    const confirmLabel = t('myBids.actions.deleteAll.confirm');
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm(`${title}\n\n${message}`)) void doDeleteAll();
+    } else {
+      Alert.alert(title, message, [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: confirmLabel, style: 'destructive', onPress: () => void doDeleteAll() },
+      ]);
+    }
+  }, [bids, removeBidLocally, refetch, t]);
+
   const handleBidPress = useCallback(
     (taskId: string) => {
       (navigation as { navigate: (screen: string, params: Record<string, unknown>) => void })
@@ -603,7 +635,18 @@ export default function MyBidsScreen() {
         <FlatList
           data={bids}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={activeTab === 'COMPLETED' ? (
+          ListHeaderComponent={(activeTab === 'REJECTED' || activeTab === 'WITHDRAWN') && bids.length > 0 ? (
+            <View style={styles.deleteAllRow}>
+              <FButton
+                variant="outline"
+                size="sm"
+                icon="delete-sweep-outline"
+                onPress={handleDeleteAll}
+              >
+                {t('myBids.actions.deleteAll.button')}
+              </FButton>
+            </View>
+          ) : activeTab === 'COMPLETED' ? (
             <View>
               {/* Year selector */}
               {availableYears.length > 0 && (
@@ -1038,6 +1081,12 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: brandColors.outlineLight,
+  },
+  deleteAllRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   bidRow: {
     flexDirection: 'row',
