@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { NavigationContainerRef } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native';
 import type { Category } from '../constants/categories';
 
 export type LandingIntent =
@@ -51,7 +52,7 @@ export type RootStackParamList = {
   Settings: undefined;
   PublicProfile: { userId?: string } | undefined;
   NotificationCenter: undefined;
-  BecomeFixerOnboarding: undefined;
+  BecomeFixerOnboarding: { returnScreen?: 'FindJobs' | 'MyBids' | 'FixerProfile' } | undefined;
   PastConversations: { mode?: string } | undefined;
   Chat: {
     taskId: string;
@@ -80,10 +81,7 @@ export function routeLandingIntent(navigation: LandingIntentNavigation, intent: 
       navigation.navigate('CreateTask', intent.category ? { category: intent.category } : undefined);
       break;
     case 'fixerWorkspace':
-      navigation.navigate('Main', {
-        screen: 'FixerMode',
-        params: { screen: 'FindJobs' },
-      });
+      navigation.navigate('BecomeFixerOnboarding', { returnScreen: 'FindJobs' });
       break;
     case 'requesterTasks':
       navigation.navigate('Main', {
@@ -92,16 +90,10 @@ export function routeLandingIntent(navigation: LandingIntentNavigation, intent: 
       });
       break;
     case 'fixerBids':
-      navigation.navigate('Main', {
-        screen: 'FixerMode',
-        params: { screen: 'MyBids' },
-      });
+      navigation.navigate('BecomeFixerOnboarding', { returnScreen: 'MyBids' });
       break;
     case 'fixerProfile':
-      navigation.navigate('Main', {
-        screen: 'FixerMode',
-        params: { screen: 'FixerProfile' },
-      });
+      navigation.navigate('BecomeFixerOnboarding', { returnScreen: 'FixerProfile' });
       break;
     case 'dashboard':
     default:
@@ -117,6 +109,36 @@ export function applyLandingIntent(
   navigation: NavigationContainerRef<RootStackParamList>,
   intent: LandingIntent,
 ) {
+  if (intent.kind === 'postTask') {
+    // Use reset so that Back from CreateTask always returns to Main (with tab bar),
+    // not to an uninitialized or unexpected screen.
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 1,
+        routes: [
+          { name: 'Main' },
+          { name: 'CreateTask', params: intent.category ? { category: intent.category } : undefined },
+        ],
+      }),
+    );
+    return;
+  }
+  if (intent.kind === 'fixerWorkspace' || intent.kind === 'fixerBids' || intent.kind === 'fixerProfile') {
+    const returnScreen =
+      intent.kind === 'fixerBids' ? 'MyBids'
+      : intent.kind === 'fixerProfile' ? 'FixerProfile'
+      : 'FindJobs';
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 1,
+        routes: [
+          { name: 'Main' },
+          { name: 'BecomeFixerOnboarding', params: { returnScreen } },
+        ],
+      }),
+    );
+    return;
+  }
   routeLandingIntent(
     {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -37,8 +37,8 @@ describe('routeLandingIntent', () => {
 
     expect(calls).toEqual([
       {
-        screen: 'Main',
-        params: { screen: 'FixerMode', params: { screen: 'MyBids' } },
+        screen: 'BecomeFixerOnboarding',
+        params: { returnScreen: 'MyBids' },
       },
     ]);
   });
