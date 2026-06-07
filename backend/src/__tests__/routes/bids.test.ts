@@ -284,6 +284,37 @@ describe('PUT /api/bids/:id/cancel-accepted', () => {
       .set('Authorization', FIXER_AUTH);
     expect(res.status).toBe(400);
   });
+
+  it('sends a notification to the requester when fixer cancels accepted bid', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    __setUid('test-uid');
+    await request(app).put(`/api/bids/${bid.id}/accept`).set('Authorization', REQUESTER_AUTH);
+
+    __setUid('fixer-uid');
+    await request(app)
+      .put(`/api/bids/${bid.id}/cancel-accepted`)
+      .set('Authorization', FIXER_AUTH);
+
+    const notifications = await prisma.notification.findMany({
+      where: { title: 'Fixer Canceled' },
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0].user_id).not.toBe(fixerId); // goes to requester, not fixer
+  });
+
+  it('returns 403 when requester tries to cancel-accepted', async () => {
+    await createOpenTask();
+    const bid = await fixerSubmitsBid();
+    __setUid('test-uid');
+    await request(app).put(`/api/bids/${bid.id}/accept`).set('Authorization', REQUESTER_AUTH);
+
+    // Requester shouldn't be able to use this endpoint
+    const res = await request(app)
+      .put(`/api/bids/${bid.id}/cancel-accepted`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(403);
+  });
 });
 
 // ── PUT /api/bids/:id/reactivate ──────────────────────────────────────────────

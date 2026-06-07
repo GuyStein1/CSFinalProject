@@ -885,3 +885,155 @@ describe('Task urgency', () => {
     expect(res.body.tasks.every((t: { urgency: string }) => t.urgency === 'TODAY')).toBe(true);
   });
 });
+
+// ── Confirm-completion race condition guard ─────────────────────────────────
+
+describe('PUT /api/tasks/:id/confirm-completion (race condition guard)', () => {
+  it('returns 409 if requester tries to double-confirm', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    // Confirm payment first
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // First confirm
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // Second confirm — should be 409
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', REQUESTER_AUTH);
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 409 if fixer tries to double-confirm', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    __setUid('fixer-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', FIXER_AUTH);
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', FIXER_AUTH);
+    expect(res.status).toBe(409);
+  });
+
+  it('sets fixer_completed_at timestamp when fixer confirms', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    __setUid('fixer-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', FIXER_AUTH);
+
+    const updated = await prisma.task.findUnique({ where: { id: task.id } });
+    expect(updated!.fixer_completed).toBe(true);
+    expect(updated!.fixer_completed_at).not.toBeNull();
+  });
+});
+
+// ── Cancellation sends notification ─────────────────────────────────────────
+
+describe('PUT /api/tasks/:id/status — cancel notifications', () => {
+  it('canceling an IN_PROGRESS task creates a notification for the fixer', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+
+    const notifications = await prisma.notification.findMany({
+      where: { title: 'Task Canceled' },
+    });
+    expect(notifications.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('cannot cancel an IN_PROGRESS task after payment is confirmed', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    const res = await request(app)
+      .put(`/api/tasks/${task.id}/status`)
+      .set('Authorization', REQUESTER_AUTH)
+      .send({ status: 'CANCELED' });
+    expect(res.status).toBe(400);
+  });
+});
+
+// ── Review nudge on completion ──────────────────────────────────────────────
+
+describe('PUT /api/tasks/:id/confirm-completion — review nudge', () => {
+  it('sends a review nudge notification when task is completed', async () => {
+    const task = await createTask();
+    await acceptBid(task.id);
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+    await completeTaskFull(task.id);
+
+    const nudges = await prisma.notification.findMany({
+      where: { title: 'Leave a Review' },
+    });
+    expect(nudges.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not send review nudge if review already exists', async () => {
+    const task = await createTask();
+    const bidId = await acceptBid(task.id);
+
+    // Get the fixer user ID
+    const bid = await prisma.bid.findUnique({ where: { id: bidId } });
+
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-payment`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // Requester confirms first
+    __setUid('test-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', REQUESTER_AUTH);
+
+    // Create a review before fixer confirms
+    const requester = await prisma.user.findFirst({ where: { firebase_uid: 'test-uid' } });
+    await prisma.review.create({
+      data: {
+        task_id: task.id,
+        reviewer_id: requester!.id,
+        reviewee_id: bid!.fixer_id,
+        rating: 5,
+      },
+    });
+
+    // Fixer confirms — completes the task
+    __setUid('fixer-uid');
+    await request(app)
+      .put(`/api/tasks/${task.id}/confirm-completion`)
+      .set('Authorization', FIXER_AUTH);
+
+    const nudges = await prisma.notification.findMany({
+      where: { title: 'Leave a Review' },
+    });
+    expect(nudges).toHaveLength(0);
+  });
+});

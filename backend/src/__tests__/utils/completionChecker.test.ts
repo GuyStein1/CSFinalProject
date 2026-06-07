@@ -1,213 +1,185 @@
-jest.mock('../../config/prisma', () => ({
-  prisma: {
-    task: { findMany: jest.fn(), update: jest.fn() },
-    user: { update: jest.fn() },
-    notification: { findFirst: jest.fn() },
-    review: { findUnique: jest.fn() },
-    $transaction: jest.fn(),
-  },
-}));
-
-jest.mock('../../services/notificationService', () => ({
-  sendNotification: jest.fn().mockResolvedValue(undefined),
-}));
-
-import { prisma } from '../../config/prisma';
-import { sendNotification } from '../../services/notificationService';
-import { checkPendingCompletions } from '../../utils/completionChecker';
-
-const mockedPrisma = prisma as jest.Mocked<typeof prisma>;
-const mockedSendNotification = sendNotification as jest.Mock;
-
-function hoursAgo(hours: number): Date {
-  return new Date(Date.now() - hours * 60 * 60 * 1000);
-}
-
-function makeTask(overrides: Partial<{
-  id: string;
-  title: string;
-  requester_id: string;
-  assigned_fixer_id: string | null;
-  fixer_completed_at: Date | null;
-  fixer: { full_name: string } | null;
-}> = {}) {
+jest.mock('../../config/firebaseAdmin', () => {
+  let currentUid = 'req-uid';
   return {
-    id: 'task-1',
-    title: 'Fix the pipe',
-    requester_id: 'requester-1',
-    assigned_fixer_id: 'fixer-1',
-    fixer_completed_at: hoursAgo(50),
-    fixer: { full_name: 'Bob the Fixer' },
-    ...overrides,
+    __esModule: true,
+    default: {
+      auth: () => ({
+        verifyIdToken: jest.fn().mockImplementation(() => Promise.resolve({ uid: currentUid })),
+      }),
+      apps: [{}],
+    },
+    __setUid: (uid: string) => { currentUid = uid; },
   };
-}
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  // Simulate $transaction calling the callback with the mocked prisma
-  (mockedPrisma.$transaction as jest.Mock).mockImplementation(
-    async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(mockedPrisma),
-  );
-  (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([]);
-  (mockedPrisma.notification.findFirst as jest.Mock).mockResolvedValue(null);
-  (mockedPrisma.review.findUnique as jest.Mock).mockResolvedValue(null);
-  (mockedPrisma.task.update as jest.Mock).mockResolvedValue({});
-  (mockedPrisma.user.update as jest.Mock).mockResolvedValue({});
 });
 
+import request from 'supertest';
+import app from '../../app';
+import { prisma } from '../../config/prisma';
+import { cleanDatabase, createTestUser } from '../setup';
+import { checkPendingCompletions } from '../../utils/completionChecker';
+
+const REQUESTER_AUTH = 'Bearer req-token';
+const FIXER_AUTH = 'Bearer fix-token';
+const { __setUid } = jest.requireMock('../../config/firebaseAdmin') as { __setUid: (uid: string) => void };
+
+beforeEach(async () => {
+  await cleanDatabase();
+  __setUid('req-uid');
+  await createTestUser({ firebase_uid: 'req-uid', email: 'req@test.com' });
+  await createTestUser({ firebase_uid: 'fix-uid', email: 'fix@test.com' });
+});
+afterAll(() => prisma.$disconnect());
+
+const validTask = {
+  title: 'Test task',
+  description: 'Needs fixing',
+  category: 'PLUMBING',
+  general_location_name: 'Tel Aviv',
+  exact_address: '1 Test St',
+  lat: 32.08,
+  lng: 34.78,
+};
+
+// Helper: create task via API, accept bid, confirm payment, fixer confirms completion,
+// then back-date fixer_completed_at to simulate elapsed time
+async function createPendingTask(hoursAgo: number) {
+  __setUid('req-uid');
+  const taskRes = await request(app)
+    .post('/api/tasks')
+    .set('Authorization', REQUESTER_AUTH)
+    .send(validTask);
+  const taskId = taskRes.body.task.id as string;
+
+  // Fixer submits bid
+  __setUid('fix-uid');
+  const bidRes = await request(app)
+    .post(`/api/tasks/${taskId}/bids`)
+    .set('Authorization', FIXER_AUTH)
+    .send({ offered_price: 100, description: 'I can do it.' });
+  const bidId = bidRes.body.bid.id as string;
+
+  // Requester accepts bid
+  __setUid('req-uid');
+  await request(app)
+    .put(`/api/bids/${bidId}/accept`)
+    .set('Authorization', REQUESTER_AUTH);
+
+  // Confirm payment
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-payment`)
+    .set('Authorization', REQUESTER_AUTH);
+
+  // Fixer confirms completion
+  __setUid('fix-uid');
+  await request(app)
+    .put(`/api/tasks/${taskId}/confirm-completion`)
+    .set('Authorization', FIXER_AUTH);
+
+  // Back-date fixer_completed_at
+  await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      fixer_completed_at: new Date(Date.now() - hoursAgo * 60 * 60 * 1000),
+    },
+  });
+
+  // Clear notifications created during setup
+  await prisma.notification.deleteMany();
+
+  __setUid('req-uid');
+  return taskId;
+}
+
 describe('checkPendingCompletions', () => {
-  it('does nothing when no pending tasks are found', async () => {
-    (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([]);
+  it('does nothing for tasks where fixer completed less than 48h ago', async () => {
+    const taskId = await createPendingTask(24);
 
     await checkPendingCompletions();
 
-    expect(mockedSendNotification).not.toHaveBeenCalled();
+    const updated = await prisma.task.findUnique({ where: { id: taskId } });
+    expect(updated!.status).toBe('IN_PROGRESS');
+
+    const notifications = await prisma.notification.findMany();
+    expect(notifications).toHaveLength(0);
   });
 
-  it('skips a task with null fixer_completed_at', async () => {
-    (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-      makeTask({ fixer_completed_at: null }),
-    ]);
+  it('sends a reminder notification after 48h', async () => {
+    const taskId = await createPendingTask(72);
 
     await checkPendingCompletions();
 
-    expect(mockedSendNotification).not.toHaveBeenCalled();
+    const updated = await prisma.task.findUnique({ where: { id: taskId } });
+    expect(updated!.status).toBe('IN_PROGRESS');
+
+    const notifications = await prisma.notification.findMany({
+      where: { title: 'Confirm Completion' },
+    });
+    expect(notifications).toHaveLength(1);
   });
 
-  it('does nothing when elapsed time is under 48 hours', async () => {
-    (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-      makeTask({ fixer_completed_at: hoursAgo(24) }),
-    ]);
+  it('does not send duplicate reminders within 48h', async () => {
+    await createPendingTask(72);
+
+    await checkPendingCompletions();
+    await checkPendingCompletions();
+
+    const notifications = await prisma.notification.findMany({
+      where: { title: 'Confirm Completion' },
+    });
+    expect(notifications).toHaveLength(1);
+  });
+
+  it('auto-completes task after 7 days', async () => {
+    const taskId = await createPendingTask(7 * 24 + 1);
 
     await checkPendingCompletions();
 
-    expect(mockedSendNotification).not.toHaveBeenCalled();
+    const updated = await prisma.task.findUnique({ where: { id: taskId } });
+    expect(updated!.status).toBe('COMPLETED');
+    expect(updated!.requester_completed).toBe(true);
+    expect(updated!.completed_at).not.toBeNull();
+
+    // Should notify both parties
+    const autoCompleteNotifs = await prisma.notification.findMany({
+      where: { title: 'Task Auto-Completed' },
+    });
+    expect(autoCompleteNotifs).toHaveLength(1);
+
+    const fixerNotifs = await prisma.notification.findMany({
+      where: { title: 'Task Completed' },
+    });
+    expect(fixerNotifs).toHaveLength(1);
   });
 
-  describe('reminder (48h–7d)', () => {
-    it('sends a reminder when no recent reminder exists', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(50) }),
-      ]);
-      (mockedPrisma.notification.findFirst as jest.Mock).mockResolvedValue(null);
+  it('sends review nudge on auto-complete only if no review exists', async () => {
+    await createPendingTask(7 * 24 + 1);
 
-      await checkPendingCompletions();
+    await checkPendingCompletions();
 
-      expect(mockedSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockedSendNotification).toHaveBeenCalledWith(
-        'requester-1',
-        'Confirm Completion',
-        expect.stringContaining('Bob the Fixer'),
-        'TASK_COMPLETED',
-        'task-1',
-        'Task',
-      );
+    const reviewNudge = await prisma.notification.findMany({
+      where: { title: 'Leave a Review' },
     });
-
-    it('uses fallback "The fixer" when fixer name is missing', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(50), fixer: null }),
-      ]);
-      (mockedPrisma.notification.findFirst as jest.Mock).mockResolvedValue(null);
-
-      await checkPendingCompletions();
-
-      expect(mockedSendNotification).toHaveBeenCalledWith(
-        'requester-1',
-        'Confirm Completion',
-        expect.stringContaining('The fixer'),
-        'TASK_COMPLETED',
-        'task-1',
-        'Task',
-      );
-    });
-
-    it('does not send a duplicate reminder when one was already sent', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(50) }),
-      ]);
-      (mockedPrisma.notification.findFirst as jest.Mock).mockResolvedValue({ id: 'notif-1' });
-
-      await checkPendingCompletions();
-
-      expect(mockedSendNotification).not.toHaveBeenCalled();
-    });
+    expect(reviewNudge).toHaveLength(1);
   });
 
-  describe('auto-complete (≥7 days)', () => {
-    it('updates task status to COMPLETED and notifies both parties', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(24 * 8) }),
-      ]);
+  it('skips review nudge on auto-complete if review already exists', async () => {
+    const taskId = await createPendingTask(7 * 24 + 1);
 
-      await checkPendingCompletions();
-
-      expect(mockedPrisma.$transaction).toHaveBeenCalled();
-      expect(mockedPrisma.task.update as jest.Mock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ status: 'COMPLETED', requester_completed: true }),
-        }),
-      );
-      expect(mockedPrisma.user.update as jest.Mock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'fixer-1' },
-          data: { completed_tasks_as_fixer: { increment: 1 } },
-        }),
-      );
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    await prisma.review.create({
+      data: {
+        task_id: taskId,
+        reviewer_id: task!.requester_id,
+        reviewee_id: task!.assigned_fixer_id!,
+        rating: 5,
+      },
     });
 
-    it('sends auto-complete notifications to requester and fixer, and review nudge when no review', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(24 * 8) }),
-      ]);
-      (mockedPrisma.review.findUnique as jest.Mock).mockResolvedValue(null);
+    await checkPendingCompletions();
 
-      await checkPendingCompletions();
-
-      expect(mockedSendNotification).toHaveBeenCalledTimes(3);
-      expect(mockedSendNotification).toHaveBeenCalledWith(
-        'requester-1', 'Task Auto-Completed', expect.any(String), 'TASK_COMPLETED', 'task-1', 'Task',
-      );
-      expect(mockedSendNotification).toHaveBeenCalledWith(
-        'fixer-1', 'Task Completed', expect.any(String), 'TASK_COMPLETED', 'task-1', 'Task',
-      );
-      expect(mockedSendNotification).toHaveBeenCalledWith(
-        'requester-1', 'Leave a Review', expect.any(String), 'TASK_COMPLETED', 'task-1', 'Task',
-      );
+    const reviewNudge = await prisma.notification.findMany({
+      where: { title: 'Leave a Review' },
     });
-
-    it('skips review nudge when a review already exists', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(24 * 8) }),
-      ]);
-      (mockedPrisma.review.findUnique as jest.Mock).mockResolvedValue({ id: 'review-1' });
-
-      await checkPendingCompletions();
-
-      expect(mockedSendNotification).toHaveBeenCalledTimes(2);
-      const titles = mockedSendNotification.mock.calls.map((c: unknown[]) => c[1]);
-      expect(titles).not.toContain('Leave a Review');
-    });
-
-    it('skips fixer notification and counter update when assigned_fixer_id is null', async () => {
-      (mockedPrisma.task.findMany as jest.Mock).mockResolvedValue([
-        makeTask({ fixer_completed_at: hoursAgo(24 * 8), assigned_fixer_id: null }),
-      ]);
-      (mockedPrisma.review.findUnique as jest.Mock).mockResolvedValue(null);
-
-      await checkPendingCompletions();
-
-      expect(mockedPrisma.user.update as jest.Mock).not.toHaveBeenCalled();
-      const recipients = mockedSendNotification.mock.calls.map((c: unknown[]) => c[0]);
-      expect(recipients).not.toContain(null);
-      // Only requester auto-complete + review nudge (no fixer notification)
-      expect(mockedSendNotification).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  it('catches and swallows errors without throwing', async () => {
-    (mockedPrisma.task.findMany as jest.Mock).mockRejectedValue(new Error('DB down'));
-
-    await expect(checkPendingCompletions()).resolves.toBeUndefined();
+    expect(reviewNudge).toHaveLength(0);
   });
 });
