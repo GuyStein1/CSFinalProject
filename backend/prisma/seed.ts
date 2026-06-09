@@ -1,59 +1,56 @@
 import { PrismaClient, Category, BidStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-if (process.env.NODE_ENV === 'production' && !process.env.FORCE_SEED) {
-  throw new Error('Seed script cannot run in production. Set FORCE_SEED=true to override.');
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Seed script cannot run in production');
 }
 
 const prisma = new PrismaClient();
 
 // Test users — Firebase accounts created with password: guyguyguy
-// Indices 0-2 are requesters, 3-5 are fixers
-// Index 0 = presentation REQUESTER (guy@example.com) — gets tasks at i%3==0
-// Index 3 = presentation FIXER (fixer@example.com) — gets accepted bids on requester's tasks
 const users = [
   // Requesters (indices 0–2)
   {
-    firebase_uid: 'sUegu2QaPlVsiYlUdvcK0LuJWOf1', // guy@example.com — presentation requester
-    full_name: 'דן לוי',
-    email: 'guy@example.com',
-    phone_number: '0505555555',
-    specializations: [] as Category[],
-  },
-  {
-    firebase_uid: 'kPGmjrkSPeh1AOFm6w1zGjnTtph1',
-    full_name: 'נטע ביבס',
+    firebase_uid: 'KHrDwz3JbtYKa8G1xOg0PasvAnM2',
+    full_name: 'Neta Bivas',
     email: 'neta@example.com',
     phone_number: '0501111111',
     specializations: [] as Category[],
   },
   {
+    firebase_uid: 'kPGmjrkSPeh1AOFm6w1zGjnTtph1',
+    full_name: 'Guy Stein',
+    email: 'stein@example.com',
+    phone_number: '0502222222',
+    specializations: [] as Category[],
+  },
+  {
     firebase_uid: '9zZC1yHuOwOHhe1HmkcY87FzcRy2',
-    full_name: 'גיא זילברשטיין',
+    full_name: 'Guy Zilberstein',
     email: 'zilber@example.com',
     phone_number: '0503333333',
     specializations: [] as Category[],
   },
   // Fixers (indices 3–5)
   {
-    firebase_uid: 'lyWZGKmsdzNKvKovR3sGXy6CNX32', // fixer@example.com — presentation fixer
-    full_name: 'יוסי ממן',
-    email: 'fixer@example.com',
-    phone_number: '0504444444',
-    specializations: [Category.ASSEMBLY, Category.MOUNTING, Category.ELECTRICITY, Category.PLUMBING],
-  },
-  {
     firebase_uid: 'IOc5riuFpOYEx0vJXljsPy8SdTP2',
-    full_name: 'גיא שיק',
+    full_name: 'Guy Shick',
     email: 'shick@example.com',
-    phone_number: '0506666666',
+    phone_number: '0504444444',
     specializations: [Category.ELECTRICITY, Category.PLUMBING],
   },
   {
+    firebase_uid: 'sUegu2QaPlVsiYlUdvcK0LuJWOf1',
+    full_name: 'Guy Toledo',
+    email: 'guy@example.com',
+    phone_number: '0505555555',
+    specializations: [Category.ASSEMBLY, Category.PAINTING],
+  },
+  {
     firebase_uid: 'N2g4806EevaLyi3qkEtExowPgck2',
-    full_name: 'אבי רון',
+    full_name: 'Avi Ron',
     email: 'avi@example.com',
-    phone_number: '0507777777',
+    phone_number: '0506666666',
     specializations: [Category.MOVING, Category.CLEANING],
   },
   // Admin
