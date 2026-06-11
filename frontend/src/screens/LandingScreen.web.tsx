@@ -52,7 +52,7 @@ const LANDING_CSS = `
 }
 
 * { box-sizing: border-box; }
-#fixit-landing { overflow-x: hidden; background: var(--background); color: var(--text-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+#fixit-landing { overflow-x: hidden; background: linear-gradient(180deg, #FFFDF8 0%, #F5F1E8 40%, #F3EEE2 75%, #FAF7F0 100%); color: var(--text-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
 #fixit-landing ::selection { background: var(--secondary); color: var(--primary-dark); }
 .fi-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex: none; }
 .fi-inline-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
@@ -139,6 +139,7 @@ const LANDING_CSS = `
 .fi-hero {
   position: relative; min-height: 100vh; padding: 140px 48px 80px;
   display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; overflow: hidden;
+  background: linear-gradient(135deg, #FDF6E3 0%, #F8F2E3 45%, #EFF3F8 100%);
 }
 .fi-hero-mark { position: absolute; right: min(8vw, 120px); bottom: 40px; width: min(42vw, 520px); height: min(42vw, 520px); object-fit: contain; opacity: 0.055; pointer-events: none; z-index: 0; }
 .fi-hero-bg {
@@ -330,11 +331,13 @@ const LANDING_CSS = `
 @media (max-width: 960px) { .fi-proof { padding: 40px 20px; } .fi-proof-inner { grid-template-columns: repeat(2,1fr); gap: 16px; } .fi-stat { border-right: none; } .fi-stat .num { font-size: 40px; } }
 
 /* ── How it works ────────────────────────────────────── */
-.fi-how { padding: 140px 48px; }
+.fi-how { padding: 140px 48px; background: linear-gradient(180deg, #FFFDF8 0%, #F7F3EA 100%); }
 .fi-how-inner { max-width: 1200px; margin: 0 auto; }
 .sec-eyebrow { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--secondary-dark); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 16px; }
 .sec-title { font-family: var(--font-display); font-size: clamp(36px,5vw,64px); font-weight: 800; letter-spacing: 0; line-height: 1.05; color: var(--primary); margin: 0 0 24px; max-width: 800px; }
 .sec-sub { font-size: 18px; color: var(--text-secondary); max-width: 600px; line-height: 1.5; margin: 0 0 64px; }
+.fi-how .sec-title { white-space: nowrap; font-size: clamp(28px, 4vw, 56px); max-width: none; }
+@media (max-width: 700px) { .fi-how .sec-title { white-space: normal; } }
 .fi-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
 .fi-step { position: relative; background: var(--surface); border-radius: 24px; padding: 36px 32px; border: 1px solid var(--outline-light); overflow: hidden; transition: transform 350ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 350ms, border-color 350ms; }
 .fi-step:hover { transform: translateY(-8px); box-shadow: 0 28px 60px -16px rgba(28,60,86,0.18); border-color: var(--secondary); }
@@ -350,7 +353,7 @@ const LANDING_CSS = `
 @media (max-width: 960px) { .fi-how { padding: 80px 20px; } .fi-steps { grid-template-columns: 1fr; } }
 
 /* ── Categories ──────────────────────────────────────── */
-.fi-cats { padding: 80px 48px 140px; }
+.fi-cats { padding: 80px 48px 140px; background: linear-gradient(180deg, #F3EFE5 0%, #FAF7F0 100%); }
 .fi-cats-inner { max-width: 1200px; margin: 0 auto; }
 .fi-cats-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 48px; }
 .fi-cats-copy { max-width: 420px; margin: 0; color: var(--text-secondary); font-size: 16px; line-height: 1.5; }
@@ -406,31 +409,108 @@ const LANDING_CSS = `
   .fi-hero-mark { width: 360px; height: 360px; right: -120px; bottom: auto; top: 90px; opacity: 0.04; }
 }
 
-/* ── Dual CTA (Fixers) ───────────────────────────────── */
-.fi-dual { padding: 0 48px 140px; }
-.fi-dual-inner { max-width: 1200px; margin: 0 auto; background: var(--primary); border-radius: 32px; padding: 80px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: center; position: relative; overflow: hidden; }
-.fi-dual-inner::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, var(--secondary) 0%, transparent 70%); opacity: 0.3; }
-.fi-dual-inner::after { content: ''; position: absolute; bottom: -200px; left: -100px; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%); opacity: 0.5; }
-.fi-dual-text { position: relative; z-index: 2; color: var(--text-on-dark); }
-.fi-dual-text h2 { font-family: var(--font-display); font-size: clamp(36px,4.5vw,56px); font-weight: 800; letter-spacing: 0; line-height: 1.05; margin: 0 0 20px; color: var(--text-on-dark); }
-.fi-dual-text p { color: rgba(255,252,246,0.88); font-size: 17px; line-height: 1.55; max-width: 480px; margin: 0 0 36px; }
-.fi-dual-actions { display: flex; gap: 14px; flex-wrap: wrap; }
-.btn-dual { display: inline-flex; align-items: center; gap: 10px; padding: 16px 28px; border-radius: 999px; font-family: var(--font-display); font-weight: 700; font-size: 15px; border: none; cursor: pointer; text-decoration: none; transition: transform 250ms cubic-bezier(0.34,1.56,0.64,1); }
-.btn-dual.amber { background: var(--secondary); color: var(--primary-dark); }
-.btn-dual.outline { background: transparent; color: var(--text-on-dark); border: 1.5px solid rgba(255,252,246,0.35); }
-.btn-dual.outline:hover { background: rgba(255,252,246,0.1); border-color: rgba(255,252,246,0.6); }
-.btn-dual:hover { transform: translateY(-3px); }
-.fi-dual-visual { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.fi-tile { background: rgba(255,252,246,0.06); border: 1px solid rgba(255,252,246,0.1); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px; transition: background 300ms, transform 300ms; }
-.fi-tile:hover { background: rgba(255,252,246,0.12); transform: translateY(-4px); }
-.fi-tile .glyph { width: 40px; height: 40px; border-radius: 10px; background: var(--secondary); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.fi-tile h4 { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-on-dark); margin: 0; }
-.fi-tile p { font-size: 13px; color: rgba(255,252,246,0.7); margin: 0; line-height: 1.5; }
-@media (max-width: 960px) { .fi-dual { padding: 0 20px 80px; } .fi-dual-inner { padding: 40px; grid-template-columns: 1fr; gap: 40px; } }
+/* ── Fixer strip + dual button ───────────────────────── */
+.btn-dual { display: inline-flex; align-items: center; gap: 10px; padding: 16px 28px; border-radius: 999px; font-family: var(--font-display); font-weight: 700; font-size: 15px; border: none; cursor: pointer; text-decoration: none; transition: transform 250ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 250ms; }
+.btn-dual.amber { background: linear-gradient(120deg, var(--secondary-light) 0%, var(--secondary) 45%, var(--secondary-dark) 100%); color: var(--primary-dark); box-shadow: 0 10px 26px -10px rgba(241,181,69,0.65); }
+.btn-dual:hover { transform: translateY(-3px); box-shadow: 0 16px 34px -12px rgba(241,181,69,0.75); }
+.fi-fixer-strip-wrap { padding: 0 48px 120px; }
+.fi-fixer-strip {
+  max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
+  background: linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%);
+  border: 1px solid rgba(241,181,69,0.35); border-radius: 28px; padding: 34px 40px;
+  box-shadow: 0 30px 70px -34px rgba(15,36,56,0.65);
+  transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 300ms;
+}
+.fi-fixer-strip:hover { transform: translateY(-4px); box-shadow: 0 38px 80px -34px rgba(15,36,56,0.75); }
+.fi-fixer-strip::before { content: ''; position: absolute; top: -140px; right: -90px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, var(--secondary) 0%, transparent 70%); opacity: 0.32; pointer-events: none; }
+.fi-fixer-strip::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255,252,246,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,252,246,0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 90% at 30% 50%, black 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse 75% 90% at 30% 50%, black 25%, transparent 80%);
+}
+.fi-fixer-strip-glyph {
+  position: relative; z-index: 1; flex: none; width: 62px; height: 62px; border-radius: 20px;
+  background: linear-gradient(150deg, var(--secondary-light), var(--secondary-dark)); color: var(--primary-dark);
+  display: flex; align-items: center; justify-content: center; transform: rotate(-5deg);
+  box-shadow: 0 14px 30px -12px rgba(241,181,69,0.8), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.fi-fixer-strip:hover .fi-fixer-strip-glyph { transform: rotate(3deg) scale(1.08); }
+.fi-fixer-strip-copy { position: relative; z-index: 1; flex: 1 1 300px; }
+.fi-fixer-strip-eyebrow { display: block; font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--secondary); margin-bottom: 6px; }
+.fi-fixer-strip-text { margin: 0; color: var(--text-on-dark); font-family: var(--font-display); font-size: clamp(19px, 2vw, 24px); font-weight: 800; line-height: 1.3; }
+.fi-fixer-strip-sub { margin: 6px 0 0; color: var(--text-on-dark-muted); font-size: 14px; line-height: 1.5; }
+.fi-fixer-strip-btn {
+  position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; flex: none; overflow: hidden;
+  background: linear-gradient(120deg, var(--secondary-light) 0%, var(--secondary) 45%, var(--secondary-dark) 100%);
+  color: var(--primary-dark); font-family: var(--font-display); font-weight: 800; font-size: 15px;
+  padding: 15px 26px; border-radius: 999px; border: none; cursor: pointer;
+  box-shadow: 0 12px 28px -12px rgba(241,181,69,0.7), inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: transform 220ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 220ms;
+}
+.fi-fixer-strip-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent); transition: left 600ms cubic-bezier(0.65,0,0.35,1); }
+.fi-fixer-strip-btn:hover::before { left: 100%; }
+.fi-fixer-strip-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -12px rgba(241,181,69,0.85), inset 0 1px 0 rgba(255,255,255,0.4); }
+.fi-fixer-strip-btn .arr { transition: transform 220ms; }
+.fi-fixer-strip-btn:hover .arr { transform: translateX(4px); }
+@media (max-width: 960px) { .fi-fixer-strip-wrap { padding: 0 20px 80px; } .fi-fixer-strip { padding: 26px 24px; gap: 18px; } }
+
+/* ── Sub-pages (FAQ, About, For Fixers, …) ───────────── */
+.sp-hero { position: relative; overflow: hidden; text-align: center; padding: clamp(72px,10vw,124px) 24px clamp(52px,8vw,84px); }
+.sp-hero-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(28,60,86,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(28,60,86,0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%);
+}
+.sp-blob { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.sp-hero-icon {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 80px; height: 80px; border-radius: 24px; margin-bottom: 26px; transform: rotate(-4deg);
+  background: linear-gradient(155deg, #ffffff 0%, #fdf4dd 100%);
+  border: 1px solid rgba(241,181,69,0.5);
+  box-shadow: 0 20px 44px -18px rgba(28,60,86,0.4), inset 0 1px 0 rgba(255,255,255,0.8);
+  opacity: 0; animation: rise 700ms cubic-bezier(0.16,1,0.3,1) forwards;
+}
+.sp-hero h1 { position: relative; font-family: var(--font-display); font-size: clamp(34px,5vw,56px); font-weight: 800; color: var(--primary); margin: 0 0 16px; line-height: 1.08; opacity: 0; animation: rise 800ms cubic-bezier(0.16,1,0.3,1) 150ms forwards; }
+.sp-hero p { position: relative; font-size: clamp(16px,2vw,19px); color: var(--text-secondary); line-height: 1.6; max-width: 580px; margin: 0 auto; opacity: 0; animation: rise 800ms cubic-bezier(0.16,1,0.3,1) 300ms forwards; }
+.sp-section { padding: clamp(44px,6vw,84px) 24px; background: linear-gradient(180deg, #fffdf8 0%, #f7f3ea 100%); }
+.sp-section.alt { background: linear-gradient(180deg, #f3efe5 0%, #faf7f0 100%); }
+.sp-inner { max-width: 940px; margin: 0 auto; }
+.sp-card {
+  position: relative; height: 100%; box-sizing: border-box;
+  background: linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%);
+  border: 1px solid rgba(28,60,86,0.1); border-radius: 26px 26px 26px 8px;
+  padding: clamp(22px,3vw,32px);
+  box-shadow: 0 22px 48px -30px rgba(28,60,86,0.4);
+  transition: transform 320ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 320ms, border-color 320ms;
+}
+.sp-card:hover { transform: translateY(-6px); border-color: rgba(241,181,69,0.6); box-shadow: 0 32px 64px -32px rgba(28,60,86,0.5); }
+.sp-card-icon { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); transition: transform 320ms cubic-bezier(0.34,1.56,0.64,1); }
+.sp-card:hover .sp-card-icon { transform: rotate(-6deg) scale(1.1); }
+.sp-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--primary); margin: 0 0 10px; }
+.sp-card p { font-size: 14.5px; line-height: 1.7; color: var(--text-secondary); margin: 0; }
+.sp-sec-head { text-align: center; margin-bottom: 44px; }
+.sp-sec-eyebrow { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--secondary-dark); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
+.sp-sec-title { font-family: var(--font-display); font-size: clamp(26px,4vw,40px); font-weight: 800; color: var(--primary); margin: 0; line-height: 1.12; }
+.sp-back-btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(28,60,86,0.12); border-radius: 999px; padding: 11px 20px;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--primary);
+  box-shadow: 0 6px 24px rgba(15,36,56,0.14);
+  transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms, border-color 200ms;
+}
+.sp-back-btn:hover { transform: translateY(-2px); border-color: rgba(241,181,69,0.7); box-shadow: 0 10px 30px rgba(15,36,56,0.2); }
 
 /* ── Footer ──────────────────────────────────────────── */
-.fi-footer { padding: 60px 48px 32px; border-top: 1px solid var(--outline-light); background: var(--surface); }
-.fi-footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; }
+/* Extra bottom padding keeps the floating accessibility widget from covering the copyright line */
+.fi-footer { padding: 60px 48px 96px; border-top: 1px solid var(--outline-light); background: var(--surface); }
+.fi-footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 48px; }
 .fi-footer .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-family: var(--font-display); font-weight: 800; font-size: 24px; color: var(--primary); letter-spacing: 0; }
 .fi-footer .logo img { width: 36px; height: 36px; object-fit: contain; }
 .fi-footer .tag { font-size: 14px; color: var(--text-muted); max-width: 280px; line-height: 1.5; }
@@ -440,10 +520,10 @@ const LANDING_CSS = `
 .fi-footer ul span { font-size: 14px; color: var(--text-secondary); text-decoration: none; transition: color 200ms; }
 .fi-footer ul a:hover { color: var(--primary); }
 .fi-footer-bottom { max-width: 1200px; margin: 48px auto 0; padding-top: 24px; border-top: 1px solid var(--outline-light); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
-@media (max-width: 960px) { .fi-footer { padding: 40px 20px 24px; } .fi-footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; } }
+@media (max-width: 960px) { .fi-footer { padding: 40px 20px 96px; } .fi-footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; } }
 @media (max-width: 520px) {
   .fi-hero-title { font-size: clamp(42px, 18vw, 64px); letter-spacing: 0; }
-  .fi-hero-actions, .fi-dual-actions { align-items: stretch; }
+  .fi-hero-actions { align-items: stretch; }
   .btn-hero, .btn-dual { width: 100%; justify-content: center; }
   .fi-proof-inner { grid-template-columns: 1fr; }
   .fi-cats-grid { grid-template-columns: 1fr; grid-auto-rows: minmax(190px, auto); }
@@ -451,8 +531,8 @@ const LANDING_CSS = `
   .fi-cat.active .body { top: 76px; padding-right: 18px; }
   .fi-cat-expanded { left: 14px; right: 14px; bottom: 14px; padding: 14px; }
   .cat-post { width: 100%; }
-  .fi-dual-inner { padding: 32px 22px; border-radius: 24px; }
-  .fi-dual-visual { grid-template-columns: 1fr; }
+  .fi-fixer-strip { flex-direction: column; align-items: flex-start; }
+  .fi-fixer-strip-btn { width: 100%; justify-content: center; }
   .fi-footer-inner { grid-template-columns: 1fr; }
   .fi-footer-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
@@ -510,12 +590,34 @@ export default function LandingScreen({
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [subPage, setSubPage] = useState<string | null>(null);
   const [expandedJob, setExpandedJob] = useState<number | null>(null);
-  const [applyJob, setApplyJob] = useState<string | null>(null);
-  const [applyEmail, setApplyEmail] = useState('');
-  const [applySent, setApplySent] = useState(false);
+  const landingScrollY = React.useRef(0);
   const closeMenus = () => {
     setMobileMenuOpen(false);
   };
+  // Sub-pages (FAQ, About, …) are React state, not navigation — push a history
+  // entry so the browser Back button closes the sub-page instead of leaving the site.
+  const openSubPage = (name: string) => {
+    landingScrollY.current = window.scrollY;
+    setSubPage(name);
+    setExpandedJob(null);
+    closeMenus();
+    window.history.pushState({ fixitSubPage: name }, '');
+    window.scrollTo(0, 0);
+  };
+  const closeSubPage = () => {
+    // Pop the entry we pushed; the popstate listener restores the landing view.
+    window.history.back();
+  };
+  useEffect(() => {
+    if (!subPage) return;
+    const handlePopState = () => {
+      setSubPage(null);
+      setExpandedJob(null);
+      requestAnimationFrame(() => window.scrollTo(0, landingScrollY.current));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [subPage]);
   const runAndClose = (action?: () => void) => {
     action?.();
     closeMenus();
@@ -542,13 +644,15 @@ export default function LandingScreen({
     }
     runAndClose(onFixerHome ?? onBecomeFixer ?? onLogin ?? onCreateAccount ?? (() => onPostTask()));
   };
-  const postTaskCtaLabel = isSignedIn ? t('landing.nav.postTask') : t('landing.nav.signInToPost');
-  const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : hasDedicatedFixerOnboarding ? t('landing.nav.joinAsFixer') : t('landing.nav.signInToFind');
+  const postTaskCtaLabel = t('landing.nav.postTaskCta');
+  const fixerCtaLabel = isSignedIn ? t('landing.nav.openFixerWorkspace') : t('landing.nav.signInAsFixer');
   const fixerTiles = [
-    { icon: 'cash-multiple',             title: t('landing.fixerSection.tiles.rate.title'),   desc: t('landing.fixerSection.tiles.rate.desc') },
-    { icon: 'map-marker-radius-outline', title: t('landing.fixerSection.tiles.nearby.title'), desc: t('landing.fixerSection.tiles.nearby.desc') },
-    { icon: 'star-circle-outline',       title: t('landing.fixerSection.tiles.trust.title'),  desc: t('landing.fixerSection.tiles.trust.desc') },
-    { icon: 'bank-transfer',             title: t('landing.fixerSection.tiles.paid.title'),   desc: t('landing.fixerSection.tiles.paid.desc') },
+    { icon: 'cash-multiple',             title: t('landing.fixerSection.tiles.rate.title'),      desc: t('landing.fixerSection.tiles.rate.desc') },
+    { icon: 'map-marker-radius-outline', title: t('landing.fixerSection.tiles.nearby.title'),    desc: t('landing.fixerSection.tiles.nearby.desc') },
+    { icon: 'star-circle-outline',       title: t('landing.fixerSection.tiles.trust.title'),     desc: t('landing.fixerSection.tiles.trust.desc') },
+    { icon: 'bank-transfer',             title: t('landing.fixerSection.tiles.paid.title'),      desc: t('landing.fixerSection.tiles.paid.desc') },
+    { icon: 'calendar-check-outline',    title: t('landing.fixerSection.tiles.hours.title'),     desc: t('landing.fixerSection.tiles.hours.desc') },
+    { icon: 'image-multiple-outline',    title: t('landing.fixerSection.tiles.portfolio.title'), desc: t('landing.fixerSection.tiles.portfolio.desc') },
   ];
 
   useEffect(() => {
@@ -587,281 +691,197 @@ export default function LandingScreen({
 
   if (subPage) {
     const spHero = (icon: string, title: React.ReactNode, subtitle: string, gradient: string) => (
-      <div style={{ position: 'relative', overflow: 'hidden', background: gradient, padding: 'clamp(60px,10vw,120px) 24px clamp(48px,8vw,80px)', textAlign: 'center' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(28,60,86,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(28,60,86,0.04) 1px, transparent 1px)', backgroundSize: '48px 48px', WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)' }} />
+      <div className="sp-hero" style={{ background: gradient }}>
+        <div className="sp-hero-grid" />
+        <span className="sp-blob" style={{ width: 340, height: 340, top: -130, left: '-5%', background: 'rgba(241,181,69,0.4)' }} />
+        <span className="sp-blob" style={{ width: 420, height: 420, bottom: -200, right: '-7%', background: 'rgba(46,134,193,0.26)' }} />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 700, margin: '0 auto' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 20, background: 'rgba(255,255,255,0.85)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', marginBottom: 24, animation: 'rise 700ms cubic-bezier(0.16,1,0.3,1) forwards', opacity: 0 }}>
-            <LandingIcon name={icon} size={36} />
+          <div className="sp-hero-icon">
+            <LandingIcon name={icon} size={38} />
           </div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, color: 'var(--primary)', margin: '0 0 16px', lineHeight: 1.1, opacity: 0, animation: 'rise 800ms cubic-bezier(0.16,1,0.3,1) 150ms forwards' }}>{title}</h1>
-          <p style={{ fontSize: 'clamp(16px,2vw,19px)', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 560, margin: '0 auto', opacity: 0, animation: 'rise 800ms cubic-bezier(0.16,1,0.3,1) 300ms forwards' }}>{subtitle}</p>
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
         </div>
       </div>
     );
-    const spSection = (children: React.ReactNode, bg?: string) => (
-      <div style={{ background: bg || '#fff', padding: 'clamp(40px,6vw,80px) 24px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>{children}</div>
+    const spSection = (children: React.ReactNode, alt?: boolean) => (
+      <div className={`sp-section${alt ? ' alt' : ''}`}>
+        <div className="sp-inner">{children}</div>
       </div>
     );
     const spCard = (children: React.ReactNode, delay?: number) => (
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: 'clamp(20px,3vw,32px)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 300ms, box-shadow 300ms', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${delay || 0}ms forwards` }}>
+      <div className="sp-card" style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${delay || 0}ms forwards` }}>
         {children}
       </div>
     );
+    const spSectionHead = (eyebrow: string, title: string) => (
+      <div className="sp-sec-head">
+        <div className="sp-sec-eyebrow">{eyebrow}</div>
+        <h2 className="sp-sec-title">{title}</h2>
+      </div>
+    );
     return (
-      <div className="fi-landing" style={{ overflowX: 'hidden' }}>
+      <div id="fixit-landing">
         {/* Back button */}
         <div style={{ position: 'fixed', top: 20, left: 20, zIndex: 100 }}>
-          <button
-            type="button"
-            onClick={() => { setSubPage(null); setExpandedJob(null); }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--primary)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', transition: 'transform 200ms, box-shadow 200ms' }}
-          >
+          <button type="button" className="sp-back-btn" onClick={closeSubPage}>
             <LandingIcon name="arrow-left" size={18} /> Back to home
           </button>
         </div>
+
+        {/* ── FOR FIXERS ────────────────────── */}
+        {subPage === 'fixers' && (
+          <>
+            {spHero(
+              'account-hard-hat-outline',
+              t('landing.fixerSection.title'),
+              t('landing.fixerPage.sub'),
+              'linear-gradient(135deg, #fdf6e3 0%, #f7ecd2 50%, #f0f4f8 100%)',
+            )}
+            {spSection(
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                {fixerTiles.map((tile, i) => (
+                  <div key={tile.title}>
+                    {spCard(<>
+                      <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FDF3E0, #F7CF7A)', color: '#B07F1F' }}><LandingIcon name={tile.icon} size={26} /></div>
+                      <h3>{tile.title}</h3>
+                      <p>{tile.desc}</p>
+                    </>, 100 + i * 100)}
+                  </div>
+                ))}
+              </div>
+            , true)}
+            {spSection(
+              <>
+                {spSectionHead(t('landing.fixerPage.stepsEyebrow'), t('landing.fixerPage.stepsTitle'))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+                  {[
+                    { num: '01', icon: 'map-search-outline', title: t('landing.fixerPage.steps.browse.title'), desc: t('landing.fixerPage.steps.browse.desc') },
+                    { num: '02', icon: 'hand-coin-outline', title: t('landing.fixerPage.steps.bid.title'), desc: t('landing.fixerPage.steps.bid.desc') },
+                    { num: '03', icon: 'cash-check', title: t('landing.fixerPage.steps.paid.title'), desc: t('landing.fixerPage.steps.paid.desc') },
+                  ].map((step, i) => (
+                    <div key={step.num} className="sp-card" style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 120}ms forwards` }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 46, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px rgba(212,154,42,0.5)', lineHeight: 1, marginBottom: 14 }}>{step.num}</div>
+                      <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FDF3E0, #F7CF7A)', color: '#B07F1F' }}><LandingIcon name={step.icon} size={24} /></div>
+                      <h3>{step.title}</h3>
+                      <p>{step.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {spSection(
+              <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%)', border: '1px solid rgba(241,181,69,0.35)', borderRadius: 28, padding: 'clamp(36px,5vw,56px)', textAlign: 'center', boxShadow: '0 30px 70px -34px rgba(15,36,56,0.65)', opacity: 0, animation: 'rise 700ms cubic-bezier(0.16,1,0.3,1) 200ms forwards' }}>
+                <div style={{ position: 'absolute', top: -120, right: -120, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, var(--secondary) 0%, transparent 70%)', opacity: 0.3 }} />
+                <div style={{ position: 'absolute', bottom: -160, left: -100, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, var(--primary-light) 0%, transparent 70%)', opacity: 0.5 }} />
+                <h2 style={{ position: 'relative', fontFamily: 'var(--font-display)', fontSize: 'clamp(26px,3.6vw,38px)', fontWeight: 800, color: 'var(--text-on-dark)', margin: '0 0 12px' }}>{t('landing.fixerPage.ctaTitle')}</h2>
+                <p style={{ position: 'relative', fontSize: 16, lineHeight: 1.6, color: 'rgba(255,252,246,0.85)', maxWidth: 520, margin: '0 auto 28px' }}>{t('landing.fixerPage.ctaBody')}</p>
+                <button type="button" className="btn-dual amber" style={{ position: 'relative' }} onClick={handleFixerCta}>
+                  {fixerCtaLabel} <span className="arr">→</span>
+                </button>
+              </div>
+            , true)}
+          </>
+        )}
 
         {/* ── ABOUT ─────────────────────────── */}
         {subPage === 'about' && (
           <>
             {spHero('information-outline', <>About Fix<span style={{ color: '#D49A2A' }}>I</span>t</>, 'A neighborhood task marketplace connecting homeowners with skilled local professionals.', 'linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 50%, #fdf6e3 100%)')}
             {spSection(
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E4F2FB', color: '#2E86C1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="lightbulb-outline" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Our Story</h3>
-                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Founded in 2026 in Tel Aviv by three CS students who saw a gap between people who need help around the house and skilled workers looking for flexible jobs nearby.</p>
-                </>, 100)}
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FFF3E0', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="target" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Our Mission</h3>
-                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Make home maintenance accessible, transparent, and fair for everyone — whether you are a homeowner posting your first task or a fixer building your reputation.</p>
-                </>, 200)}
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E0F5F3', color: '#0D7C6E', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="account-group-outline" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>The Team</h3>
-                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>A team of three developers passionate about great products and real-world impact. We build, test, and ship together — every feature, every sprint.</p>
-                </>, 300)}
-              </div>
-            , '#f8f9fb')}
-            {spSection(
               <>
-                <div style={{ textAlign: 'center', marginBottom: 40 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>By the numbers</div>
-                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>Growing every day.</h2>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24, textAlign: 'center' }}>
-                  {[{ num: '2,500+', label: 'Tasks posted' }, { num: '1,200+', label: 'Active fixers' }, { num: '15+', label: 'Service categories' }, { num: '4.8', label: 'Average rating' }].map((s, i) => (
-                    <div key={i} style={{ padding: 24, opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 100}ms forwards` }}>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,4vw,48px)', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>{s.num}</div>
-                      <div style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 8 }}>{s.label}</div>
-                    </div>
-                  ))}
+                {spSectionHead('The problem', 'All kinds of small jobs need a hand. Getting one is harder than it should be.')}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+                  {spCard(<>
+                    <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E4F2FB, #BFE0F5)', color: '#1F6DA3' }}><LandingIcon name="sofa-outline" size={26} /></div>
+                    <h3>Everyday tasks, no pro needed</h3>
+                    <p>Moving a couch, building IKEA furniture, hanging a shelf, painting a wall, mounting a TV, a quick deep clean. Anyone handy with free time could do these. But hiring for jobs this small isn&#39;t common, so you lean on friends, a number someone passed along, or just do it yourself.</p>
+                  </>, 100)}
+                  {spCard(<>
+                    <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FDF3E0, #F7CF7A)', color: '#B07F1F' }}><LandingIcon name="lightning-bolt-outline" size={26} /></div>
+                    <h3>Jobs that need a pro</h3>
+                    <p>Electrical, plumbing, AC repair, gardening, renovation, pest control. These need real skills or gear. Hiring is normal, but finding someone means digging through WhatsApp groups, Facebook, and contractor sites, then waiting to hear back.</p>
+                  </>, 220)}
                 </div>
               </>
-            )}
-          </>
-        )}
-
-        {/* ── CAREERS ───────────────────────── */}
-        {subPage === 'careers' && (
-          <>
-            {spHero('briefcase-outline', 'Careers', 'Join a small, focused team building the future of local home services. We care about great products and real-world impact.', 'linear-gradient(135deg, #f0f4f8 0%, #e0ecf8 50%, #f5f0ff 100%)')}
+            , true)}
             {spSection(
-              <>
-                <div style={{ textAlign: 'center', marginBottom: 40 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>Open Positions</div>
-                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>Find your next role.</h2>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[
-                    { title: 'Full-Stack Developer', location: 'Tel Aviv', type: 'Full-time', icon: 'code-braces', color: '#2E86C1', bg: '#E4F2FB', desc: 'Build and maintain our React Native mobile app and Node.js backend.', details: 'You will work across the entire stack — from crafting responsive UI components in React Native to designing RESTful APIs in Express. You\'ll collaborate closely with product and design to ship features end-to-end.\n\nRequirements: 2+ years TypeScript, React/React Native experience, relational databases (PostgreSQL preferred), fast-paced startup comfort.' },
-                    { title: 'Backend Engineer', location: 'Tel Aviv', type: 'Full-time', icon: 'server-network', color: '#6A1B9A', bg: '#F3E5F5', desc: 'Design scalable APIs, optimize geospatial queries with PostGIS, and build real-time features.', details: 'Own the server-side architecture — robust APIs, PostGIS spatial queries, real-time messaging with Socket.io, authentication, and deployment pipelines.\n\nRequirements: 3+ years backend, strong SQL and Node.js, WebSockets experience, passion for performance.' },
-                    { title: 'Mobile Developer', location: 'Remote', type: 'Full-time', icon: 'cellphone', color: '#00796B', bg: '#E0F2F1', desc: 'Craft pixel-perfect cross-platform experiences for iOS and Android using Expo.', details: 'Build polished, performant mobile experiences. Smooth animations, offline-first patterns, pushing Expo and React Native to the limit.\n\nRequirements: 2+ years React Native, published apps, Expo experience, eye for UI/UX detail.' },
-                    { title: 'Product Designer', location: 'Tel Aviv', type: 'Full-time', icon: 'palette-outline', color: '#E65100', bg: '#FFF3E0', desc: 'Own the design system, create intuitive flows, and champion accessibility.', details: 'Lead visual and interaction design across mobile and web. User research to hi-fi prototypes. Accessibility and RTL support are first-class.\n\nRequirements: 3+ years product design, Figma, mobile apps, WCAG guidelines, bonus for RTL experience.' },
-                    { title: 'QA Engineer', location: 'Remote', type: 'Part-time', icon: 'test-tube', color: '#2E7D32', bg: '#E8F5E9', desc: 'Write automated tests, set up CI pipelines, and maintain our quality bar.', details: 'Build and maintain testing infrastructure — unit, integration, and E2E. Establish quality gates in CI/CD.\n\nRequirements: 2+ years QA, Jest/testing-library, GitHub Actions, systematic test coverage approach.' },
-                    { title: 'DevOps Engineer', location: 'Tel Aviv', type: 'Full-time', icon: 'cloud-outline', color: '#1565C0', bg: '#E3F2FD', desc: 'Manage cloud infrastructure, CI/CD, monitoring, and deployment pipelines.', details: 'Ensure reliable, fast deployments. Monitoring, alerting, build optimization, database migrations.\n\nRequirements: 2+ years DevOps/SRE, Docker, CI/CD, cloud platforms (Render/Vercel/AWS), PostgreSQL.' },
-                  ].map((job, i) => (
-                    <div key={i} style={{ background: '#fff', border: expandedJob === i ? '2px solid var(--primary)' : '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', transition: 'all 300ms cubic-bezier(0.16,1,0.3,1)', boxShadow: expandedJob === i ? '0 8px 32px rgba(15,36,56,0.10)' : '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
-                      <button onClick={() => setExpandedJob(expandedJob === i ? null : i)} style={{ width: '100%', padding: '24px 28px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 20, alignItems: 'center' }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: job.bg, color: job.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'transform 350ms cubic-bezier(0.34,1.56,0.64,1)' }}>
-                          <LandingIcon name={job.icon} size={26} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{job.title}</h4>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <span style={{ fontSize: 12, background: job.bg, color: job.color, padding: '4px 12px', borderRadius: 20, fontWeight: 700 }}>{job.type}</span>
-                              <span style={{ fontSize: 12, background: '#f3f4f6', color: '#6b7280', padding: '4px 12px', borderRadius: 20, fontWeight: 600 }}>{job.location}</span>
-                              <span style={{ fontSize: 16, color: '#9ca3af', transition: 'transform 300ms', display: 'inline-block', transform: expandedJob === i ? 'rotate(180deg)' : 'rotate(0)' }}>&#9660;</span>
-                            </div>
-                          </div>
-                          <p style={{ fontSize: 14, lineHeight: 1.5, color: '#6b7280', margin: '6px 0 0' }}>{job.desc}</p>
-                        </div>
-                      </button>
-                      {expandedJob === i && (
-                        <div style={{ padding: '0 28px 28px 100px', borderTop: '1px solid #f3f4f6', animation: 'rise 400ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
-                          {job.details.split('\n\n').map((para, pi) => (
-                            <p key={pi} style={{ fontSize: 15, lineHeight: 1.7, color: '#4b5563', margin: pi === 0 ? '20px 0 0' : '14px 0 0' }}>{para}</p>
-                          ))}
-                          <button
-                            onClick={() => { setApplyJob(job.title); setApplyEmail(''); setApplySent(false); }}
-                            style={{ marginTop: 24, padding: '12px 32px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', transition: 'transform 200ms, box-shadow 200ms', boxShadow: '0 4px 16px rgba(15,36,56,0.2)' }}
-                          >
-                            Apply Now
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ textAlign: 'center', marginTop: 40, padding: '32px', background: '#f8f9fb', borderRadius: 16, opacity: 0, animation: 'rise 600ms cubic-bezier(0.16,1,0.3,1) 700ms forwards' }}>
-                  <p style={{ fontSize: 16, color: 'var(--text-secondary)', margin: 0 }}>Don&#39;t see a perfect fit? Send your CV to <a href="mailto:careers@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 700 }}>careers@fixit-app.com</a></p>
-                </div>
-              </>
-            )}
-
-            {/* Apply Modal */}
-            {applyJob && (
-              <div onClick={() => setApplyJob(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, animation: 'rise 300ms forwards' }}>
-                <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '36px 40px', maxWidth: 460, width: '90%', boxShadow: '0 24px 80px rgba(0,0,0,0.18)', animation: 'rise 400ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
-                  {!applySent ? (
-                    <>
-                      <div style={{ width: 56, height: 56, borderRadius: 16, background: '#E4F2FB', color: '#2E86C1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><LandingIcon name="email-outline" size={28} /></div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--primary)', margin: '0 0 6px' }}>Apply for {applyJob}</h3>
-                      <p style={{ fontSize: 15, color: '#6b7280', margin: '0 0 24px', lineHeight: 1.5 }}>Enter your email and we&#39;ll get back to you soon.</p>
-                      <input
-                        type="email"
-                        placeholder="your@email.com"
-                        value={applyEmail}
-                        onChange={(e) => setApplyEmail((e.target as HTMLInputElement).value)}
-                        style={{ width: '100%', padding: '14px 18px', border: '2px solid #e5e7eb', borderRadius: 12, fontSize: 16, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color 200ms' }}
-                      />
-                      <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
-                        <button onClick={() => setApplyJob(null)} style={{ padding: '12px 22px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                        <button
-                          onClick={() => { if (applyEmail.includes('@')) setApplySent(true); }}
-                          style={{ padding: '12px 28px', background: applyEmail.includes('@') ? 'var(--primary)' : '#d1d5db', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: applyEmail.includes('@') ? 'pointer' : 'default', transition: 'background 200ms', boxShadow: applyEmail.includes('@') ? '0 4px 16px rgba(15,36,56,0.2)' : 'none' }}
-                        >
-                          Submit
-                        </button>
+              <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%)', border: '1px solid rgba(241,181,69,0.35)', borderRadius: 28, padding: 'clamp(32px,5vw,52px)', boxShadow: '0 30px 70px -34px rgba(15,36,56,0.65)', opacity: 0, animation: 'rise 700ms cubic-bezier(0.16,1,0.3,1) 150ms forwards' }}>
+                <div style={{ position: 'absolute', top: -130, right: -110, width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, var(--secondary) 0%, transparent 70%)', opacity: 0.3 }} />
+                <div style={{ position: 'relative' }}>
+                  <div className="sp-sec-eyebrow" style={{ color: 'var(--secondary)' }}>The solution</div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px,3.4vw,36px)', fontWeight: 800, color: 'var(--text-on-dark)', margin: '0 0 26px', lineHeight: 1.15 }}>FixIt centralizes the whole local-services marketplace.</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+                    {[
+                      { icon: 'send-outline', text: 'Post one request with photos, budget, and location' },
+                      { icon: 'scale-balance', text: 'Compare clear bids from nearby Fixers' },
+                      { icon: 'chat-processing-outline', text: 'Accept the best offer and coordinate in chat' },
+                      { icon: 'check-circle-outline', text: 'Finish the job, pay, and review' },
+                    ].map((item, i) => (
+                      <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(255,252,246,0.07)', border: '1px solid rgba(255,252,246,0.12)', borderRadius: 18, padding: '14px 18px', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms forwards` }}>
+                        <span style={{ flex: 'none', width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(150deg, var(--secondary-light), var(--secondary-dark))', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><LandingIcon name={item.icon} size={20} /></span>
+                        <span style={{ color: 'var(--text-on-dark)', fontSize: 15, fontWeight: 600, lineHeight: 1.45 }}>{item.text}</span>
                       </div>
-                    </>
-                  ) : (
-                    <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8F5E9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, animation: 'rise 500ms cubic-bezier(0.16,1,0.3,1) forwards' }}><LandingIcon name="check-circle-outline" size={36} /></div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--primary)', margin: '0 0 8px' }}>Application Sent!</h3>
-                      <p style={{ fontSize: 16, color: '#6b7280', margin: '0 0 24px', lineHeight: 1.5 }}>We&#39;ll reach out to <strong>{applyEmail}</strong> shortly.</p>
-                      <button onClick={() => setApplyJob(null)} style={{ padding: '12px 32px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(15,36,56,0.2)' }}>Done</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ── PRESS ─────────────────────────── */}
-        {subPage === 'press' && (
-          <>
-            {spHero('newspaper-variant-outline', 'Press', 'Media resources, press releases, and everything you need to write about FixIt.', 'linear-gradient(135deg, #fdf6e3 0%, #f0f4f8 50%, #e8f0fe 100%)')}
-            {spSection(
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FFF3E0', color: '#E65100', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="file-document-outline" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Press Kit</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Download our logo pack, brand guidelines, product screenshots, and founder bios — everything you need for your story.</p>
-                </>, 100)}
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E3F2FD', color: '#1565C0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="microphone-outline" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Interviews</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>Our founders are available for interviews about the local services market, startup life in Israel, and the future of gig work.</p>
-                </>, 200)}
-                {spCard(<>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name="email-outline" size={26} /></div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 10px' }}>Get in Touch</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>For media inquiries, reach out to <a href="mailto:press@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 600 }}>press@fixit-app.com</a> and we&#39;ll respond within 24 hours.</p>
-                </>, 300)}
-              </div>
-            , '#f8f9fb')}
-            {spSection(
-              <>
-                <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#D49A2A', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 }}>In the News</div>
-                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>What people are saying.</h2>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[
-                    { source: 'Geektime', date: 'April 2026', headline: '"FixIt is rethinking how Israelis find local help — and it\'s working."' },
-                    { source: 'Calcalist', date: 'March 2026', headline: '"Three students built a marketplace that puts trust and transparency first."' },
-                    { source: 'The Marker', date: 'February 2026', headline: '"The Waze of home repairs? FixIt connects fixers and homeowners in real-time."' },
-                  ].map((pr, i) => (
-                    <div key={i} style={{ padding: '24px 28px', background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 120}ms forwards` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>{pr.source}</span>
-                        <span style={{ fontSize: 13, color: '#9ca3af' }}>{pr.date}</span>
-                      </div>
-                      <p style={{ fontSize: 16, lineHeight: 1.5, color: '#374151', margin: 0, fontStyle: 'italic' }}>{pr.headline}</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </>
-        )}
-
-        {/* ── CONTACT ───────────────────────── */}
-        {subPage === 'contact' && (
-          <>
-            {spHero('email-outline', 'Contact Us', 'Have a question, suggestion, or just want to say hi? We\'d love to hear from you.', 'linear-gradient(135deg, #e8f0fe 0%, #f0f4f8 50%, #e0f5f3 100%)')}
-            {spSection(
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-                {[
-                  { icon: 'email-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'General Inquiries', detail: 'hello@fixit-app.com', href: 'mailto:hello@fixit-app.com', sub: 'Questions about FixIt, partnerships, or anything else.' },
-                  { icon: 'wrench-outline', color: '#E65100', bg: '#FFF3E0', title: 'Support', detail: 'support@fixit-app.com', href: 'mailto:support@fixit-app.com', sub: 'Technical issues, account help, or bug reports.' },
-                  { icon: 'map-marker-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Office', detail: 'Tel Aviv, Israel', href: '', sub: 'We\'re based in the heart of Tel Aviv\'s tech scene.' },
-                ].map((c, i) => (
-                  <div key={i} style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 120}ms forwards` }}>
-                    {spCard(<>
-                      <div style={{ width: 52, height: 52, borderRadius: 14, background: c.bg, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><LandingIcon name={c.icon} size={28} /></div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 4px' }}>{c.title}</h3>
-                      {c.href ? <a href={c.href} style={{ fontSize: 16, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>{c.detail}</a> : <span style={{ fontSize: 16, color: 'var(--primary)', fontWeight: 600 }}>{c.detail}</span>}
-                      <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-secondary)', margin: '10px 0 0' }}>{c.sub}</p>
-                    </>)}
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            , '#f8f9fb')}
+            )}
+            {spSection(
+              <>
+                {spSectionHead('Who we are', 'Three students, one shared itch to fix things.')}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+                  {spCard(<>
+                    <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E4F2FB, #BFE0F5)', color: '#1F6DA3' }}><LandingIcon name="lightbulb-outline" size={26} /></div>
+                    <h3>Our Story</h3>
+                    <p>Founded in 2026 in Tel Aviv by three CS students who saw a gap between people who need help around the house and skilled workers looking for flexible jobs nearby.</p>
+                  </>, 100)}
+                  {spCard(<>
+                    <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FFF3E0, #FBD9A2)', color: '#C25E00' }}><LandingIcon name="target" size={26} /></div>
+                    <h3>Our Mission</h3>
+                    <p>Make home maintenance accessible, transparent, and fair for everyone: homeowners posting their first task and fixers building their reputation alike.</p>
+                  </>, 220)}
+                  {spCard(<>
+                    <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E0F5F3, #B5E3DD)', color: '#0A6359' }}><LandingIcon name="account-group-outline" size={26} /></div>
+                    <h3>The Team</h3>
+                    <p>A team of three developers passionate about great products and real-world impact. We build, test, and ship every feature together.</p>
+                  </>, 340)}
+                </div>
+              </>
+            , true)}
           </>
         )}
 
         {/* ── PRICING ───────────────────────── */}
         {subPage === 'pricing' && (
           <>
-            {spHero('tag-outline', <>Pricing — it&#39;s <span style={{ color: '#D49A2A' }}>free</span>.</>, 'No commissions, no subscriptions, no hidden fees. Just connect and get the job done.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #fdf6e3 100%)')}
+            {spHero('tag-outline', <>Pricing? It&#39;s <span style={{ color: '#D49A2A' }}>free</span>.</>, 'No commissions, no subscriptions, no hidden fees. Just connect and get the job done.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #fdf6e3 100%)')}
             {spSection(
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 28 }}>
                 {[
                   { plan: 'Requester', price: '0', desc: 'For homeowners who need things fixed.', features: ['Post unlimited tasks', 'Receive bids from local fixers', 'In-app chat with fixers', 'Rate and review fixers', 'Location privacy until bid accepted'] },
                   { plan: 'Fixer', price: '0', desc: 'For skilled professionals looking for jobs.', features: ['Browse jobs on the map', 'Place unlimited bids', 'Build your portfolio & reputation', 'In-app chat with requesters', 'Push notifications for new jobs'] },
                 ].map((p, i) => (
-                  <div key={i} style={{ background: i === 0 ? '#fff' : 'var(--primary)', border: i === 0 ? '2px solid #e5e7eb' : '2px solid var(--primary)', borderRadius: 20, padding: 'clamp(28px,4vw,40px)', boxShadow: '0 8px 32px rgba(0,0,0,0.06)', opacity: 0, animation: `rise 700ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms forwards` }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: i === 0 ? '#D49A2A' : 'rgba(255,255,255,0.7)', marginBottom: 8 }}>{p.plan}</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 800, color: i === 0 ? 'var(--primary)' : '#fff', lineHeight: 1, marginBottom: 4 }}>&#8362;{p.price}</div>
-                    <div style={{ fontSize: 15, color: i === 0 ? '#9ca3af' : 'rgba(255,255,255,0.6)', marginBottom: 24 }}>forever</div>
-                    <p style={{ fontSize: 15, lineHeight: 1.6, color: i === 0 ? 'var(--text-secondary)' : 'rgba(255,255,255,0.85)', marginBottom: 24 }}>{p.desc}</p>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {p.features.map((f, fi) => (
-                        <li key={fi} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: i === 0 ? '#374151' : 'rgba(255,255,255,0.9)' }}>
-                          <span style={{ width: 22, height: 22, borderRadius: '50%', background: i === 0 ? '#E8F5E9' : 'rgba(255,255,255,0.15)', color: i === 0 ? '#2E7D32' : '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>&#10003;</span>
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
+                  <div key={i} style={{ position: 'relative', overflow: 'hidden', background: i === 0 ? 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)' : 'linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%)', border: i === 0 ? '1px solid rgba(28,60,86,0.12)' : '1px solid rgba(241,181,69,0.4)', borderRadius: '28px 28px 28px 10px', padding: 'clamp(28px,4vw,40px)', boxShadow: i === 0 ? '0 24px 50px -30px rgba(28,60,86,0.4)' : '0 30px 64px -32px rgba(15,36,56,0.65)', opacity: 0, animation: `rise 700ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms forwards` }}>
+                    {i === 1 && <div style={{ position: 'absolute', top: -110, right: -110, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, var(--secondary) 0%, transparent 70%)', opacity: 0.3 }} />}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: i === 0 ? '#D49A2A' : 'var(--secondary)', marginBottom: 8 }}>{p.plan}</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 800, color: i === 0 ? 'var(--primary)' : '#fff', lineHeight: 1, marginBottom: 4 }}>&#8362;{p.price}</div>
+                      <div style={{ fontSize: 15, color: i === 0 ? '#9ca3af' : 'rgba(255,255,255,0.6)', marginBottom: 24 }}>forever</div>
+                      <p style={{ fontSize: 15, lineHeight: 1.6, color: i === 0 ? 'var(--text-secondary)' : 'rgba(255,255,255,0.85)', marginBottom: 24 }}>{p.desc}</p>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {p.features.map((f, fi) => (
+                          <li key={fi} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: i === 0 ? '#374151' : 'rgba(255,255,255,0.9)' }}>
+                            <span style={{ width: 22, height: 22, borderRadius: '50%', background: i === 0 ? 'linear-gradient(150deg, #E5EFE6, #BBDCC0)' : 'linear-gradient(150deg, var(--secondary-light), var(--secondary-dark))', color: i === 0 ? '#2E7D32' : 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>&#10003;</span>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 ))}
               </div>
-            , '#f8f9fb')}
+            , true)}
           </>
         )}
 
@@ -875,26 +895,26 @@ export default function LandingScreen({
                   { q: 'How do I post a task?', a: 'Sign in, choose a category, describe what you need, set a budget and location, and submit. Fixers in your area will start bidding within minutes.', icon: 'plus-circle-outline' },
                   { q: 'How do I become a Fixer?', a: 'Every account can be both a requester and a fixer. Switch to Fixer mode using the toggle in the navigation bar and start browsing jobs near you.', icon: 'swap-horizontal' },
                   { q: 'Is FixIt free?', a: 'Yes! There are no fees for posting tasks or placing bids. Payment is handled directly between you and the fixer via Bit or Paybox.', icon: 'cash-remove' },
-                  { q: 'How does payment work?', a: 'Once the job is done, the requester pays the fixer directly via Bit or Paybox. FixIt does not process payments — we just connect people.', icon: 'credit-card-outline' },
+                  { q: 'How does payment work?', a: 'Once the job is done, the requester pays the fixer directly via Bit or Paybox. FixIt does not process payments. We just connect people.', icon: 'credit-card-outline' },
                   { q: 'How do I know a fixer is reliable?', a: 'Every fixer has a public profile with ratings, reviews from past clients, and a portfolio of their work. Review these before accepting a bid.', icon: 'shield-check-outline' },
                   { q: 'Can I cancel a task?', a: 'Yes, you can cancel an open task at any time. If a fixer is already assigned, contact them via chat first to coordinate.', icon: 'close-circle-outline' },
                   { q: 'What areas does FixIt cover?', a: 'FixIt works across Israel. Jobs are shown based on proximity, so fixers see tasks near their current location.', icon: 'map-outline' },
                 ].map((item, i) => (
-                  <div key={i} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 70}ms forwards` }}>
+                  <div key={i} style={{ background: expandedJob === i ? 'linear-gradient(165deg, #ffffff 0%, #fdf8ec 100%)' : 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', border: expandedJob === i ? '1px solid rgba(241,181,69,0.6)' : '1px solid rgba(28,60,86,0.1)', borderRadius: '22px 22px 22px 8px', overflow: 'hidden', boxShadow: expandedJob === i ? '0 24px 50px -28px rgba(28,60,86,0.45)' : '0 14px 36px -28px rgba(28,60,86,0.35)', transition: 'border-color 250ms, box-shadow 250ms', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 70}ms forwards` }}>
                     <button onClick={() => setExpandedJob(expandedJob === i ? null : i)} style={{ width: '100%', padding: '20px 24px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f0f4f8', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={item.icon} size={22} /></div>
+                      <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(150deg, #EAF1F7, #CBDDEC)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={item.icon} size={22} /></div>
                       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--primary)', margin: 0, flex: 1 }}>{item.q}</h3>
                       <span style={{ fontSize: 18, color: '#9ca3af', transition: 'transform 300ms', display: 'inline-block', transform: expandedJob === i ? 'rotate(180deg)' : 'rotate(0)', flexShrink: 0 }}>&#9660;</span>
                     </button>
                     {expandedJob === i && (
-                      <div style={{ padding: '0 24px 20px 80px', animation: 'rise 300ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
+                      <div style={{ padding: '0 24px 20px 82px', animation: 'rise 300ms cubic-bezier(0.16,1,0.3,1) forwards' }}>
                         <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{item.a}</p>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-            , '#f8f9fb')}
+            , true)}
           </>
         )}
 
@@ -909,19 +929,19 @@ export default function LandingScreen({
                   { icon: 'star-outline', color: '#E65100', bg: '#FFF3E0', title: 'Reviews & Ratings', desc: 'After every completed task, both sides can leave honest reviews. Ratings are public and build real reputation.' },
                   { icon: 'chat-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'In-App Chat', desc: 'All communication stays on the platform for transparency. Messages are encrypted and auto-deleted on task completion.' },
                   { icon: 'map-marker-check-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Location Privacy', desc: 'Your exact address is only shared after you accept a bid. Before that, only a general area is shown on the map.' },
-                  { icon: 'flag-outline', color: '#C62828', bg: '#FFEBEE', title: 'Report System', desc: 'Flag inappropriate behavior at any time. Our team reviews every report and takes action within 24 hours.' },
+                  { icon: 'flag-outline', color: '#C62828', bg: '#FFEBEE', title: 'Report System', desc: 'Flag inappropriate behavior at any time. Every report is reviewed, and accounts that break the rules are suspended.' },
                   { icon: 'lock-outline', color: '#1565C0', bg: '#E3F2FD', title: 'Secure Payments', desc: 'Payments go directly between parties via Bit or Paybox. FixIt never stores payment information.' },
                 ].map((item, i) => (
                   <div key={i} style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
                     {spCard(<>
-                      <div style={{ width: 52, height: 52, borderRadius: 14, background: item.bg, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, transition: 'transform 350ms cubic-bezier(0.34,1.56,0.64,1)' }}><LandingIcon name={item.icon} size={28} /></div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 8px' }}>{item.title}</h3>
-                      <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{item.desc}</p>
+                      <div className="sp-card-icon" style={{ background: item.bg, color: item.color }}><LandingIcon name={item.icon} size={28} /></div>
+                      <h3>{item.title}</h3>
+                      <p>{item.desc}</p>
                     </>)}
                   </div>
                 ))}
               </div>
-            , '#f8f9fb')}
+            , true)}
           </>
         )}
 
@@ -935,12 +955,12 @@ export default function LandingScreen({
                 <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
                   {[
                     { icon: 'database-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'What We Collect', text: 'FixIt collects only the information necessary to connect requesters with fixers: your name, email, profile photo, and location when you post or browse tasks.' },
-                    { icon: 'hand-back-right-off-outline', color: '#C62828', bg: '#FFEBEE', title: 'What We Don\'t Do', text: 'We do not sell your personal data to third parties. Your exact address is never shown publicly — only a general area is displayed until a bid is accepted.' },
+                    { icon: 'hand-back-right-off-outline', color: '#C62828', bg: '#FFEBEE', title: 'What We Don\'t Do', text: 'We do not sell your personal data to third parties. Your exact address is never shown publicly. Only a general area is displayed until a bid is accepted.' },
                     { icon: 'chat-remove-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'Chat & Messages', text: 'Chat messages are stored securely and deleted automatically when a task is completed. We do not read, analyze, or share your private conversations.' },
                     { icon: 'bell-outline', color: '#E65100', bg: '#FFF3E0', title: 'Push Notifications', text: 'Push notification tokens are used solely for delivering app notifications. We never send marketing push notifications without your explicit consent.' },
-                    { icon: 'email-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Questions?', text: 'For questions about your data or to request deletion, contact privacy@fixit-app.com. We respond within 48 hours.' },
+                    { icon: 'account-cog-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Your Data, Your Control', text: 'You can update your details or delete your account at any time from the app settings. Deleting your account removes your personal data from the platform.' },
                   ].map((s, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
+                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', background: 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', border: '1px solid rgba(28,60,86,0.1)', borderRadius: '24px 24px 24px 8px', padding: '22px 26px', boxShadow: '0 16px 40px -28px rgba(28,60,86,0.4)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
                       <div style={{ width: 48, height: 48, borderRadius: 14, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={s.icon} size={26} /></div>
                       <div>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 8px' }}>{s.title}</h3>
@@ -950,7 +970,7 @@ export default function LandingScreen({
                   ))}
                 </div>
               </>
-            , '#f8f9fb')}
+            , true)}
           </>
         )}
 
@@ -964,14 +984,14 @@ export default function LandingScreen({
                 <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {[
                     { num: '01', title: 'Eligibility', text: 'You must be at least 18 years old to use the FixIt platform. By creating an account, you confirm that you meet this requirement.' },
-                    { num: '02', title: 'Accuracy', text: 'You are responsible for the accuracy of information you provide — including task descriptions, profile information, and bid details.' },
+                    { num: '02', title: 'Accuracy', text: 'You are responsible for the accuracy of information you provide, including task descriptions, profile information, and bid details.' },
                     { num: '03', title: 'Marketplace Role', text: 'FixIt is a marketplace that connects requesters and fixers. We are not responsible for the quality, safety, or legality of work performed.' },
                     { num: '04', title: 'Payments', text: 'Payment is handled directly between requesters and fixers via Bit or Paybox. FixIt does not process, hold, or guarantee any payments.' },
                     { num: '05', title: 'Conduct', text: 'Abusive behavior, spam, fraudulent listings, or harassment will result in immediate account suspension and potential permanent ban.' },
                     { num: '06', title: 'Updates', text: 'FixIt may update these terms at any time. Continued use of the platform constitutes acceptance of the updated terms.' },
                   ].map((t, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', padding: '24px 28px', background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px #d1d5db', lineHeight: 1, flexShrink: 0, width: 48, textAlign: 'center' }}>{t.num}</div>
+                    <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', padding: '24px 28px', background: 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', borderRadius: '24px 24px 24px 8px', border: '1px solid rgba(28,60,86,0.1)', boxShadow: '0 16px 40px -28px rgba(28,60,86,0.4)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px rgba(212,154,42,0.5)', lineHeight: 1, flexShrink: 0, width: 48, textAlign: 'center' }}>{t.num}</div>
                       <div>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 6px' }}>{t.title}</h3>
                         <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{t.text}</p>
@@ -979,11 +999,8 @@ export default function LandingScreen({
                     </div>
                   ))}
                 </div>
-                <div style={{ textAlign: 'center', marginTop: 40, padding: '28px', background: '#f8f9fb', borderRadius: 16, opacity: 0, animation: 'rise 600ms cubic-bezier(0.16,1,0.3,1) 700ms forwards' }}>
-                  <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Questions? Contact <a href="mailto:legal@fixit-app.com" style={{ color: 'var(--primary)', fontWeight: 700 }}>legal@fixit-app.com</a></p>
-                </div>
               </>
-            , '#f8f9fb')}
+            , true)}
           </>
         )}
       </div>
@@ -1002,7 +1019,9 @@ export default function LandingScreen({
           <div className="links">
             <a href="#how" onClick={closeMenus}>{t('landing.nav.howItWorks')}</a>
             <a href="#categories" onClick={closeMenus}>{t('landing.nav.categories')}</a>
-            <a href="#fixers" onClick={closeMenus}>{t('landing.nav.forFixers')}</a>
+            <button type="button" onClick={() => openSubPage('faq')}>{t('landing.nav.faq')}</button>
+            <button type="button" onClick={() => openSubPage('about')}>{t('landing.nav.about')}</button>
+            <button type="button" onClick={() => openSubPage('fixers')}>{t('landing.nav.forFixers')}</button>
           </div>
         )}
         <div className="actions">
@@ -1041,9 +1060,20 @@ export default function LandingScreen({
               )}
             </>
           ) : null}
-          <button type="button" className="cta" onClick={isSignedIn ? () => handlePostTaskCta() : () => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}>
-            {isSignedIn ? postTaskCtaLabel : t('landing.nav.getStarted')} <span className="arr">→</span>
-          </button>
+          {!isSignedIn && (
+            <button type="button" className="login" onClick={handleLogin}>
+              {t('landing.nav.login')}
+            </button>
+          )}
+          {isSignedIn ? (
+            <button type="button" className="cta" onClick={() => handlePostTaskCta()}>
+              {postTaskCtaLabel} <span className="arr">→</span>
+            </button>
+          ) : (
+            <button type="button" className="cta" onClick={() => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}>
+              {t('landing.nav.signup')} <span className="arr">→</span>
+            </button>
+          )}
           <button
             type="button"
             className="menu-toggle"
@@ -1068,9 +1098,11 @@ export default function LandingScreen({
             <>
               <a href="#how" onClick={closeMenus}>{t('landing.nav.howItWorks')}</a>
               <a href="#categories" onClick={closeMenus}>{t('landing.nav.categories')}</a>
-              <a href="#fixers" onClick={closeMenus}>{t('landing.nav.forFixers')}</a>
-              <button type="button" onClick={() => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}><LandingIcon name="account-plus-outline" size={18} />{t('landing.nav.getStarted')}</button>
-              <button type="button" onClick={handleFixerCta}><LandingIcon name="account-hard-hat-outline" size={18} />{fixerCtaLabel}</button>
+              <button type="button" onClick={() => openSubPage('faq')}><LandingIcon name="frequently-asked-questions" size={18} />{t('landing.nav.faq')}</button>
+              <button type="button" onClick={() => openSubPage('about')}><LandingIcon name="information-outline" size={18} />{t('landing.nav.about')}</button>
+              <button type="button" onClick={() => openSubPage('fixers')}><LandingIcon name="account-hard-hat-outline" size={18} />{t('landing.nav.forFixers')}</button>
+              <button type="button" onClick={handleLogin}><LandingIcon name="login" size={18} />{t('landing.nav.login')}</button>
+              <button type="button" onClick={() => runAndClose(onCreateAccount ?? onLogin ?? (() => onPostTask()))}><LandingIcon name="account-plus-outline" size={18} />{t('landing.nav.signup')}</button>
             </>
           )}
         </div>
@@ -1080,6 +1112,8 @@ export default function LandingScreen({
       <section className="fi-hero" id="top">
         <div className="fi-hero-bg" />
         <div className="fi-hero-grid" />
+        <span className="sp-blob" style={{ width: 380, height: 380, top: -140, left: '-6%', background: 'rgba(241,181,69,0.35)' }} />
+        <span className="sp-blob" style={{ width: 460, height: 460, bottom: -220, right: '-8%', background: 'rgba(46,134,193,0.2)' }} />
         {logoSrc ? <img className="fi-hero-mark" src={logoSrc} alt="" aria-hidden="true" /> : null}
 
         <div className="fi-hero-content">
@@ -1104,9 +1138,6 @@ export default function LandingScreen({
           <div className="fi-hero-actions">
             <button type="button" className="btn-hero primary" onClick={() => handlePostTaskCta()}>
               {postTaskCtaLabel} <span className="arr">→</span>
-            </button>
-            <button type="button" className="btn-hero ghost" onClick={handleFixerCta}>
-              {fixerCtaLabel}
             </button>
             <a href="#how" className="btn-hero quiet">{t('landing.hero2.howItWorksBtn')}</a>
           </div>
@@ -1309,29 +1340,20 @@ export default function LandingScreen({
         </div>
       </section>
 
-      {/* ── Fixer CTA ────────────────────────────────────── */}
-      <section className="fi-dual" id="fixers">
-        <div className="fi-dual-inner">
-          <div className="fi-dual-text">
-            <div className="sec-eyebrow" style={{ color: '#F1B545' }}>{t('landing.fixerSection.eyebrow')}</div>
-            <h2>{t('landing.fixerSection.title')}</h2>
-            <p>{t('landing.fixerSection.body')}</p>
-            <div className="fi-dual-actions">
-              <button type="button" className="btn-dual amber" onClick={handleFixerCta}>{fixerCtaLabel} <span className="arr">→</span></button>
-              <a href="#how" className="btn-dual outline">{t('landing.fixerSection.learnMore')}</a>
-            </div>
+      {/* ── Fixer strip ──────────────────────────────────── */}
+      <section className="fi-fixer-strip-wrap" id="fixers">
+        <div className="fi-fixer-strip">
+          <div className="fi-fixer-strip-glyph">
+            <LandingIcon name="account-hard-hat-outline" size={30} />
           </div>
-          <div className="fi-dual-visual">
-            {fixerTiles.map((tile) => (
-              <div key={tile.title} className="fi-tile">
-                <div className="glyph">
-                  <LandingIcon name={tile.icon} size={22} />
-                </div>
-                <h4>{tile.title}</h4>
-                <p>{tile.desc}</p>
-              </div>
-            ))}
+          <div className="fi-fixer-strip-copy">
+            <span className="fi-fixer-strip-eyebrow">{t('landing.fixerStrip.eyebrow')}</span>
+            <p className="fi-fixer-strip-text">{t('landing.fixerStrip.text')}</p>
+            <p className="fi-fixer-strip-sub">{t('landing.fixerStrip.sub')}</p>
           </div>
+          <button type="button" className="fi-fixer-strip-btn" onClick={() => openSubPage('fixers')}>
+            {t('landing.fixerStrip.cta')} <span className="arr">→</span>
+          </button>
         </div>
       </section>
 
@@ -1350,26 +1372,18 @@ export default function LandingScreen({
             <ul>
               <li><a href="#how">{t('landing.footer.howItWorksLink')}</a></li>
               <li><a href="#categories">{t('landing.footer.categoriesLink')}</a></li>
-              <li><a href="#fixers">{t('landing.footer.forFixersLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('pricing'); }}>{t('landing.footer.pricingLink')}</a></li>
-            </ul>
-          </div>
-          <div>
-            <h5>{t('landing.footer.company')}</h5>
-            <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('about'); }}>{t('landing.footer.aboutLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('careers'); }}>{t('landing.footer.careersLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('press'); }}>{t('landing.footer.pressLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('contact'); }}>{t('landing.footer.contactLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('fixers'); }}>{t('landing.footer.forFixersLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('pricing'); }}>{t('landing.footer.pricingLink')}</a></li>
             </ul>
           </div>
           <div>
             <h5>{t('landing.footer.help')}</h5>
             <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('faq'); }}>{t('landing.footer.faqLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('trust'); }}>{t('landing.footer.trustSafetyLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('privacy'); }}>{t('landing.footer.privacyLink')}</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setSubPage('terms'); }}>{t('landing.footer.termsLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('about'); }}>{t('landing.footer.aboutLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('faq'); }}>{t('landing.footer.faqLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('trust'); }}>{t('landing.footer.trustSafetyLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('privacy'); }}>{t('landing.footer.privacyLink')}</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); openSubPage('terms'); }}>{t('landing.footer.termsLink')}</a></li>
             </ul>
           </div>
         </div>

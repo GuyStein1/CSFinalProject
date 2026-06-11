@@ -116,7 +116,31 @@ function RootContent() {
     setPendingLandingIntent(intent);
     setAuthMode(mode);
     setSignedOutSurface('auth');
+    // Push a history entry so the browser Back button returns to the landing
+    // page instead of leaving the site (the landing ↔ auth switch is React
+    // state, not navigation, so the browser knows nothing about it).
+    if (USE_SIGNED_OUT_LANDING && typeof window !== 'undefined') {
+      window.history.pushState({ fixitSurface: 'auth' }, '');
+    }
   }, []);
+
+  useEffect(() => {
+    if (
+      !USE_SIGNED_OUT_LANDING ||
+      typeof window === 'undefined' ||
+      authState.status !== 'signed_out' ||
+      signedOutSurface !== 'auth'
+    ) {
+      return;
+    }
+    const handlePopState = () => {
+      setPendingLandingIntent(null);
+      setAuthMode('login');
+      setSignedOutSurface('landing');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [authState.status, signedOutSurface]);
 
   const handleAuthLogOut = useCallback(async () => {
     setPendingLandingIntent(null);
