@@ -102,7 +102,7 @@
       "emailPlaceholder": "Please enter your email address",
       "submit": "Send Reset Link",
       "backToSignIn": "Back to Sign In",
-      "sentDescription": "Check your inbox â€” we sent a reset link to {{email}}.",
+      "sentDescription": "Check your inbox. We sent a reset link to {{email}}.",
       "failed": "Failed to send reset email"
     },
     "needsSync": {
@@ -468,7 +468,7 @@
     "error": {
       "couldNotLoad": "Could not load jobs",
       "retry": "Try Again",
-      "mapsNotReady": "Maps not ready â€” please try again.",
+      "mapsNotReady": "Maps not ready. Please try again.",
       "couldNotResolve": "Could not resolve that place. Please try again.",
       "noResults": "No results found for that area."
     },
@@ -789,7 +789,7 @@
       "subtitle": "Enter the address and verify the pin on the map",
       "taskLocation": "Task location",
       "locationPlaceholder": "e.g., Dizengoff 120, Tel Aviv",
-      "pinPlaced": "Pin placed â€” drag it or tap the map to adjust",
+      "pinPlaced": "Pin placed. Drag it or tap the map to adjust",
       "enterAddress": "Enter an address above to place the pin",
       "locationDenied": "Location access was denied. Enter the address above and we'll find it on the map.",
       "privacyNote": "Fixers see only an approximate location. The exact address is shared only after you accept a bid."
@@ -841,7 +841,7 @@
       "locationRequired": "Location is required",
       "failedCreate": "Failed to create task. Please try again.",
       "noResults": "No results found. Try a more specific address.",
-      "mapsNotReady": "Maps not ready â€” please try again.",
+      "mapsNotReady": "Maps not ready. Please try again.",
       "couldNotFind": "Could not find this location. Please try again.",
       "photoPermissionTitle": "Permission required",
       "photoPermission": "Please allow access to your photo library to add images."
@@ -987,7 +987,7 @@
   "landing": {
     "hero": {
       "title": "Local fixes, trusted Fixers.",
-      "subtitle": "Post a task, compare bids from verified local pros, and get the job done â€” on your terms.",
+      "subtitle": "Post a task, compare bids from verified local pros, and get the job done, on your terms.",
       "postTask": "Post a Task",
       "becomeFixer": "Become a Fixer",
       "available": "Available across Israel",
@@ -1033,11 +1033,14 @@
       "requesterDashboard": "Requester Dashboard",
       "fixer": "Fixer",
       "createAccount": "Create account",
-      "signInToPost": "Sign in to Post Task",
       "openFixerWorkspace": "Open Fixer Workspace",
       "joinAsFixer": "Join as a Fixer",
       "signInToFind": "Sign in to Find Jobs",
-      "getStarted": "Get Started"
+      "getStarted": "Get Started",
+      "postTaskCta": "Post a Task",
+      "signInAsFixer": "Sign in as a Fixer",
+      "faq": "FAQ",
+      "about": "About"
     },
     "stats": {
       "tasksPosted": "Tasks posted",
@@ -1094,30 +1097,26 @@
       "footerTagline": "Your neighborhood. Fixed. A task marketplace for homeowners and skilled local pros.",
       "madeby": "Made for neighbors who get things done.",
       "product": "Product",
-      "company": "Company",
       "help": "Help",
       "howItWorksLink": "How it works",
       "categoriesLink": "Categories",
       "forFixersLink": "For Fixers",
       "pricingLink": "Pricing",
       "aboutLink": "About",
-      "careersLink": "Careers",
-      "pressLink": "Press",
-      "contactLink": "Contact",
       "faqLink": "FAQ",
       "trustSafetyLink": "Trust & Safety",
       "privacyLink": "Privacy",
       "termsLink": "Terms"
     },
     "language": {
-      "toggle": "EN | ×¢×‘"
+      "toggle": "EN | עב"
     },
     "hero2": {
       "eyebrowDefault": "Trusted by 12,000+ neighbors in Israel",
       "eyebrowSignedIn": "Your requester workspace is ready",
       "line1": "Let's fix your",
       "line2": "problems.",
-      "bodyDefault": "Post any home task, compare bids from vetted local Fixers, and choose who gets the job without chasing calls or favors.",
+      "bodyDefault": "Post your task, get offers from Fixers nearby, and pick who does the job.",
       "bodySignedIn": "Post the next thing your home needs, compare local Fixers, and head back to your dashboard when you are ready to manage the work.",
       "howItWorksBtn": "How it works",
       "trustMeta": "from 8,400+ jobs completed",
@@ -1131,9 +1130,9 @@
     },
     "how": {
       "eyebrow": "How it works",
-      "title": "Three steps.",
-      "titleAccent": "No phone tag.",
-      "sub": "Skip the WhatsApp groups and the \"I'll call you back tomorrow.\" Post your task, compare offers, hire the best one.",
+      "title": "Three simple steps.",
+      "titleAccent": "All in one place.",
+      "sub": "Describe it once, compare offers, and hire. All without leaving the app.",
       "step1": {
         "title": "Describe your task",
         "desc": "Snap a photo, set your budget, pick a category. Sign in once, then your task is ready for local Fixers."
@@ -1149,8 +1148,8 @@
     },
     "catsSection": {
       "eyebrow": "Categories",
-      "title": "Whatever you need fixed.",
-      "copy": "Pick a category to see what belongs there, then start the task with the right context already selected.",
+      "title": "What do you need done?",
+      "copy": "Browse examples by category. Pick one and we'll start your task with it already selected.",
       "willSelect": "We will start your task with {{label}} selected.",
       "postCat": "Post {{label}} Task"
     },
@@ -1213,10 +1212,7 @@
       }
     },
     "fixerSection": {
-      "eyebrow": "For Fixers",
       "title": "Turn your skills into local work.",
-      "body": "Build a steady book of local jobs. Set your own rates, work where you want, get paid in cash, Bit, or Paybox. No subscription, no lead fees â€” we take a small cut only when you're hired.",
-      "learnMore": "Learn more",
       "tiles": {
         "rate": {
           "title": "Set your rate",
@@ -1224,7 +1220,7 @@
         },
         "nearby": {
           "title": "Work nearby",
-          "desc": "Filter by distance â€” keep your commute short."
+          "desc": "Filter by distance and keep your commute short."
         },
         "trust": {
           "title": "Build trust",
@@ -1233,8 +1229,43 @@
         "paid": {
           "title": "Get paid fast",
           "desc": "Bit or Paybox direct. No 30-day waits."
+        },
+        "hours": {
+          "title": "Choose your hours",
+          "desc": "Accept jobs only when it suits your schedule."
+        },
+        "portfolio": {
+          "title": "Show your work",
+          "desc": "Build a portfolio and let finished jobs sell the next one."
         }
       }
+    },
+    "fixerStrip": {
+      "eyebrow": "For Fixers",
+      "text": "Good with your hands? Turn nearby tasks into income.",
+      "sub": "Set your rates, choose nearby jobs, and get paid directly.",
+      "cta": "Become a Fixer"
+    },
+    "fixerPage": {
+      "sub": "Set your own rates, choose jobs near you, and get paid directly in cash, Bit, or Paybox. No subscriptions, no fees.",
+      "stepsEyebrow": "How it works",
+      "stepsTitle": "From nearby jobs to money in hand.",
+      "steps": {
+        "browse": {
+          "title": "Browse nearby jobs",
+          "desc": "See open tasks around you on the map and pick the ones that fit your skills."
+        },
+        "bid": {
+          "title": "Send your price",
+          "desc": "Bid what the job is worth, add a short pitch, and chat with the requester in-app."
+        },
+        "paid": {
+          "title": "Do the work, get paid",
+          "desc": "Complete the job, get paid directly in cash, Bit, or Paybox, and collect a review."
+        }
+      },
+      "ctaTitle": "Ready to take on your first job?",
+      "ctaBody": "Every FixIt account can post tasks and work as a Fixer, and you can switch anytime. Sign in, set up your Fixer profile, and start bidding."
     }
   },
   "placeholder": {
@@ -1295,7 +1326,7 @@
     "benefits": {
       "flexibleHours": {
         "title": "Flexible Hours",
-        "body": "Work when you want — accept jobs that fit your schedule."
+        "body": "Work when you want and accept jobs that fit your schedule."
       },
       "findWork": {
         "title": "Find Work Nearby",
