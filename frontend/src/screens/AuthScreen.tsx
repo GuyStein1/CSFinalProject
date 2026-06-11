@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -162,7 +162,10 @@ export default function AuthScreen({
             { opacity: pressed || socialLoading === 'google' ? 0.7 : 1 },
           ]}
         >
-          <MaterialCommunityIcons name="google" size={20} color="#4285F4" />
+          <Image
+            source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cGF0aCBmaWxsPSIjRkZDMTA3IiBkPSJNNDMuNjExIDIwLjA4M0g0MlYyMEgyNHY4aDExLjMwM2MtMS42NDkgNC42NTctNi4wOCA4LTExLjMwMyA4LTYuNjI3IDAtMTItNS4zNzMtMTItMTJzNS4zNzMtMTIgMTItMTJjMy4wNTkgMCA1Ljg0MiAxLjE1NCA3Ljk2MSAzLjAzOWw1LjY1Ny01LjY1N0MzNC4wNDYgNi4wNTMgMjkuMjY4IDQgMjQgNCA5LjI1NCA0LTMuOTYgMjAuMTI2IDcuMzggMzVjMy4wODkgNC4wNTUgNy44NCA2LjcxNCAxMy4xNjQgNi43NTdDMzMuNjQyIDQxLjk3IDQ0LjU1MiAzNC4yODIgNDQuNTUyIDI0YzAtMS4zMjQtLjEzOC0yLjYxNi0uNDAyLTMuODM2Ii8+PHBhdGggZmlsbD0iI0ZGM0QwMCIgZD0iTTYuMzA2IDE0LjY5MWw2LjU3MSA0LjgxOUMxNC42NTUgMTUuMTA4IDE4Ljk2MSAxMiAyNCAxMmMzLjA1OSAwIDUuODQyIDEuMTU0IDcuOTYxIDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0NiA2LjA1MyAyOS4yNjggNCAyNCA0IDEyLjk1NSA0IDMuMiAxMS40MjcgNi4zMDYgMTQuNjkxIi8+PHBhdGggZmlsbD0iIzRDQUY1MCIgZD0iTTI0IDQ0YzUuMTY2IDAgOS44Ni0xLjk3NyAxMy40MDktNS4xOTJsLTYuMTktNS4yMzhBMTEuOTEgMTEuOTEgMCAwIDEgMjQgMzZjLTUuMjAyIDAtOS42MTktMy4zMTctMTEuMjgzLTcuOTQ2bC02LjUyMiA1LjAyNUM5LjUwNSAzOS41NTYgMTYuMjI3IDQ0IDI0IDQ0Ii8+PHBhdGggZmlsbD0iIzE5NzZEMiIgZD0iTTQzLjYxMSAyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNhMTIuMDQgMTIuMDQgMCAwIDEtNC4wODcgNS41NzFsLjAwMy0uMDAyIDYuMTkgNS4yMzhDMzYuOTcxIDM5LjIwNSA0NCAzNCA0NCAyNGMwLTEuMzI0LS4xMzgtMi42MTYtLjQwMi0zLjkxNyIvPjwvc3ZnPg==' }}
+            style={{ width: 20, height: 20 }}
+          />
           <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
             {socialLoading === 'google' ? 'Signing in...' : 'Continue with Google'}
           </Text>
