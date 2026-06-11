@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Image,
   type ImageStyle,
+  Platform,
   StyleSheet,
   type StyleProp,
   View,
@@ -13,6 +14,17 @@ import { brandColors, spacing } from '../theme';
 const MARK_ASPECT_RATIO = 436 / 291;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const transparentMark = require('../../assets/fixit-logo-mark-transparent.png') as number;
+
+// Load the brand display font (Manrope) on web so the wordmark matches the
+// landing page exactly. Native falls back to the system font automatically.
+const BRAND_FONT_FAMILY = Platform.OS === 'web' ? 'Manrope, system-ui, sans-serif' : undefined;
+if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('fixit-brand-font')) {
+  const link = document.createElement('link');
+  link.id = 'fixit-brand-font';
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap';
+  document.head.appendChild(link);
+}
 
 type AppLogoVariant = 'mark' | 'lockup' | 'wordmark' | 'heroSilhouette';
 
@@ -42,8 +54,8 @@ export default function AppLogo({
 
   const wordmark = (
     <View style={[styles.textStack, !compact && styles.textStackCentered]}>
-      <Text style={[compact ? styles.wordmarkCompact : styles.wordmark, { color: wordmarkColor }]}>
-        Fix<Text style={{ color: brandColors.secondaryDark, fontWeight: '900' }}>I</Text>t
+      <Text style={[compact ? styles.wordmarkCompact : styles.wordmark, { color: wordmarkColor, fontFamily: BRAND_FONT_FAMILY }]}>
+        Fix<Text style={{ color: brandColors.secondaryDark, fontWeight: '800', fontFamily: BRAND_FONT_FAMILY }}>I</Text>t
       </Text>
       {showTagline && (
         <Text style={[compact ? styles.taglineCompact : styles.tagline, { color: taglineColor }]}>

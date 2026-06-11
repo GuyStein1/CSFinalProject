@@ -45,6 +45,8 @@ interface FilterBarProps {
   compact?: boolean;
   /** When true, force the filter panel open externally */
   forceExpanded?: boolean;
+  /** Optional element rendered inline in the filter row (e.g. a location toggle) */
+  inlineAccessory?: React.ReactNode;
 }
 
 // --- Single-thumb slider for distance ---
@@ -242,6 +244,7 @@ export default function FilterBar({
   onClearFilters,
   compact,
   forceExpanded,
+  inlineAccessory,
 }: FilterBarProps) {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
@@ -325,6 +328,8 @@ export default function FilterBar({
             <Text style={[typography.caption, styles.resetText]}>{t('discovery.filterBar.clearFilters')}</Text>
           </Pressable>
         )}
+
+        {inlineAccessory}
 
         <View style={styles.divider} />
 

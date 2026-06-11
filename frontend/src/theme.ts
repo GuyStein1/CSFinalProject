@@ -34,6 +34,42 @@ export const brandColors = {
   overlay: 'rgba(15, 36, 56, 0.45)',
 };
 
+// Soft light "hero" gradient — matches the landing page's For Fixers hero
+// (linear-gradient(135deg, #fdf6e3 0%, #f7ecd2 50%, #f0f4f8 100%)): warm cream
+// flowing into pale blue. Content placed on it uses navy text (textPrimary) and
+// the darker amber (secondaryDark) for accents so everything stays readable.
+// Neutral pre-login gradient (loading + auth/welcome, before a mode is known).
+export const heroGradient = {
+  colors: ['#FAF2DC', '#E9EFF1', '#DCE8F6'] as [string, string, string],
+  locations: [0, 0.45, 1] as [number, number, number],
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};
+
+// Per-mode hero gradients so it's instantly clear which workspace you're in:
+// requester surfaces read cool/blue, fixer surfaces read warm/amber.
+export const heroGradientRequester = {
+  colors: ['#EFF4FB', '#E4EDF7', '#D6E4F3'] as [string, string, string],
+  locations: [0, 0.5, 1] as [number, number, number],
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};
+
+export const heroGradientFixer = {
+  colors: ['#FDF5E4', '#F8EBCD', '#F2E0BA'] as [string, string, string],
+  locations: [0, 0.5, 1] as [number, number, number],
+  start: { x: 0, y: 0 },
+  end: { x: 1, y: 1 },
+};
+
+// Solid header tints for the desktop nav bar, matching each mode's hero.
+export const headerTint = {
+  requester: '#EFF4FB',
+  requesterBorder: '#C9DCEE',
+  fixer: '#FDF3E0',
+  fixerBorder: brandColors.secondary,
+};
+
 export const spacing = {
   xs: 4,
   sm: 8,

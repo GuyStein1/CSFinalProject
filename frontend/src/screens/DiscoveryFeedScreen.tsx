@@ -22,7 +22,8 @@ import useTasks, { type Category } from '../hooks/useTasks';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axiosInstance';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { brandColors, heroGradientFixer, spacing, radii, shadows, typography } from '../theme';
 
 type PermissionState = 'checking' | 'rationale' | 'denied' | 'ready' | 'error';
 type CenterMode = 'gps' | 'manual';
@@ -60,6 +61,8 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const [suggestions, setSuggestions] = useState<{ placeId: string; description: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  // Work-area search starts collapsed to a small toggle so it doesn't eat space.
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [fixerGps, setFixerGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bidTaskIds, setBidTaskIds] = useState<Set<string>>(new Set());
   const [bidFilter, setBidFilter] = useState<'all' | 'has_bid' | 'no_bid'>('all');
@@ -334,6 +337,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   const handleSelectSuggestion = useCallback((placeId: string, description: string) => {
     setSearchText(description);
     geocodeByPlaceId(placeId, description);
+    setSearchExpanded(false);
   }, [geocodeByPlaceId]);
 
   // Submit raw text — first get the top prediction, then geocode its placeId
@@ -442,11 +446,17 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}>
+      <LinearGradient
+        colors={heroGradientFixer.colors}
+        locations={heroGradientFixer.locations}
+        start={heroGradientFixer.start}
+        end={heroGradientFixer.end}
+        style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}
+      >
         <View style={styles.workspaceHeaderMain}>
           <View style={styles.headerKickerRow}>
             <View style={styles.headerIconShell}>
-              <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondary} />
+              <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondaryDark} />
             </View>
             <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('discovery.header.kicker')}</Text>
           </View>
@@ -486,7 +496,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <Text style={styles.workspaceStatLabel}>{t('discovery.stats.range')}</Text>
           </Pressable>
         </View>
-      </View>
+      </LinearGradient>
 
       <FilterBar
         compact={isWide && Platform.OS === 'web'}
@@ -502,12 +512,32 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         hasActiveFilters={hasActiveFilters}
         onClearFilters={handleClearFilters}
         forceExpanded={showFilterPanel}
+        inlineAccessory={supportsWorkAreaSearch ? (
+          <Pressable
+            onPress={() => setSearchExpanded((prev) => !prev)}
+            style={({ pressed }) => [styles.workAreaToggleBtn, searchExpanded && styles.workAreaToggleBtnActive, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: searchExpanded }}
+            accessibilityLabel={searchExpanded ? t('discovery.location.searchClose') : t('discovery.location.searchToggle')}
+          >
+            <MaterialCommunityIcons name="map-marker-radius-outline" size={15} color={brandColors.success} />
+            <Text style={styles.workAreaToggleText} numberOfLines={1}>{t('discovery.location.searchToggle')}</Text>
+            <MaterialCommunityIcons name={searchExpanded ? 'chevron-up' : 'chevron-down'} size={15} color={brandColors.success} />
+          </Pressable>
+        ) : undefined}
       />
 
       {/* Work-area search uses Google Places on web; native keeps GPS/default centers only. */}
-      {supportsWorkAreaSearch && (
+      {supportsWorkAreaSearch && searchExpanded && (
         <View style={[styles.workAreaStrip, isWide && styles.workAreaStripWide]}>
-          <MaterialCommunityIcons name="briefcase-search-outline" size={16} color={brandColors.primary} />
+          <Pressable
+            onPress={() => setSearchExpanded(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('discovery.location.searchClose')}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="map-marker-radius-outline" size={16} color={brandColors.primary} />
+          </Pressable>
           <View style={styles.workAreaInputWrapper}>
             <FInput
               placeholder={t('discovery.location.searchPlaceholder')}
@@ -561,7 +591,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <ActivityIndicator size="small" color={brandColors.primary} />
           ) : (
             <Pressable
-              onPress={handleSearchSubmit}
+              onPress={() => { handleSearchSubmit(); setSearchExpanded(false); }}
               style={styles.searchGoBtn}
               accessibilityRole="button"
               accessibilityLabel="Search this work area"
@@ -709,7 +739,6 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
   workspaceHeader: {
-    backgroundColor: brandColors.primaryDark,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
@@ -740,15 +769,15 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: radii.xs,
-    backgroundColor: 'rgba(241,181,69,0.14)',
+    backgroundColor: 'rgba(241,181,69,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(241,181,69,0.22)',
+    borderColor: 'rgba(212,154,42,0.35)',
   },
   headerKicker: {
     ...typography.eyebrow,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
     letterSpacing: 0.8,
   },
   headerTitle: {
@@ -756,11 +785,11 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   headerSub: {
     ...typography.bodySm,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     maxWidth: 560,
   },
   workspaceStats: {
@@ -778,25 +807,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255,252,246,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.14)',
+    borderColor: brandColors.outlineLight,
   },
   workspaceStatActive: {
-    borderColor: brandColors.secondary,
+    borderColor: brandColors.secondaryDark,
     borderWidth: 2,
-    backgroundColor: 'rgba(241,181,69,0.12)',
+    backgroundColor: 'rgba(241,181,69,0.18)',
   },
   workspaceStatValue: {
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   workspaceStatLabel: {
     ...typography.caption,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     marginTop: 1,
   },
   rationaleContainer: {
@@ -847,6 +876,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: brandColors.outlineLight,
     zIndex: 20,
+  },
+  workAreaToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.sm,
+    backgroundColor: brandColors.successSoft,
+    borderWidth: 1,
+    borderColor: brandColors.success,
+  },
+  workAreaToggleBtnActive: {
+    backgroundColor: '#CFE3D2',
+  },
+  workAreaToggleText: {
+    ...typography.caption,
+    color: brandColors.success,
+    fontWeight: '700',
   },
   workAreaStripWide: {
     paddingHorizontal: spacing.xl,

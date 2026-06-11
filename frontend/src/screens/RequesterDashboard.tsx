@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
 import { FButton } from '../components/ui';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, heroGradientRequester, spacing, radii, shadows, typography } from '../theme';
 import {
   CATEGORY_LIST,
   getCategoryLabel,
@@ -79,9 +79,10 @@ export default function RequesterDashboard({ navigation }: Props) {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient
-        colors={[brandColors.primary, brandColors.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={heroGradientRequester.colors}
+        locations={heroGradientRequester.locations}
+        start={heroGradientRequester.start}
+        end={heroGradientRequester.end}
         style={styles.hero}
       >
         <View style={[styles.heroInner, wide && styles.heroInnerWide, { paddingHorizontal: horizontalPadding }]}>
@@ -121,7 +122,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 <MaterialCommunityIcons
                   name="clipboard-list-outline"
                   size={18}
-                  color={brandColors.textOnDark}
+                  color={brandColors.primary}
                 />
                 <Text style={styles.heroGhostText}>{t('dashboard.hero.myTasks')}</Text>
               </Pressable>
@@ -134,7 +135,7 @@ export default function RequesterDashboard({ navigation }: Props) {
             <View style={styles.panelDivider} />
             <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
-                <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondary} />
+                <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.panelText}>
                 <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosTitle')}</Text>
@@ -143,7 +144,7 @@ export default function RequesterDashboard({ navigation }: Props) {
             </View>
             <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
-                <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondary} />
+                <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.panelText}>
                 <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyTitle')}</Text>
@@ -207,10 +208,21 @@ export default function RequesterDashboard({ navigation }: Props) {
                   { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
                 ]}
               >
-                <Image
-                  source={CATEGORY_METADATA[category.value as keyof typeof CATEGORY_METADATA].image}
-                  style={styles.categoryImage}
-                />
+                {category.value === 'OTHER' ? (
+                  <LinearGradient
+                    colors={[brandColors.primaryLight, brandColors.primaryDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.categoryOtherTile}
+                  >
+                    <MaterialCommunityIcons name="tools" size={46} color={brandColors.secondary} />
+                  </LinearGradient>
+                ) : (
+                  <Image
+                    source={CATEGORY_METADATA[category.value as keyof typeof CATEGORY_METADATA].image}
+                    style={styles.categoryImage}
+                  />
+                )}
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.65)']}
                   style={styles.categoryOverlay}
@@ -267,6 +279,8 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 0,
     overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: brandColors.outlineLight,
   },
   heroInner: {
     width: '100%',
@@ -293,28 +307,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.12)',
+    borderColor: brandColors.outlineLight,
   },
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: brandColors.secondary,
+    backgroundColor: brandColors.success,
   },
   workspacePillText: {
     ...typography.eyebrow,
-    color: brandColors.textOnDark,
+    color: brandColors.textSecondary,
   },
   greeting: {
     ...typography.hero,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
     maxWidth: 640,
   },
   heroSub: {
     ...typography.body,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     maxWidth: 620,
   },
   heroActions: {
@@ -339,18 +353,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.28)',
+    borderColor: 'rgba(28,60,86,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   heroGhostText: {
     ...typography.button,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   heroPanel: {
     borderRadius: radii.xl,
     padding: spacing.xl,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.14)',
+    borderColor: brandColors.outlineLight,
     gap: spacing.md,
   },
   heroPanelWide: {
@@ -359,15 +374,15 @@ const styles = StyleSheet.create({
   },
   panelEyebrow: {
     ...typography.eyebrow,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   panelTitle: {
     ...typography.h2,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   panelDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,252,246,0.14)',
+    backgroundColor: brandColors.outlineLight,
   },
   panelRow: {
     flexDirection: 'row',
@@ -378,7 +393,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(241,181,69,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -388,11 +403,11 @@ const styles = StyleSheet.create({
   },
   panelRowTitle: {
     ...typography.label,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   panelRowCopy: {
     ...typography.caption,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
   },
   content: {
     width: '100%',
@@ -505,6 +520,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  categoryOtherTile: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: spacing.lg,
   },
   categoryOverlay: {
     position: 'absolute',

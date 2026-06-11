@@ -200,7 +200,7 @@ function RootContent() {
 
   if (authState.isAdmin) {
     return (
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer theme={navigationTheme} documentTitle={{ formatter: () => 'FixIt' }}>
         <AdminNavigator />
       </NavigationContainer>
     );
@@ -212,6 +212,7 @@ function RootContent() {
         ref={navigationRef}
         linking={Platform.OS === 'web' ? linking : undefined}
         theme={navigationTheme}
+        documentTitle={{ formatter: () => 'FixIt' }}
         onReady={() => setNavigationReady(true)}
       >
         <AppNavigator />

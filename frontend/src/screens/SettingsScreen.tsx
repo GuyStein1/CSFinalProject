@@ -11,7 +11,7 @@ import { auth } from '../config/firebase';
 import api from '../api/axiosInstance';
 import { useLanguage } from '../context/LanguageContext';
 import { FButton, FCard, FInput } from '../components/ui';
-import { brandColors, radii, spacing, typography } from '../theme';
+import { brandColors, headerTint, radii, spacing, typography } from '../theme';
 
 export default function SettingsScreen() {
   const user = auth.currentUser;
@@ -116,22 +116,22 @@ export default function SettingsScreen() {
       <FCard style={styles.heroCard} shadow="sm">
         <View style={styles.heroRow}>
           <View style={styles.heroIcon}>
-            <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondary} />
+            <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondaryDark} />
           </View>
           <View style={styles.heroText}>
             <Text style={[typography.eyebrow, styles.heroEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('settings.hero.eyebrow')}</Text>
-            <Text style={[typography.h2, { color: brandColors.textOnDark, textAlign: isRTL ? 'right' : 'left' }]}>{accountName}</Text>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{accountName}</Text>
             <Text style={[typography.bodySm, styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>{accountEmail}</Text>
           </View>
         </View>
         <View style={styles.heroMetaRow}>
           <View style={styles.heroPill}>
             <View style={[styles.statusDot, { backgroundColor: verificationColor }]} />
-            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{verificationLabel}</Text>
+            <Text style={[typography.caption, { color: brandColors.textPrimary }]}>{verificationLabel}</Text>
           </View>
           <View style={styles.heroPill}>
-            <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondary} />
-            <Text style={[typography.caption, { color: brandColors.textOnDark }]}>{t('settings.hero.secureSession')}</Text>
+            <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondaryDark} />
+            <Text style={[typography.caption, { color: brandColors.textSecondary }]}>{t('settings.hero.secureSession')}</Text>
           </View>
         </View>
       </FCard>
@@ -376,7 +376,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     marginBottom: spacing.lg,
-    backgroundColor: brandColors.primary,
+    backgroundColor: '#E4EDF7',
+    borderBottomWidth: 3,
+    borderBottomColor: headerTint.requesterBorder,
     overflow: 'hidden',
   },
   sectionCard: {
@@ -393,9 +395,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radii.lg,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(241,181,69,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.14)',
+    borderColor: 'rgba(212,154,42,0.30)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -404,10 +406,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   heroEyebrow: {
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   heroSub: {
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
   },
   heroMetaRow: {
     flexDirection: 'row',
@@ -422,7 +424,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
   },
   statusDot: {
     width: 7,

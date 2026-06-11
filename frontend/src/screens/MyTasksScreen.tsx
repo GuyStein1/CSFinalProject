@@ -20,7 +20,7 @@ import TaskCard from '../components/TaskCard';
 import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FChip } from '../components/ui';
-import { brandColors, spacing, shadows, radii, typography } from '../theme';
+import { brandColors, heroGradientRequester, spacing, shadows, radii, typography } from '../theme';
 import type { Category } from '../utils/categoryMetadata';
 
 interface Task {
@@ -560,9 +560,10 @@ function WorkspaceHeader({
   const { isRTL } = useLanguage();
   return (
     <LinearGradient
-      colors={[brandColors.primary, brandColors.primaryDark]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      colors={heroGradientRequester.colors}
+      locations={heroGradientRequester.locations}
+      start={heroGradientRequester.start}
+      end={heroGradientRequester.end}
       style={styles.headerCard}
     >
       <View style={[styles.headerTop, wide && styles.headerTopWide]}>
@@ -587,7 +588,7 @@ function WorkspaceHeader({
           icon="progress-wrench"
           label={t('myTasks.pills.inProgress')}
           value={inProgressCount}
-          color={brandColors.secondary}
+          color={brandColors.secondaryDark}
           wide={wide}
           active={activeFilter === 'in_progress'}
           onPress={() => onPillPress('in_progress')}
@@ -596,7 +597,7 @@ function WorkspaceHeader({
           icon="hand-extended-outline"
           label={t('myTasks.pills.hasBids')}
           value={pendingBidCount}
-          color={brandColors.secondaryLight}
+          color={brandColors.primaryMuted}
           wide={wide}
           active={activeFilter === 'bids'}
           onPress={() => onPillPress('bids')}
@@ -756,15 +757,15 @@ const styles = StyleSheet.create({
   },
   headerEyebrow: {
     ...typography.eyebrow,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   headerTitle: {
     ...typography.h1,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   headerBody: {
     ...typography.bodySm,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     maxWidth: 560,
   },
   summaryRail: {
@@ -782,9 +783,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.lg,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.12)',
+    borderColor: brandColors.outlineLight,
   },
   summaryPillWide: {
     flex: 1,
@@ -795,17 +796,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(28,60,86,0.06)',
   },
   summaryValue: {
     fontSize: 20,
     lineHeight: 24,
     fontWeight: '800',
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   summaryLabel: {
     ...typography.caption,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
   },
   section: {
     marginTop: spacing.xxxl,
