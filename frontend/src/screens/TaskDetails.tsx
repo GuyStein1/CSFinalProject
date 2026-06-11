@@ -133,13 +133,17 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
 
   const fetchData = useCallback(async () => {
     try {
-      const [taskRes, bidsRes] = await Promise.all([
-        api.get(`/api/tasks/${taskId}`),
-        api.get(`/api/tasks/${taskId}/bids`),
-      ]);
+      const taskRes = await api.get(`/api/tasks/${taskId}`);
       const fetchedTask: Task = taskRes.data.task;
       setTask(fetchedTask);
-      setBids(bidsRes.data.bids || []);
+
+      // Bids endpoint is requester-only; fail silently for fixers
+      try {
+        const bidsRes = await api.get(`/api/tasks/${taskId}/bids`);
+        setBids(bidsRes.data.bids || []);
+      } catch {
+        setBids([]);
+      }
       // Sync review-submitted state with server (survives refresh / re-mount)
       if (fetchedTask.my_review) {
         setReviewSubmitted(true);
