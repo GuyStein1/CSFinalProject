@@ -4,6 +4,9 @@ import { adminOnly } from '../middleware/adminAuth';
 import { prisma } from '../config/prisma';
 import { NotFoundError } from '../utils/errors';
 import { recalculateFixerRating } from '../utils/ratingCalculator';
+import { sendNotification } from '../services/notificationService';
+import { validate } from '../middleware/validate';
+import { reviewCertificationSchema } from '../schemas';
 
 const router = Router();
 
@@ -190,6 +193,80 @@ router.get(
 
       const buffer = Buffer.from(await response.arrayBuffer());
       res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/admin/pending-certifications — list certifications awaiting review
+router.get(
+  '/pending-certifications',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const [certifications, total] = await Promise.all([
+        prisma.certification.findMany({
+          where: { status: 'PENDING' },
+          include: {
+            fixer: {
+              select: {
+                id: true,
+                full_name: true,
+                email: true,
+                avatar_url: true,
+                specializations: true,
+              },
+            },
+          },
+          orderBy: { created_at: 'asc' },
+          skip,
+          take: limit,
+        }),
+        prisma.certification.count({ where: { status: 'PENDING' } }),
+      ]);
+      res.json({ certifications, total, page, limit });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/admin/certifications/:id/review — approve or reject a certification
+router.post(
+  '/certifications/:id/review',
+  validate(reviewCertificationSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { action, rejection_note } = req.body as { action: 'approve' | 'reject'; rejection_note?: string };
+
+      const certification = await prisma.certification.findUnique({ where: { id: req.params.id } });
+      if (!certification) throw new NotFoundError('Certification not found');
+
+      const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
+      await prisma.certification.update({
+        where: { id: certification.id },
+        data: {
+          status,
+          reviewed_at: new Date(),
+          reviewed_by: req.user.id,
+          ...(action === 'reject' && rejection_note ? { rejection_note } : {}),
+        },
+      });
+
+      const categoryLabel = certification.category === 'ELECTRICITY' ? 'Electrician' : 'Plumber';
+      const notifType = action === 'approve' ? 'CERTIFICATION_APPROVED' : 'CERTIFICATION_REJECTED';
+      const title = action === 'approve' ? 'Certification Approved!' : 'Certification Rejected';
+      const body = action === 'approve'
+        ? `Your ${categoryLabel} certification has been approved. A badge will now appear on your profile.`
+        : `Your ${categoryLabel} certification was not approved.${rejection_note ? ` Reason: ${rejection_note}` : ''} You can re-upload a new document.`;
+
+      await sendNotification(certification.fixer_id, title, body, notifType, certification.id, 'certification');
+
+      res.json({ message: `Certification ${action}d` });
     } catch (err) {
       next(err);
     }

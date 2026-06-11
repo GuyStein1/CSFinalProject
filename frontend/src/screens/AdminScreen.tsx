@@ -20,7 +20,7 @@ import EmptyState from '../components/EmptyState';
 import { FButton, FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography, shadows } from '../theme';
 
-type AdminTab = 'reviews' | 'verifications';
+type AdminTab = 'reviews' | 'verifications' | 'certifications';
 
 interface Report {
   id: string;
@@ -51,6 +51,25 @@ interface PendingVerification {
   created_at: string;
 }
 
+interface PendingCertification {
+  id: string;
+  category: string;
+  title: string;
+  document_url: string;
+  created_at: string;
+  fixer: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url: string | null;
+  };
+}
+
+const CERT_CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
+  ELECTRICITY: { label: 'Electricity', color: '#D4A017' },
+  PLUMBING: { label: 'Plumbing', color: '#0D7C6E' },
+};
+
 const REASON_LABELS: Record<string, string> = {
   SPAM: 'Spam',
   OFFENSIVE: 'Offensive',
@@ -77,6 +96,7 @@ export default function AdminScreen() {
   const [activeTab, setActiveTab] = useState<AdminTab>('reviews');
   const [reviews, setReviews] = useState<FlaggedReview[]>([]);
   const [verifications, setVerifications] = useState<PendingVerification[]>([]);
+  const [pendingCerts, setPendingCerts] = useState<PendingCertification[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
@@ -107,11 +127,21 @@ export default function AdminScreen() {
     }
   }, []);
 
+  const fetchCertifications = useCallback(async () => {
+    try {
+      const res = await api.get('/api/admin/pending-certifications');
+      setPendingCerts(res.data.certifications ?? []);
+    } catch {
+      // silent
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void fetchFlagged();
       void fetchVerifications();
-    }, [fetchFlagged, fetchVerifications]),
+      void fetchCertifications();
+    }, [fetchFlagged, fetchVerifications, fetchCertifications]),
   );
 
   const handleHide = async (reviewId: string) => {
@@ -150,6 +180,21 @@ export default function AdminScreen() {
       setVerifications((prev) => prev.filter((v) => v.id !== userId));
     } catch {
       const msg = `Failed to ${action} verification`;
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(msg);
+      } else {
+        Alert.alert('Error', msg);
+      }
+    }
+  };
+
+  const handleCertReview = async (certId: string, action: 'approve' | 'reject') => {
+    try {
+      await api.post(`/api/admin/certifications/${certId}/review`, { action });
+      setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
+    } catch {
+      const msg = `Failed to ${action} certification`;
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
@@ -201,9 +246,80 @@ export default function AdminScreen() {
             Verifications ({verifications.length})
           </Text>
         </Pressable>
+        <Pressable
+          style={[styles.tab, activeTab === 'certifications' && styles.tabActive]}
+          onPress={() => setActiveTab('certifications')}
+        >
+          <MaterialCommunityIcons name="certificate-outline" size={16} color={activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted} />
+          <Text style={[typography.bodyMedium, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
+            Certifications ({pendingCerts.length})
+          </Text>
+        </Pressable>
       </View>
 
-      {activeTab === 'verifications' ? (
+      {activeTab === 'certifications' ? (
+        <FlatList
+          data={pendingCerts}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => {
+            const catMeta = CERT_CATEGORY_LABELS[item.category];
+            return (
+              <FCard style={{ ...styles.reviewCard, borderLeftColor: catMeta?.color ?? brandColors.primary }}>
+                <View style={styles.reviewMeta}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{item.fixer.full_name}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>{item.fixer.email}</Text>
+                  </View>
+                  <View style={[styles.reasonBadge, { backgroundColor: (catMeta?.color ?? brandColors.primary) + '20' }]}>
+                    <Text style={[typography.caption, { color: catMeta?.color ?? brandColors.primary, fontWeight: '700' }]}>
+                      {catMeta?.label ?? item.category}
+                    </Text>
+                  </View>
+                </View>
+
+                {item.document_url && (
+                  <Pressable onPress={() => setViewingPhotoUrl(item.document_url)} style={{ marginVertical: spacing.sm }}>
+                    <Image source={{ uri: item.document_url }} style={{ width: '100%', height: 200, borderRadius: radii.md }} resizeMode="contain" />
+                  </Pressable>
+                )}
+
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                  Submitted: {new Date(item.created_at).toLocaleDateString()}
+                </Text>
+
+                <View style={styles.actions}>
+                  <FButton
+                    variant="outline"
+                    size="sm"
+                    icon="close-circle-outline"
+                    onPress={() => void handleCertReview(item.id, 'reject')}
+                    style={{ flex: 1 }}
+                  >
+                    Reject
+                  </FButton>
+                  <FButton
+                    size="sm"
+                    icon="check-circle-outline"
+                    onPress={() => void handleCertReview(item.id, 'approve')}
+                    style={{ flex: 1 }}
+                  >
+                    Approve
+                  </FButton>
+                </View>
+              </FCard>
+            );
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              icon="certificate-outline"
+              title="No pending certifications"
+              message="All certification requests have been handled."
+            />
+          }
+          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        />
+      ) : activeTab === 'verifications' ? (
         <FlatList
           data={verifications}
           keyExtractor={(item) => item.id}

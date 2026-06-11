@@ -97,6 +97,7 @@ function RootContent() {
     }
   }, [authState.status, navigationReady]);
 
+
   useEffect(() => {
     if (
       authState.status !== 'ready' ||

@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import RequesterDashboard from '../screens/RequesterDashboard';
+import RequesterTutorialScreen from '../screens/AppTutorialScreen';
 import MyTasksScreen from '../screens/MyTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
+import { auth } from '../config/firebase';
 import { brandColors, shadows, spacing } from '../theme';
+
+const getRequesterTutorialKey = () => `requesterTutorialSeen_${auth.currentUser?.uid ?? 'anon'}`;
 
 const Tab = createBottomTabNavigator();
 
@@ -36,6 +41,25 @@ export default function RequesterTabs() {
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
   const { unreadCount } = useUnreadMessages();
+  const [tutorialState, setTutorialState] = useState<'checking' | 'show' | 'done'>('checking');
+
+  useEffect(() => {
+    AsyncStorage.getItem(getRequesterTutorialKey()).then((seen) => {
+      setTutorialState(seen === 'true' ? 'done' : 'show');
+    });
+  }, []);
+
+  const handleTutorialComplete = useCallback(async () => {
+    await AsyncStorage.setItem(getRequesterTutorialKey(), 'true');
+    await AsyncStorage.setItem('onboarding_nudge_dismissed', 'true');
+    setTutorialState('done');
+  }, []);
+
+  if (tutorialState === 'checking') return null;
+
+  if (tutorialState === 'show') {
+    return <RequesterTutorialScreen onComplete={handleTutorialComplete} />;
+  }
 
   return (
     <Tab.Navigator

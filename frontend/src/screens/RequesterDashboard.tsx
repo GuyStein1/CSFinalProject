@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -15,6 +15,7 @@ import { sendEmailVerification } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
+import api from '../api/axiosInstance';
 import { FButton } from '../components/ui';
 import { brandColors, heroGradientRequester, spacing, radii, shadows, typography } from '../theme';
 import {
@@ -28,15 +29,14 @@ interface Props {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 }
 
-const WORKSPACE_STEPS = [
-  { icon: 'clipboard-edit-outline', key: 'post' },
-  { icon: 'hand-extended-outline', key: 'compare' },
-  { icon: 'check-decagram-outline', key: 'finish' },
-] as const;
-
 export default function RequesterDashboard({ navigation }: Props) {
   const [emailVerified, setEmailVerified] = useState(true);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [latestOpenTask, setLatestOpenTask] = useState<{
+    id: string;
+    title: string;
+    category: Category;
+  } | null>(null);
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
@@ -57,6 +57,23 @@ export default function RequesterDashboard({ navigation }: Props) {
   useEffect(() => {
     if (user && !user.emailVerified) setEmailVerified(false);
   }, [user]);
+
+  const fetchLatestOpenTask = useCallback(async () => {
+    try {
+      const res = await api.get('/api/users/me/tasks', { params: { limit: 50 } });
+      const tasks = (res.data.tasks || []) as Array<{ id: string; title: string; category: Category; status: string; created_at: string }>;
+      const openTasks = tasks
+        .filter((t: { status: string }) => t.status === 'OPEN')
+        .sort((a: { created_at: string }, b: { created_at: string }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setLatestOpenTask(openTasks.length > 0 ? openTasks[0] : null);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchLatestOpenTask();
+  }, [fetchLatestOpenTask]);
 
   const handleResendVerification = async () => {
     if (!user) return;
@@ -155,9 +172,43 @@ export default function RequesterDashboard({ navigation }: Props) {
         </View>
       </LinearGradient>
 
-      <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
-        {!emailVerified && (
-          <View style={styles.verifyBanner}>
+      <View style={styles.contentWrap}>
+        {latestOpenTask && (() => {
+          const meta = CATEGORY_METADATA[latestOpenTask.category as keyof typeof CATEGORY_METADATA];
+          return (
+            <View style={[styles.quickAccess, isRTL && styles.quickAccessRTL]}>
+              <Pressable
+                onPress={() => navigation.navigate('TaskDetails', { taskId: latestOpenTask.id })}
+                accessibilityRole="button"
+                accessibilityLabel={`View task: ${latestOpenTask.title}`}
+                style={({ pressed }) => [
+                  styles.quickCircle,
+                  { borderColor: meta?.color ?? brandColors.primary, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <Image
+                  source={meta?.image}
+                  style={styles.quickCircleImage}
+                />
+                <View style={styles.statusBadge}>
+                  <View style={styles.statusDot} />
+                  <Text style={styles.statusText}>{t('dashboard.quickAccess.open')}</Text>
+                </View>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate('MyTasks')}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <Text style={styles.quickViewAll}>{t('dashboard.quickAccess.viewAll')}</Text>
+              </Pressable>
+            </View>
+          );
+        })()}
+
+        <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
+          {!emailVerified && (
+            <View style={styles.verifyBanner}>
             <View style={styles.verifyIcon}>
               <MaterialCommunityIcons
                 name="alert-circle-outline"
@@ -237,29 +288,7 @@ export default function RequesterDashboard({ navigation }: Props) {
           />
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flow')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.flowTitle')}</Text>
-            </View>
-          </View>
-
-          <View style={[styles.stepGrid, wide && styles.stepGridWide]}>
-            {WORKSPACE_STEPS.map((step, index) => (
-              <View key={step.key} style={[styles.stepItem, wide && styles.stepItemWide]}>
-                <View style={styles.stepTopRow}>
-                  <View style={styles.stepIcon}>
-                    <MaterialCommunityIcons name={step.icon as never} size={20} color={brandColors.primary} />
-                  </View>
-                  <Text style={styles.stepNumber}>{String(index + 1).padStart(2, '0')}</Text>
-                </View>
-                <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.title`)}</Text>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t(`dashboard.steps.${step.key}.copy`)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+      </View>
       </View>
     </ScrollView>
   );
@@ -409,6 +438,67 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: brandColors.textSecondary,
   },
+  contentWrap: {
+    position: 'relative',
+  },
+  quickAccess: {
+    position: 'absolute',
+    left: 20,
+    top: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+    zIndex: 10,
+  },
+  quickAccessRTL: {
+    left: undefined,
+    right: 20,
+  },
+  quickCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    padding: 3,
+  },
+  quickCircleImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 52,
+    resizeMode: 'cover',
+  },
+  statusBadge: {
+    position: 'absolute',
+    bottom: -4,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: brandColors.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: brandColors.outlineLight,
+    ...shadows.sm,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: brandColors.success,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: brandColors.success,
+    textTransform: 'uppercase',
+  },
+  quickViewAll: {
+    ...typography.caption,
+    color: brandColors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline' as const,
+  },
   content: {
     width: '100%',
     maxWidth: 1120,
@@ -546,41 +636,5 @@ const styles = StyleSheet.create({
     color: brandColors.white,
     fontWeight: '700',
     fontSize: 14,
-  },
-  stepGrid: {
-    gap: spacing.md,
-  },
-  stepGridWide: {
-    flexDirection: 'row',
-  },
-  stepItem: {
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-    gap: spacing.sm,
-  },
-  stepItemWide: {
-    flex: 1,
-  },
-  stepTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stepIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.lg,
-    backgroundColor: brandColors.infoSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumber: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: '800',
-    color: brandColors.surfaceAlt,
   },
 });

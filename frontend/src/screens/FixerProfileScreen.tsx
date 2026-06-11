@@ -34,6 +34,17 @@ interface PortfolioItem {
   description: string | null;
 }
 
+interface Certification {
+  id: string;
+  category: string;
+  title: string;
+  document_url: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejection_note?: string | null;
+}
+
+const CERTIFIABLE_CATEGORIES = ['PLUMBING', 'ELECTRICITY'] as const;
+
 interface Profile {
   id: string;
   full_name: string;
@@ -48,6 +59,7 @@ interface Profile {
   avg_response_time_minutes: number | null;
   verification_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   portfolio_items: PortfolioItem[];
+  certifications: Certification[];
 }
 
 function isValidUrl(value: string) {
@@ -97,6 +109,8 @@ export default function FixerProfileScreen() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [uploadingCert, setUploadingCert] = useState<string | null>(null);
   const [langOpen, setLangOpen] = useState(false);
 
   const dismissEditing = () => {
@@ -138,6 +152,7 @@ export default function FixerProfileScreen() {
       setEditingPayment(!pl);
       setSpecializations(u.specializations ?? []);
       setPortfolioItems(u.portfolio_items ?? []);
+      setCertifications(u.certifications ?? []);
     } catch {
       Alert.alert(t('common.error'), t('fixerProfile.alerts.loadError'));
     } finally {
@@ -280,6 +295,36 @@ export default function FixerProfileScreen() {
       setUploadingVerification(false);
     }
   };
+
+  const handleUploadCertification = async (category: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      quality: 0.8,
+      allowsEditing: true,
+    });
+    if (result.canceled || !profile) return;
+    setUploadingCert(category);
+    try {
+      const url = await uploadImage(result.assets[0].uri, `certifications/${profile.id}/${category}/${Date.now()}.jpg`);
+      const categoryLabel = category === 'ELECTRICITY' ? t('fixerProfile.certifications.badge.ELECTRICITY') : t('fixerProfile.certifications.badge.PLUMBING');
+      const res = await api.post('/api/users/me/certifications', {
+        category,
+        title: categoryLabel,
+        document_url: url,
+      });
+      const cert = res.data.certification as Certification;
+      setCertifications(prev => {
+        const filtered = prev.filter(c => c.category !== category);
+        return [...filtered, cert];
+      });
+    } catch {
+      Alert.alert(t('common.error'), t('fixerProfile.certifications.uploadError'));
+    } finally {
+      setUploadingCert(null);
+    }
+  };
+
+  const certifiableSpecs = specializations.filter(s => (CERTIFIABLE_CATEGORIES as readonly string[]).includes(s));
 
   if (loading) return <LoadingScreen label={t('common.loading')} />;
 
@@ -691,6 +736,100 @@ export default function FixerProfileScreen() {
                 ))}
               </View>
             </FCard>
+
+            {certifiableSpecs.length > 0 && (
+              <FCard style={styles.section} shadow="sm">
+                <View style={styles.sectionHeaderCompact}>
+                  <View style={styles.sectionIcon}>
+                    <MaterialCommunityIcons name="certificate-outline" size={18} color={brandColors.primary} />
+                  </View>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('fixerProfile.certifications.title')}
+                  </Text>
+                </View>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left' }]}>
+                  {t('fixerProfile.certifications.description')}
+                </Text>
+
+                {certifiableSpecs.map(category => {
+                  const cert = certifications.find(c => c.category === category);
+                  const badgeLabel = t(`fixerProfile.certifications.badge.${category}`);
+
+                  if (cert?.status === 'APPROVED') {
+                    return (
+                      <View key={category} style={styles.certRow}>
+                        <View style={styles.certBadge}>
+                          <MaterialCommunityIcons name="check-decagram" size={18} color={brandColors.success} />
+                          <Text style={[typography.label, { color: brandColors.success }]}>{badgeLabel}</Text>
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  if (cert?.status === 'PENDING') {
+                    return (
+                      <View key={category} style={styles.certRow}>
+                        <View style={styles.certPending}>
+                          <MaterialCommunityIcons name="clock-outline" size={18} color={brandColors.warning} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[typography.label, { color: brandColors.textPrimary }]}>{badgeLabel}</Text>
+                            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                              {t('fixerProfile.certifications.pendingMsg')}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  if (cert?.status === 'REJECTED') {
+                    return (
+                      <View key={category} style={styles.certRow}>
+                        <View style={styles.certRejected}>
+                          <MaterialCommunityIcons name="close-circle-outline" size={18} color={brandColors.danger} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[typography.label, { color: brandColors.danger }]}>
+                              {t('fixerProfile.certifications.rejected')}
+                            </Text>
+                            {cert.rejection_note && (
+                              <Text style={[typography.caption, { color: brandColors.textMuted }]}>{cert.rejection_note}</Text>
+                            )}
+                            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                              {t('fixerProfile.certifications.rejectedMsg')}
+                            </Text>
+                          </View>
+                        </View>
+                        <FButton
+                          onPress={() => void handleUploadCertification(category)}
+                          variant="outline"
+                          size="sm"
+                          icon="upload"
+                          loading={uploadingCert === category}
+                          style={{ marginTop: spacing.sm }}
+                        >
+                          {t('fixerProfile.certifications.reuploadBtn')}
+                        </FButton>
+                      </View>
+                    );
+                  }
+
+                  // No certification yet — show upload button
+                  return (
+                    <View key={category} style={styles.certRow}>
+                      <FButton
+                        onPress={() => void handleUploadCertification(category)}
+                        variant="outline"
+                        size="sm"
+                        icon="upload"
+                        loading={uploadingCert === category}
+                      >
+                        {`${t('fixerProfile.certifications.uploadBtn')} — ${badgeLabel}`}
+                      </FButton>
+                    </View>
+                  );
+                })}
+              </FCard>
+            )}
           </View>
         </View>
       </View>
@@ -982,6 +1121,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15,36,56,0.74)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
+  },
+  certRow: {
+    marginBottom: spacing.md,
+  },
+  certBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.successSoft,
+  },
+  certPending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.warningSoft,
+  },
+  certRejected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.dangerSoft,
   },
   modalBackdrop: {
     flex: 1,

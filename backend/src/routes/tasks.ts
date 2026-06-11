@@ -793,10 +793,24 @@ router.get('/:id/bids', async (req: Request, res: Response, next: NextFunction) 
       previousTaskCounts.map((r) => [r.assigned_fixer_id, r._count]),
     );
 
+    // Certification data for bidding fixers
+    const fixerIds = bids.map((b) => b.fixer_id);
+    const certifications = await prisma.certification.findMany({
+      where: { fixer_id: { in: fixerIds }, status: 'APPROVED' },
+      select: { fixer_id: true, category: true },
+    });
+    const certMap = new Map<string, string[]>();
+    for (const cert of certifications) {
+      const list = certMap.get(cert.fixer_id) ?? [];
+      list.push(cert.category);
+      certMap.set(cert.fixer_id, list);
+    }
+
     const enrichedBids = bids.map((b) => ({
       ...b,
       is_repeat_customer: (repeatMap.get(b.fixer_id) ?? 0) > 0,
       previous_tasks_together: repeatMap.get(b.fixer_id) ?? 0,
+      certified_categories: certMap.get(b.fixer_id) ?? [],
     }));
 
     res.json({ bids: enrichedBids });

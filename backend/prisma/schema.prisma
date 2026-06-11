@@ -61,6 +61,14 @@ enum NotificationType {
   TASK_CANCELED
   VERIFICATION_APPROVED
   VERIFICATION_REJECTED
+  CERTIFICATION_APPROVED
+  CERTIFICATION_REJECTED
+}
+
+enum CertificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum VerificationStatus {
@@ -106,8 +114,9 @@ model User {
   messages_received Message[]      @relation("MessagesReceived")
   notifications    Notification[]
   portfolio_items  PortfolioItem[]
-  certifications   Certification[]
-  review_reports   ReviewReport[]
+  certifications            Certification[]
+  reviewed_certifications   Certification[] @relation("CertificationReviewer")
+  review_reports            ReviewReport[]
 }
 
 model Task {
@@ -243,11 +252,21 @@ model PortfolioItem {
 }
 
 model Certification {
-  id           String   @id @default(uuid())
-  fixer_id     String
-  title        String
-  document_url String
-  created_at   DateTime @default(now())
+  id             String              @id @default(uuid())
+  fixer_id       String
+  category       Category
+  title          String
+  document_url   String
+  status         CertificationStatus @default(PENDING)
+  reviewed_at    DateTime?
+  reviewed_by    String?
+  rejection_note String?
+  created_at     DateTime            @default(now())
+  updated_at     DateTime            @updatedAt
 
-  fixer User @relation(fields: [fixer_id], references: [id])
+  fixer    User  @relation(fields: [fixer_id], references: [id])
+  reviewer User? @relation("CertificationReviewer", fields: [reviewed_by], references: [id])
+
+  @@unique([fixer_id, category])
+  @@index([status])
 }

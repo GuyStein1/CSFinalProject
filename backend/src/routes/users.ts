@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
-import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema, submitVerificationSchema } from '../schemas';
+import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema, submitVerificationSchema, submitCertificationSchema } from '../schemas';
 
 const router = Router();
 
@@ -16,7 +16,10 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      include: { portfolio_items: { orderBy: { created_at: 'desc' } } },
+      include: {
+        portfolio_items: { orderBy: { created_at: 'desc' } },
+        certifications: { orderBy: { created_at: 'desc' } },
+      },
     });
     res.json({ user });
   } catch (err) {
@@ -196,6 +199,59 @@ router.post('/me/verification', validate(submitVerificationSchema), async (req: 
   }
 });
 
+// GET /api/users/me/certifications — list own certifications
+router.get('/me/certifications', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const certifications = await prisma.certification.findMany({
+      where: { fixer_id: req.user.id },
+      orderBy: { created_at: 'desc' },
+    });
+    res.json({ certifications });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/users/me/certifications — submit a certification for review
+router.post('/me/certifications', validate(submitCertificationSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { category, title, document_url } = req.body;
+
+    // Verify the fixer has this category in their specializations
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user?.specializations.includes(category)) {
+      return next(new ForbiddenError(`You must have ${category} in your specializations`));
+    }
+
+    // Check for existing certification for this category
+    const existing = await prisma.certification.findUnique({
+      where: { fixer_id_category: { fixer_id: req.user.id, category } },
+    });
+
+    if (existing) {
+      if (existing.status === 'PENDING') {
+        return next(new ConflictError('Certification already pending review'));
+      }
+      if (existing.status === 'APPROVED') {
+        return next(new ConflictError('You already have an approved certification for this category'));
+      }
+      // REJECTED — allow re-upload by updating existing record
+      const updated = await prisma.certification.update({
+        where: { id: existing.id },
+        data: { title, document_url, status: 'PENDING', rejection_note: null, reviewed_at: null, reviewed_by: null },
+      });
+      return res.json({ certification: updated });
+    }
+
+    const certification = await prisma.certification.create({
+      data: { fixer_id: req.user.id, category, title, document_url },
+    });
+    res.status(201).json({ certification });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/users/:id — public profile (limited fields)
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -213,6 +269,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         specializations: true,
         created_at: true,
         portfolio_items: { orderBy: { created_at: 'desc' } },
+        certifications: {
+          where: { status: 'APPROVED' },
+          select: { id: true, category: true, title: true, created_at: true },
+        },
       },
     });
     if (!user) throw new NotFoundError('User not found');

@@ -90,3 +90,14 @@ export const submitVerificationSchema = z.object({
 export const completionPhotosSchema = z.object({
   completion_photos: z.array(z.url()).min(1).max(10),
 });
+
+export const submitCertificationSchema = z.object({
+  category: z.enum(['PLUMBING', 'ELECTRICITY']),
+  title: z.string().trim().min(1).max(200),
+  document_url: z.url(),
+});
+
+export const reviewCertificationSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  rejection_note: z.string().trim().max(500).optional(),
+});

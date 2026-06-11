@@ -229,6 +229,10 @@
       "flow": "Flow",
       "flowTitle": "How requests move"
     },
+    "quickAccess": {
+      "viewAll": "View all tasks",
+      "open": "Open"
+    },
     "quickActions": {
       "postTask": {
         "title": "Post Task",
@@ -954,6 +958,24 @@
       "pendingMsg": "Your verification photo is being reviewed by an admin.",
       "uploadMsg": "Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.",
       "uploadBtn": "Upload ID Photo"
+    },
+    "certifications": {
+      "kicker": "Credentials",
+      "title": "Professional Certifications",
+      "description": "Upload your professional certification for eligible trades to earn a certified badge.",
+      "uploadBtn": "Upload Certificate",
+      "reuploadBtn": "Re-upload Certificate",
+      "pending": "Pending review",
+      "pendingMsg": "Your certification is being reviewed by an admin.",
+      "approved": "Certified",
+      "rejected": "Certification rejected",
+      "rejectedMsg": "You can re-upload a new document.",
+      "noCertifiableCategories": "Add Plumbing or Electricity to your trades to upload certifications.",
+      "uploadError": "Failed to upload certification.",
+      "badge": {
+        "ELECTRICITY": "Certified Electrician",
+        "PLUMBING": "Certified Plumber"
+      }
     }
   },
   "publicProfile": {
@@ -1402,5 +1424,25 @@
     "message": "Complete your profile to get the most out of the app. Add a photo, phone number, and bio so others can get to know you.",
     "completeProfile": "Complete Profile",
     "later": "Maybe Later"
+  },
+  "tutorial": {
+    "getStarted": "Get Started",
+    "requester": {
+      "kicker": "FLOW",
+      "title": "How requests move",
+      "subtitle": "Three simple steps from task to done",
+      "step1": {
+        "label": "Post clearly",
+        "detail": "Add the job, area, budget, and photos so Fixers can price it quickly."
+      },
+      "step2": {
+        "label": "Compare bids",
+        "detail": "Review offers, availability, and fit from your task workspace."
+      },
+      "step3": {
+        "label": "Finish confidently",
+        "detail": "Track progress, mark completion, and keep the record in one place."
+      }
+    }
   }
 }

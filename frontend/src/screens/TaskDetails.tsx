@@ -28,6 +28,7 @@ interface Bid {
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   is_repeat_customer?: boolean;
   previous_tasks_together?: number;
+  certified_categories?: string[];
   fixer?: {
     full_name: string;
     average_rating_as_fixer: number | null;
@@ -487,6 +488,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                         <MaterialCommunityIcons name="account-check" size={14} color={brandColors.primary} />
                         <Text style={[typography.caption, { color: brandColors.primary }]}>
                           Worked together {bid.previous_tasks_together} time{(bid.previous_tasks_together ?? 0) !== 1 ? 's' : ''} before
+                        </Text>
+                      </View>
+                    )}
+                    {task && bid.certified_categories?.includes(task.category) && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <MaterialCommunityIcons name="check-decagram" size={14} color={brandColors.success} />
+                        <Text style={[typography.caption, { color: brandColors.success, fontWeight: '700' }]}>
+                          {t(`fixerProfile.certifications.badge.${task.category}`)}
                         </Text>
                       </View>
                     )}

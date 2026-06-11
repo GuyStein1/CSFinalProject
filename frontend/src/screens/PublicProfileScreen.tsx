@@ -41,6 +41,7 @@ interface UserProfile {
   specializations: string[];
   created_at: string;
   portfolio_items: PortfolioItem[];
+  certifications?: { id: string; category: string; title: string }[];
 }
 
 function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
@@ -349,6 +350,23 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             </View>
           )}
 
+          {/* Certification badges */}
+          {profile?.certifications && profile.certifications.length > 0 && (
+            <View style={styles.certBadgeRow}>
+              {profile.certifications.map((cert) => {
+                const meta = getCategoryMeta(cert.category);
+                return (
+                  <View key={cert.id} style={[styles.certBadge, { backgroundColor: meta.bg }]}>
+                    <MaterialCommunityIcons name="check-decagram" size={14} color={meta.color} />
+                    <Text style={[typography.caption, { color: meta.color, fontWeight: '700' }]}>
+                      {t(`fixerProfile.certifications.badge.${cert.category}`)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
           {/* Portfolio */}
           {(profile?.portfolio_items?.length ?? 0) > 0 && (
             <>
@@ -438,6 +456,21 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   specChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+  },
+  certBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  certBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
