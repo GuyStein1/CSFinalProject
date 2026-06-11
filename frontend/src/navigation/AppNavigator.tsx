@@ -29,7 +29,7 @@ import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useLanguage } from '../context/LanguageContext';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, headerTint, heroGradientRequester, heroGradientFixer, spacing, radii, shadows, typography } from '../theme';
 import {
   type RootStackParamList,
 } from './landingIntent';
@@ -182,7 +182,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
     <View
       style={[
         styles.desktopBar,
-        mode === 'fixer' && styles.desktopBarFixer,
+        mode === 'fixer' ? styles.desktopBarFixer : styles.desktopBarRequester,
         {
           height: topInset + 64,
           paddingTop: topInset,
@@ -190,28 +190,28 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
       ]}
     >
       <View style={styles.desktopBarInner}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go to FixIt home"
-          onPress={openDashboard}
-          style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
-        >
-          <AppLogo compact />
-        </Pressable>
+        <View style={[styles.desktopLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go to FixIt home"
+            onPress={openDashboard}
+            style={({ pressed }) => [styles.logoPressable, { opacity: pressed ? 0.78 : 1 }]}
+          >
+            <AppLogo compact />
+          </Pressable>
 
-        {mode === 'fixer' ? (
-          <View style={[styles.modeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
-            <Text style={styles.modeLabelText}>{t('nav.workspace.fixerBadge')}</Text>
-          </View>
-        ) : (
-          <View style={[styles.modeLabel, styles.modeLabelRequester, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <MaterialCommunityIcons name="home-outline" size={13} color={brandColors.primary} />
-            <Text style={[styles.modeLabelText, styles.modeLabelRequesterText]}>{t('nav.workspace.requesterBadge')}</Text>
-          </View>
-        )}
+          {mode === 'fixer' ? (
+            <View style={[styles.modeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
+              <Text style={styles.modeLabelText}>{t('nav.workspace.fixerBadge')}</Text>
+            </View>
+          ) : (
+            <View style={[styles.modeLabel, styles.modeLabelRequester, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <MaterialCommunityIcons name="home-outline" size={13} color="#fff" />
+              <Text style={styles.modeLabelText}>{t('nav.workspace.requesterBadge')}</Text>
+            </View>
+          )}
 
-        <View style={styles.desktopCenter}>
           <View style={styles.desktopPageTabs}>
             {workspaceTabs.map((item) => {
               const selected = activeScreen === item.screen;
@@ -322,7 +322,7 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               hitSlop={8}
               onPress={() => handleModeChange('requester')}
             >
-              <MaterialCommunityIcons name={isRTL ? 'chevron-right' : 'chevron-left'} size={14} color={brandColors.secondaryDark} />
+              <MaterialCommunityIcons name={isRTL ? 'chevron-right' : 'chevron-left'} size={14} color={brandColors.primary} />
               <Text style={styles.desktopBackHomeBtnText}>{t('nav.workspace.openRequester')}</Text>
             </Pressable>
           )}
@@ -413,14 +413,18 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
     navigation.navigate('FixerMode', { screen: 'FixerProfile' });
   };
 
+  const headerGradient = mode === 'fixer' ? heroGradientFixer : heroGradientRequester;
+
   return (
     <>
       <LinearGradient
-        colors={['#050D18', '#0C1E33']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={headerGradient.colors}
+        locations={headerGradient.locations}
+        start={headerGradient.start}
+        end={headerGradient.end}
         style={[
           styles.topBar,
+          mode === 'fixer' && styles.topBarFixer,
           {
             height: topInset + 56,
             paddingTop: topInset,
@@ -436,7 +440,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
           onPress={() => setMenuOpen(true)}
           hitSlop={8}
         >
-          <MaterialCommunityIcons name="menu" size={24} color={brandColors.textOnDark} />
+          <MaterialCommunityIcons name="menu" size={24} color={brandColors.primary} />
         </Pressable>
 
         {/* logo — absolutely centered */}
@@ -448,7 +452,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
             hitSlop={8}
             style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
           >
-            <AppLogo compact onDark />
+            <AppLogo compact />
           </Pressable>
         </View>
 
@@ -461,7 +465,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
             hitSlop={8}
             onPress={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
           >
-            <MaterialCommunityIcons name="web" size={22} color={brandColors.textOnDark} />
+            <MaterialCommunityIcons name="web" size={22} color={brandColors.primary} />
             <View style={styles.globeLangBadge}>
               <Text style={styles.globeLangText}>{language === 'en' ? 'EN' : 'עב'}</Text>
             </View>
@@ -477,7 +481,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
             hitSlop={8}
             onPress={openNotifications}
           >
-            <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.textOnDark} />
+            <MaterialCommunityIcons name="bell-outline" size={22} color={brandColors.primary} />
             <NotifBadge count={notificationCount} />
           </Pressable>
         </View>
@@ -567,6 +571,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     flexGrow: 0,
     flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: headerTint.requesterBorder,
+  },
+  topBarFixer: {
+    borderBottomColor: headerTint.fixerBorder,
   },
   logoCenter: {
     position: 'absolute',
@@ -579,9 +588,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255,252,246,0.10)',
+    backgroundColor: 'rgba(28,60,86,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.12)',
+    borderColor: brandColors.outlineLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -607,34 +616,32 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.lg,
   },
-  desktopCenter: {
-    flex: 1,
+  // Logo + nav tabs grouped together on the left; actions sit on the right.
+  desktopLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
+    flexShrink: 1,
   },
   desktopActions: {
-    minWidth: 168,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: spacing.sm,
   },
   desktopIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.md,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: brandColors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
+    backgroundColor: 'rgba(28,60,86,0.05)',
   },
   desktopActionPressed: {
-    opacity: 0.82,
+    opacity: 0.6,
   },
   desktopPrimaryAction: {
     flexDirection: 'row',
@@ -670,12 +677,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  // Requester badge mirrors the fixer one but in the requester's navy/blue.
   modeLabelRequester: {
-    backgroundColor: brandColors.infoSoft,
+    backgroundColor: brandColors.primary,
     borderColor: brandColors.primary,
-  },
-  modeLabelRequesterText: {
-    color: brandColors.primary,
   },
   // "Become a Fixer" CTA variant (first-time, filled amber)
   desktopBecomeFixerBtn: {
@@ -690,34 +695,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    height: 38,
-    paddingHorizontal: spacing.md,
+    height: 40,
+    paddingHorizontal: spacing.lg,
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: brandColors.outlineLight,
-    backgroundColor: brandColors.surfaceAlt,
+    backgroundColor: 'rgba(241,181,69,0.16)',
   },
   desktopFixerWorkspaceBtnText: {
     color: brandColors.secondaryDark,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     lineHeight: 16,
   },
-  // Back to home button (fixer mode, right actions)
+  // Back to requester button (fixer mode, right actions) — uses requester blue
+  // so the colour signals where it leads.
   desktopBackHomeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    height: 38,
-    paddingHorizontal: spacing.md,
+    height: 40,
+    paddingHorizontal: spacing.lg,
     borderRadius: radii.pill,
+    backgroundColor: headerTint.requester,
     borderWidth: 1,
-    borderColor: brandColors.secondaryDark,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderColor: headerTint.requesterBorder,
   },
   desktopBackHomeBtnText: {
-    color: brandColors.secondaryDark,
-    fontSize: 12,
+    color: brandColors.primary,
+    fontSize: 13,
     fontWeight: '700',
     lineHeight: 16,
   },
@@ -752,10 +756,15 @@ const styles = StyleSheet.create({
     color: brandColors.primary,
     fontWeight: '700',
   },
+  // Per-mode header tints so the bar colour signals which workspace you're in.
+  desktopBarRequester: {
+    backgroundColor: headerTint.requester,
+    borderBottomColor: headerTint.requesterBorder,
+  },
   // Fixer-mode tab variants
   desktopBarFixer: {
-    backgroundColor: '#FDF3E0',
-    borderBottomColor: brandColors.secondary,
+    backgroundColor: headerTint.fixer,
+    borderBottomColor: headerTint.fixerBorder,
   },
   desktopPageTabActiveFixer: {
     borderBottomColor: brandColors.secondaryDark,
@@ -765,8 +774,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   desktopIconBtnFixer: {
-    backgroundColor: brandColors.warningSoft,
-    borderColor: brandColors.secondary,
+    backgroundColor: 'rgba(212,154,42,0.14)',
   },
 
   // Language switcher chips

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Portal, Modal, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,7 +22,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
 import useBids, { type BidStatus, type UserBid } from '../hooks/useBids';
-import { brandColors, spacing, radii, shadows, typography } from '../theme';
+import { brandColors, heroGradientFixer, spacing, radii, shadows, typography } from '../theme';
 import { getCategoryMeta } from '../utils/categoryMetadata';
 
 type TabFilter = 'ALL' | BidStatus | 'COMPLETED';
@@ -590,11 +591,17 @@ export default function MyBidsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}>
+      <LinearGradient
+        colors={heroGradientFixer.colors}
+        locations={heroGradientFixer.locations}
+        start={heroGradientFixer.start}
+        end={heroGradientFixer.end}
+        style={[styles.workspaceHeader, isWide && styles.workspaceHeaderWide]}
+      >
         <View style={styles.workspaceHeaderMain}>
           <View style={styles.headerKickerRow}>
             <View style={styles.headerIconShell}>
-              <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondary} />
+              <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondaryDark} />
             </View>
             <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.kicker')}</Text>
           </View>
@@ -619,7 +626,7 @@ export default function MyBidsScreen() {
             {t('myBids.stats.findJobs')}
           </FButton>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Tab filter */}
       <View style={styles.tabBar}>
@@ -827,7 +834,6 @@ const styles = StyleSheet.create({
     backgroundColor: brandColors.background,
   },
   workspaceHeader: {
-    backgroundColor: brandColors.primaryDark,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
@@ -858,15 +864,15 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: radii.xs,
-    backgroundColor: 'rgba(241,181,69,0.14)',
+    backgroundColor: 'rgba(241,181,69,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(241,181,69,0.22)',
+    borderColor: 'rgba(212,154,42,0.35)',
   },
   headerKicker: {
     ...typography.eyebrow,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
     letterSpacing: 0.8,
   },
   headerTitle: {
@@ -874,11 +880,11 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   headerSub: {
     ...typography.bodySm,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     maxWidth: 560,
   },
   workspaceStats: {
@@ -895,20 +901,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.sm,
-    backgroundColor: 'rgba(255,252,246,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.14)',
+    borderColor: brandColors.outlineLight,
   },
   workspaceStatValue: {
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   workspaceStatLabel: {
     ...typography.caption,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     marginTop: 1,
   },
   headerAction: {

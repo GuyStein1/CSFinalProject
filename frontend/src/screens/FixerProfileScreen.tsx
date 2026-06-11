@@ -24,7 +24,8 @@ import api from '../api/axiosInstance';
 import { uploadImage } from '../utils/uploadImage';
 import { FButton, FCard, FChip, FInput } from '../components/ui';
 import LoadingScreen from '../components/LoadingScreen';
-import { brandColors, radii, shadows, spacing, typography } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { brandColors, heroGradientFixer, radii, shadows, spacing, typography } from '../theme';
 import { CATEGORY_LIST, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
@@ -298,7 +299,13 @@ export default function FixerProfileScreen() {
       onScrollBeginDrag={dismissEditing}
     >
       <View style={[styles.workspaceShell, isWide && styles.workspaceShellWide]}>
-        <View style={[styles.profileHero, isWide && styles.profileHeroWide]}>
+        <LinearGradient
+          colors={heroGradientFixer.colors}
+          locations={heroGradientFixer.locations}
+          start={heroGradientFixer.start}
+          end={heroGradientFixer.end}
+          style={[styles.profileHero, isWide && styles.profileHeroWide]}
+        >
           <View style={styles.avatarWrapper}>
             <Pressable
               onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
@@ -334,7 +341,7 @@ export default function FixerProfileScreen() {
           <View style={styles.heroCopy}>
             <View style={styles.headerKickerRow}>
               <View style={styles.headerIconShell}>
-                <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondary} />
+                <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
               </View>
               <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
@@ -359,12 +366,12 @@ export default function FixerProfileScreen() {
               {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
             </Text>
             <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.rating')}</Text>
-            <Text style={[typography.caption, { color: brandColors.secondary, marginTop: spacing.xs, textDecorationLine: 'underline' }]}>
+            <Text style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline' }]}>
               {t('fixerProfile.stats.tapToView')}
             </Text>
           </Pressable>
 
-        </View>
+        </LinearGradient>
 
         <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
           <View style={styles.profileMainColumn}>
@@ -772,7 +779,6 @@ const styles = StyleSheet.create({
     maxWidth: 1120,
   },
   profileHero: {
-    backgroundColor: brandColors.primaryDark,
     borderRadius: radii.xl,
     padding: spacing.lg,
     flexGrow: 0,
@@ -782,6 +788,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,
+    overflow: 'hidden',
     ...shadows.md,
   },
   profileHeroWide: {
@@ -818,15 +825,15 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: radii.sm,
-    backgroundColor: 'rgba(241,181,69,0.14)',
+    backgroundColor: 'rgba(241,181,69,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(241,181,69,0.22)',
+    borderColor: 'rgba(212,154,42,0.35)',
   },
   headerKicker: {
     ...typography.eyebrow,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
     letterSpacing: 0.8,
   },
   heroName: {
@@ -834,11 +841,11 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   heroEmail: {
     ...typography.bodySm,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
   },
   heroStats: {
     flexDirection: 'row',
@@ -850,20 +857,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255,252,246,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255,252,246,0.14)',
+    borderColor: brandColors.outlineLight,
   },
   heroStatValue: {
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
     letterSpacing: 0,
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
   },
   heroStatLabel: {
     ...typography.caption,
-    color: brandColors.textOnDarkMuted,
+    color: brandColors.textSecondary,
     marginTop: 1,
   },
   profileGrid: {

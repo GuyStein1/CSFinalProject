@@ -7,6 +7,7 @@ import Constants from 'expo-constants';
 import api from '../api/axiosInstance';
 import { auth } from '../config/firebase';
 import { disconnectSocket } from '../utils/socket';
+import { friendlyAuthError } from '../utils/authErrors';
 
 const PUSH_PROMPTED_KEY = 'push_permission_prompted';
 
@@ -135,7 +136,7 @@ export default function useAuthBootstrap() {
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (nextError) {
       setStatus('signed_out');
-      setError(getApiErrorMessage(nextError, 'Failed to sign in.'));
+      setError(friendlyAuthError(nextError, getApiErrorMessage(nextError, 'Failed to sign in.')));
     }
   }, []);
 

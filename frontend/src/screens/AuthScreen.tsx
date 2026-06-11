@@ -9,9 +9,10 @@ import { auth } from '../config/firebase';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
 import { FButton, FCard, FInput } from '../components/ui';
-import { brandColors, spacing, radii, typography } from '../theme';
+import { brandColors, heroGradient, spacing, radii, typography } from '../theme';
 import type { AuthBootstrapStatus } from '../hooks/useAuthBootstrap';
 import useGoogleAuth from '../hooks/useGoogleAuth';
+import { friendlyAuthError } from '../utils/authErrors';
 
 interface AuthScreenProps {
   status: AuthBootstrapStatus;
@@ -113,7 +114,7 @@ export default function AuthScreen({
       await createUserWithEmailAndPassword(auth, registerEmail.trim(), registerPassword);
       await onSyncLocalAccount(registerFullName.trim(), registerPhone.trim());
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : t('auth.register.errors.registrationFailed'));
+      setLocalError(friendlyAuthError(err, t('auth.register.errors.registrationFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +128,7 @@ export default function AuthScreen({
       await sendPasswordResetEmail(auth, forgotEmail.trim());
       setForgotSent(true);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : t('auth.forgot.failed'));
+      setLocalError(friendlyAuthError(err, t('auth.forgot.failed')));
     } finally {
       setSubmitting(false);
     }
@@ -172,8 +173,10 @@ export default function AuthScreen({
 
   const renderShell = (content: React.ReactNode) => (
     <LinearGradient
-      colors={[brandColors.primary, brandColors.primaryDark, '#0A1D30', brandColors.background]}
-      locations={[0, 0.3, 0.6, 1]}
+      colors={heroGradient.colors}
+      locations={heroGradient.locations}
+      start={heroGradient.start}
+      end={heroGradient.end}
       style={styles.gradient}
     >
       <KeyboardAvoidingView
@@ -268,9 +271,10 @@ export default function AuthScreen({
   if (mode === 'welcome') {
     return (
       <LinearGradient
-        colors={[brandColors.primary, brandColors.primaryDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        colors={heroGradient.colors}
+        locations={heroGradient.locations}
+        start={heroGradient.start}
+        end={heroGradient.end}
         style={styles.welcomeScreen}
       >
         <View style={styles.welcomeCenter}>
@@ -292,7 +296,7 @@ export default function AuthScreen({
             <Text style={styles.welcomeGhostText}>{t('auth.welcome.createAccount')}</Text>
           </Pressable>
 
-          {renderSocialButtons('dark')}
+          {renderSocialButtons('light')}
 
           <Text style={styles.welcomeFootnote}>
             {t('auth.welcome.footnote')}
@@ -467,7 +471,7 @@ export default function AuthScreen({
 }
 
 const styles = StyleSheet.create({
-  // Welcome screen — full-screen navy, no card
+  // Welcome screen — full-screen light hero gradient, no card
   welcomeScreen: {
     flex: 1,
     justifyContent: 'space-between',
@@ -485,13 +489,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '800',
     letterSpacing: -1,
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
     marginTop: spacing.md,
   },
   welcomeTagline: {
     fontSize: 18,
     fontWeight: '600',
-    color: brandColors.secondary,
+    color: brandColors.secondaryDark,
     textAlign: 'center',
   },
   welcomeActions: {
@@ -499,8 +503,8 @@ const styles = StyleSheet.create({
   },
   welcomeGhostBtn: {
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 252, 246, 0.4)',
-    backgroundColor: 'transparent',
+    borderColor: 'rgba(28, 60, 86, 0.28)',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: radii.pill,
     paddingVertical: spacing.md + 2,
     alignItems: 'center',
@@ -509,12 +513,12 @@ const styles = StyleSheet.create({
   welcomeGhostText: {
     fontSize: 15,
     fontWeight: '700',
-    color: brandColors.textOnDark,
+    color: brandColors.textPrimary,
   },
   welcomeFootnote: {
     textAlign: 'center',
     fontSize: 11,
-    color: 'rgba(255, 252, 246, 0.55)',
+    color: brandColors.textMuted,
     marginTop: spacing.sm,
     letterSpacing: 0.3,
   },

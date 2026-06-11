@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { brandColors, spacing, typography } from '../theme';
+import { brandColors, heroGradient, spacing, typography } from '../theme';
 
 interface LoadingScreenProps {
   label?: string;
+  /** Delay (ms) before the loader becomes visible. Avoids a flash on fast loads. */
+  delayMs?: number;
 }
 
 function PulsingDot({ delay }: { delay: number }) {
@@ -43,14 +45,24 @@ function PulsingDot({ delay }: { delay: number }) {
   return <Animated.View style={[styles.dot, { opacity }]} />;
 }
 
-export default function LoadingScreen({ label = 'Loading your workspace...' }: LoadingScreenProps) {
+export default function LoadingScreen({ label = 'Loading your workspace...', delayMs = 250 }: LoadingScreenProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
+  // Only reveal the loader if loading actually takes a moment. Quick loads
+  // resolve before this flips, so the screen never flashes on transitions.
+  const [visible, setVisible] = useState(delayMs <= 0);
 
   useEffect(() => {
+    if (visible) return;
+    const timer = setTimeout(() => setVisible(true), delayMs);
+    return () => clearTimeout(timer);
+  }, [visible, delayMs]);
+
+  useEffect(() => {
+    if (!visible) return;
     Animated.timing(fadeIn, {
       toValue: 1,
-      duration: 700,
+      duration: 320,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
@@ -73,19 +85,20 @@ export default function LoadingScreen({ label = 'Loading your workspace...' }: L
     );
     pulse.start();
     return () => pulse.stop();
-  }, []);
+  }, [visible]);
+
+  // Render nothing during the grace period — prevents the loader flashing in
+  // and out on fast transitions (which looked like a glitch).
+  if (!visible) return null;
 
   return (
     <LinearGradient
-      colors={['#050D18', '#0C1E33', '#132D4A', '#1A3D63']}
-      start={{ x: 0.15, y: 0 }}
-      end={{ x: 0.85, y: 1 }}
+      colors={heroGradient.colors}
+      locations={heroGradient.locations}
+      start={heroGradient.start}
+      end={heroGradient.end}
       style={styles.container}
     >
-      {/* Depth orbs */}
-      <View style={[styles.orb, styles.orbTopLeft]} />
-      <View style={[styles.orb, styles.orbBottomRight]} />
-
       <Animated.View style={[styles.inner, { opacity: fadeIn }]}>
         {/*
          * Circular "coin" — the logo's light background becomes the coin surface.
@@ -119,24 +132,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  orb: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  orbTopLeft: {
-    width: 320,
-    height: 320,
-    top: -130,
-    left: -100,
-    backgroundColor: 'rgba(42, 100, 160, 0.28)',
-  },
-  orbBottomRight: {
-    width: 240,
-    height: 240,
-    bottom: -90,
-    right: -80,
-    backgroundColor: 'rgba(26, 61, 99, 0.4)',
-  },
   inner: {
     alignItems: 'center',
     gap: spacing.xxl,
@@ -149,11 +144,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFCF6',
     alignItems: 'center',
     justifyContent: 'center',
-    // Ring shadow for depth
-    shadowColor: brandColors.secondary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
+    // Soft drop shadow for depth against the light background
+    shadowColor: brandColors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
     elevation: 12,
   },
   // Amber ring accent around the coin
@@ -178,10 +173,10 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: brandColors.secondary,
+    backgroundColor: brandColors.secondaryDark,
   },
   label: {
-    color: 'rgba(255, 252, 246, 0.5)',
+    color: brandColors.textMuted,
     letterSpacing: 0.3,
     textAlign: 'center',
   },
