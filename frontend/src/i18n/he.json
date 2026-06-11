@@ -353,7 +353,7 @@
     },
     "card": {
       "yourOffer": "ההצעה שלך",
-      "budget": "תקציב {{value}}",
+      "budget": "תקציב המזמין {{value}}",
       "quote": "הצעת מחיר",
       "submitted": "הוגש {{date}}",
       "withdraw": "משוך חזרה",

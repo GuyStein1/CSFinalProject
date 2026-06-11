@@ -353,7 +353,7 @@
     },
     "card": {
       "yourOffer": "Your offer",
-      "budget": "Budget {{value}}",
+      "budget": "Requester's budget {{value}}",
       "quote": "Quote",
       "submitted": "Submitted {{date}}",
       "withdraw": "Withdraw",
