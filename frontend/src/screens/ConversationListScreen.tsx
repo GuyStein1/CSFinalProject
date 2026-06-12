@@ -74,7 +74,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
       data={activeConversations}
       keyExtractor={(item) => item.taskId}
       contentContainerStyle={activeConversations.length === 0 && pastCount === 0 ? styles.emptyContainer : styles.listContent}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ItemSeparatorComponent={() => <View style={[styles.separator, isRTL && { direction: 'rtl' as const }]} />}
       ListEmptyComponent={
         <EmptyState
           icon="chat-outline"
@@ -88,7 +88,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
           onPress={() => navigation.navigate('PastConversations', { mode })}
         >
           <MaterialCommunityIcons name="archive-outline" size={20} color={brandColors.textMuted} />
-          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 }]}>
+          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('conversations.past')} ({pastCount})
           </Text>
           <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.outlineLight} />
@@ -129,7 +129,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
 
             <View style={styles.content}>
               <View style={styles.topRow}>
-                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {other?.full_name || 'User'}
                 </Text>
                 {item.lastMessage && (
@@ -139,18 +139,18 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                 )}
               </View>
               <View style={styles.titleRow}>
-                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {item.taskTitle}
                 </Text>
                 <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-                  <Text style={styles.rolePillText}>{t(`nav.mode.${item.userRole}`)}</Text>
+                  <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${item.userRole}`)}</Text>
                 </View>
               </View>
               <View style={styles.bottomRow}>
                 <Text
                   style={[
                     typography.bodySm,
-                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' },
+                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
                   ]}
                   numberOfLines={1}
                 >

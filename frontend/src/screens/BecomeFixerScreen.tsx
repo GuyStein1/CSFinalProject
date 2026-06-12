@@ -70,6 +70,7 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
   };
 
   const rowDirection = isRTL ? 'row-reverse' : 'row';
+  const rtlText = isRTL ? { writingDirection: 'rtl' as const } : {};
 
   return (
     <Animated.View style={[styles.root, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -87,8 +88,8 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="wrench" size={40} color="#fff" />
           </View>
-          <Text style={[typography.h1, styles.heroTitle]}>{t('becomeFixer.hero.title')}</Text>
-          <Text style={[typography.body, styles.heroSubtitle]}>{t('becomeFixer.hero.subtitle')}</Text>
+          <Text style={[typography.h1, styles.heroTitle, rtlText]}>{t('becomeFixer.hero.title')}</Text>
+          <Text style={[typography.body, styles.heroSubtitle, rtlText]}>{t('becomeFixer.hero.subtitle')}</Text>
         </LinearGradient>
 
         {/* Benefits grid */}
@@ -99,10 +100,10 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
                 <MaterialCommunityIcons name={BENEFIT_ICONS[key] as never} size={24} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.benefitText}>
-                <Text style={[typography.bodyMedium, styles.benefitTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.bodyMedium, styles.benefitTitle, { textAlign: isRTL ? 'right' : 'left' }, rtlText]}>
                   {t(`becomeFixer.benefits.${key}.title`)}
                 </Text>
-                <Text style={[typography.bodySm, styles.benefitBody, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.bodySm, styles.benefitBody, { textAlign: isRTL ? 'right' : 'left' }, rtlText]}>
                   {t(`becomeFixer.benefits.${key}.body`)}
                 </Text>
               </View>
@@ -112,7 +113,7 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
 
         {/* Steps */}
         <View style={[styles.stepsSection, wide && styles.stepsSectionWide]}>
-          <Text style={[typography.h3, styles.stepsHeading, { textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[typography.h3, styles.stepsHeading, { textAlign: isRTL ? 'right' : 'left' }, rtlText]}>
             {t('becomeFixer.steps.heading')}
           </Text>
           <View style={styles.steps}>
@@ -122,10 +123,10 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
                   <Text style={styles.stepBadgeText}>{idx + 1}</Text>
                 </View>
                 <View style={styles.stepText}>
-                  <Text style={[typography.bodyMedium, styles.stepLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[typography.bodyMedium, styles.stepLabel, { textAlign: isRTL ? 'right' : 'left' }, rtlText]}>
                     {t(`becomeFixer.steps.${key}.label`)}
                   </Text>
-                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }, rtlText]}>
                     {t(`becomeFixer.steps.${key}.detail`)}
                   </Text>
                 </View>

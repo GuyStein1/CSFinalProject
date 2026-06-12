@@ -81,7 +81,7 @@ function NotificationItem({
   };
 
   return (
-    <View style={styles.itemRow}>
+    <View style={[styles.itemRow, isRTL && { direction: 'rtl' as const }]}>
       <Pressable
         style={({ pressed }) => [
           styles.item,
@@ -98,7 +98,7 @@ function NotificationItem({
           <Text
             style={[
               typography.bodyMedium,
-              { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+              { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
               !notification.is_read && { fontWeight: '700' },
             ]}
             numberOfLines={1}
@@ -107,11 +107,11 @@ function NotificationItem({
           </Text>
           {role && (
             <View style={[styles.rolePill, { backgroundColor: role === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-              <Text style={styles.rolePillText}>{t(`nav.mode.${role}`)}</Text>
+              <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${role}`)}</Text>
             </View>
           )}
           <Text
-            style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}
+            style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
             numberOfLines={2}
           >
             {notification.body}

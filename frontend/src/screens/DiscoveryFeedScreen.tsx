@@ -400,14 +400,14 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
 
   if (permissionState === 'rationale' && !center) {
     return (
-      <View style={styles.rationaleContainer}>
+      <View style={[styles.rationaleContainer, isRTL && { direction: 'rtl' as const }]}>
         <FCard style={styles.rationaleCard} shadow="md">
           <View style={styles.rationaleContent}>
             <AppLogo />
-            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('discovery.location.rationale.title')}
             </Text>
-            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', maxWidth: 300 }]}>
+            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', maxWidth: 300 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('discovery.location.rationale.description')}
             </Text>
           </View>
@@ -422,10 +422,10 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <View style={styles.modalIconCircle}>
               <MaterialCommunityIcons name="map-marker-radius-outline" size={32} color={brandColors.primary} />
             </View>
-            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' }]}>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: 'center' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('discovery.location.modal.title')}
             </Text>
-            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.md }]}>
+            <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.md , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('discovery.location.modal.description')}
             </Text>
             <View style={styles.modalActions}>
@@ -458,10 +458,10 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="toolbox-outline" size={17} color={brandColors.secondaryDark} />
             </View>
-            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('discovery.header.kicker')}</Text>
+            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.header.kicker')}</Text>
           </View>
-          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('discovery.header.title')}</Text>
-          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.header.title')}</Text>
+          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
             {t('discovery.header.sub', { location: center?.label ?? t('discovery.location.workArea'), categories: categorySummary, budget: priceSummary })}
           </Text>
         </View>
@@ -471,29 +471,29 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             style={[styles.workspaceStat, bidFilter === 'all' && styles.workspaceStatActive]}
             onPress={() => setBidFilter('all')}
           >
-            <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((t) => !currentUserId || t.requesterId !== currentUserId).length}</Text>
-            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.openJobs')}</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{loading ? '...' : rawTasks.filter((t) => !currentUserId || t.requesterId !== currentUserId).length}</Text>
+            <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.stats.openJobs')}</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'no_bid' && styles.workspaceStatActive]}
             onPress={() => setBidFilter('no_bid')}
           >
-            <Text style={styles.workspaceStatValue}>{loading ? '...' : rawTasks.filter((task) => (!currentUserId || task.requesterId !== currentUserId) && !bidTaskIds.has(task.id)).length}</Text>
-            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.new')}</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{loading ? '...' : rawTasks.filter((task) => (!currentUserId || task.requesterId !== currentUserId) && !bidTaskIds.has(task.id)).length}</Text>
+            <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.stats.new')}</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, bidFilter === 'has_bid' && styles.workspaceStatActive]}
             onPress={() => setBidFilter('has_bid')}
           >
-            <Text style={styles.workspaceStatValue}>{bidTaskIds.size}</Text>
-            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.alreadyBid')}</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{bidTaskIds.size}</Text>
+            <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.stats.alreadyBid')}</Text>
           </Pressable>
           <Pressable
             style={[styles.workspaceStat, showFilterPanel && styles.workspaceStatActive]}
             onPress={() => setShowFilterPanel(!showFilterPanel)}
           >
-            <Text style={styles.workspaceStatValue}>{radius} km</Text>
-            <Text style={styles.workspaceStatLabel}>{t('discovery.stats.range')}</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{radius} km</Text>
+            <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.stats.range')}</Text>
           </Pressable>
         </View>
       </LinearGradient>
@@ -521,7 +521,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             accessibilityLabel={searchExpanded ? t('discovery.location.searchClose') : t('discovery.location.searchToggle')}
           >
             <MaterialCommunityIcons name="map-marker-radius-outline" size={15} color={brandColors.success} />
-            <Text style={styles.workAreaToggleText} numberOfLines={1}>{t('discovery.location.searchToggle')}</Text>
+            <Text style={[styles.workAreaToggleText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{t('discovery.location.searchToggle')}</Text>
             <MaterialCommunityIcons name={searchExpanded ? 'chevron-up' : 'chevron-down'} size={15} color={brandColors.success} />
           </Pressable>
         ) : undefined}
@@ -604,15 +604,15 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
       {center && centerMode === 'manual' && !searchLoading && (
         <View style={[styles.workAreaActiveBar, isWide && styles.workAreaActiveBarWide]}>
           <MaterialCommunityIcons name="map-marker-check" size={13} color={brandColors.success} />
-          <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]} numberOfLines={1}>
-            {t('discovery.location.showingTasksIn')}<Text style={{ color: brandColors.textPrimary, fontWeight: '600' }}>{center.label}</Text>
+          <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
+            {t('discovery.location.showingTasksIn')}<Text style={{ color: brandColors.textPrimary, fontWeight: '600', writingDirection: isRTL ? 'rtl' : 'ltr' }}>{center.label}</Text>
           </Text>
           <Pressable
             onPress={() => { setSearchText(''); loadGpsCenter(); }}
             accessibilityRole="button"
             accessibilityLabel="Use my current location"
           >
-            <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>{t('discovery.location.useMyLocation')}</Text>
+            <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.location.useMyLocation')}</Text>
           </Pressable>
         </View>
       )}
@@ -649,7 +649,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
               <FCard style={styles.overlayCard} shadow="md">
                 <View style={styles.overlayContent}>
                   <ActivityIndicator size="small" color={brandColors.primary} />
-                  <Text style={[typography.body, { color: brandColors.textMuted }]}>
+                  <Text style={[typography.body, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('discovery.loading.nearby')}
                   </Text>
                 </View>
@@ -660,7 +660,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           {!loading && error && (
             <View style={styles.loadingOverlay}>
               <FCard style={styles.overlayCard} shadow="md">
-                <Text style={[typography.h3, { color: brandColors.textPrimary }]}>{t('discovery.error.couldNotLoad')}</Text>
+                <Text style={[typography.h3, { color: brandColors.textPrimary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.error.couldNotLoad')}</Text>
                 <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.sm }]}>
                   {error}
                 </Text>

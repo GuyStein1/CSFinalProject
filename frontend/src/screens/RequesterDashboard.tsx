@@ -91,7 +91,7 @@ export default function RequesterDashboard({ navigation }: Props) {
 
   return (
     <ScrollView
-      style={styles.root}
+      style={[styles.root, isRTL && { direction: 'rtl' as const }]}
       contentContainerStyle={styles.scroll}
       showsVerticalScrollIndicator={false}
     >
@@ -106,13 +106,13 @@ export default function RequesterDashboard({ navigation }: Props) {
           <View style={[styles.heroCopy, wide && styles.heroCopyWide]}>
             <View style={styles.workspacePill}>
               <View style={styles.liveDot} />
-              <Text style={styles.workspacePillText}>{t('dashboard.hero.workspace')}</Text>
+              <Text style={[styles.workspacePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.hero.workspace')}</Text>
             </View>
 
-            <Text style={[styles.greeting, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.greeting, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {firstName ? `${greeting}, ${firstName}.` : `${greeting}.`}
             </Text>
-            <Text style={[styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.heroSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('dashboard.hero.sub')}
             </Text>
 
@@ -141,22 +141,22 @@ export default function RequesterDashboard({ navigation }: Props) {
                   size={18}
                   color={brandColors.primary}
                 />
-                <Text style={styles.heroGhostText}>{t('dashboard.hero.myTasks')}</Text>
+                <Text style={[styles.heroGhostText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.hero.myTasks')}</Text>
               </Pressable>
             </View>
           </View>
 
           <View style={[styles.heroPanel, wide && styles.heroPanelWide]}>
-            <Text style={[styles.panelEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.eyebrow')}</Text>
-            <Text style={[styles.panelTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.title')}</Text>
+            <Text style={[styles.panelEyebrow, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.eyebrow')}</Text>
+            <Text style={[styles.panelTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.title')}</Text>
             <View style={styles.panelDivider} />
             <View style={styles.panelRow}>
               <View style={styles.panelIconShell}>
                 <MaterialCommunityIcons name="camera-plus-outline" size={19} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.panelText}>
-                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosTitle')}</Text>
-                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.photosCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.photosTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.photosCopy')}</Text>
               </View>
             </View>
             <View style={styles.panelRow}>
@@ -164,8 +164,8 @@ export default function RequesterDashboard({ navigation }: Props) {
                 <MaterialCommunityIcons name="shield-check-outline" size={19} color={brandColors.secondaryDark} />
               </View>
               <View style={styles.panelText}>
-                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyTitle')}</Text>
-                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.panel.historyCopy')}</Text>
+                <Text style={[styles.panelRowTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.historyTitle')}</Text>
+                <Text style={[styles.panelRowCopy, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.panel.historyCopy')}</Text>
               </View>
             </View>
           </View>
@@ -192,7 +192,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 />
                 <View style={styles.statusBadge}>
                   <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>{t('dashboard.quickAccess.open')}</Text>
+                  <Text style={[styles.statusText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.quickAccess.open')}</Text>
                 </View>
               </Pressable>
               <Pressable
@@ -200,7 +200,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 accessibilityRole="button"
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               >
-                <Text style={styles.quickViewAll}>{t('dashboard.quickAccess.viewAll')}</Text>
+                <Text style={[styles.quickViewAll, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.quickAccess.viewAll')}</Text>
               </Pressable>
             </View>
           );
@@ -217,8 +217,8 @@ export default function RequesterDashboard({ navigation }: Props) {
               />
             </View>
             <View style={styles.verifyCopy}>
-              <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.verify.title')}</Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.verify.title')}</Text>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {verificationSent ? t('dashboard.verify.sent') : t('dashboard.verify.pending')}
               </Text>
             </View>
@@ -229,7 +229,7 @@ export default function RequesterDashboard({ navigation }: Props) {
                 accessibilityLabel="Resend verification email"
                 style={({ pressed }) => [styles.verifyBtn, { opacity: pressed ? 0.75 : 1 }]}
               >
-                <Text style={[typography.caption, styles.verifyBtnText]}>{t('dashboard.verify.resend')}</Text>
+                <Text style={[typography.caption, styles.verifyBtnText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.verify.resend')}</Text>
               </Pressable>
             )}
           </View>
@@ -238,8 +238,8 @@ export default function RequesterDashboard({ navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.services')}</Text>
-              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('dashboard.section.servicesTitle')}</Text>
+              <Text style={[styles.sectionEyebrow, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.section.services')}</Text>
+              <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.section.servicesTitle')}</Text>
             </View>
           </View>
 
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   quickAccessRTL: {
-    left: undefined,
+    left: 'auto' as unknown as number,
     right: 20,
   },
   quickCircle: {

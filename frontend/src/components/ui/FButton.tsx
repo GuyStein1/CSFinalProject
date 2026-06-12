@@ -10,6 +10,7 @@ import {
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { brandColors, radii, shadows, spacing, typography } from '../../theme';
+import { useLanguage } from '../../context/LanguageContext';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -53,6 +54,7 @@ export default function FButton({
   fullWidth = false,
   style,
 }: FButtonProps) {
+  const { isRTL } = useLanguage();
   const sConf = sizeConfig[size];
   const vConf = variantStyles[variant];
   const isDisabled = disabled || loading;
@@ -82,22 +84,22 @@ export default function FButton({
       {loading ? (
         <ActivityIndicator size="small" color={vConf.text} />
       ) : (
-        <View style={styles.content}>
+        <View style={[styles.content, isRTL && { flexDirection: 'row-reverse' }]}>
           {icon && (
             <MaterialCommunityIcons
               name={icon as never}
               size={sConf.iconSize}
               color={vConf.text}
-              style={styles.iconLeft}
+              style={isRTL ? styles.iconRight : styles.iconLeft}
             />
           )}
-          <Text style={[sConf.typo, { color: vConf.text }]}>{children}</Text>
+          <Text style={[sConf.typo, { color: vConf.text }, isRTL && { writingDirection: 'rtl' }]}>{children}</Text>
           {iconRight && (
             <MaterialCommunityIcons
               name={iconRight as never}
               size={sConf.iconSize}
               color={vConf.text}
-              style={styles.iconRight}
+              style={isRTL ? styles.iconLeft : styles.iconRight}
             />
           )}
         </View>

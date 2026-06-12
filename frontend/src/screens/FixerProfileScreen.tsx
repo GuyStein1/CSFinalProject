@@ -337,7 +337,7 @@ export default function FixerProfileScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, isRTL && { direction: 'rtl' as const }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -388,15 +388,15 @@ export default function FixerProfileScreen() {
               <View style={styles.headerIconShell}>
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
               </View>
-              <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.headerKicker')}</Text>
+              <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Text style={[styles.heroName, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>{displayName}</Text>
+              <Text style={[styles.heroName, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
             </View>
-            <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{profile?.email}</Text>
+            <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
           </View>
 
           <Pressable
@@ -410,8 +410,8 @@ export default function FixerProfileScreen() {
             <Text style={styles.heroStatValue}>
               {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
             </Text>
-            <Text style={styles.heroStatLabel}>{t('fixerProfile.stats.rating')}</Text>
-            <Text style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline' }]}>
+            <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
+            <Text style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('fixerProfile.stats.tapToView')}
             </Text>
           </Pressable>
@@ -426,13 +426,13 @@ export default function FixerProfileScreen() {
                   <MaterialCommunityIcons name="account-edit-outline" size={18} color={brandColors.primary} />
                 </View>
                 <View>
-                  <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.sectionKicker')}</Text>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.sectionTitle')}</Text>
+                  <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.sectionKicker')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.sectionTitle')}</Text>
                 </View>
               </View>
 
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.fullName')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.fields.fullName')}</Text>
                 {editingName ? (
                   <FInput autoFocus value={fullName} onChangeText={setFullName} returnKeyType="next" onBlur={() => { if (fullName.trim() === origName) setEditingName(false); }} />
                 ) : (
@@ -445,7 +445,7 @@ export default function FixerProfileScreen() {
                 )}
               </View>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.bio')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.fields.bio')}</Text>
                 {editingBio ? (
                   <FInput autoFocus value={bio} onChangeText={setBio} multiline numberOfLines={3} returnKeyType="next" onBlur={() => { if (bio.trim() === origBio) setEditingBio(false); }} />
                 ) : (
@@ -458,7 +458,7 @@ export default function FixerProfileScreen() {
                 )}
               </View>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.phone')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.fields.phone')}</Text>
                 {editingPhone ? (
                   <FInput
                     autoFocus
@@ -478,7 +478,7 @@ export default function FixerProfileScreen() {
                 )}
               </View>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>{t('fixerProfile.fields.paymentLink')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.fields.paymentLink')}</Text>
                 {editingPayment ? (
                   <FInput
                     autoFocus
@@ -506,10 +506,10 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="tools" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.tradeCoverage.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
-                  <Text style={[typography.caption, { color: brandColors.primary }]}>
+                  <Text style={[typography.caption, { color: brandColors.primary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('fixerProfile.tradeCoverage.selectedCount', { count: specializations.length })}
                   </Text>
                 </View>
@@ -535,44 +535,46 @@ export default function FixerProfileScreen() {
                     <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.pushNotifications.label')}
                     </Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.pushNotifications.description')}
                     </Text>
                   </View>
                 </View>
-                <Switch
-                  value={pushEnabled}
-                  onValueChange={async (value) => {
-                    if (Platform.OS === 'web') {
-                      setPushEnabled(value);
-                      void AsyncStorage.setItem('pushEnabled', String(value));
-                      return;
-                    }
-                    if (!value) { setPushEnabled(false); return; }
-                    setPushLoading(true);
-                    try {
-                      const { status } = await Notifications.requestPermissionsAsync();
-                      if (status !== 'granted') {
-                        Alert.alert(t('fixerProfile.alerts.permissionDenied'), t('fixerProfile.alerts.enableNotifications'));
+                <View style={isRTL ? { direction: 'ltr' as const } : undefined}>
+                  <Switch
+                    value={pushEnabled}
+                    onValueChange={async (value) => {
+                      if (Platform.OS === 'web') {
+                        setPushEnabled(value);
+                        void AsyncStorage.setItem('pushEnabled', String(value));
                         return;
                       }
-                      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string;
-                      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-                      await api.post('/api/users/me/push-token', { token: tokenData.data });
-                      setPushEnabled(true);
-                    } catch (err) {
-                      Alert.alert('Error', err instanceof Error ? err.message : String(err));
-                    } finally {
-                      setPushLoading(false);
-                    }
-                  }}
-                  disabled={pushLoading}
-                  trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
-                  thumbColor={brandColors.white}
-                />
+                      if (!value) { setPushEnabled(false); return; }
+                      setPushLoading(true);
+                      try {
+                        const { status } = await Notifications.requestPermissionsAsync();
+                        if (status !== 'granted') {
+                          Alert.alert(t('fixerProfile.alerts.permissionDenied'), t('fixerProfile.alerts.enableNotifications'));
+                          return;
+                        }
+                        const projectId = Constants.expoConfig?.extra?.eas?.projectId as string;
+                        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+                        await api.post('/api/users/me/push-token', { token: tokenData.data });
+                        setPushEnabled(true);
+                      } catch (err) {
+                        Alert.alert('Error', err instanceof Error ? err.message : String(err));
+                      } finally {
+                        setPushLoading(false);
+                      }
+                    }}
+                    disabled={pushLoading}
+                    trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
+                    thumbColor={brandColors.white}
+                  />
+                </View>
               </View>
 
               <Divider style={{ marginVertical: spacing.lg, backgroundColor: brandColors.outlineLight }} />
@@ -583,10 +585,10 @@ export default function FixerProfileScreen() {
                     <MaterialCommunityIcons name="translate" size={18} color={brandColors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('settings.preferences.language.label')}
                     </Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('settings.preferences.language.description')}
                     </Text>
                   </View>
@@ -624,7 +626,7 @@ export default function FixerProfileScreen() {
               {savedSuccess ? (
                 <View style={styles.savedBanner}>
                   <MaterialCommunityIcons name="check-circle-outline" size={18} color={brandColors.success} />
-                  <Text style={[typography.bodyMedium, { color: brandColors.success }]}>
+                  <Text style={[typography.bodyMedium, { color: brandColors.success , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('fixerProfile.alerts.savedTitle')}
                   </Text>
                 </View>
@@ -649,22 +651,22 @@ export default function FixerProfileScreen() {
                     <MaterialCommunityIcons name="shield-check-outline" size={18} color={brandColors.primary} />
                   </View>
                   <View>
-                    <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.kicker')}</Text>
-                    <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.title')}</Text>
+                    <Text style={[styles.sectionKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.verification.kicker')}</Text>
+                    <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.verification.title')}</Text>
                   </View>
                 </View>
 
                 {profile?.verification_status === 'PENDING' ? (
                   <View style={styles.verificationBanner}>
                     <MaterialCommunityIcons name="clock-outline" size={20} color={brandColors.warning} />
-                    <Text style={[typography.bodyMedium, { color: brandColors.warning, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.verification.pending')}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.bodyMedium, { color: brandColors.warning, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.verification.pending')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.verification.pendingMsg')}
                     </Text>
                   </View>
                 ) : (
                   <>
-                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left' }]}>
+                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.verification.uploadMsg')}
                     </Text>
                     <FButton
@@ -691,10 +693,10 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('fixerProfile.portfolio.title')}</Text>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.portfolio.title')}</Text>
                 </View>
                 <View style={styles.countChip}>
-                  <Text style={[typography.caption, { color: brandColors.primary }]}>
+                  <Text style={[typography.caption, { color: brandColors.primary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('fixerProfile.portfolio.photoCount', { count: portfolioItems.length })}
                   </Text>
                 </View>
@@ -713,7 +715,7 @@ export default function FixerProfileScreen() {
                   ) : (
                     <>
                       <MaterialCommunityIcons name="plus" size={28} color={brandColors.primaryMuted} />
-                      <Text style={[typography.caption, { color: brandColors.primaryMuted, marginTop: spacing.xs }]}>
+                      <Text style={[typography.caption, { color: brandColors.primaryMuted, marginTop: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                         {t('fixerProfile.portfolio.addPhoto')}
                       </Text>
                     </>
@@ -743,11 +745,11 @@ export default function FixerProfileScreen() {
                   <View style={styles.sectionIcon}>
                     <MaterialCommunityIcons name="certificate-outline" size={18} color={brandColors.primary} />
                   </View>
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('fixerProfile.certifications.title')}
                   </Text>
                 </View>
-                <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {t('fixerProfile.certifications.description')}
                 </Text>
 
@@ -772,8 +774,8 @@ export default function FixerProfileScreen() {
                         <View style={styles.certPending}>
                           <MaterialCommunityIcons name="clock-outline" size={18} color={brandColors.warning} />
                           <View style={{ flex: 1 }}>
-                            <Text style={[typography.label, { color: brandColors.textPrimary }]}>{badgeLabel}</Text>
-                            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                            <Text style={[typography.label, { color: brandColors.textPrimary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{badgeLabel}</Text>
+                            <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                               {t('fixerProfile.certifications.pendingMsg')}
                             </Text>
                           </View>
@@ -788,13 +790,13 @@ export default function FixerProfileScreen() {
                         <View style={styles.certRejected}>
                           <MaterialCommunityIcons name="close-circle-outline" size={18} color={brandColors.danger} />
                           <View style={{ flex: 1 }}>
-                            <Text style={[typography.label, { color: brandColors.danger }]}>
+                            <Text style={[typography.label, { color: brandColors.danger , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                               {t('fixerProfile.certifications.rejected')}
                             </Text>
                             {cert.rejection_note && (
-                              <Text style={[typography.caption, { color: brandColors.textMuted }]}>{cert.rejection_note}</Text>
+                              <Text style={[typography.caption, { color: brandColors.textMuted, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{cert.rejection_note}</Text>
                             )}
-                            <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+                            <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                               {t('fixerProfile.certifications.rejectedMsg')}
                             </Text>
                           </View>

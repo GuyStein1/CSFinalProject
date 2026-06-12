@@ -54,6 +54,7 @@ interface ConfirmationOptions {
 
 export default function MyTasksScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -302,7 +303,7 @@ export default function MyTasksScreen({ navigation }: Props) {
 
   if (loadError && tasks.length === 0) {
     return (
-      <View style={styles.root}>
+      <View style={[styles.root, isRTL && { direction: 'rtl' as const }]}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
           refreshControl={
@@ -568,9 +569,9 @@ function WorkspaceHeader({
     >
       <View style={[styles.headerTop, wide && styles.headerTopWide]}>
         <View style={styles.headerCopy}>
-          <Text style={[styles.headerEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.eyebrow')}</Text>
-          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.title')}</Text>
-          <Text style={[styles.headerBody, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.body')}</Text>
+          <Text style={[styles.headerEyebrow, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.eyebrow')}</Text>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.title')}</Text>
+          <Text style={[styles.headerBody, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.body')}</Text>
         </View>
       </View>
 
@@ -666,14 +667,14 @@ function SectionHeader({
       <View style={[styles.sectionAccent, muted && styles.sectionAccentMuted]} />
       <View style={styles.sectionCopy}>
         <View style={styles.sectionTitleRow}>
-          <Text style={[typography.h2, { color: muted ? brandColors.textSecondary : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[typography.h2, { color: muted ? brandColors.textSecondary : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {label}
           </Text>
           <View style={[styles.countBadge, muted && styles.countBadgeMuted]}>
             <Text style={[typography.caption, styles.countText]}>{count}</Text>
           </View>
         </View>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{helper}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{helper}</Text>
       </View>
     </View>
   );
@@ -695,8 +696,8 @@ function InlineEmpty({
         <MaterialCommunityIcons name={icon as never} size={20} color={brandColors.primaryMuted} />
       </View>
       <View style={styles.inlineEmptyCopy}>
-        <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{message}</Text>
+        <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{title}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{message}</Text>
       </View>
     </View>
   );
@@ -711,8 +712,8 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
         <MaterialCommunityIcons name="alert-circle-outline" size={18} color={brandColors.danger} />
       </View>
       <View style={styles.errorCopy}>
-        <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.error.refreshTitle')}</Text>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{message}</Text>
+        <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.error.refreshTitle')}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{message}</Text>
       </View>
       <FButton onPress={onRetry} variant="outline" size="sm" icon="refresh">
         {t('myTasks.empty.couldNotLoad.retry')}

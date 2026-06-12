@@ -111,17 +111,17 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" onScrollBeginDrag={dismissEditing}>
+    <ScrollView contentContainerStyle={[styles.container, isRTL && { direction: 'rtl' as const }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" onScrollBeginDrag={dismissEditing}>
       {/* Hero */}
       <FCard style={styles.heroCard} shadow="sm">
-        <View style={styles.heroRow}>
+        <View style={[styles.heroRow, isRTL && { direction: 'rtl' as const }]}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="account-cog-outline" size={26} color={brandColors.secondaryDark} />
           </View>
           <View style={styles.heroText}>
-            <Text style={[typography.eyebrow, styles.heroEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('settings.hero.eyebrow')}</Text>
-            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{accountName}</Text>
-            <Text style={[typography.bodySm, styles.heroSub, { textAlign: isRTL ? 'right' : 'left' }]}>{accountEmail}</Text>
+            <Text style={[typography.eyebrow, styles.heroEyebrow, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('settings.hero.eyebrow')}</Text>
+            <Text style={[typography.h2, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{accountName}</Text>
+            <Text style={[typography.bodySm, styles.heroSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{accountEmail}</Text>
           </View>
         </View>
         <View style={styles.heroMetaRow}>
@@ -131,7 +131,7 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.heroPill}>
             <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondaryDark} />
-            <Text style={[typography.caption, { color: brandColors.textSecondary }]}>{t('settings.hero.secureSession')}</Text>
+            <Text style={[typography.caption, { color: brandColors.textSecondary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('settings.hero.secureSession')}</Text>
           </View>
         </View>
       </FCard>
@@ -180,7 +180,7 @@ export default function SettingsScreen() {
           {phoneSavedSuccess ? (
             <View style={styles.savedBanner}>
               <MaterialCommunityIcons name="check-circle-outline" size={16} color={brandColors.success} />
-              <Text style={[typography.bodySm, { color: brandColors.success }]}>
+              <Text style={[typography.bodySm, { color: brandColors.success , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('settings.alerts.phone.saved')}
               </Text>
             </View>
@@ -221,21 +221,23 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="bell-outline" size={18} color={brandColors.primaryMuted} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('settings.preferences.pushNotifications.label')}
               </Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('settings.preferences.pushNotifications.description')}
               </Text>
             </View>
           </View>
-          <Switch
-            value={pushEnabled}
-            onValueChange={handlePushToggle}
-            disabled={pushLoading}
-            trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
-            thumbColor={brandColors.white}
-          />
+          <View style={isRTL ? { direction: 'ltr' as const } : undefined}>
+            <Switch
+              value={pushEnabled}
+              onValueChange={handlePushToggle}
+              disabled={pushLoading}
+              trackColor={{ true: brandColors.primary, false: brandColors.outlineLight }}
+              thumbColor={brandColors.white}
+            />
+          </View>
         </View>
 
         <Divider style={styles.divider} />
@@ -246,10 +248,10 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="translate" size={18} color={brandColors.primaryMuted} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('settings.preferences.language.label')}
               </Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('settings.preferences.language.description')}
               </Text>
             </View>
@@ -291,10 +293,10 @@ export default function SettingsScreen() {
             <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
           </View>
           <View style={styles.rowText}>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('settings.preferences.changePassword.label')}
             </Text>
-            <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('settings.preferences.changePassword.description')}
             </Text>
           </View>
@@ -305,7 +307,7 @@ export default function SettingsScreen() {
       {/* Danger Zone */}
       <FCard style={styles.sectionCard} shadow="sm">
         <SectionHeader icon="logout" label={t('settings.section.session')} />
-        <Text style={[typography.bodySm, styles.sessionCopy, { textAlign: isRTL ? 'right' : 'left' }]}>
+        <Text style={[typography.bodySm, styles.sessionCopy, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
           {t('settings.session.copy')}
         </Text>
         <FButton
@@ -329,7 +331,7 @@ function SectionHeader({ icon, label }: { icon: string; label: string }) {
       <View style={styles.sectionHeaderIcon}>
         <MaterialCommunityIcons name={icon as never} size={16} color={brandColors.primary} />
       </View>
-      <Text style={[typography.eyebrow, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+      <Text style={[typography.eyebrow, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{label}</Text>
     </View>
   );
 }
@@ -352,12 +354,12 @@ function SettingRow({
         <MaterialCommunityIcons name={icon as never} size={18} color={brandColors.primaryMuted} />
       </View>
       <View style={styles.rowText}>
-        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{label}</Text>
         {value && (
-          <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
+          <Text style={[typography.body, { color: brandColors.textPrimary, marginTop: 2, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{value}</Text>
         )}
         {description && (
-          <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: 2, textAlign: isRTL ? 'right' : 'left' }]}>{description}</Text>
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginTop: 2, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{description}</Text>
         )}
       </View>
     </View>

@@ -257,7 +257,7 @@ export default function ChatScreen({ route }: { route: any }) {
     >
       {/* Recipient name subtitle */}
       {recipientName ? (
-        <View style={styles.subHeader}>
+        <View style={[styles.subHeader, isRTL && { direction: 'rtl' as const }]}>
           <Text style={[typography.caption, { color: brandColors.textMuted }]}>
             {recipientName}
           </Text>
@@ -294,7 +294,7 @@ export default function ChatScreen({ route }: { route: any }) {
                 </Pressable>
               )}
               <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.bubbleText, { color: isMine ? brandColors.white : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {item.content}
                 </Text>
                 <View style={styles.bubbleMeta}>
@@ -317,7 +317,7 @@ export default function ChatScreen({ route }: { route: any }) {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="chat-outline" size={40} color={brandColors.outlineLight} />
-            <Text style={[typography.body, { color: brandColors.textMuted, marginTop: spacing.md, textAlign: 'center' }]}>
+            <Text style={[typography.body, { color: brandColors.textMuted, marginTop: spacing.md, textAlign: 'center' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('chat.empty.title')}{'\n'}{t('chat.empty.subtitle')}
             </Text>
           </View>
@@ -327,7 +327,7 @@ export default function ChatScreen({ route }: { route: any }) {
       {isReadOnly ? (
         <View style={styles.readOnlyBar}>
           <MaterialCommunityIcons name="lock-outline" size={14} color={brandColors.textMuted} />
-          <Text style={[typography.caption, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginLeft: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {liveTaskStatus === 'CANCELED' ? t('chat.readonlyCanceled') : liveTaskStatus === 'OPEN' ? t('chat.readonlyFixerLeft') : t('chat.readonlyCompleted')}
           </Text>
         </View>

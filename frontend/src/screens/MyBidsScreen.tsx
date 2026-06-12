@@ -94,7 +94,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
   const budgetLabel = bid.task.suggested_price != null ? `₪${bid.task.suggested_price}` : t('myBids.card.quote');
 
   return (
-    <View style={styles.swipeContainer}>
+    <View style={[styles.swipeContainer, isRTL && { direction: 'rtl' as const }]}>
       {isPending && (
         <Pressable
           style={styles.withdrawAction}
@@ -106,7 +106,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
           }}
         >
           <MaterialCommunityIcons name="close-circle-outline" size={22} color={brandColors.white} />
-          <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' }]}>
+          <Text style={[typography.caption, { color: brandColors.white, fontWeight: '700' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('myBids.card.withdraw')}
           </Text>
         </Pressable>
@@ -131,12 +131,12 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               <MaterialCommunityIcons name={catMeta.icon as never} size={18} color={catMeta.color} />
             </View>
             <View style={styles.titleBlock}>
-              <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+              <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {bid.task.title}
               </Text>
               <View style={styles.metaRow}>
                 <MaterialCommunityIcons name="map-marker-outline" size={12} color={brandColors.textMuted} />
-                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {bid.task.general_location_name || t('myBids.card.locationNotSet')} · {budgetLabel}
                 </Text>
               </View>
@@ -147,14 +147,14 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
           <View style={styles.bidDetails}>
             <View style={styles.priceRow}>
               <View>
-                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.card.yourOffer')}</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.yourOffer')}</Text>
                 <Text style={styles.offerValue}>₪{bid.offered_price}</Text>
               </View>
               <View style={styles.priceTag}>
-                <Text style={[typography.caption, styles.priceTagText]}>{t('myBids.card.budget', { value: budgetLabel })}</Text>
+                <Text style={[typography.caption, styles.priceTagText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.budget', { value: budgetLabel })}</Text>
               </View>
             </View>
-            <Text style={[typography.bodySm, styles.pitch, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
+            <Text style={[typography.bodySm, styles.pitch, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
               {bid.description}
             </Text>
           </View>
@@ -163,18 +163,18 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             <View style={styles.rejectionBanner}>
               <View style={styles.rejectionHeader}>
                 <MaterialCommunityIcons name="information-outline" size={14} color={brandColors.danger} />
-                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700', textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700', textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {t(`taskDetailsFixer.rejectionReasons.${bid.rejection_reason}`, { defaultValue: bid.rejection_reason })}
                 </Text>
               </View>
               {bid.rejection_note ? (
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={3}>
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={3}>
                   &quot;{bid.rejection_note}&quot;
                 </Text>
               ) : null}
               {bid.auto_rejected_winning_price != null && (
                 <View style={styles.rejectionContext}>
-                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     Winning bid: ₪{bid.auto_rejected_winning_price}
                     {bid.auto_rejected_winning_rating != null && bid.auto_rejected_winning_rating > 0
                       ? ` · Rating: ${bid.auto_rejected_winning_rating.toFixed(1)}★`
@@ -188,7 +188,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
           <View style={styles.bottomRow}>
             <View style={styles.dateRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color={brandColors.textMuted} />
-              <Text style={[typography.caption, { color: brandColors.textMuted }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('myBids.card.submitted', { date: formatDate(bid.created_at) })}
               </Text>
             </View>
@@ -202,7 +202,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onEdit(bid); }}
                   >
                     <MaterialCommunityIcons name="pencil" size={13} color={brandColors.primaryMuted} />
-                    <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' }]}>{t('myBids.card.edit')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.primaryMuted, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.edit')}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.actionBtn, styles.dangerActionBtn]}
@@ -211,7 +211,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onWithdraw(bid.id); }}
                   >
                     <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
-                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.withdraw')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.withdraw')}</Text>
                   </Pressable>
                 </>
               )}
@@ -224,7 +224,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onChat(bid); }}
                   >
                     <MaterialCommunityIcons name="chat-outline" size={13} color={brandColors.primary} />
-                    <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' }]}>{t('myBids.card.chat')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.primary, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.chat')}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.actionBtn, styles.dangerActionBtn]}
@@ -233,7 +233,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                     onPress={(e) => { e.stopPropagation(); onCancelAccepted(bid); }}
                   >
                     <MaterialCommunityIcons name="close-circle-outline" size={13} color={brandColors.danger} />
-                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' }]}>{t('myBids.card.cancelJob')}</Text>
+                    <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.cancelJob')}</Text>
                   </Pressable>
                 </>
               )}
@@ -245,7 +245,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   onPress={(e) => { e.stopPropagation(); onReactivate(bid.id); }}
                 >
                   <MaterialCommunityIcons name="refresh" size={13} color={brandColors.success} />
-                  <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' }]}>{t('myBids.card.reactivate')}</Text>
+                  <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.reactivate')}</Text>
                 </Pressable>
               )}
             </View>
@@ -603,10 +603,10 @@ export default function MyBidsScreen() {
             <View style={styles.headerIconShell}>
               <MaterialCommunityIcons name="format-list-checks" size={17} color={brandColors.secondaryDark} />
             </View>
-            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.kicker')}</Text>
+            <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.header.kicker')}</Text>
           </View>
-          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myBids.header.title')}</Text>
-          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.header.title')}</Text>
+          <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
             {activeTab === 'ALL'
               ? t('myBids.header.subAll', { pending: pipelineSummary.pendingOffers, active: pipelineSummary.activeJobs })
               : activeTab === 'PENDING'
@@ -619,8 +619,8 @@ export default function MyBidsScreen() {
 
         <View style={[styles.workspaceStats, isWide && styles.workspaceStatsWide]}>
           <View style={styles.workspaceStat}>
-            <Text style={styles.workspaceStatValue}>{loading ? '...' : bids.length}</Text>
-            <Text style={styles.workspaceStatLabel}>{t('myBids.stats.inView')}</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{loading ? '...' : bids.length}</Text>
+            <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.stats.inView')}</Text>
           </View>
           <FButton variant="secondary" size="sm" icon="map-search-outline" onPress={handleFindJobs} style={styles.headerAction}>
             {t('myBids.stats.findJobs')}
@@ -734,13 +734,13 @@ export default function MyBidsScreen() {
                 </Text>
                 <View style={styles.summaryContent}>
                   <View style={styles.summaryItem}>
-                    <Text style={[typography.h1, { color: brandColors.primary }]}>{completedTotal}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.stats.jobs')}</Text>
+                    <Text style={[typography.h1, { color: brandColors.primary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{completedTotal}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.stats.jobs')}</Text>
                   </View>
                   <View style={styles.summaryDivider} />
                   <View style={styles.summaryItem}>
-                    <Text style={[typography.h1, { color: brandColors.primary }]}>₪{completedEarnings.toLocaleString()}</Text>
-                    <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('myBids.stats.earned')}</Text>
+                    <Text style={[typography.h1, { color: brandColors.primary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>₪{completedEarnings.toLocaleString()}</Text>
+                    <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.stats.earned')}</Text>
                   </View>
                 </View>
               </FCard>
@@ -794,7 +794,7 @@ export default function MyBidsScreen() {
           onDismiss={() => setEditingBid(null)}
           contentContainerStyle={styles.editModal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('myBids.editModal.title')}
           </Text>
           <FInput
