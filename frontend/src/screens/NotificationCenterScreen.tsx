@@ -68,7 +68,6 @@ function NotificationItem({
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
-  const role = getNotificationRole(notification);
 
   const timeAgo = (dateStr: string): string => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -107,11 +106,6 @@ function NotificationItem({
           >
             {notification.title}
           </Text>
-          {role && (
-            <View style={[styles.rolePill, { backgroundColor: role === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-              <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${role}`)}</Text>
-            </View>
-          )}
           <Text
             style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
             numberOfLines={2}
@@ -151,10 +145,11 @@ export default function NotificationCenterScreen() {
     deleteAll,
   } = useNotificationContext();
 
-  // Filter by active mode: show notifications for this mode + null-role (legacy) records
-  const filtered = notifications.filter(
-    n => n.user_role === activeMode || n.user_role === null,
-  );
+  // Filter by active mode using inferred role so old null-role records are classified by type
+  const filtered = notifications.filter(n => {
+    const role = getNotificationRole(n);
+    return role === activeMode || role === null;
+  });
   const unreadCount = filtered.filter(n => !n.is_read).length;
 
   useFocusEffect(
@@ -328,19 +323,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: brandColors.outlineLight,
     marginLeft: spacing.lg + 40 + spacing.md, // aligned with content
-  },
-  rolePill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 3,
-    marginBottom: 2,
-  },
-  rolePillText: {
-    color: brandColors.white,
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 14,
   },
 });
