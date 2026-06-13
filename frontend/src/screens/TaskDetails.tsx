@@ -35,6 +35,7 @@ interface Bid {
     phone_number: string | null;
     payment_link: string | null;
     avatar_url: string | null;
+    verification_status?: string | null;
   };
 }
 
@@ -474,9 +475,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                   >
                   <Avatar.Icon size={44} icon="account" style={{ backgroundColor: brandColors.primaryMuted }} />
                   <View style={styles.bidInfo}>
-                    <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                      {bid.fixer?.full_name || 'Fixer'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                        {bid.fixer?.full_name || 'Fixer'}
+                      </Text>
+                      {bid.fixer?.verification_status === 'APPROVED' && (
+                        <MaterialCommunityIcons name="check-decagram" size={16} color="#29B6F6" />
+                      )}
+                    </View>
                     {bid.fixer?.average_rating_as_fixer != null ? (
                       <View style={styles.ratingRow}>
                         <StarRating rating={bid.fixer.average_rating_as_fixer} size={14} />

@@ -388,15 +388,15 @@ export default function FixerProfileScreen() {
               <View style={styles.headerIconShell}>
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
               </View>
-              <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
+              <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Text style={[styles.heroName, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start' }}>
+              <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
             </View>
-            <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
+            <Text style={[styles.heroEmail, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
           </View>
 
           <Pressable
@@ -408,7 +408,7 @@ export default function FixerProfileScreen() {
             }}
           >
             <Text style={styles.heroStatValue}>
-              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
+              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
             </Text>
             <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
             <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
@@ -924,12 +924,14 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     flexGrow: 0,
     flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(Platform.OS === 'web' ? { direction: 'ltr' } : {}) as any,
     ...shadows.md,
   },
   profileHeroWide: {
