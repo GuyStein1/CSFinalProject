@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -422,8 +423,10 @@ export default function TaskDetailsFixer({ route }: Props) {
 
           {/* Requester */}
           {task.requester && (
-            <View
-              style={styles.requesterRow}
+            <Pressable
+              style={({ pressed }) => [styles.requesterRow, pressed && { opacity: 0.7 }]}
+              onPress={() => navigation.navigate('PublicProfile', { userId: task.requester_id })}
+              accessibilityRole="button"
             >
               {task.requester.avatar_url ? (
                 <Avatar.Image size={48} source={{ uri: task.requester.avatar_url }} />
@@ -438,7 +441,12 @@ export default function TaskDetailsFixer({ route }: Props) {
                   {t('taskDetailsFixer.requester')}
                 </Text>
               </View>
-            </View>
+              <MaterialCommunityIcons
+                name={isRTL ? 'chevron-left' : 'chevron-right'}
+                size={20}
+                color={brandColors.textMuted}
+              />
+            </Pressable>
           )}
 
           {/* Existing bid info */}
@@ -640,53 +648,60 @@ export default function TaskDetailsFixer({ route }: Props) {
           onDismiss={() => !bidSubmitting && setBidModalVisible(false)}
           contentContainerStyle={styles.modalContainer}
         >
-          <View style={styles.modalHeader}>
-            <View style={styles.modalIconCircle}>
-              <MaterialCommunityIcons name="hand-extended-outline" size={24} color={brandColors.primary} />
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconCircle}>
+                <MaterialCommunityIcons name="hand-extended-outline" size={24} color={brandColors.primary} />
+              </View>
+              <Text style={[typography.h2, { color: brandColors.textPrimary }]}>{isEditing ? t('taskDetailsFixer.bidModal.editTitle') : t('taskDetailsFixer.bidModal.title')}</Text>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.xs }]}>
+                {task.suggested_price != null
+                  ? t('taskDetailsFixer.suggestedBudget', { amount: task.suggested_price })
+                  : t('taskDetailsFixer.openToQuotes')}
+              </Text>
             </View>
-            <Text style={[typography.h2, { color: brandColors.textPrimary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{isEditing ? t('taskDetailsFixer.bidModal.editTitle') : t('taskDetailsFixer.bidModal.title')}</Text>
-            <Text style={[typography.bodySm, { color: brandColors.textMuted, marginTop: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-              {task.suggested_price != null
-                ? t('taskDetailsFixer.suggestedBudget', { amount: task.suggested_price })
-                : t('taskDetailsFixer.openToQuotes')}
+
+            <FInput
+              label={t('taskDetailsFixer.bidModal.price')}
+              placeholder={t('taskDetailsFixer.bidModal.pricePlaceholder')}
+              value={bidPrice}
+              onChangeText={(text: string) => {
+                setBidPrice(text.replace(/[^0-9.]/g, ''));
+                setBidError(null);
+              }}
+              keyboardType="numeric"
+              left={<FInput.Affix text="₪" />}
+            />
+
+            <View style={{ height: spacing.md }} />
+
+            <FInput
+              label={t('taskDetailsFixer.bidModal.pitchLabel')}
+              placeholder={t('taskDetailsFixer.bidModal.pitchPlaceholder')}
+              value={bidPitch}
+              onChangeText={(text: string) => {
+                setBidPitch(text);
+                setBidError(null);
+              }}
+              multiline
+              numberOfLines={Platform.OS === 'web' ? 5 : 4}
+              maxLength={MAX_PITCH_LENGTH}
+              returnKeyType="done"
+              blurOnSubmit={true}
+            />
+            <Text style={[typography.caption, { textAlign: 'right', color: brandColors.textMuted, marginTop: spacing.xs }]}>
+              {bidPitch.length}/{MAX_PITCH_LENGTH}
             </Text>
-          </View>
 
-          <FInput
-            label={t('taskDetailsFixer.bidModal.price')}
-            placeholder={t('taskDetailsFixer.bidModal.pricePlaceholder')}
-            value={bidPrice}
-            onChangeText={(text: string) => {
-              setBidPrice(text.replace(/[^0-9.]/g, ''));
-              setBidError(null);
-            }}
-            keyboardType="numeric"
-            left={<FInput.Affix text="₪" />}
-          />
-
-          <View style={{ height: spacing.md }} />
-
-          <FInput
-            label={t('taskDetailsFixer.bidModal.pitchLabel')}
-            placeholder={t('taskDetailsFixer.bidModal.pitchPlaceholder')}
-            value={bidPitch}
-            onChangeText={(text: string) => {
-              setBidPitch(text);
-              setBidError(null);
-            }}
-            multiline
-            numberOfLines={Platform.OS === 'web' ? 5 : 4}
-            maxLength={MAX_PITCH_LENGTH}
-          />
-          <Text style={[typography.caption, { textAlign: 'right', color: brandColors.textMuted, marginTop: spacing.xs }]}>
-            {bidPitch.length}/{MAX_PITCH_LENGTH}
-          </Text>
-
-          {bidError && (
-            <Text style={[typography.bodySm, { color: brandColors.danger, marginTop: spacing.sm }]}>
-              {bidError}
-            </Text>
-          )}
+            {bidError && (
+              <Text style={[typography.bodySm, { color: brandColors.danger, marginTop: spacing.sm }]}>
+                {bidError}
+              </Text>
+            )}
+          </ScrollView>
 
           <View style={styles.modalActions}>
             <FButton

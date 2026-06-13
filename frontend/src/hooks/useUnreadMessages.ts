@@ -3,7 +3,7 @@ import api from '../api/axiosInstance';
 import { getSocket } from '../utils/socket';
 import { auth } from '../config/firebase';
 
-const POLL_INTERVAL = 30_000;
+const POLL_INTERVAL = 5_000;
 
 /**
  * Tracks total unread message count across all conversations.

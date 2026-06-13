@@ -830,7 +830,10 @@
     "step2": {
       "title": "Add photos",
       "subtitle": "Up to 5 photos (optional) help fixers understand the job",
-      "add": "Add"
+      "add": "Add",
+      "photoSourceTitle": "Add Photo",
+      "takePhoto": "Take Photo",
+      "chooseFromLibrary": "Choose from Library"
     },
     "step3": {
       "title": "Choose a category",
@@ -911,7 +914,8 @@
       "mapsNotReady": "Maps not ready. Please try again.",
       "couldNotFind": "Could not find this location. Please try again.",
       "photoPermissionTitle": "Permission required",
-      "photoPermission": "Please allow access to your photo library to add images."
+      "photoPermission": "Please allow access to your photo library to add images.",
+      "cameraPermission": "Camera access is required to take photos."
     },
     "success": {
       "title": "Task Posted!",

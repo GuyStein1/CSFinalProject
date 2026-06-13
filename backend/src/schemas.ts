@@ -72,6 +72,7 @@ export const updateUserSchema = z.object({
     .array(z.enum(['ASSEMBLY', 'MOUNTING', 'MOVING', 'PAINTING', 'PLUMBING', 'ELECTRICITY', 'OUTDOORS', 'CLEANING', 'OTHER']))
     .optional(),
   language: z.enum(['en', 'he']).optional(),
+  is_fixer: z.boolean().optional(),
 });
 
 export const pushTokenSchema = z.object({

@@ -209,8 +209,8 @@ describe('decimal numbers in UI have writingDirection handling', () => {
         const lines = content.split('\n');
 
         lines.forEach((line, i) => {
-          // Look for .toFixed( inside JSX (inside curly braces)
-          if (/\{.*\.toFixed\(/.test(line) && !line.trim().startsWith('//')) {
+          // Look for .toFixed( inside JSX Text elements (not in state setters or variables)
+          if (/\{.*\.toFixed\(/.test(line) && !line.trim().startsWith('//') && !/(set\w+|const |let |var |=\s)/.test(line.trim())) {
             // Check surrounding ~5 lines for writingDirection or dir="ltr"
             const context = lines.slice(Math.max(0, i - 5), i + 5).join('\n');
             if (

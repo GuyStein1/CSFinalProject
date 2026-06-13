@@ -4,10 +4,12 @@ import {
   ScrollView,
   FlatList,
   Image,
+  Platform,
   StyleSheet,
   Pressable,
   useWindowDimensions,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -71,9 +73,11 @@ export default function RequesterDashboard({ navigation }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchLatestOpenTask();
-  }, [fetchLatestOpenTask]);
+  useFocusEffect(
+    useCallback(() => {
+      void fetchLatestOpenTask();
+    }, [fetchLatestOpenTask]),
+  );
 
   const handleResendVerification = async () => {
     if (!user) return;
@@ -442,16 +446,26 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   quickAccess: {
-    position: 'absolute',
-    left: 20,
-    top: spacing.lg,
     alignItems: 'center',
     gap: spacing.sm,
-    zIndex: 10,
+    ...Platform.select({
+      web: {
+        position: 'absolute' as const,
+        left: 20,
+        top: spacing.lg,
+        zIndex: 10,
+      },
+      default: {
+        paddingHorizontal: 20,
+        paddingTop: spacing.lg,
+      },
+    }),
   },
   quickAccessRTL: {
-    left: 'auto' as unknown as number,
-    right: 20,
+    ...Platform.select({
+      web: { left: undefined, right: 20 },
+      default: {},
+    }),
   },
   quickCircle: {
     width: 110,

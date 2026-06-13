@@ -72,6 +72,11 @@ export default function useAuthBootstrap() {
   const verifyLocalUser = useCallback(async () => {
     const res = await api.get('/api/users/me');
     setIsAdmin(res.data.user?.is_admin === true);
+    // If the user activated fixer mode on another device, sync the local flag.
+    if (res.data.user?.is_fixer && auth.currentUser) {
+      const key = `fixerOnboardingSeen_${auth.currentUser.uid}`;
+      await AsyncStorage.setItem(key, 'true');
+    }
   }, []);
 
   const bootstrapSignedInUser = useCallback(

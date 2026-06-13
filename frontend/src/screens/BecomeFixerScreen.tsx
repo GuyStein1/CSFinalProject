@@ -19,6 +19,7 @@ import { FButton } from '../components/ui';
 import { useLanguage } from '../context/LanguageContext';
 import { brandColors, radii, shadows, spacing, typography } from '../theme';
 import { auth } from '../config/firebase';
+import api from '../api/axiosInstance';
 
 const getOnboardingKey = () => `fixerOnboardingSeen_${auth.currentUser?.uid ?? 'anon'}`;
 
@@ -61,6 +62,7 @@ export default function BecomeFixerScreen({ navigation, route }: Props) {
   }, [fadeAnim, slideAnim]);
 
   const markSeenAndNavigate = async (dest: 'profile' | 'jobs') => {
+    await api.put('/api/users/me', { is_fixer: true });
     await AsyncStorage.setItem(getOnboardingKey(), 'true');
     if (dest === 'profile') {
       navigation.replace('Main', { screen: 'FixerMode', params: { screen: 'FixerProfile' } });

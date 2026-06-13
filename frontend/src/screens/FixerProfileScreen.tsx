@@ -411,7 +411,7 @@ export default function FixerProfileScreen() {
               {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
             </Text>
             <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
-            <Text style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+            <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('fixerProfile.stats.tapToView')}
             </Text>
           </Pressable>
@@ -983,6 +983,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.textPrimary,
+    flex: 1,
   },
   heroEmail: {
     ...typography.bodySm,
@@ -995,6 +996,7 @@ const styles = StyleSheet.create({
   },
   heroStat: {
     minWidth: 82,
+    maxWidth: 100,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
