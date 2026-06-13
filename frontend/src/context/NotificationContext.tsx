@@ -17,8 +17,18 @@ export interface AppNotification {
   updated_at: string;
 }
 
-export const FIXER_NOTIF_TYPES = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED'];
-export const REQUESTER_NOTIF_TYPES = ['NEW_BID'];
+export const FIXER_NOTIF_TYPES = [
+  'BID_ACCEPTED', 'BID_REJECTED',
+  'TASK_COMPLETED', 'TASK_CANCELED',
+  'VERIFICATION_APPROVED', 'VERIFICATION_REJECTED',
+  'CERTIFICATION_APPROVED', 'CERTIFICATION_REJECTED',
+  'NEW_MESSAGE',
+];
+export const REQUESTER_NOTIF_TYPES = [
+  'NEW_BID', 'BID_WITHDRAWN',
+  'TASK_COMPLETED', 'TASK_CANCELED',
+  'NEW_MESSAGE',
+];
 
 interface NotificationContextValue {
   notifications: AppNotification[];

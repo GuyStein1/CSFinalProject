@@ -193,24 +193,43 @@ export default function CreateTask({ navigation, route }: Props) {
     );
   }, []);
 
-  const reverseGeocode = useCallback((lat: number, lng: number) => {
-    if (typeof google === 'undefined') return;
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results && results[0]) {
-        const result = results[0];
-        setAddress(result.formatted_address ?? '');
-        setAddressConfirmed(true);
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    if (Platform.OS === 'web') {
+      if (typeof google === 'undefined') return;
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const result = results[0];
+          setAddress(result.formatted_address ?? '');
+          setAddressConfirmed(true);
 
-        const components = result.address_components ?? [];
-        const neighborhood = components.find((c) => c.types.includes('neighborhood'))?.long_name;
-        const locality = components.find((c) => c.types.includes('locality'))?.long_name;
-        const sublocality = components.find((c) => c.types.includes('sublocality'))?.long_name;
-        setGeneralLocationName(
-          [neighborhood ?? sublocality, locality].filter(Boolean).join(', ') || (result.formatted_address ?? ''),
-        );
+          const components = result.address_components ?? [];
+          const neighborhood = components.find((c) => c.types.includes('neighborhood'))?.long_name;
+          const locality = components.find((c) => c.types.includes('locality'))?.long_name;
+          const sublocality = components.find((c) => c.types.includes('sublocality'))?.long_name;
+          setGeneralLocationName(
+            [neighborhood ?? sublocality, locality].filter(Boolean).join(', ') || (result.formatted_address ?? ''),
+          );
+        }
+      });
+    } else {
+      setGeocoding(true);
+      try {
+        const [r] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+        if (r) {
+          const formatted = [r.streetNumber, r.street, r.city].filter(Boolean).join(' ');
+          setAddress(formatted || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+          setAddressConfirmed(true);
+          setGeneralLocationName(
+            [r.district ?? r.subregion, r.city].filter(Boolean).join(', ') || formatted,
+          );
+        }
+      } catch {
+        // fail silently — address field will remain empty for user to type
+      } finally {
+        setGeocoding(false);
       }
-    });
+    }
   }, []);
 
   const handleAddressChange = useCallback((text: string) => {
@@ -285,25 +304,49 @@ export default function CreateTask({ navigation, route }: Props) {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const pickImage = async () => {
+  const pickImageFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('createTask.errors.photoPermissionTitle'), t('createTask.errors.photoPermission'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: false,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const pickImageFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('createTask.errors.photoPermissionTitle'), t('createTask.errors.cameraPermission'));
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (!result.canceled && result.assets.length > 0) {
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const pickImage = () => {
     if (photos.length >= 5) return;
     if (Platform.OS === 'web') {
       fileInputRef.current?.click();
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('createTask.errors.photoPermissionTitle'), t('createTask.errors.photoPermission'));
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        allowsMultipleSelection: false,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        setPhotos((prev) => [...prev, result.assets[0].uri]);
-      }
+      return;
     }
+    Alert.alert(
+      t('createTask.step2.photoSourceTitle'),
+      undefined,
+      [
+        { text: t('createTask.step2.takePhoto'), onPress: () => void pickImageFromCamera() },
+        { text: t('createTask.step2.chooseFromLibrary'), onPress: () => void pickImageFromLibrary() },
+        { text: t('common.cancel'), style: 'cancel' },
+      ],
+    );
   };
 
   const handleWebFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -631,11 +674,7 @@ export default function CreateTask({ navigation, route }: Props) {
                   onRegionChange={setMapRegion}
                   onPress={(coords: { latitude: number; longitude: number }) => {
                     setPinCoords(coords);
-                    if (!address.trim()) {
-                      reverseGeocode(coords.latitude, coords.longitude);
-                    } else {
-                      setAddressConfirmed(true);
-                    }
+                    reverseGeocode(coords.latitude, coords.longitude);
                   }}
                 />
                 {pinCoords && (
