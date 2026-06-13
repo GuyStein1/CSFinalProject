@@ -190,7 +190,10 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         },
       ]}
     >
-      <View style={[styles.desktopBarInner, styles.forceLtr]}>
+      <View
+        ref={(el: unknown) => { if (el && Platform.OS === 'web') { (el as HTMLElement).dir = 'ltr'; } }}
+        style={styles.desktopBarInner}
+      >
         <View style={styles.desktopLeft}>
           <Pressable
             accessibilityRole="button"
@@ -626,8 +629,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  forceLtr: Platform.OS === 'web' ? { direction: 'ltr' } as any : {},
   // Logo + workspace badge on the left; flex: 1 so it occupies an equal side to actions.
   desktopLeft: {
     flex: 1,
