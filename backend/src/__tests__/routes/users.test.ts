@@ -1,7 +1,9 @@
+const mockDeleteUser = jest.fn().mockResolvedValue(undefined);
+const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'test-uid', email_verified: true });
 jest.mock('../../config/firebaseAdmin', () => ({
   __esModule: true,
   default: {
-    auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'test-uid' }) }),
+    auth: () => ({ verifyIdToken: mockVerifyIdToken, deleteUser: mockDeleteUser }),
     apps: [{}],
   },
 }));
@@ -214,6 +216,55 @@ describe('POST /api/users/me/verification', () => {
       .set('Authorization', AUTH)
       .send({ verification_photo_url: 'not-a-url' });
     expect(res.status).toBe(400);
+  });
+});
+
+describe('PATCH /api/users/me/email-verified', () => {
+  it('marks user as email-verified when Firebase token confirms it', async () => {
+    // First call: auth middleware, second call: route handler
+    mockVerifyIdToken
+      .mockResolvedValueOnce({ uid: 'test-uid', email_verified: true })
+      .mockResolvedValueOnce({ uid: 'test-uid', email_verified: true });
+    const res = await request(app)
+      .patch('/api/users/me/email-verified')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.user.email_verified).toBe(true);
+  });
+
+  it('returns 403 when Firebase email is not verified', async () => {
+    // First call: auth middleware (passes), second call: route handler (email not verified)
+    mockVerifyIdToken
+      .mockResolvedValueOnce({ uid: 'test-uid', email_verified: false })
+      .mockResolvedValueOnce({ uid: 'test-uid', email_verified: false });
+    const res = await request(app)
+      .patch('/api/users/me/email-verified')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('EMAIL_NOT_VERIFIED');
+  });
+});
+
+describe('DELETE /api/users/me', () => {
+  it('deletes the user and related records', async () => {
+    const res = await request(app)
+      .delete('/api/users/me')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Account deleted');
+
+    const user = await prisma.user.findFirst({ where: { firebase_uid: 'test-uid' } });
+    expect(user).toBeNull();
+    expect(mockDeleteUser).toHaveBeenCalledWith('test-uid');
+  });
+
+  it('succeeds even when Firebase deleteUser fails', async () => {
+    mockDeleteUser.mockRejectedValueOnce(new Error('Firebase error'));
+    const res = await request(app)
+      .delete('/api/users/me')
+      .set('Authorization', AUTH);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Account deleted');
   });
 });
 

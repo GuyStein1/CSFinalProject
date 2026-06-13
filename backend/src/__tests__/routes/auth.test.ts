@@ -1,7 +1,8 @@
+const mockVerifyIdToken = jest.fn().mockResolvedValue({ uid: 'new-uid', email: 'alice@example.com', email_verified: false });
 jest.mock('../../config/firebaseAdmin', () => ({
   __esModule: true,
   default: {
-    auth: () => ({ verifyIdToken: jest.fn().mockResolvedValue({ uid: 'new-uid' }) }),
+    auth: () => ({ verifyIdToken: mockVerifyIdToken }),
     apps: [{}],
   },
 }));
@@ -57,5 +58,22 @@ describe('POST /api/auth/sync', () => {
       .send({ full_name: 'Alice' });
 
     expect(res.status).toBe(401);
+  });
+
+  it('updates Firebase UID when user re-registers with same email but new UID', async () => {
+    // Create user with old UID
+    await prisma.user.create({
+      data: { firebase_uid: 'old-uid', email: 'alice@example.com', full_name: 'Alice' },
+    });
+
+    // Sync comes from new-uid (mock returns uid: 'new-uid', email: 'alice@example.com')
+    const res = await request(app)
+      .post('/api/auth/sync')
+      .set('Authorization', 'Bearer mock-token')
+      .send({ full_name: 'Alice Smith' });
+
+    expect(res.status).toBe(200);
+    const dbUser = await prisma.user.findFirst({ where: { email: 'alice@example.com' } });
+    expect(dbUser?.firebase_uid).toBe('new-uid');
   });
 });
