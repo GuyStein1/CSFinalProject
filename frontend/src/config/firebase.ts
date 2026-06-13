@@ -1,15 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, type Persistence } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// getReactNativePersistence exists in the react-native Metro bundle but is absent
-// from the web TypeScript types — use require to bypass the type mismatch.
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const { getReactNativePersistence } = require('firebase/auth') as {
-  getReactNativePersistence: (storage: typeof AsyncStorage) => Persistence;
-};
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
