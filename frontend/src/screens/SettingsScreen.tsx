@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Alert, View, Pressable, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, Switch, Divider } from 'react-native-paper';
@@ -30,7 +30,8 @@ export default function SettingsScreen() {
   };
 
   const [langOpen, setLangOpen] = useState(false);
-  const accountName = user?.displayName?.trim() || 'FixIt account';
+  const [backendName, setBackendName] = useState('');
+  const accountName = user?.displayName?.trim() || backendName || t('settings.hero.defaultName');
   const accountEmail = user?.email || 'Not signed in';
   const verificationLabel = user?.emailVerified ? t('settings.hero.verifiedEmail') : t('settings.hero.emailNotVerified');
   const verificationColor = user?.emailVerified ? brandColors.success : brandColors.warning;
@@ -46,16 +47,43 @@ export default function SettingsScreen() {
       setPhone(p);
       setSavedPhone(p);
       setEditingPhone(!p);
+      if (res.data.user?.full_name) setBackendName(res.data.user.full_name);
     }).catch(() => {});
   }, []);
 
+  const [passwordCooldown, setPasswordCooldown] = useState(0);
+  const passwordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => { if (passwordTimerRef.current) clearInterval(passwordTimerRef.current); }, []);
+
+  const COOLDOWN_SECONDS = 30;
+
   const handleChangePassword = async () => {
-    if (!user?.email) return;
+    if (!user?.email || passwordCooldown > 0) return;
     try {
       await sendPasswordResetEmail(auth, user.email);
-      Alert.alert(t('settings.alerts.passwordReset.successTitle'), t('settings.alerts.passwordReset.success'));
+      if (Platform.OS === 'web') {
+        window.alert(t('settings.alerts.passwordReset.success'));
+      } else {
+        Alert.alert(t('settings.alerts.passwordReset.successTitle'), t('settings.alerts.passwordReset.success'));
+      }
+      setPasswordCooldown(COOLDOWN_SECONDS);
+      passwordTimerRef.current = setInterval(() => {
+        setPasswordCooldown(prev => {
+          if (prev <= 1) {
+            if (passwordTimerRef.current) clearInterval(passwordTimerRef.current);
+            passwordTimerRef.current = null;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
-      Alert.alert(t('common.error'), t('settings.alerts.passwordReset.error'));
+      if (Platform.OS === 'web') {
+        window.alert(t('settings.alerts.passwordReset.error'));
+      } else {
+        Alert.alert(t('common.error'), t('settings.alerts.passwordReset.error'));
+      }
     }
   };
 
@@ -106,6 +134,33 @@ export default function SettingsScreen() {
             await signOut(auth);
           },
         },
+      ]);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const doDelete = async () => {
+      try {
+        await api.delete('/api/users/me');
+        await signOut(auth);
+      } catch {
+        if (Platform.OS === 'web') {
+          window.alert(t('settings.alerts.deleteAccount.error'));
+        } else {
+          Alert.alert(t('common.error'), t('settings.alerts.deleteAccount.error'));
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm(t('settings.alerts.deleteAccount.message'))) {
+        await doDelete();
+      }
+    } else {
+      Alert.alert(t('settings.alerts.deleteAccount.title'), t('settings.alerts.deleteAccount.message'), [
+        { text: t('common.cancel') },
+        { text: t('settings.alerts.deleteAccount.confirm'), style: 'destructive', onPress: doDelete },
       ]);
     }
   };
@@ -288,20 +343,17 @@ export default function SettingsScreen() {
 
         <Divider style={styles.divider} />
 
-        <Pressable onPress={handleChangePassword} style={styles.actionRow}>
-          <View style={styles.settingIcon}>
-            <MaterialCommunityIcons name="lock-reset" size={18} color={brandColors.primaryMuted} />
-          </View>
-          <View style={styles.rowText}>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-              {t('settings.preferences.changePassword.label')}
-            </Text>
-            <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-              {t('settings.preferences.changePassword.description')}
-            </Text>
-          </View>
-          <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
-        </Pressable>
+        <FButton
+          onPress={handleChangePassword}
+          variant="outline"
+          icon="lock-reset"
+          disabled={passwordCooldown > 0}
+          fullWidth
+        >
+          {passwordCooldown > 0
+            ? `${t('settings.alerts.passwordReset.sentLabel')} (${passwordCooldown}s)`
+            : t('settings.preferences.changePassword.label')}
+        </FButton>
       </FCard>
 
       {/* Danger Zone */}
@@ -318,6 +370,23 @@ export default function SettingsScreen() {
           style={styles.logoutButton}
         >
           {t('settings.session.logout')}
+        </FButton>
+      </FCard>
+
+      {/* Delete Account */}
+      <FCard style={styles.sectionCard} shadow="sm">
+        <SectionHeader icon="delete-forever" label={t('settings.section.danger')} />
+        <Text style={[typography.bodySm, styles.sessionCopy, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+          {t('settings.session.deleteCopy')}
+        </Text>
+        <FButton
+          variant="danger"
+          icon="delete-forever"
+          onPress={handleDeleteAccount}
+          fullWidth
+          style={styles.logoutButton}
+        >
+          {t('settings.session.deleteAccount')}
         </FButton>
       </FCard>
     </ScrollView>
@@ -496,6 +565,9 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: spacing.xs,
+  },
+  deleteButton: {
+    marginTop: spacing.sm,
   },
   savedBanner: {
     flexDirection: 'row',

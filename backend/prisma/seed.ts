@@ -16,6 +16,7 @@ const users = [
     email: 'neta@example.com',
     phone_number: '0501111111',
     specializations: [] as Category[],
+    email_verified: true,
   },
   {
     firebase_uid: 'kPGmjrkSPeh1AOFm6w1zGjnTtph1',
@@ -23,6 +24,7 @@ const users = [
     email: 'stein@example.com',
     phone_number: '0502222222',
     specializations: [] as Category[],
+    email_verified: true,
   },
   {
     firebase_uid: '9zZC1yHuOwOHhe1HmkcY87FzcRy2',
@@ -30,6 +32,7 @@ const users = [
     email: 'zilber@example.com',
     phone_number: '0503333333',
     specializations: [] as Category[],
+    email_verified: true,
   },
   // Fixers (indices 3–5)
   {
@@ -39,6 +42,7 @@ const users = [
     phone_number: '0504444444',
     specializations: [Category.ELECTRICITY, Category.PLUMBING],
     verification_status: 'APPROVED' as const,
+    email_verified: true,
   },
   {
     firebase_uid: 'sUegu2QaPlVsiYlUdvcK0LuJWOf1',
@@ -46,6 +50,7 @@ const users = [
     email: 'guy@example.com',
     phone_number: '0505555555',
     specializations: [Category.ASSEMBLY, Category.PAINTING],
+    email_verified: true,
   },
   {
     firebase_uid: 'N2g4806EevaLyi3qkEtExowPgck2',
@@ -53,6 +58,7 @@ const users = [
     email: 'avi@example.com',
     phone_number: '0506666666',
     specializations: [Category.MOVING, Category.CLEANING],
+    email_verified: true,
   },
   // Admin
   {
@@ -62,6 +68,7 @@ const users = [
     phone_number: null,
     specializations: [] as Category[],
     is_admin: true,
+    email_verified: true,
   },
 ];
 
@@ -172,7 +179,7 @@ async function main() {
   for (const user of users) {
     const created = await prisma.user.upsert({
       where: { firebase_uid: user.firebase_uid },
-      update: { is_admin: (user as { is_admin?: boolean }).is_admin ?? false },
+      update: { is_admin: (user as { is_admin?: boolean }).is_admin ?? false, email_verified: true },
       create: user,
       select: { id: true },
     });
