@@ -253,9 +253,9 @@ export default function PublicProfileScreen({ route }: { route: any }) {
   }
 
   const formatResponseTime = (minutes: number): string => {
-    if (minutes < 60) return t('publicProfile.respondsIn', { value: Math.round(minutes), unit: 'min' });
-    if (minutes < 1440) return t('publicProfile.respondsIn', { value: Math.round(minutes / 60), unit: 'hr' });
-    return t('publicProfile.respondsIn', { value: Math.round(minutes / 1440), unit: 'days' });
+    if (minutes < 60) return t('publicProfile.respondsIn', { value: Math.round(minutes), unit: t('publicProfile.timeUnit.min') });
+    if (minutes < 1440) return t('publicProfile.respondsIn', { value: Math.round(minutes / 60), unit: t('publicProfile.timeUnit.hr') });
+    return t('publicProfile.respondsIn', { value: Math.round(minutes / 1440), unit: t('publicProfile.timeUnit.days') });
   };
 
   const avgRating = profile?.average_rating_as_fixer;
@@ -283,7 +283,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           )}
 
           {/* Name + verified badge */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}>
+          <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}>
             <Text style={[typography.h2, { color: brandColors.textPrimary }]}>
               {profile?.full_name ?? 'User'}
             </Text>
