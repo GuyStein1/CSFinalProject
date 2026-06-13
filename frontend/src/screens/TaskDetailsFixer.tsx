@@ -59,7 +59,9 @@ interface Task {
   media_urls: string[];
   completion_photos: string[];
   general_location_name: string;
+  general_location_name_en: string | null;
   exact_address?: string;
+  exact_address_en?: string | null;
   is_payment_confirmed: boolean;
   requester_completed: boolean;
   fixer_completed: boolean;
@@ -95,7 +97,8 @@ interface Props {
 
 export default function TaskDetailsFixer({ route }: Props) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const taskId = route.params?.taskId;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
@@ -149,7 +152,7 @@ export default function TaskDetailsFixer({ route }: Props) {
     (async () => {
       try {
         const res = await api.get(`/api/tasks/${taskId}/directions`, {
-          params: { originLat: userCoords.lat, originLng: userCoords.lng },
+          params: { originLat: userCoords.lat, originLng: userCoords.lng, lang: language },
         });
         if (res.data.directions) setDirections(res.data.directions);
       } catch {
@@ -359,13 +362,13 @@ export default function TaskDetailsFixer({ route }: Props) {
               {task.urgency === 'TODAY' && (
                 <View style={[styles.categoryChip, { backgroundColor: brandColors.dangerSoft }]}>
                   <MaterialCommunityIcons name="clock-alert-outline" size={16} color={brandColors.danger} />
-                  <Text style={[typography.label, { color: brandColors.danger }]}>Today</Text>
+                  <Text style={[typography.label, { color: brandColors.danger }]}>{t('taskDetails.detail.urgencyToday')}</Text>
                 </View>
               )}
               {task.urgency === 'THIS_WEEK' && (
                 <View style={[styles.categoryChip, { backgroundColor: brandColors.warningSoft }]}>
                   <MaterialCommunityIcons name="calendar-week" size={16} color={brandColors.warning} />
-                  <Text style={[typography.label, { color: brandColors.warning }]}>This week</Text>
+                  <Text style={[typography.label, { color: brandColors.warning }]}>{t('taskDetails.detail.urgencyThisWeek')}</Text>
                 </View>
               )}
             </View>
@@ -380,14 +383,14 @@ export default function TaskDetailsFixer({ route }: Props) {
           <Divider style={styles.divider} />
 
           {/* Detail Rows */}
-          <InfoRow icon="map-marker-outline" label={t('taskDetailsFixer.detail.generalArea')} value={task.general_location_name || 'Not specified'} />
+          <InfoRow icon="map-marker-outline" label={t('taskDetailsFixer.detail.generalArea')} value={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : (task.general_location_name || t('taskDetailsFixer.detail.notSpecified'))} />
           {task.status !== 'OPEN' && task.exact_address && (
-            <InfoRow icon="home-outline" label={t('taskDetailsFixer.detail.exactAddress')} value={task.exact_address} />
+            <InfoRow icon="home-outline" label={t('taskDetailsFixer.detail.exactAddress')} value={(language === 'en' && task.exact_address_en) ? task.exact_address_en : task.exact_address} />
           )}
           <InfoRow
             icon="calendar-outline"
             label={t('taskDetailsFixer.detail.posted')}
-            value={new Date(task.created_at).toLocaleDateString(undefined, {
+            value={new Date(task.created_at).toLocaleDateString(dateLocale, {
               year: 'numeric', month: 'long', day: 'numeric',
             })}
           />
@@ -465,10 +468,9 @@ export default function TaskDetailsFixer({ route }: Props) {
                     ) : null}
                     {existingBid.auto_rejected_winning_price != null && (
                       <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                        Winning bid: ₪{existingBid.auto_rejected_winning_price}
                         {existingBid.auto_rejected_winning_rating != null && existingBid.auto_rejected_winning_rating > 0
-                          ? ` · Rating: ${existingBid.auto_rejected_winning_rating.toFixed(1)}★`
-                          : ''}
+                          ? t('myBids.card.winningBidRating', { price: existingBid.auto_rejected_winning_price, rating: existingBid.auto_rejected_winning_rating.toFixed(1) })
+                          : t('myBids.card.winningBid', { price: existingBid.auto_rejected_winning_price })}
                       </Text>
                     )}
                   </View>

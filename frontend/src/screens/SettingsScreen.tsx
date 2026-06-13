@@ -84,7 +84,7 @@ export default function SettingsScreen() {
       Alert.alert(t('settings.alerts.notifications.enabledTitle'), t('settings.alerts.notifications.enabled'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      Alert.alert('Error', msg);
+      Alert.alert(t('common.error'), msg);
     } finally {
       setPushLoading(false);
     }
@@ -93,7 +93,7 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm('Are you sure you want to log out?')) {
+      if (confirm(t('settings.alerts.logOut.message'))) {
         await signOut(auth);
       }
     } else {

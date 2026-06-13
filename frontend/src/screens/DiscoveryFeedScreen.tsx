@@ -462,7 +462,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           </View>
           <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.header.title')}</Text>
           <Text style={[styles.headerSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
-            {t('discovery.header.sub', { location: center?.label ?? t('discovery.location.workArea'), categories: categorySummary, budget: priceSummary })}
+            {t('discovery.header.sub', { location: centerMode === 'gps' ? t('discovery.filterBar.currentLocation') : (center?.label ?? t('discovery.location.workArea')), categories: categorySummary, budget: priceSummary })}
           </Text>
         </View>
 
@@ -492,7 +492,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
             style={[styles.workspaceStat, showFilterPanel && styles.workspaceStatActive]}
             onPress={() => setShowFilterPanel(!showFilterPanel)}
           >
-            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{radius} km</Text>
+            <Text style={[styles.workspaceStatValue, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{isRTL ? `${t('discoveryCard.km')} ${radius}` : `${radius} ${t('discoveryCard.km')}`}</Text>
             <Text style={[styles.workspaceStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('discovery.stats.range')}</Text>
           </Pressable>
         </View>

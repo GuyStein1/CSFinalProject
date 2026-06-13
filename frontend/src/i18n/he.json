@@ -18,6 +18,16 @@
       "openFixer": "פתח סביבת פיקסר",
       "openRequester": "פתח סביבת מזמין",
       "becomeFixer": "הפוך לפיקסר"
+    },
+    "screenTitle": {
+      "createTask": "צור משימה",
+      "taskDetails": "פרטי המשימה",
+      "jobDetails": "פרטי העבודה",
+      "settings": "הגדרות",
+      "profile": "פרופיל",
+      "notifications": "התראות",
+      "pastConversations": "שיחות עבר",
+      "chat": "צ׳אט"
     }
   },
   "categories": {
@@ -57,7 +67,8 @@
     "or": "או",
     "yesterday": "אתמול",
     "justNow": "הרגע",
-    "saveChanges": "שמור שינויים"
+    "saveChanges": "שמור שינויים",
+    "profanityError": "התגובה מכילה שפה לא הולמת"
   },
   "auth": {
     "orContinueWith": "או המשך עם",
@@ -158,7 +169,7 @@
     },
     "preferences": {
       "pushNotifications": {
-        "label": "התראות דחיפה",
+        "label": "התראות",
         "description": "הצעות, הודעות, תשלומים ועדכוני משימות"
       },
       "language": {
@@ -265,7 +276,7 @@
     "header": {
       "eyebrow": "המשימות שלי",
       "title": "נהל כל עבודה שפורסמה",
-      "body": "בדוק הצעות, עדכן בקשות פתוחות, השלם עבודות מוקצות ושמור עבודות גמורות מהדרך."
+      "body": "בדוק הצעות, עדכן בקשות פתוחות, השלם עבודות מוקצות ודרג עבודות שנגמרו."
     },
     "pills": {
       "open": "פתוח",
@@ -343,20 +354,23 @@
   "myBids": {
     "header": {
       "kicker": "סביבת עבודה לפיקסר",
-      "title": "צינור הצעות",
+      "title": "ההצעות שלי",
       "sub": "הצעות {{tab}} · {{pending}} ממתינות · {{active}} עבודות פעילות",
-      "subAll": "{{pending}} ממתינות · {{active}} עבודות פעילות",
-      "subPending": "{{pending}} הצעות ממתינות",
+      "subAll": "{{pending}} בהמתנה · {{active}} עבודות פעילות",
+      "subPending": "{{pending}} הצעות בהמתנה",
       "subAccepted": "{{active}} עבודות פעילות",
-      "subTab": "הצעות {{tab}}"
+      "subTab": "הצעות {{tab}}",
+      "subCompleted": "עבודות שהושלמו",
+      "subRejected": "הצעות שנדחו",
+      "subWithdrawn": "הצעות שנמשכו"
     },
     "tabs": {
       "active": "פעיל",
-      "pending": "ממתין",
+      "pending": "בהמתנה",
       "accepted": "אושר",
       "completed": "הושלם",
       "rejected": "נדחה",
-      "withdrawn": "נמשך חזרה"
+      "withdrawn": "נמשך"
     },
     "card": {
       "yourOffer": "ההצעה שלך",
@@ -368,7 +382,9 @@
       "cancelJob": "בטל עבודה",
       "chat": "צ׳אט",
       "reactivate": "הפעל מחדש",
-      "locationNotSet": "מיקום לא הוגדר"
+      "locationNotSet": "מיקום לא הוגדר",
+      "winningBid": "הצעה שנבחרה: ₪{{price}}",
+      "winningBidRating": "הצעה שנבחרה: ₪{{price}} · דירוג: {{rating}}★"
     },
     "stats": {
       "inView": "בתצוגה",
@@ -394,6 +410,26 @@
       "filtered": {
         "title": "אין הצעות {{tab}}",
         "message": "לא נמצאו הצעות {{tab}}."
+      },
+      "pending": {
+        "title": "אין הצעות בהמתנה",
+        "message": "אין לך הצעות בהמתנה כרגע."
+      },
+      "accepted": {
+        "title": "אין הצעות שאושרו",
+        "message": "אף הצעה שלך לא אושרה עדיין."
+      },
+      "completed": {
+        "title": "אין עבודות שהושלמו",
+        "message": "עדיין לא השלמת אף עבודה."
+      },
+      "rejected": {
+        "title": "אין הצעות שנדחו",
+        "message": "אף הצעה שלך לא נדחתה."
+      },
+      "withdrawn": {
+        "title": "אין הצעות שנמשכו",
+        "message": "לא משכת אף הצעה."
       }
     },
     "error": {
@@ -497,7 +533,10 @@
       "budgetAny": "תקציב: הכל",
       "budgetRange": "תקציב: ₪{{min}}–₪{{max}}",
       "clearFilters": "נקה פילטרים",
-      "currentLocation": "מיקום נוכחי"
+      "currentLocation": "מיקום נוכחי",
+      "distance": "מרחק",
+      "budget": "תקציב",
+      "anyBudget": "כל תקציב"
     }
   },
   "chat": {
@@ -561,6 +600,12 @@
       "days": "לפני {{count}} ימים"
     }
   },
+  "taskStatus": {
+    "OPEN": "פתוח",
+    "IN_PROGRESS": "בביצוע",
+    "COMPLETED": "הושלם",
+    "CANCELED": "בוטל"
+  },
   "taskDetails": {
     "loading": "טוען פרטי משימה...",
     "notFound": "המשימה לא נמצאה",
@@ -605,6 +650,10 @@
       "emptyMessage": "אין הצעות עדיין. פיקסרים באזורך יראו את המשימה שלך!",
       "seeReviews": "ראה ביקורות",
       "noReviewsYet": "אין ביקורות עדיין",
+      "workedTogether_one": "עבדו יחד פעם אחת בעבר",
+      "workedTogether_two": "עבדו יחד {{count}} פעמים בעבר",
+      "workedTogether_many": "עבדו יחד {{count}} פעמים בעבר",
+      "workedTogether_other": "עבדו יחד {{count}} פעמים בעבר",
       "accept": {
         "title": "לקבל את ההצעה הזו?",
         "confirm": "קבל הצעה"
@@ -670,6 +719,8 @@
       "submitted": "ביקורת נשלחה",
       "rateFixer": "דרג את הפיקסר:",
       "daysLeft_one": "נותר {{count}} יום לכתיבת ביקורת",
+      "daysLeft_two": "נותרו {{count}} ימים לכתיבת ביקורת",
+      "daysLeft_many": "נותרו {{count}} ימים לכתיבת ביקורת",
       "daysLeft_other": "נותרו {{count}} ימים לכתיבת ביקורת",
       "windowExpired": "חלון הביקורת של 14 יום פג. לא ניתן עוד לכתוב ביקורת על משימה זו.",
       "thankYou": "הביקורת נשלחה. תודה!"
@@ -703,8 +754,8 @@
       "generalArea": "אזור כללי",
       "exactAddress": "כתובת מדויקת",
       "posted": "פורסם",
-      "bids": "{{count}} הצעות הוגשו",
-      "bid": "{{count}} הצעה הוגשה"
+      "bids": "הוגשו {{count}} הצעות",
+      "bid": "הוגשה הצעה {{count}}"
     },
     "sections": {
       "details": "פרטי המשימה",
@@ -884,7 +935,7 @@
       "tapToView": "לחץ לצפייה בביקורות"
     },
     "pushNotifications": {
-      "label": "התראות דחיפה",
+      "label": "התראות",
       "description": "עדכוני הצעות, הודעות והתראות משימות"
     },
     "tradeCoverage": {
@@ -898,6 +949,8 @@
       "title": "תיק עבודות",
       "addPhoto": "הוסף תמונה",
       "photoCount_one": "{{count}} תמונה",
+      "photoCount_two": "{{count}} תמונות",
+      "photoCount_many": "{{count}} תמונות",
       "photoCount_other": "{{count}} תמונות"
     },
     "payment": {
@@ -923,7 +976,7 @@
       "fullName": "שם מלא",
       "bio": "על עצמי",
       "phone": "מספר טלפון",
-      "paymentLink": "קישור לתשלום (⁦Bit⁩ / ⁦Paybox⁩ URL)"
+      "paymentLink": "קישור לתשלום (⁦Bit⁩ / ⁦Paybox⁩)"
     },
     "actions": {
       "save": "שמור פרופיל",
@@ -998,12 +1051,18 @@
     "noBio": "לא נוסף תיאור",
     "memberSince": "חבר מאז {{date}}",
     "reviewCount_one": "ביקורת אחת",
+    "reviewCount_two": "{{count}} ביקורות",
+    "reviewCount_many": "{{count}} ביקורות",
     "reviewCount_other": "{{count}} ביקורות",
     "portfolioTitle": "תיק עבודות ({{count}})",
     "reviewsTitle": "ביקורות ({{count}})",
     "review": "ביקורת",
     "reviews": "ביקורות",
     "respondsIn": "מגיב תוך ~{{value}} {{unit}}",
+    "tasksCompleted_one": "משימה אחת הושלמה",
+    "tasksCompleted_two": "{{count}} משימות הושלמו",
+    "tasksCompleted_many": "{{count}} משימות הושלמו",
+    "tasksCompleted_other": "{{count}} משימות הושלמו",
     "report": {
       "title": "דיווח על ביקורת",
       "prompt": "למה את/ה מדווח/ת על ביקורת זו?",
@@ -1349,7 +1408,7 @@
       "a7": "⁦FixIt⁩ פועל ברחבי ישראל. עבודות מוצגות לפי קרבה, כך שפיקסרים רואים משימות ליד המיקום הנוכחי שלהם."
     },
     "about": {
-      "title": "About Fix<accent>I</accent>t",
+      "title": "אודות Fix<accent>I</accent>t",
       "sub": "שוק משימות שכונתי המחבר בעלי בתים עם אנשי מקצוע מקומיים.",
       "problemEyebrow": "הבעיה",
       "problemTitle": "כל מיני עבודות קטנות צריכות יד. למצוא אחת זה קשה מדי.",
@@ -1444,11 +1503,16 @@
     "selectedJob": "עבודה נבחרת",
     "bidAlreadySent": "הצעה כבר נשלחה",
     "viewYourBid": "ראה את ההצעה שלך",
-    "viewDetails": "ראה פרטים"
+    "viewDetails": "ראה פרטים",
+    "km": "ק״מ",
+    "bids_one": "הצעה אחת",
+    "bids_two": "{{count}} הצעות",
+    "bids_many": "{{count}} הצעות",
+    "bids_other": "{{count}} הצעות"
   },
   "status": {
     "open": "פתוח",
-    "inProgress": "בתהליך",
+    "inProgress": "בביצוע",
     "completed": "הושלם",
     "canceled": "בוטל",
     "pending": "ממתין",
@@ -1462,6 +1526,8 @@
     "reviewBids": "בחן הצעות",
     "viewDetails": "פרטים",
     "newOffers_one": "הצעה חדשה אחת לבחינה",
+    "newOffers_two": "{{count}} הצעות חדשות לבחינה",
+    "newOffers_many": "{{count}} הצעות חדשות לבחינה",
     "newOffers_other": "{{count}} הצעות חדשות לבחינה",
     "awaitingFirstBid": "ממתין להצעה הראשונה",
     "assignedTo": "הוקצה ל-{{name}}",
@@ -1562,6 +1628,16 @@
         "label": "סיים בביטחון",
         "detail": "עקוב אחר ההתקדמות, סמן השלמה ושמור את הרשומה במקום אחד."
       }
+    }
+  },
+  "admin": {
+    "errors": {
+      "loadFlagged": "טעינת הביקורות המסומנות נכשלה",
+      "hideReview": "הסתרת הביקורת נכשלה",
+      "dismissReports": "דחיית הדיווחים נכשלה",
+      "verification": "{{action}} האימות נכשל",
+      "certification": "{{action}} ההסמכה נכשל",
+      "downloadPhoto": "הורדת התמונה נכשלה"
     }
   }
 }

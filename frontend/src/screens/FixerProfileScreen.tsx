@@ -565,7 +565,7 @@ export default function FixerProfileScreen() {
                         await api.post('/api/users/me/push-token', { token: tokenData.data });
                         setPushEnabled(true);
                       } catch (err) {
-                        Alert.alert('Error', err instanceof Error ? err.message : String(err));
+                        Alert.alert(t('common.error'), err instanceof Error ? err.message : String(err));
                       } finally {
                         setPushLoading(false);
                       }
@@ -1001,6 +1001,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
     borderColor: brandColors.outlineLight,
+    alignItems: 'center',
   },
   heroStatValue: {
     fontSize: 18,
@@ -1008,6 +1009,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.secondaryDark,
+    textAlign: 'center',
+    writingDirection: 'ltr',
   },
   heroStatLabel: {
     ...typography.caption,

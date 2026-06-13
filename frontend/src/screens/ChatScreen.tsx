@@ -40,8 +40,8 @@ interface ChatScreenParams {
   taskStatus?: string;
 }
 
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+function formatTime(dateStr: string, locale?: string): string {
+  return new Date(dateStr).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +58,8 @@ export default function ChatScreen({ route }: { route: any }) {
 
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const { refetch: refetchNotifications } = useNotificationContext();
   const [myDbId, setMyDbId] = useState<string | undefined>(myDbIdParam);
 
@@ -299,7 +300,7 @@ export default function ChatScreen({ route }: { route: any }) {
                 </Text>
                 <View style={styles.bubbleMeta}>
                   <Text style={[typography.caption, styles.bubbleTime, { color: isMine ? 'rgba(255,255,255,0.65)' : brandColors.textMuted }]}>
-                    {formatTime(item.created_at)}
+                    {formatTime(item.created_at, dateLocale)}
                   </Text>
                   {isMine && (
                     <MaterialCommunityIcons

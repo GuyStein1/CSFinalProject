@@ -16,7 +16,7 @@ import CelebrationOverlay from '../components/CelebrationOverlay';
 import { FButton, FCard, FInput, FSectionHeader } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
 import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
-import { containsProfanity, PROFANITY_ERROR_MESSAGE } from '../utils/profanityFilter';
+import { containsProfanity } from '../utils/profanityFilter';
 
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
@@ -55,7 +55,9 @@ interface Task {
   urgency?: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   suggested_price: number | null;
   general_location_name: string;
+  general_location_name_en: string | null;
   exact_address: string;
+  exact_address_en?: string | null;
   media_urls: string[];
   completion_photos: string[];
   is_payment_confirmed: boolean;
@@ -99,7 +101,8 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TaskDetails({ route, navigation }: { route: any; navigation: any }) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const { taskId, openEdit } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -281,9 +284,9 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
     if (trimmed && containsProfanity(trimmed)) {
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
-        window.alert(PROFANITY_ERROR_MESSAGE);
+        window.alert(t('common.profanityError'));
       } else {
-        Alert.alert('Error', PROFANITY_ERROR_MESSAGE);
+        Alert.alert(t('common.error'), t('common.profanityError'));
       }
       return;
     }
@@ -390,7 +393,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
         <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
           <MaterialCommunityIcons name={banner.icon as never} size={20} color={banner.color} />
           <Text style={[typography.label, { color: banner.color }]}>
-            {task.status.replace('_', ' ')}
+            {t(`taskStatus.${task.status}`, { defaultValue: task.status.replace('_', ' ') })}
           </Text>
         </View>
         {task.status === 'OPEN' && (
@@ -434,14 +437,14 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
           <DetailRow icon="calendar-week" iconColor={brandColors.warning} label={t('taskDetails.detail.urgency')} value={t('taskDetails.detail.urgencyThisWeek')} />
         )}
         <DetailRow icon="cash-multiple" label={t('taskDetails.detail.budget')} value={task.suggested_price ? `₪${task.suggested_price}` : t('taskDetails.detail.quoteRequired')} />
-        <DetailRow icon="map-marker-outline" label={t('taskDetails.detail.location')} value={task.general_location_name} />
+        <DetailRow icon="map-marker-outline" label={t('taskDetails.detail.location')} value={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : task.general_location_name} />
         {task.status !== 'OPEN' && (
-          <DetailRow icon="home-outline" label={t('taskDetails.detail.address')} value={task.exact_address} />
+          <DetailRow icon="home-outline" label={t('taskDetails.detail.address')} value={(language === 'en' && task.exact_address_en) ? task.exact_address_en : task.exact_address} />
         )}
         <DetailRow
           icon="calendar-outline"
           label={t('taskDetails.detail.posted')}
-          value={new Date(task.created_at).toLocaleDateString(undefined, {
+          value={new Date(task.created_at).toLocaleDateString(dateLocale, {
             year: 'numeric', month: 'long', day: 'numeric',
           })}
         />
@@ -477,7 +480,7 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     {bid.fixer?.average_rating_as_fixer != null ? (
                       <View style={styles.ratingRow}>
                         <StarRating rating={bid.fixer.average_rating_as_fixer} size={14} />
-                        <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                        <Text style={[typography.bodySm, { color: brandColors.textMuted, writingDirection: 'ltr' }]}>
                           {bid.fixer.average_rating_as_fixer.toFixed(1)}
                         </Text>
                         <Pressable onPress={() => showReviewsForFixer(bid.fixer_id)}>
@@ -490,8 +493,8 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     {bid.is_repeat_customer && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
                         <MaterialCommunityIcons name="account-check" size={14} color={brandColors.primary} />
-                        <Text style={[typography.caption, { color: brandColors.primary }]}>
-                          Worked together {bid.previous_tasks_together} time{(bid.previous_tasks_together ?? 0) !== 1 ? 's' : ''} before
+                        <Text style={[typography.caption, { color: brandColors.primary, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                          {t('taskDetails.bids.workedTogether', { count: bid.previous_tasks_together ?? 1 })}
                         </Text>
                       </View>
                     )}
@@ -569,11 +572,11 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                 {acceptedBid.fixer?.average_rating_as_fixer != null ? (
                   <View style={styles.ratingRow}>
                     <StarRating rating={acceptedBid.fixer.average_rating_as_fixer} size={14} />
-                    <Text style={[typography.bodySm, { color: brandColors.textMuted }]}>
+                    <Text style={[typography.bodySm, { color: brandColors.textMuted, writingDirection: 'ltr' }]}>
                       {acceptedBid.fixer.average_rating_as_fixer.toFixed(1)}
                     </Text>
                     <Pressable onPress={() => showReviewsForFixer(acceptedBid.fixer_id)}>
-                      <Text style={[typography.caption, { color: brandColors.primaryMuted }]}>see reviews</Text>
+                      <Text style={[typography.caption, { color: brandColors.primaryMuted, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('taskDetails.bids.seeReviews')}</Text>
                     </Pressable>
                   </View>
                 ) : (

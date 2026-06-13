@@ -18,6 +18,16 @@
       "openFixer": "Open Fixer Workspace",
       "openRequester": "Open Requester Workspace",
       "becomeFixer": "Become a Fixer"
+    },
+    "screenTitle": {
+      "createTask": "Create Task",
+      "taskDetails": "Task Details",
+      "jobDetails": "Job Details",
+      "settings": "Settings",
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "pastConversations": "Past Conversations",
+      "chat": "Chat"
     }
   },
   "categories": {
@@ -57,7 +67,8 @@
     "or": "or",
     "yesterday": "Yesterday",
     "justNow": "Just now",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "profanityError": "Comment contains inappropriate language"
   },
   "auth": {
     "orContinueWith": "or continue with",
@@ -343,12 +354,15 @@
   "myBids": {
     "header": {
       "kicker": "Fixer Workspace",
-      "title": "Bid pipeline",
+      "title": "My Bids",
       "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs",
       "subAll": "{{pending}} pending · {{active}} active jobs",
       "subPending": "{{pending}} pending bids",
       "subAccepted": "{{active}} active jobs",
-      "subTab": "{{tab}} bids"
+      "subTab": "{{tab}} bids",
+      "subCompleted": "Completed bids",
+      "subRejected": "Rejected bids",
+      "subWithdrawn": "Withdrawn bids"
     },
     "tabs": {
       "active": "Active",
@@ -368,7 +382,9 @@
       "cancelJob": "Cancel job",
       "chat": "Chat",
       "reactivate": "Reactivate",
-      "locationNotSet": "Location not set"
+      "locationNotSet": "Location not set",
+      "winningBid": "Winning bid: ₪{{price}}",
+      "winningBidRating": "Winning bid: ₪{{price}} · Rating: {{rating}}★"
     },
     "stats": {
       "inView": "In view",
@@ -394,6 +410,26 @@
       "filtered": {
         "title": "No {{tab}} bids",
         "message": "No {{tab}} bids found."
+      },
+      "pending": {
+        "title": "No pending bids",
+        "message": "You don't have any pending bids right now."
+      },
+      "accepted": {
+        "title": "No accepted bids",
+        "message": "None of your bids have been accepted yet."
+      },
+      "completed": {
+        "title": "No completed jobs",
+        "message": "You haven't completed any jobs yet."
+      },
+      "rejected": {
+        "title": "No rejected bids",
+        "message": "None of your bids have been rejected."
+      },
+      "withdrawn": {
+        "title": "No withdrawn bids",
+        "message": "You haven't withdrawn any bids."
       }
     },
     "error": {
@@ -497,7 +533,10 @@
       "budgetAny": "Budget: Any",
       "budgetRange": "Budget: ₪{{min}}–₪{{max}}",
       "clearFilters": "Clear filters",
-      "currentLocation": "Current location"
+      "currentLocation": "Current location",
+      "distance": "Distance",
+      "budget": "Budget",
+      "anyBudget": "Any budget"
     }
   },
   "chat": {
@@ -561,6 +600,12 @@
       "days": "{{count}}d ago"
     }
   },
+  "taskStatus": {
+    "OPEN": "Open",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELED": "Canceled"
+  },
   "taskDetails": {
     "loading": "Loading task details...",
     "notFound": "Task not found",
@@ -605,6 +650,8 @@
       "emptyMessage": "No bids yet. Fixers in your area will see your task!",
       "seeReviews": "see reviews",
       "noReviewsYet": "No reviews yet",
+      "workedTogether_one": "Worked together {{count}} time before",
+      "workedTogether_other": "Worked together {{count}} times before",
       "accept": {
         "title": "Accept this bid?",
         "confirm": "Accept bid"
@@ -923,7 +970,7 @@
       "fullName": "Full Name",
       "bio": "Bio",
       "phone": "Phone Number",
-      "paymentLink": "Payment Link (Bit / Paybox URL)"
+      "paymentLink": "Payment Link (Bit / Paybox)"
     },
     "actions": {
       "save": "Save Profile",
@@ -1004,6 +1051,8 @@
     "review": "review",
     "reviews": "reviews",
     "respondsIn": "Responds in ~{{value}} {{unit}}",
+    "tasksCompleted_one": "{{count}} task completed",
+    "tasksCompleted_other": "{{count}} tasks completed",
     "report": {
       "title": "Report Review",
       "prompt": "Why are you reporting this review?",
@@ -1444,7 +1493,10 @@
     "selectedJob": "Selected job",
     "bidAlreadySent": "Bid already sent",
     "viewYourBid": "View Your Bid",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "km": "km",
+    "bids_one": "{{count}} bid",
+    "bids_other": "{{count}} bids"
   },
   "status": {
     "open": "Open",
@@ -1562,6 +1614,16 @@
         "label": "Finish confidently",
         "detail": "Track progress, mark completion, and keep the record in one place."
       }
+    }
+  },
+  "admin": {
+    "errors": {
+      "loadFlagged": "Failed to load flagged reviews",
+      "hideReview": "Failed to hide review",
+      "dismissReports": "Failed to dismiss reports",
+      "verification": "Failed to {{action}} verification",
+      "certification": "Failed to {{action}} certification",
+      "downloadPhoto": "Failed to download photo"
     }
   }
 }

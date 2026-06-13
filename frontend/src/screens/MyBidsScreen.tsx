@@ -39,8 +39,8 @@ const TABS: { value: TabFilter; key: string }[] = [
 const SWIPE_THRESHOLD = -80;
 const WITHDRAW_BUTTON_WIDTH = 90;
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
+function formatDate(dateString: string, locale?: string): string {
+  return new Date(dateString).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -67,7 +67,8 @@ interface BidCardProps {
 
 function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted, onChat }: BidCardProps) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const translateX = useRef(new Animated.Value(0)).current;
   const isPending = bid.status === 'PENDING';
   const catMeta = getCategoryMeta(bid.task.category);
@@ -137,7 +138,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               <View style={styles.metaRow}>
                 <MaterialCommunityIcons name="map-marker-outline" size={12} color={brandColors.textMuted} />
                 <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
-                  {bid.task.general_location_name || t('myBids.card.locationNotSet')} · {budgetLabel}
+                  {((language === 'en' && bid.task.general_location_name_en) ? bid.task.general_location_name_en : bid.task.general_location_name) || t('myBids.card.locationNotSet')} · {budgetLabel}
                 </Text>
               </View>
             </View>
@@ -175,10 +176,9 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
               {bid.auto_rejected_winning_price != null && (
                 <View style={styles.rejectionContext}>
                   <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                    Winning bid: ₪{bid.auto_rejected_winning_price}
                     {bid.auto_rejected_winning_rating != null && bid.auto_rejected_winning_rating > 0
-                      ? ` · Rating: ${bid.auto_rejected_winning_rating.toFixed(1)}★`
-                      : ''}
+                      ? t('myBids.card.winningBidRating', { price: bid.auto_rejected_winning_price, rating: bid.auto_rejected_winning_rating.toFixed(1) })
+                      : t('myBids.card.winningBid', { price: bid.auto_rejected_winning_price })}
                   </Text>
                 </View>
               )}
@@ -189,7 +189,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             <View style={styles.dateRow}>
               <MaterialCommunityIcons name="clock-outline" size={12} color={brandColors.textMuted} />
               <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                {t('myBids.card.submitted', { date: formatDate(bid.created_at) })}
+                {t('myBids.card.submitted', { date: formatDate(bid.created_at, dateLocale) })}
               </Text>
             </View>
             <View style={styles.actionButtons}>
@@ -258,22 +258,28 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
 
 // Rejection labels now come from i18n: taskDetailsFixer.rejectionReasons.*
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 function getMonthKey(dateStr: string | null): string {
   if (!dateStr) return 'unknown';
   const d = new Date(dateStr);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function formatMonthLabel(key: string): string {
+function getMonthShortName(monthKey: string, locale?: string): string {
+  const [year, month] = monthKey.split('-');
+  const d = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return d.toLocaleDateString(locale, { month: 'short' });
+}
+
+function formatMonthLabel(key: string, locale?: string): string {
   const [year, month] = key.split('-');
-  return `${MONTH_NAMES[parseInt(month) - 1]} ${year}`;
+  const d = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return d.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 }
 
 export default function MyBidsScreen() {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
@@ -582,12 +588,10 @@ export default function MyBidsScreen() {
     (navigation as { navigate: (screen: string) => void }).navigate('FindJobs');
   }, [navigation]);
 
+  const emptyTabKey = activeTabKey; // 'active', 'pending', 'accepted', etc.
   const emptyTitle = activeTab === 'ALL'
     ? t('myBids.empty.noActive.title')
-    : t('myBids.empty.filtered.title', { tab: activeTabLabel.toLowerCase() });
-  const emptyMessage = activeTab === 'ALL'
-    ? t('myBids.empty.noActive.message')
-    : t('myBids.empty.filtered.message', { tab: activeTabLabel.toLowerCase() });
+    : t(`myBids.empty.${emptyTabKey}.title`, { defaultValue: t('myBids.empty.filtered.title', { tab: activeTabLabel.toLowerCase() }) });
 
   return (
     <View style={styles.container}>
@@ -613,7 +617,13 @@ export default function MyBidsScreen() {
                 ? t('myBids.header.subPending', { pending: pipelineSummary.pendingOffers })
                 : activeTab === 'ACCEPTED'
                   ? t('myBids.header.subAccepted', { active: pipelineSummary.activeJobs })
-                  : t('myBids.header.subTab', { tab: activeTabLabel })}
+                  : activeTab === 'COMPLETED'
+                    ? t('myBids.header.subCompleted')
+                    : activeTab === 'REJECTED'
+                      ? t('myBids.header.subRejected')
+                      : activeTab === 'WITHDRAWN'
+                        ? t('myBids.header.subWithdrawn')
+                        : t('myBids.header.subTab', { tab: activeTabLabel })}
           </Text>
         </View>
 
@@ -662,7 +672,6 @@ export default function MyBidsScreen() {
         <EmptyState
           icon={activeTab === 'ALL' ? 'hand-extended-outline' : 'filter-off-outline'}
           title={emptyTitle}
-          message={emptyMessage}
           actionLabel={activeTab === 'ALL' ? t('myBids.empty.noActive.action') : undefined}
           onAction={activeTab === 'ALL' ? handleFindJobs : undefined}
         />
@@ -719,7 +728,7 @@ export default function MyBidsScreen() {
                   contentContainerStyle={styles.monthRow}
                   renderItem={({ item }) => (
                     <FChip
-                      label={MONTH_NAMES[parseInt(item.split('-')[1]) - 1]}
+                      label={getMonthShortName(item, dateLocale)}
                       selected={effectiveMonth === item}
                       onPress={() => setSelectedMonth(item === effectiveMonth ? null : item)}
                       compact
@@ -730,7 +739,7 @@ export default function MyBidsScreen() {
               {/* Summary card for selected month */}
               <FCard style={styles.summaryCard}>
                 <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.sm }]}>
-                  {effectiveMonth ? formatMonthLabel(effectiveMonth) : effectiveYear != null ? String(effectiveYear) : 'All time'}
+                  {effectiveMonth ? formatMonthLabel(effectiveMonth, dateLocale) : effectiveYear != null ? String(effectiveYear) : 'All time'}
                 </Text>
                 <View style={styles.summaryContent}>
                   <View style={styles.summaryItem}>
@@ -777,7 +786,6 @@ export default function MyBidsScreen() {
               <EmptyState
                 icon="filter-off-outline"
                 title={emptyTitle}
-                message={emptyMessage}
               />
             )
           }

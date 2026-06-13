@@ -34,7 +34,8 @@ interface DiscoveryListCardProps {
 
 export default function DiscoveryListCard({ task, hasBid = false, onPress }: DiscoveryListCardProps) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const locationName = (language === 'en' && task.generalLocationNameEn) ? task.generalLocationNameEn : task.generalLocationName;
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : t('discoveryCard.noPrice');
   const catMeta = getCategoryMetadata(task.category);
 
@@ -73,13 +74,13 @@ export default function DiscoveryListCard({ task, hasBid = false, onPress }: Dis
             {task.urgency === 'TODAY' && (
               <View style={styles.urgencyPill}>
                 <MaterialCommunityIcons name="clock-alert-outline" size={12} color={brandColors.danger} />
-                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>Today</Text>
+                <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '700' }]}>{t('taskDetails.detail.urgencyToday')}</Text>
               </View>
             )}
             {task.urgency === 'THIS_WEEK' && (
               <View style={styles.urgencyPillWeek}>
                 <MaterialCommunityIcons name="calendar-week" size={12} color={brandColors.warning} />
-                <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>This week</Text>
+                <Text style={[typography.caption, { color: brandColors.warning, fontWeight: '700' }]}>{t('taskDetails.detail.urgencyThisWeek')}</Text>
               </View>
             )}
           </View>
@@ -98,14 +99,14 @@ export default function DiscoveryListCard({ task, hasBid = false, onPress }: Dis
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="map-marker-outline" size={13} color={brandColors.textMuted} />
-          <Text style={[typography.caption, styles.metaText]}>
-            {task.generalLocationName} / {task.distanceKm.toFixed(1)} km
+          <Text style={[typography.caption, styles.metaText, { writingDirection: 'ltr' }]}>
+            {locationName} / {task.distanceKm.toFixed(1)} {t('discoveryCard.km')}
           </Text>
         </View>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="hand-extended-outline" size={13} color={brandColors.textMuted} />
           <Text style={[typography.caption, styles.metaText]}>
-            {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
+            {t('discoveryCard.bids', { count: task.bidCount })}
           </Text>
         </View>
         <View style={[styles.detailsCue, hasBid && styles.bidDetailsCue]}>
