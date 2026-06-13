@@ -41,6 +41,20 @@ router.post('/sync', validate(authSyncSchema), async (req: Request, res: Respons
       err instanceof PrismaClientKnownRequestError &&
       err.code === 'P2002'
     ) {
+      // User re-registered with same email but new Firebase UID — update the existing record
+      try {
+        const decoded = await admin.auth().verifyIdToken(req.headers.authorization!.slice(7));
+        const existing = await prisma.user.findFirst({ where: { email: decoded.email ?? '' } });
+        if (existing && existing.firebase_uid !== decoded.uid) {
+          const updated = await prisma.user.update({
+            where: { id: existing.id },
+            data: { firebase_uid: decoded.uid, email_verified: decoded.email_verified ?? false },
+          });
+          return res.status(200).json({ user: updated });
+        }
+      } catch {
+        // fall through to conflict error
+      }
       return next(new ConflictError('User already exists'));
     }
     // Firebase token verification errors

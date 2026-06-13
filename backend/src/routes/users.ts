@@ -163,6 +163,36 @@ router.patch('/me/email-verified', async (req: Request, res: Response, next: Nex
   }
 });
 
+// DELETE /api/users/me — delete account from both database and Firebase
+router.delete('/me', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete related records in dependency order
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { user_id: userId } }),
+      prisma.message.deleteMany({ where: { sender_id: userId } }),
+      prisma.review.deleteMany({ where: { reviewer_id: userId } }),
+      prisma.portfolioItem.deleteMany({ where: { fixer_id: userId } }),
+      prisma.certification.deleteMany({ where: { fixer_id: userId } }),
+      prisma.bid.deleteMany({ where: { fixer_id: userId } }),
+      prisma.task.deleteMany({ where: { requester_id: userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    // Delete from Firebase
+    try {
+      await admin.auth().deleteUser(req.user.firebase_uid);
+    } catch {
+      // If Firebase deletion fails (e.g. user already deleted), continue
+    }
+
+    res.json({ message: 'Account deleted' });
+  } catch (err) {
+    next(err as Error);
+  }
+});
+
 // POST /api/users/me/push-token — register or update Expo push token
 router.post('/me/push-token', validate(pushTokenSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {

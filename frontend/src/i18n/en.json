@@ -124,8 +124,12 @@
       "message": "We sent a verification link to {{email}}. Please check your inbox and click the link to continue.",
       "resend": "Resend email",
       "resent": "Email sent!",
+      "resentMessage": "A verification email has been sent. Please check your inbox.",
       "checkButton": "I've verified my email",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "notVerifiedYet": "Your email is not verified yet. Please check your inbox and click the verification link, then try again.",
+      "signOutConfirmTitle": "Sign out",
+      "signOutConfirmMessage": "Are you sure you want to sign out?"
     },
     "needsSync": {
       "title": "Finish your account setup",
@@ -157,12 +161,14 @@
       "eyebrow": "Workspace",
       "secureSession": "Secure session",
       "verifiedEmail": "Verified email",
-      "emailNotVerified": "Email not verified"
+      "emailNotVerified": "Email not verified",
+      "defaultName": "FixIt account"
     },
     "section": {
       "account": "Account",
       "preferences": "Preferences",
-      "session": "Session"
+      "session": "Session",
+      "danger": "Danger Zone"
     },
     "account": {
       "email": {
@@ -191,7 +197,9 @@
     },
     "session": {
       "copy": "Log out of this device. Your posted tasks, bids, and profile details stay saved.",
-      "logout": "Log Out"
+      "logout": "Log Out",
+      "deleteAccount": "Delete Account",
+      "deleteCopy": "Permanently delete your account and all associated data. This action cannot be undone."
     },
     "alerts": {
       "logOut": {
@@ -199,10 +207,17 @@
         "message": "Are you sure you want to log out?",
         "confirm": "Log Out"
       },
+      "deleteAccount": {
+        "title": "Delete Account",
+        "message": "Are you sure you want to permanently delete your account? This will remove all your data, tasks, bids, and messages. This cannot be undone.",
+        "confirm": "Delete Account",
+        "error": "Failed to delete account."
+      },
       "passwordReset": {
         "successTitle": "Success",
         "success": "Check your inbox for a password reset link.",
-        "error": "Failed to send password reset email."
+        "error": "Failed to send password reset email.",
+        "sentLabel": "Reset link sent"
       },
       "phone": {
         "savedTitle": "Saved",

@@ -175,9 +175,9 @@ function RootContent() {
     );
   }
 
-  // On web, show the standard loading screen while auth is checking so the user
-  // doesn't see a flash of the AuthScreen before the landing page appears.
-  if (USE_SIGNED_OUT_LANDING && authState.status === 'checking') {
+  // Show the standard loading screen while auth is checking so the user
+  // doesn't see a flash between screens.
+  if (authState.status === 'checking') {
     return <LoadingScreen />;
   }
 

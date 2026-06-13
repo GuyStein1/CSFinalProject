@@ -3,7 +3,7 @@ import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
@@ -114,6 +114,7 @@ export default function AuthScreen({
     setSubmitting(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, registerEmail.trim(), registerPassword);
+      await updateProfile(cred.user, { displayName: registerFullName.trim() });
       await sendEmailVerification(cred.user);
       await onSyncLocalAccount(registerFullName.trim(), registerPhone.trim());
     } catch (err) {

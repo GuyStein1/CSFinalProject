@@ -69,7 +69,7 @@ export default function useAuthBootstrap() {
   const [isAdmin, setIsAdmin] = useState(false);
   const pushRegistered = useRef(false);
 
-  const verifyLocalUser = useCallback(async () => {
+  const verifyLocalUser = useCallback(async (): Promise<boolean> => {
     const res = await api.get('/api/users/me');
     setIsAdmin(res.data.user?.is_admin === true);
     // If the user activated fixer mode on another device, sync the local flag.
@@ -77,6 +77,8 @@ export default function useAuthBootstrap() {
       const key = `fixerOnboardingSeen_${auth.currentUser.uid}`;
       await AsyncStorage.setItem(key, 'true');
     }
+    // Return whether the backend considers this user email-verified
+    return res.data.user?.email_verified === true;
   }, []);
 
   const bootstrapSignedInUser = useCallback(
@@ -87,9 +89,10 @@ export default function useAuthBootstrap() {
       setSuggestedFullName(user.displayName ?? '');
 
       try {
-        await verifyLocalUser();
-        // Check if email is verified via Firebase (Google users are auto-verified)
-        if (!user.emailVerified) {
+        const backendVerified = await verifyLocalUser();
+        // Skip verification if backend already marks user as verified (e.g. seed users)
+        // or if Firebase says verified (e.g. Google sign-in)
+        if (!user.emailVerified && !backendVerified) {
           setStatus('needs_email_verify');
           return;
         }
@@ -102,6 +105,27 @@ export default function useAuthBootstrap() {
         const status = getApiErrorStatus(nextError);
 
         if (status === 404) {
+          // Auto-sync: create local account from Firebase user data
+          try {
+            const name = user.displayName || user.email?.split('@')[0] || 'User';
+            await api.post('/api/auth/sync', {
+              full_name: name,
+              phone_number: undefined,
+            });
+            const bv = await verifyLocalUser();
+            if (!user.emailVerified && !bv) {
+              setStatus('needs_email_verify');
+              return;
+            }
+            setStatus('ready');
+            if (!pushRegistered.current) {
+              pushRegistered.current = true;
+              void registerPushTokenSilently();
+            }
+            return;
+          } catch {
+            // If auto-sync fails, fall through to error
+          }
           setStatus('needs_sync');
           return;
         }
@@ -160,9 +184,9 @@ export default function useAuthBootstrap() {
           full_name: fullName.trim(),
           phone_number: phoneNumber.trim() || undefined,
         });
-        await verifyLocalUser();
+        const backendVerified = await verifyLocalUser();
         // New email/password users won't be verified yet
-        if (!auth.currentUser?.emailVerified) {
+        if (!auth.currentUser?.emailVerified && !backendVerified) {
           setStatus('needs_email_verify');
           return;
         }
@@ -170,7 +194,11 @@ export default function useAuthBootstrap() {
       } catch (nextError) {
         if (getApiErrorStatus(nextError) === 409) {
           try {
-            await verifyLocalUser();
+            const bv = await verifyLocalUser();
+            if (!auth.currentUser?.emailVerified && !bv) {
+              setStatus('needs_email_verify');
+              return;
+            }
             setStatus('ready');
             return;
           } catch {
@@ -195,9 +223,9 @@ export default function useAuthBootstrap() {
     await bootstrapSignedInUser(auth.currentUser);
   }, [bootstrapSignedInUser]);
 
-  const recheckEmailVerification = useCallback(async () => {
+  const recheckEmailVerification = useCallback(async (): Promise<boolean> => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) return false;
     await user.reload();
     if (user.emailVerified) {
       // Sync verified status to backend
@@ -212,7 +240,9 @@ export default function useAuthBootstrap() {
         pushRegistered.current = true;
         void registerPushTokenSilently();
       }
+      return true;
     }
+    return false;
   }, []);
 
   const logOut = useCallback(async () => {
