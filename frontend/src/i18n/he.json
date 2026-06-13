@@ -936,7 +936,8 @@
       "trades": "מקצועות",
       "photos": "תמונות",
       "profileCompletion": "פרופיל",
-      "tapToView": "לחץ לצפייה בביקורות"
+      "tapToView": "לחץ לצפייה בביקורות",
+      "new": "חדש"
     },
     "pushNotifications": {
       "label": "התראות",
@@ -1063,6 +1064,11 @@
     "review": "ביקורת",
     "reviews": "ביקורות",
     "respondsIn": "מגיב תוך ~{{value}} {{unit}}",
+    "timeUnit": {
+      "min": "דק׳",
+      "hr": "שע׳",
+      "days": "ימים"
+    },
     "tasksCompleted_one": "משימה אחת הושלמה",
     "tasksCompleted_two": "{{count}} משימות הושלמו",
     "tasksCompleted_many": "{{count}} משימות הושלמו",

@@ -190,8 +190,8 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         },
       ]}
     >
-      <View style={styles.desktopBarInner}>
-        <View style={[styles.desktopLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <View style={[styles.desktopBarInner, styles.forceLtr]}>
+        <View style={styles.desktopLeft}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go to FixIt home"
@@ -202,12 +202,12 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
           </Pressable>
 
           {mode === 'fixer' ? (
-            <View style={[styles.modeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={styles.modeLabel}>
               <MaterialCommunityIcons name="wrench-outline" size={13} color="#fff" />
               <Text style={styles.modeLabelText}>{t('nav.workspace.fixerBadge')}</Text>
             </View>
           ) : (
-            <View style={[styles.modeLabel, styles.modeLabelRequester, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.modeLabel, styles.modeLabelRequester]}>
               <MaterialCommunityIcons name="home-outline" size={13} color="#fff" />
               <Text style={styles.modeLabelText}>{t('nav.workspace.requesterBadge')}</Text>
             </View>
@@ -627,6 +627,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.lg,
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  forceLtr: Platform.OS === 'web' ? { direction: 'ltr' } as any : {},
   // Logo + nav tabs grouped together on the left; actions sit on the right.
   desktopLeft: {
     flexDirection: 'row',

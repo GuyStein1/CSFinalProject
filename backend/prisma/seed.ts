@@ -38,6 +38,7 @@ const users = [
     email: 'shick@example.com',
     phone_number: '0504444444',
     specializations: [Category.ELECTRICITY, Category.PLUMBING],
+    verification_status: 'APPROVED' as const,
   },
   {
     firebase_uid: 'sUegu2QaPlVsiYlUdvcK0LuJWOf1',

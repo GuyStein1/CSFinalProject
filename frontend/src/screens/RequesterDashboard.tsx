@@ -180,7 +180,7 @@ export default function RequesterDashboard({ navigation }: Props) {
         {latestOpenTask && (() => {
           const meta = CATEGORY_METADATA[latestOpenTask.category as keyof typeof CATEGORY_METADATA];
           return (
-            <View style={[styles.quickAccess, isRTL && styles.quickAccessRTL]}>
+            <View style={styles.quickAccess}>
               <Pressable
                 onPress={() => navigation.navigate('TaskDetails', { taskId: latestOpenTask.id })}
                 accessibilityRole="button"
