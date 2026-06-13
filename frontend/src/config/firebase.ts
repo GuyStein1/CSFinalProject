@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
@@ -13,16 +13,22 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Guard against duplicate initialization in Expo Go's persistent environment
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // On web, getAuth uses window.location for auth domain detection.
-// On native, we must use initializeAuth with AsyncStorage persistence to
-// avoid a crash on window.location.origin and to persist sessions across restarts.
-export const auth =
-  Platform.OS === 'web'
-    ? getAuth(app)
-    : initializeAuth(app, {
-        persistence: getReactNativePersistence(AsyncStorage),
-      });
+// On native, use initializeAuth with AsyncStorage persistence to avoid a crash
+// on window.location.origin and to persist sessions across restarts.
+// Fall back to getAuth if initializeAuth was already called (Expo Go hot reload).
+export const auth = (() => {
+  if (Platform.OS === 'web') return getAuth(app);
+  try {
+    return initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch {
+    return getAuth(app);
+  }
+})();
 
 export const storage = getStorage(app);
