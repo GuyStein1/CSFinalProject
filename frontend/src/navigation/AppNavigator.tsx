@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigationState } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../config/firebase';
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -517,18 +516,9 @@ function MainHeader(props: BottomTabHeaderProps) {
   return isDesktop ? <DesktopHeader {...props} /> : <MobileHeader {...props} />;
 }
 
-function ModeTracker() {
-  const { setActiveMode } = useActiveMode();
-  const state = useNavigationState(s => s);
-  useEffect(() => {
-    const route = state?.routes[state.index];
-    setActiveMode(route?.name === 'FixerMode' ? 'fixer' : 'requester');
-  }, [state, setActiveMode]);
-  return null;
-}
-
 function MainNavigator() {
   const theme = useTheme();
+  const { setActiveMode } = useActiveMode();
 
   return (
     <ModeTabs.Navigator
@@ -537,6 +527,13 @@ function MainNavigator() {
         header: (props: BottomTabHeaderProps) => <MainHeader {...props} />,
         tabBarStyle: { display: 'none' },
         sceneStyle: { backgroundColor: theme.colors.background },
+      }}
+      screenListeners={{
+        state: (e) => {
+          const navState = e.data.state;
+          const activeRoute = navState?.routes[navState.index ?? 0];
+          setActiveMode(activeRoute?.name === 'FixerMode' ? 'fixer' : 'requester');
+        },
       }}
     >
       <ModeTabs.Screen name="RequesterMode" component={RequesterTabs} options={{ title: 'Requester' }} />
@@ -560,9 +557,7 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: theme.colors.background },
       }}
     >
-      <Stack.Screen name="Main" options={{ headerShown: false }}>
-        {() => <><ModeTracker /><MainNavigator /></>}
-      </Stack.Screen>
+      <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: t('nav.screenTitle.createTask') }} />
       <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: t('nav.screenTitle.taskDetails') }} />
       <Stack.Screen name="TaskDetailsFixer" component={TaskDetailsFixer} options={{ title: t('nav.screenTitle.jobDetails') }} />
