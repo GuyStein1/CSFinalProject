@@ -30,6 +30,7 @@ interface Task {
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   suggested_price: number | null;
   general_location_name: string;
+  general_location_name_en?: string | null;
   bid_count?: number;
   assigned_fixer_name?: string;
   assigned_fixer_id?: string;
@@ -54,7 +55,7 @@ interface ConfirmationOptions {
 
 export default function MyTasksScreen({ navigation }: Props) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -274,7 +275,11 @@ export default function MyTasksScreen({ navigation }: Props) {
       : pastTasks;
 
   // Year/month filtering for past tasks
-  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
+  const getMonthName = (month: number) => {
+    const d = new Date(2024, month, 1);
+    return d.toLocaleDateString(dateLocale, { month: 'short' });
+  };
 
   const availableYears = [...new Set(
     filteredPastTasksBase.map((t) => new Date(t.completed_at ?? t.created_at).getFullYear()),
@@ -421,7 +426,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                   category={task.category}
                   status={task.status}
                   suggestedPrice={task.suggested_price}
-                  locationName={task.general_location_name}
+                  locationName={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : task.general_location_name}
                   bidCount={task.bid_count}
                   fixerName={task.assigned_fixer_name}
                   onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
@@ -492,7 +497,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                     {availableMonths.map((month) => (
                       <FChip
                         key={month}
-                        label={MONTH_NAMES[month]}
+                        label={getMonthName(month)}
                         selected={selectedMonth === month}
                         onPress={() => setSelectedMonth(month === selectedMonth ? null : month)}
                         compact
@@ -513,7 +518,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                     category={task.category}
                     status={task.status}
                     suggestedPrice={task.suggested_price}
-                    locationName={task.general_location_name}
+                    locationName={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : task.general_location_name}
                     onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
                     onReactivate={
                       task.status === 'CANCELED' ? () => reactivateTask(task) : undefined

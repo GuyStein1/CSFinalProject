@@ -129,8 +129,10 @@ model Task {
   suggested_price       Float?
   urgency               TaskUrgency @default(FLEXIBLE)
   status                TaskStatus @default(OPEN)
-  general_location_name String
-  exact_address         String
+  general_location_name    String
+  general_location_name_en String?
+  exact_address            String
+  exact_address_en         String?
   coordinates           Unsupported("geometry(Point, 4326)")
   assigned_fixer_id     String?
   completion_photos     String[]

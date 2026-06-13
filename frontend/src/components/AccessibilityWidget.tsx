@@ -11,6 +11,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { brandColors, spacing, radii, shadows, typography } from '../theme';
 import { useAccessibility, AccessibilityState } from '../context/AccessibilityContext';
+import { useLanguage } from '../context/LanguageContext';
 
 /* ------------------------------------------------------------------ */
 /*  Menu item definition                                              */
@@ -47,6 +48,8 @@ const MENU_ITEMS: MenuItem[] = [
 export default function AccessibilityWidget() {
   const [open, setOpen] = useState(false);
   const { state, increaseFontSize, decreaseFontSize, toggle, resetAll } = useAccessibility();
+  const { language } = useLanguage();
+  const isHebrew = language === 'he';
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
@@ -95,7 +98,7 @@ export default function AccessibilityWidget() {
         <View style={[styles.panel, isDesktop && styles.panelDesktop]}>
           <View style={styles.panelHeader}>
             <MaterialCommunityIcons name="human" size={22} color={brandColors.white} />
-            <Text style={styles.panelTitle}>נגישות / Accessibility</Text>
+            <Text style={styles.panelTitle}>{isHebrew ? 'נגישות' : 'Accessibility'}</Text>
             {state.fontScale !== 1 && (
               <Text style={styles.fontScaleBadge}>{Math.round(state.fontScale * 100)}%</Text>
             )}
@@ -140,13 +143,7 @@ export default function AccessibilityWidget() {
                       active && styles.menuLabelActive,
                       isReset && styles.menuLabelReset,
                     ]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[
-                      styles.menuLabelHe,
-                      active && styles.menuLabelActive,
-                    ]}>
-                      {item.labelHe}
+                      {isHebrew ? item.labelHe : item.label}
                     </Text>
                   </View>
                   {item.type === 'toggle' && (

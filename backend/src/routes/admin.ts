@@ -5,6 +5,7 @@ import { prisma } from '../config/prisma';
 import { NotFoundError } from '../utils/errors';
 import { recalculateFixerRating } from '../utils/ratingCalculator';
 import { sendNotification } from '../services/notificationService';
+import { getNotificationText } from '../utils/notificationMessages';
 import { validate } from '../middleware/validate';
 import { reviewCertificationSchema } from '../schemas';
 
@@ -257,14 +258,11 @@ router.post(
         },
       });
 
-      const categoryLabel = certification.category === 'ELECTRICITY' ? 'Electrician' : 'Plumber';
+      const categoryLabel = certification.category.charAt(0) + certification.category.slice(1).toLowerCase();
       const notifType = action === 'approve' ? 'CERTIFICATION_APPROVED' : 'CERTIFICATION_REJECTED';
-      const title = action === 'approve' ? 'Certification Approved!' : 'Certification Rejected';
-      const body = action === 'approve'
-        ? `Your ${categoryLabel} certification has been approved. A badge will now appear on your profile.`
-        : `Your ${categoryLabel} certification was not approved.${rejection_note ? ` Reason: ${rejection_note}` : ''} You can re-upload a new document.`;
-
-      await sendNotification(certification.fixer_id, title, body, notifType, certification.id, 'certification');
+      const key = action === 'approve' ? 'certificationApproved' : 'certificationRejected';
+      const certNt = await getNotificationText(certification.fixer_id, key as 'certificationApproved' | 'certificationRejected', { category: categoryLabel, reason: rejection_note || '' });
+      await sendNotification(certification.fixer_id, certNt.title, certNt.body, notifType, certification.id, 'certification');
 
       res.json({ message: `Certification ${action}d` });
     } catch (err) {

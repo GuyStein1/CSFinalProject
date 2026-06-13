@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { rejectBidSchema } from '../schemas';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
+import { getNotificationText } from '../utils/notificationMessages';
 import { getIO } from '../socket';
 import {
   NotFoundError,
@@ -63,14 +64,8 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
     });
 
     // Notify accepted fixer
-    await sendNotification(
-      bid.fixer_id,
-      'Bid Accepted',
-      `Your bid of ₪${bid.offered_price} on "${bid.task.title}" has been accepted!`,
-      'BID_ACCEPTED',
-      bid.task_id,
-      'Task',
-    );
+    const acceptedText = await getNotificationText(bid.fixer_id, 'bidAccepted', { price: String(bid.offered_price), taskTitle: bid.task.title });
+    await sendNotification(bid.fixer_id, acceptedText.title, acceptedText.body, 'BID_ACCEPTED', bid.task_id, 'Task');
 
     // Notify auto-rejected fixers
     const autoRejected = await prisma.bid.findMany({
@@ -78,14 +73,8 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
       select: { fixer_id: true },
     });
     for (const rejected of autoRejected) {
-      await sendNotification(
-        rejected.fixer_id,
-        'Bid Rejected',
-        `Another fixer was chosen for "${bid.task.title}".`,
-        'BID_REJECTED',
-        bid.task_id,
-        'Task',
-      );
+      const rejText = await getNotificationText(rejected.fixer_id, 'bidRejectedChosen', { taskTitle: bid.task.title });
+      await sendNotification(rejected.fixer_id, rejText.title, rejText.body, 'BID_REJECTED', bid.task_id, 'Task');
     }
 
     const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
@@ -118,14 +107,8 @@ router.put('/:id/reject', validate(rejectBidSchema), async (req: Request, res: R
       },
     });
 
-    await sendNotification(
-      bid.fixer_id,
-      'Bid Rejected',
-      `Your bid of ₪${bid.offered_price} on "${bid.task.title}" was not accepted.`,
-      'BID_REJECTED',
-      bid.task_id,
-      'Task',
-    );
+    const rejNotif = await getNotificationText(bid.fixer_id, 'bidRejected', { price: String(bid.offered_price), taskTitle: bid.task.title });
+    await sendNotification(bid.fixer_id, rejNotif.title, rejNotif.body, 'BID_REJECTED', bid.task_id, 'Task');
 
     res.json({ bid: updated });
   } catch (err) {
@@ -150,14 +133,8 @@ router.put('/:id/withdraw', async (req: Request, res: Response, next: NextFuncti
       data: { status: 'WITHDRAWN' },
     });
 
-    await sendNotification(
-      bid.task.requester_id,
-      'Bid Withdrawn',
-      `A fixer withdrew their bid of ₪${bid.offered_price} on "${bid.task.title}".`,
-      'BID_WITHDRAWN',
-      bid.task_id,
-      'Task',
-    );
+    const wdNotif = await getNotificationText(bid.task.requester_id, 'bidWithdrawn', { price: String(bid.offered_price), taskTitle: bid.task.title });
+    await sendNotification(bid.task.requester_id, wdNotif.title, wdNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task');
 
     res.json({ bid: updated });
   } catch (err) {
@@ -189,14 +166,8 @@ router.put('/:id/cancel-accepted', async (req: Request, res: Response, next: Nex
       });
     });
 
-    await sendNotification(
-      bid.task.requester_id,
-      'Fixer Canceled',
-      `The assigned fixer has canceled their bid on "${bid.task.title}". Your task is now open for new bids.`,
-      'BID_WITHDRAWN',
-      bid.task_id,
-      'Task',
-    );
+    const cancelNotif = await getNotificationText(bid.task.requester_id, 'fixerCanceled', { taskTitle: bid.task.title });
+    await sendNotification(bid.task.requester_id, cancelNotif.title, cancelNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task');
 
     // Notify open chat rooms so the chat updates in real-time
     const io = getIO();

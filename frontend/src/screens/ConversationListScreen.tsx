@@ -26,21 +26,22 @@ export interface Conversation {
   unreadCount: number;
 }
 
-export function formatConversationTime(dateStr: string, t: (key: string) => string): string {
+export function formatConversationTime(dateStr: string, t: (key: string) => string, locale?: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (diffDays === 0) return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   if (diffDays === 1) return t('conversations.yesterday');
-  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (diffDays < 7) return date.toLocaleDateString(locale, { weekday: 'short' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
@@ -134,7 +135,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                 </Text>
                 {item.lastMessage && (
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                    {formatConversationTime(item.lastMessage.timestamp, t)}
+                    {formatConversationTime(item.lastMessage.timestamp, t, dateLocale)}
                   </Text>
                 )}
               </View>

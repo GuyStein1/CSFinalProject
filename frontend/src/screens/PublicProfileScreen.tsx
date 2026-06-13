@@ -19,7 +19,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
-import { getCategoryMeta } from '../utils/categoryMetadata';
+import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
   id: string;
@@ -64,12 +64,13 @@ const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
 function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
   const canReport = currentUserId === review.reviewee_id;
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REPORT_REASONS[number] | null>(null);
   const [otherDetails, setOtherDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const date = new Date(review.created_at).toLocaleDateString(undefined, {
+  const date = new Date(review.created_at).toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -216,7 +217,8 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
 export default function PublicProfileScreen({ route }: { route: any }) {
   const { userId } = route.params;
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
@@ -258,7 +260,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
 
   const avgRating = profile?.average_rating_as_fixer;
   const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+    ? new Date(profile.created_at).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long' })
     : null;
 
   return (
@@ -294,7 +296,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {avgRating != null && avgRating > 0 && (
             <View style={styles.ratingRow}>
               <StarRating rating={avgRating} size={20} />
-              <Text style={[typography.bodyMedium, { color: brandColors.textSecondary, marginLeft: spacing.sm }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textSecondary, marginLeft: spacing.sm, writingDirection: 'ltr' }]}>
                 {avgRating.toFixed(1)}
               </Text>
               <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
@@ -309,7 +311,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
               <View style={styles.statChip}>
                 <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
                 <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                  {profile!.completed_tasks_as_fixer} tasks completed
+                  {t('publicProfile.tasksCompleted', { count: profile!.completed_tasks_as_fixer })}
                 </Text>
               </View>
             )}
@@ -341,8 +343,8 @@ export default function PublicProfileScreen({ route }: { route: any }) {
                 return (
                   <View key={s} style={[styles.specChip, { backgroundColor: meta.bg }]}>
                     <MaterialCommunityIcons name={meta.icon as never} size={14} color={meta.color} />
-                    <Text style={[typography.caption, { color: meta.color }]}>
-                      {meta.label}
+                    <Text style={[typography.caption, { color: meta.color, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {getCategoryLabel(s as never, t)}
                     </Text>
                   </View>
                 );

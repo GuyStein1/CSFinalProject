@@ -9,12 +9,15 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton } from '../components/ui';
 import { Conversation, formatConversationTime } from './ConversationListScreen';
+import { useLanguage } from '../context/LanguageContext';
 import { brandColors, radii, spacing, typography } from '../theme';
 
 export default function PastConversationsScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const { language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
@@ -165,7 +168,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
                 </Text>
                 {item.lastMessage && (
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                    {formatConversationTime(item.lastMessage.timestamp, t)}
+                    {formatConversationTime(item.lastMessage.timestamp, t, dateLocale)}
                   </Text>
                 )}
               </View>

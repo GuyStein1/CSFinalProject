@@ -63,7 +63,8 @@ function NotificationItem({
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
   const role = getNotificationRole(notification);
@@ -77,7 +78,7 @@ function NotificationItem({
     if (hours < 24) return t('notifications.timeAgo.hours', { count: hours });
     const days = Math.floor(hours / 24);
     if (days < 7) return t('notifications.timeAgo.days', { count: days });
-    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(dateStr).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
   };
 
   return (

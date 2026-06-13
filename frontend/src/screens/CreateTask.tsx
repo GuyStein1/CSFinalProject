@@ -478,7 +478,7 @@ export default function CreateTask({ navigation, route }: Props) {
                     <View style={[styles.categoryIconCircle, { backgroundColor: cat.color }]}>
                       <MaterialCommunityIcons name={cat.icon as never} size={24} color={brandColors.white} />
                     </View>
-                    <Text style={[typography.label, { color: brandColors.textPrimary }]}>{cat.label}</Text>
+                    <Text style={[typography.label, { color: brandColors.textPrimary }]}>{getCategoryLabel(cat.value, t)}</Text>
                   </Pressable>
                 );
               })}

@@ -3,6 +3,7 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import { prisma } from '../config/prisma';
 import admin from '../config/firebaseAdmin';
 import { sendNotification } from '../services/notificationService';
+import { getNotificationText } from '../utils/notificationMessages';
 import { NotificationType } from '@prisma/client';
 
 interface AuthenticatedSocket extends Socket {
@@ -134,15 +135,8 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
           if (!recipientInRoom) {
             const recipientRole = recipientId === task.requester_id ? 'requester' : 'fixer';
-            await sendNotification(
-              recipientId,
-              'New message',
-              content.trim(),
-              NotificationType.NEW_MESSAGE,
-              taskId,
-              'Task',
-              recipientRole,
-            );
+            const msgNt = await getNotificationText(recipientId, 'newMessage', {});
+            await sendNotification(recipientId, msgNt.title, content.trim(), NotificationType.NEW_MESSAGE, taskId, 'Task', recipientRole);
           }
         } catch (err) {
           console.error('[socket] send_message error', err);
