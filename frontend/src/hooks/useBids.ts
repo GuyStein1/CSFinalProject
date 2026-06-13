@@ -18,6 +18,7 @@ export interface BidTask {
   status: string;
   suggested_price: number | null;
   general_location_name: string;
+  general_location_name_en?: string | null;
   completed_at: string | null;
   requester?: {
     id: string;

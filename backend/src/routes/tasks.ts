@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
+import { getNotificationText } from '../utils/notificationMessages';
 import { recalculateFixerRating } from '../utils/ratingCalculator';
 import {
   NotFoundError,
@@ -79,12 +80,36 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
       throw new ValidationError('Location appears to be in the sea. Please pick a valid address on land.');
     }
 
+    // Reverse-geocode in English to get the English location name and address
+    let generalLocationNameEn: string | null = null;
+    let exactAddressEn: string | null = null;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
+    if (apiKey) {
+      try {
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=${apiKey}`,
+        );
+        const geoData = (await geoRes.json()) as { status: string; results: { formatted_address: string; address_components?: { long_name: string; types: string[] }[] }[] };
+        if (geoData.status === 'OK' && geoData.results?.length) {
+          const components = geoData.results[0].address_components ?? [];
+          const neighborhood = components.find(c => c.types.includes('neighborhood'))?.long_name;
+          const sublocality = components.find(c => c.types.includes('sublocality'))?.long_name;
+          const locality = components.find(c => c.types.includes('locality'))?.long_name;
+          const parts = [neighborhood || sublocality, locality].filter(Boolean);
+          generalLocationNameEn = parts.length > 0 ? parts.join(', ') : null;
+          exactAddressEn = geoData.results[0].formatted_address || null;
+        }
+      } catch {
+        // Non-critical — English names just won't be available
+      }
+    }
+
     // Insert with PostGIS point — must use raw SQL for the geometry column.
     // ST_MakePoint takes (longitude, latitude) — longitude first.
     const result = await prisma.$queryRaw<{ id: string }[]>`
       INSERT INTO "Task" (
         id, requester_id, title, description, media_urls, category,
-        suggested_price, urgency, status, general_location_name, exact_address,
+        suggested_price, urgency, status, general_location_name, general_location_name_en, exact_address, exact_address_en,
         coordinates, completion_photos, is_payment_confirmed, created_at, updated_at
       ) VALUES (
         gen_random_uuid(),
@@ -97,7 +122,9 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
         ${urgency ?? 'FLEXIBLE'}::"TaskUrgency",
         'OPEN'::"TaskStatus",
         ${general_location_name},
+        ${generalLocationNameEn},
         ${exact_address},
+        ${exactAddressEn},
         ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
         '{}'::text[],
         false,
@@ -161,6 +188,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       suggested_price: number | null;
       status: TaskStatus;
       general_location_name: string;
+      general_location_name_en: string | null;
       is_payment_confirmed: boolean;
       created_at: Date;
       updated_at: Date;
@@ -177,7 +205,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     if (minPriceNum !== null && maxPriceNum !== null) {
       tasks = await prisma.$queryRaw<TaskRow[]>`
         SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
-               t.suggested_price, t.urgency, t.status, t.general_location_name,
+               t.suggested_price, t.urgency, t.status, t.general_location_name, t.general_location_name_en,
                t.is_payment_confirmed, t.created_at, t.updated_at,
                ST_Y(t.coordinates::geometry) AS lat,
                ST_X(t.coordinates::geometry) AS lng,
@@ -223,7 +251,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     } else {
       tasks = await prisma.$queryRaw<TaskRow[]>`
         SELECT t.id, t.requester_id, t.title, t.description, t.media_urls, t.category,
-               t.suggested_price, t.urgency, t.status, t.general_location_name,
+               t.suggested_price, t.urgency, t.status, t.general_location_name, t.general_location_name_en,
                t.is_payment_confirmed, t.created_at, t.updated_at,
                ST_Y(t.coordinates::geometry) AS lat,
                ST_X(t.coordinates::geometry) AS lng,
@@ -329,8 +357,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/tasks/:id/directions?originLat=...&originLng=... — driving directions via Google
 router.get('/:id/directions', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { originLat, originLng } = req.query;
+    const { originLat, originLng, lang } = req.query;
     if (!originLat || !originLng) throw new ValidationError('originLat and originLng are required');
+
+    const userLang = (lang as string) === 'en' ? 'en' : 'he';
 
     const coordsRow = await prisma.$queryRaw<{ lat: number; lng: number }[]>`
       SELECT ST_Y(coordinates::geometry) AS lat, ST_X(coordinates::geometry) AS lng
@@ -351,7 +381,7 @@ router.get('/:id/directions', async (req: Request, res: Response, next: NextFunc
       `&destination=${dest.lat},${dest.lng}` +
       `&mode=driving` +
       `&departure_time=now` +
-      `&language=he` +
+      `&language=${userLang}` +
       `&key=${apiKey}`;
 
     const gRes = await fetch(url);
@@ -365,20 +395,24 @@ router.get('/:id/directions', async (req: Request, res: Response, next: NextFunc
 
     const leg = data.routes[0].legs[0];
 
-    // Google returns English units even with language=he — localise to Hebrew
-    const toHe = (text: string) =>
-      text
-        .replace(/\bkm\b/g, 'ק״מ')
-        .replace(/\bm\b/g, 'מ׳')
-        .replace(/\bmins?\b/g, 'דקות')
-        .replace(/\bhours?\b/g, 'שעות')
-        .replace(/\bdays?\b/g, 'ימים');
+    // Localise unit labels when Google returns English units
+    const localiseUnits = (text: string) => {
+      if (userLang === 'he') {
+        return text
+          .replace(/\bkm\b/g, 'ק״מ')
+          .replace(/\bm\b/g, 'מ׳')
+          .replace(/\bmins?\b/g, 'דקות')
+          .replace(/\bhours?\b/g, 'שעות')
+          .replace(/\bdays?\b/g, 'ימים');
+      }
+      return text;
+    };
 
     res.json({
       directions: {
-        distanceText: toHe(leg.distance.text),
-        durationText: toHe(leg.duration.text),
-        durationInTraffic: leg.duration_in_traffic?.text ? toHe(leg.duration_in_traffic.text) : null,
+        distanceText: localiseUnits(leg.distance.text),
+        durationText: localiseUnits(leg.duration.text),
+        durationInTraffic: leg.duration_in_traffic?.text ? localiseUnits(leg.duration_in_traffic.text) : null,
       },
     });
   } catch (err) {
@@ -456,14 +490,8 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
       });
 
       for (const bid of affectedBids) {
-        await sendNotification(
-          bid.fixer_id,
-          'Task Canceled',
-          `The task "${task.title}" you bid on has been canceled.`,
-          'TASK_CANCELED',
-          task.id,
-          'Task',
-        );
+        const nt = await getNotificationText(bid.fixer_id, 'taskCanceledBidder', { taskTitle: task.title });
+        await sendNotification(bid.fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task');
       }
     } else if (task.status === 'IN_PROGRESS' && newStatus === 'CANCELED') {
       if (task.is_payment_confirmed) {
@@ -475,14 +503,8 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
       });
 
       if (task.assigned_fixer_id) {
-        await sendNotification(
-          task.assigned_fixer_id,
-          'Task Canceled',
-          `The task "${task.title}" has been canceled by the requester.`,
-          'TASK_CANCELED',
-          task.id,
-          'Task',
-        );
+        const nt = await getNotificationText(task.assigned_fixer_id, 'taskCanceledFixer', { taskTitle: task.title });
+        await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task');
       }
     }
 
@@ -551,14 +573,8 @@ router.put('/:id/confirm-payment', async (req: Request, res: Response, next: Nex
 
     // Notify fixer that payment was confirmed
     if (task.assigned_fixer_id) {
-      await sendNotification(
-        task.assigned_fixer_id,
-        'Payment Confirmed',
-        `The requester confirmed payment for "${task.title}". You can now mark the task as completed.`,
-        'TASK_COMPLETED',
-        task.id,
-        'Task',
-      );
+      const nt = await getNotificationText(task.assigned_fixer_id, 'paymentConfirmed', { taskTitle: task.title });
+      await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_COMPLETED', task.id, 'Task');
     }
 
     res.json({ task: updated });
@@ -627,23 +643,11 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
 
     if (result === 'COMPLETED') {
       // Notify both sides
-      await sendNotification(
-        task.requester_id,
-        'Task Completed',
-        `The task "${task.title}" has been marked as completed by both sides.`,
-        'TASK_COMPLETED',
-        task.id,
-        'Task',
-      );
+      const reqNt = await getNotificationText(task.requester_id, 'taskCompleted', { taskTitle: task.title });
+      await sendNotification(task.requester_id, reqNt.title, reqNt.body, 'TASK_COMPLETED', task.id, 'Task');
       if (task.assigned_fixer_id) {
-        await sendNotification(
-          task.assigned_fixer_id,
-          'Task Completed',
-          `The task "${task.title}" has been marked as completed by both sides.`,
-          'TASK_COMPLETED',
-          task.id,
-          'Task',
-        );
+        const fixNt = await getNotificationText(task.assigned_fixer_id, 'taskCompleted', { taskTitle: task.title });
+        await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task');
       }
       // Review nudge — only if the requester hasn't already left a review
       const existingReview = await prisma.review.findUnique({
@@ -654,27 +658,15 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
           where: { id: task.assigned_fixer_id! },
           select: { full_name: true },
         });
-        await sendNotification(
-          task.requester_id,
-          'Leave a Review',
-          `Task "${task.title}" is complete! Let ${fixer?.full_name || 'the fixer'} know how they did.`,
-          'TASK_COMPLETED',
-          task.id,
-          'Task',
-        );
+        const revNt = await getNotificationText(task.requester_id, 'leaveReview', { taskTitle: task.title, fixerName: fixer?.full_name || 'the fixer' });
+        await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task');
       }
     } else {
       // Notify the other side
       const otherUserId = isRequester ? task.assigned_fixer_id : task.requester_id;
       if (otherUserId) {
-        await sendNotification(
-          otherUserId,
-          'Completion Confirmed',
-          `One side has confirmed completion of "${task.title}". Please confirm on your end.`,
-          'TASK_COMPLETED',
-          task.id,
-          'Task',
-        );
+        const confNt = await getNotificationText(otherUserId, 'completionConfirmed', { taskTitle: task.title });
+        await sendNotification(otherUserId, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task');
       }
     }
 
@@ -749,14 +741,8 @@ router.post('/:id/bids', validate(createBidSchema), async (req: Request, res: Re
       });
     }
 
-    await sendNotification(
-      task.requester_id,
-      'New Bid',
-      `You received a new bid of ₪${offered_price} on "${task.title}".`,
-      'NEW_BID',
-      task.id,
-      'Task',
-    );
+    const bidNt = await getNotificationText(task.requester_id, 'newBid', { price: String(offered_price), taskTitle: task.title });
+    await sendNotification(task.requester_id, bidNt.title, bidNt.body, 'NEW_BID', task.id, 'Task');
 
     res.status(201).json({ bid, has_existing_bid: false });
   } catch (err) {

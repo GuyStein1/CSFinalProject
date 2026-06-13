@@ -22,7 +22,8 @@ export default function DiscoveryPreviewCard({
   onViewDetails,
 }: DiscoveryPreviewCardProps) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const locationName = (language === 'en' && task.generalLocationNameEn) ? task.generalLocationNameEn : task.generalLocationName;
   const budgetLabel = task.suggestedPrice != null ? `₪${task.suggestedPrice}` : t('discoveryCard.noPrice');
   const catMeta = getCategoryMetadata(task.category);
 
@@ -77,14 +78,14 @@ export default function DiscoveryPreviewCard({
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="map-marker-outline" size={14} color={brandColors.textMuted} />
-          <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-            {task.generalLocationName} · {task.distanceKm.toFixed(1)} km
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: 'ltr' }]}>
+            {locationName} · {task.distanceKm.toFixed(1)} {t('discoveryCard.km')}
           </Text>
         </View>
         <View style={styles.metaItem}>
           <MaterialCommunityIcons name="hand-extended-outline" size={14} color={brandColors.textMuted} />
           <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-            {task.bidCount} {task.bidCount === 1 ? 'bid' : 'bids'}
+            {t('discoveryCard.bids', { count: task.bidCount })}
           </Text>
         </View>
       </View>

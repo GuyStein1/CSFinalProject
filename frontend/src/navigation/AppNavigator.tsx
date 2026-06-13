@@ -535,6 +535,7 @@ function MainNavigator() {
 
 export default function AppNavigator() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Stack.Navigator
@@ -548,15 +549,15 @@ export default function AppNavigator() {
       }}
     >
       <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
-      <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: 'Create Task' }} />
-      <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: 'Task Details' }} />
-      <Stack.Screen name="TaskDetailsFixer" component={TaskDetailsFixer} options={{ title: 'Job Details' }} />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profile' }} />
-      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: 'Notifications' }} />
+      <Stack.Screen name="CreateTask" component={CreateTask} options={{ title: t('nav.screenTitle.createTask') }} />
+      <Stack.Screen name="TaskDetails" component={TaskDetails} options={{ title: t('nav.screenTitle.taskDetails') }} />
+      <Stack.Screen name="TaskDetailsFixer" component={TaskDetailsFixer} options={{ title: t('nav.screenTitle.jobDetails') }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: t('nav.screenTitle.settings') }} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: t('nav.screenTitle.profile') }} />
+      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{ title: t('nav.screenTitle.notifications') }} />
       <Stack.Screen name="BecomeFixerOnboarding" component={BecomeFixerScreen} options={{ title: 'Become a Fixer', headerShown: false }} />
-      <Stack.Screen name="PastConversations" component={PastConversationsScreen} options={{ title: 'Past Conversations' }} />
-      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+      <Stack.Screen name="PastConversations" component={PastConversationsScreen} options={{ title: t('nav.screenTitle.pastConversations') }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ title: t('nav.screenTitle.chat') }} />
     </Stack.Navigator>
   );
 }

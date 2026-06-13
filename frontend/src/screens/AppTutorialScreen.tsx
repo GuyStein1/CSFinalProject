@@ -51,6 +51,7 @@ export default function RequesterTutorialScreen({ onComplete }: TutorialProps) {
 
   const rowDirection = isRTL ? 'row-reverse' : 'row';
   const textAlign = isRTL ? 'right' as const : 'left' as const;
+  const rtlText = isRTL ? { writingDirection: 'rtl' as const } : {};
 
   return (
     <Animated.View style={[styles.root, { opacity: fadeAnim }]}>
@@ -68,9 +69,9 @@ export default function RequesterTutorialScreen({ onComplete }: TutorialProps) {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="clipboard-text-outline" size={36} color="#fff" />
           </View>
-          <Text style={styles.eyebrow}>{t('tutorial.requester.kicker')}</Text>
-          <Text style={[typography.h1, styles.heroTitle]}>{t('tutorial.requester.title')}</Text>
-          <Text style={[typography.body, styles.heroSubtitle]}>
+          <Text style={[styles.eyebrow, rtlText]}>{t('tutorial.requester.kicker')}</Text>
+          <Text style={[typography.h1, styles.heroTitle, rtlText]}>{t('tutorial.requester.title')}</Text>
+          <Text style={[typography.body, styles.heroSubtitle, rtlText]}>
             {t('tutorial.requester.subtitle')}
           </Text>
         </LinearGradient>
@@ -109,11 +110,11 @@ export default function RequesterTutorialScreen({ onComplete }: TutorialProps) {
                     size={20}
                     color={brandColors.primary}
                   />
-                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign }]}>
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign }, rtlText]}>
                     {step.label}
                   </Text>
                 </View>
-                <Text style={[typography.body, { color: brandColors.textSecondary, textAlign }]}>
+                <Text style={[typography.body, { color: brandColors.textSecondary, textAlign }, rtlText]}>
                   {step.detail}
                 </Text>
               </View>

@@ -495,7 +495,7 @@ const LANDING_CSS = `
 .sp-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--primary); margin: 0 0 10px; }
 .sp-card p { font-size: 14.5px; line-height: 1.7; color: var(--text-secondary); margin: 0; }
 .sp-sec-head { text-align: center; margin-bottom: 44px; }
-.sp-sec-eyebrow { display: inline-block; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--secondary-dark); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
+.sp-sec-eyebrow { display: inline-block; font-family: var(--font-display); font-size: 14px; font-weight: 800; color: var(--secondary-dark); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
 .sp-sec-title { font-family: var(--font-display); font-size: clamp(26px,4vw,40px); font-weight: 800; color: var(--primary); margin: 0; line-height: 1.12; }
 .sp-back-btn {
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
@@ -725,7 +725,7 @@ export default function LandingScreen({
         {/* Back button */}
         <div style={{ position: 'fixed', top: 20, left: 20, zIndex: 100 }}>
           <button type="button" className="sp-back-btn" onClick={closeSubPage}>
-            <LandingIcon name="arrow-left" size={18} /> Back to home
+            <LandingIcon name="arrow-left" size={18} /> {t('landing.backToHome')}
           </button>
         </div>
 
@@ -787,20 +787,20 @@ export default function LandingScreen({
         {/* ── ABOUT ─────────────────────────── */}
         {subPage === 'about' && (
           <>
-            {spHero('information-outline', <>About Fix<span style={{ color: '#D49A2A' }}>I</span>t</>, 'A neighborhood task marketplace connecting homeowners with skilled local professionals.', 'linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 50%, #fdf6e3 100%)')}
+            {spHero('information-outline', <>About Fix<span style={{ color: '#D49A2A' }}>I</span>t</>, t('landing.about.sub'), 'linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 50%, #fdf6e3 100%)')}
             {spSection(
               <>
-                {spSectionHead('The problem', 'All kinds of small jobs need a hand. Getting one is harder than it should be.')}
+                {spSectionHead(t('landing.about.problemEyebrow'), t('landing.about.problemTitle'))}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
                   {spCard(<>
                     <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E4F2FB, #BFE0F5)', color: '#1F6DA3' }}><LandingIcon name="sofa-outline" size={26} /></div>
-                    <h3>Everyday tasks, no pro needed</h3>
-                    <p>Moving a couch, building IKEA furniture, hanging a shelf, painting a wall, mounting a TV, a quick deep clean. Anyone handy with free time could do these. But hiring for jobs this small isn&#39;t common, so you lean on friends, a number someone passed along, or just do it yourself.</p>
+                    <h3>{t('landing.about.card1Title')}</h3>
+                    <p>{t('landing.about.card1Desc')}</p>
                   </>, 100)}
                   {spCard(<>
                     <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FDF3E0, #F7CF7A)', color: '#B07F1F' }}><LandingIcon name="lightning-bolt-outline" size={26} /></div>
-                    <h3>Jobs that need a pro</h3>
-                    <p>Electrical, plumbing, AC repair, gardening, renovation, pest control. These need real skills or gear. Hiring is normal, but finding someone means digging through WhatsApp groups, Facebook, and contractor sites, then waiting to hear back.</p>
+                    <h3>{t('landing.about.card2Title')}</h3>
+                    <p>{t('landing.about.card2Desc')}</p>
                   </>, 220)}
                 </div>
               </>
@@ -809,14 +809,14 @@ export default function LandingScreen({
               <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%)', border: '1px solid rgba(241,181,69,0.35)', borderRadius: 28, padding: 'clamp(32px,5vw,52px)', boxShadow: '0 30px 70px -34px rgba(15,36,56,0.65)', opacity: 0, animation: 'rise 700ms cubic-bezier(0.16,1,0.3,1) 150ms forwards' }}>
                 <div style={{ position: 'absolute', top: -130, right: -110, width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, var(--secondary) 0%, transparent 70%)', opacity: 0.3 }} />
                 <div style={{ position: 'relative' }}>
-                  <div className="sp-sec-eyebrow" style={{ color: 'var(--secondary)' }}>The solution</div>
-                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px,3.4vw,36px)', fontWeight: 800, color: 'var(--text-on-dark)', margin: '0 0 26px', lineHeight: 1.15 }}>FixIt centralizes the whole local-services marketplace.</h2>
+                  <div className="sp-sec-eyebrow" style={{ color: 'var(--secondary)' }}>{t('landing.about.solutionEyebrow')}</div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(24px,3.4vw,36px)', fontWeight: 800, color: 'var(--text-on-dark)', margin: '0 0 26px', lineHeight: 1.15 }}>{t('landing.about.solutionTitle')}</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
                     {[
-                      { icon: 'send-outline', text: 'Post one request with photos, budget, and location' },
-                      { icon: 'scale-balance', text: 'Compare clear bids from nearby Fixers' },
-                      { icon: 'chat-processing-outline', text: 'Accept the best offer and coordinate in chat' },
-                      { icon: 'check-circle-outline', text: 'Finish the job, pay, and review' },
+                      { icon: 'send-outline', text: t('landing.about.sol1') },
+                      { icon: 'scale-balance', text: t('landing.about.sol2') },
+                      { icon: 'chat-processing-outline', text: t('landing.about.sol3') },
+                      { icon: 'check-circle-outline', text: t('landing.about.sol4') },
                     ].map((item, i) => (
                       <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(255,252,246,0.07)', border: '1px solid rgba(255,252,246,0.12)', borderRadius: 18, padding: '14px 18px', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${300 + i * 100}ms forwards` }}>
                         <span style={{ flex: 'none', width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(150deg, var(--secondary-light), var(--secondary-dark))', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><LandingIcon name={item.icon} size={20} /></span>
@@ -829,22 +829,22 @@ export default function LandingScreen({
             )}
             {spSection(
               <>
-                {spSectionHead('Who we are', 'Three students, one shared itch to fix things.')}
+                {spSectionHead(t('landing.about.whoEyebrow'), t('landing.about.whoTitle'))}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
                   {spCard(<>
                     <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E4F2FB, #BFE0F5)', color: '#1F6DA3' }}><LandingIcon name="lightbulb-outline" size={26} /></div>
-                    <h3>Our Story</h3>
-                    <p>Founded in 2026 in Tel Aviv by three CS students who saw a gap between people who need help around the house and skilled workers looking for flexible jobs nearby.</p>
+                    <h3>{t('landing.about.storyTitle')}</h3>
+                    <p>{t('landing.about.storyDesc')}</p>
                   </>, 100)}
                   {spCard(<>
                     <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #FFF3E0, #FBD9A2)', color: '#C25E00' }}><LandingIcon name="target" size={26} /></div>
-                    <h3>Our Mission</h3>
-                    <p>Make home maintenance accessible, transparent, and fair for everyone: homeowners posting their first task and fixers building their reputation alike.</p>
+                    <h3>{t('landing.about.missionTitle')}</h3>
+                    <p>{t('landing.about.missionDesc')}</p>
                   </>, 220)}
                   {spCard(<>
                     <div className="sp-card-icon" style={{ background: 'linear-gradient(150deg, #E0F5F3, #B5E3DD)', color: '#0A6359' }}><LandingIcon name="account-group-outline" size={26} /></div>
-                    <h3>The Team</h3>
-                    <p>A team of three developers passionate about great products and real-world impact. We build, test, and ship every feature together.</p>
+                    <h3>{t('landing.about.teamTitle')}</h3>
+                    <p>{t('landing.about.teamDesc')}</p>
                   </>, 340)}
                 </div>
               </>
@@ -855,19 +855,19 @@ export default function LandingScreen({
         {/* ── PRICING ───────────────────────── */}
         {subPage === 'pricing' && (
           <>
-            {spHero('tag-outline', <>Pricing? It&#39;s <span style={{ color: '#D49A2A' }}>free</span>.</>, 'No commissions, no subscriptions, no hidden fees. Just connect and get the job done.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #fdf6e3 100%)')}
+            {spHero('tag-outline', <>{t('landing.pricing.title')} <span style={{ color: '#D49A2A' }}>{t('landing.pricing.titleAccent')}</span>.</>, t('landing.pricing.sub'), 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #fdf6e3 100%)')}
             {spSection(
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 28 }}>
                 {[
-                  { plan: 'Requester', price: '0', desc: 'For homeowners who need things fixed.', features: ['Post unlimited tasks', 'Receive bids from local fixers', 'In-app chat with fixers', 'Rate and review fixers', 'Location privacy until bid accepted'] },
-                  { plan: 'Fixer', price: '0', desc: 'For skilled professionals looking for jobs.', features: ['Browse jobs on the map', 'Place unlimited bids', 'Build your portfolio & reputation', 'In-app chat with requesters', 'Push notifications for new jobs'] },
+                  { plan: t('landing.pricing.requester.plan'), price: '0', desc: t('landing.pricing.requester.desc'), features: [t('landing.pricing.requester.f1'), t('landing.pricing.requester.f2'), t('landing.pricing.requester.f3'), t('landing.pricing.requester.f4'), t('landing.pricing.requester.f5')] },
+                  { plan: t('landing.pricing.fixer.plan'), price: '0', desc: t('landing.pricing.fixer.desc'), features: [t('landing.pricing.fixer.f1'), t('landing.pricing.fixer.f2'), t('landing.pricing.fixer.f3'), t('landing.pricing.fixer.f4'), t('landing.pricing.fixer.f5')] },
                 ].map((p, i) => (
                   <div key={i} style={{ position: 'relative', overflow: 'hidden', background: i === 0 ? 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)' : 'linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 55%, var(--primary-light) 100%)', border: i === 0 ? '1px solid rgba(28,60,86,0.12)' : '1px solid rgba(241,181,69,0.4)', borderRadius: '28px 28px 28px 10px', padding: 'clamp(28px,4vw,40px)', boxShadow: i === 0 ? '0 24px 50px -30px rgba(28,60,86,0.4)' : '0 30px 64px -32px rgba(15,36,56,0.65)', opacity: 0, animation: `rise 700ms cubic-bezier(0.16,1,0.3,1) ${200 + i * 150}ms forwards` }}>
                     {i === 1 && <div style={{ position: 'absolute', top: -110, right: -110, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, var(--secondary) 0%, transparent 70%)', opacity: 0.3 }} />}
                     <div style={{ position: 'relative' }}>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: i === 0 ? '#D49A2A' : 'var(--secondary)', marginBottom: 8 }}>{p.plan}</div>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 56, fontWeight: 800, color: i === 0 ? 'var(--primary)' : '#fff', lineHeight: 1, marginBottom: 4 }}>&#8362;{p.price}</div>
-                      <div style={{ fontSize: 15, color: i === 0 ? '#9ca3af' : 'rgba(255,255,255,0.6)', marginBottom: 24 }}>forever</div>
+                      <div style={{ fontSize: 15, color: i === 0 ? '#9ca3af' : 'rgba(255,255,255,0.6)', marginBottom: 24 }}>{t('landing.pricing.forever')}</div>
                       <p style={{ fontSize: 15, lineHeight: 1.6, color: i === 0 ? 'var(--text-secondary)' : 'rgba(255,255,255,0.85)', marginBottom: 24 }}>{p.desc}</p>
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {p.features.map((f, fi) => (
@@ -888,17 +888,17 @@ export default function LandingScreen({
         {/* ── FAQ ────────────────────────────── */}
         {subPage === 'faq' && (
           <>
-            {spHero('frequently-asked-questions', 'FAQ', 'Everything you need to know about using FixIt.', 'linear-gradient(135deg, #f5f0ff 0%, #f0f4f8 50%, #e8f0fe 100%)')}
+            {spHero('frequently-asked-questions', t('landing.faq.title'), t('landing.faq.sub'), 'linear-gradient(135deg, #f5f0ff 0%, #f0f4f8 50%, #e8f0fe 100%)')}
             {spSection(
               <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
-                  { q: 'How do I post a task?', a: 'Sign in, choose a category, describe what you need, set a budget and location, and submit. Fixers in your area will start bidding within minutes.', icon: 'plus-circle-outline' },
-                  { q: 'How do I become a Fixer?', a: 'Every account can be both a requester and a fixer. Switch to Fixer mode using the toggle in the navigation bar and start browsing jobs near you.', icon: 'swap-horizontal' },
-                  { q: 'Is FixIt free?', a: 'Yes! There are no fees for posting tasks or placing bids. Payment is handled directly between you and the fixer via Bit or Paybox.', icon: 'cash-remove' },
-                  { q: 'How does payment work?', a: 'Once the job is done, the requester pays the fixer directly via Bit or Paybox. FixIt does not process payments. We just connect people.', icon: 'credit-card-outline' },
-                  { q: 'How do I know a fixer is reliable?', a: 'Every fixer has a public profile with ratings, reviews from past clients, and a portfolio of their work. Review these before accepting a bid.', icon: 'shield-check-outline' },
-                  { q: 'Can I cancel a task?', a: 'Yes, you can cancel an open task at any time. If a fixer is already assigned, contact them via chat first to coordinate.', icon: 'close-circle-outline' },
-                  { q: 'What areas does FixIt cover?', a: 'FixIt works across Israel. Jobs are shown based on proximity, so fixers see tasks near their current location.', icon: 'map-outline' },
+                  { q: t('landing.faq.q1'), a: t('landing.faq.a1'), icon: 'plus-circle-outline' },
+                  { q: t('landing.faq.q2'), a: t('landing.faq.a2'), icon: 'swap-horizontal' },
+                  { q: t('landing.faq.q3'), a: t('landing.faq.a3'), icon: 'cash-remove' },
+                  { q: t('landing.faq.q4'), a: t('landing.faq.a4'), icon: 'credit-card-outline' },
+                  { q: t('landing.faq.q5'), a: t('landing.faq.a5'), icon: 'shield-check-outline' },
+                  { q: t('landing.faq.q6'), a: t('landing.faq.a6'), icon: 'close-circle-outline' },
+                  { q: t('landing.faq.q7'), a: t('landing.faq.a7'), icon: 'map-outline' },
                 ].map((item, i) => (
                   <div key={i} style={{ background: expandedJob === i ? 'linear-gradient(165deg, #ffffff 0%, #fdf8ec 100%)' : 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', border: expandedJob === i ? '1px solid rgba(241,181,69,0.6)' : '1px solid rgba(28,60,86,0.1)', borderRadius: '22px 22px 22px 8px', overflow: 'hidden', boxShadow: expandedJob === i ? '0 24px 50px -28px rgba(28,60,86,0.45)' : '0 14px 36px -28px rgba(28,60,86,0.35)', transition: 'border-color 250ms, box-shadow 250ms', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 70}ms forwards` }}>
                     <button onClick={() => setExpandedJob(expandedJob === i ? null : i)} style={{ width: '100%', padding: '20px 24px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -921,16 +921,16 @@ export default function LandingScreen({
         {/* ── TRUST & SAFETY ────────────────── */}
         {subPage === 'trust' && (
           <>
-            {spHero('shield-check-outline', 'Trust & Safety', 'Your safety is our priority. Here\'s how FixIt keeps the community trustworthy.', 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #e8f0fe 100%)')}
+            {spHero('shield-check-outline', t('landing.trust.title'), t('landing.trust.sub'), 'linear-gradient(135deg, #e0f5f3 0%, #f0f4f8 50%, #e8f0fe 100%)')}
             {spSection(
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
                 {[
-                  { icon: 'account-check-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'Verified Accounts', desc: 'Every user signs in with a verified email address through Firebase Authentication. No anonymous profiles.' },
-                  { icon: 'star-outline', color: '#E65100', bg: '#FFF3E0', title: 'Reviews & Ratings', desc: 'After every completed task, both sides can leave honest reviews. Ratings are public and build real reputation.' },
-                  { icon: 'chat-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'In-App Chat', desc: 'All communication stays on the platform for transparency. Messages are encrypted and auto-deleted on task completion.' },
-                  { icon: 'map-marker-check-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Location Privacy', desc: 'Your exact address is only shared after you accept a bid. Before that, only a general area is shown on the map.' },
-                  { icon: 'flag-outline', color: '#C62828', bg: '#FFEBEE', title: 'Report System', desc: 'Flag inappropriate behavior at any time. Every report is reviewed, and accounts that break the rules are suspended.' },
-                  { icon: 'lock-outline', color: '#1565C0', bg: '#E3F2FD', title: 'Secure Payments', desc: 'Payments go directly between parties via Bit or Paybox. FixIt never stores payment information.' },
+                  { icon: 'account-check-outline', color: '#2E86C1', bg: '#E4F2FB', title: t('landing.trust.verifiedTitle'), desc: t('landing.trust.verifiedDesc') },
+                  { icon: 'star-outline', color: '#E65100', bg: '#FFF3E0', title: t('landing.trust.reviewsTitle'), desc: t('landing.trust.reviewsDesc') },
+                  { icon: 'chat-outline', color: '#6A1B9A', bg: '#F3E5F5', title: t('landing.trust.chatTitle'), desc: t('landing.trust.chatDesc') },
+                  { icon: 'map-marker-check-outline', color: '#0D7C6E', bg: '#E0F5F3', title: t('landing.trust.locationTitle'), desc: t('landing.trust.locationDesc') },
+                  { icon: 'flag-outline', color: '#C62828', bg: '#FFEBEE', title: t('landing.trust.reportTitle'), desc: t('landing.trust.reportDesc') },
+                  { icon: 'lock-outline', color: '#1565C0', bg: '#E3F2FD', title: t('landing.trust.paymentsTitle'), desc: t('landing.trust.paymentsDesc') },
                 ].map((item, i) => (
                   <div key={i} style={{ opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
                     {spCard(<>
@@ -948,17 +948,17 @@ export default function LandingScreen({
         {/* ── PRIVACY ───────────────────────── */}
         {subPage === 'privacy' && (
           <>
-            {spHero('eye-off-outline', 'Privacy Policy', 'We take your privacy seriously. Here\'s exactly what we collect and why.', 'linear-gradient(135deg, #f0f4f8 0%, #e3f2fd 50%, #f5f0ff 100%)')}
+            {spHero('eye-off-outline', t('landing.privacy.title'), t('landing.privacy.sub'), 'linear-gradient(135deg, #f0f4f8 0%, #e3f2fd 50%, #f5f0ff 100%)')}
             {spSection(
               <>
-                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>Last updated: May 2026</div>
+                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>{t('landing.privacy.lastUpdated')}</div>
                 <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
                   {[
-                    { icon: 'database-outline', color: '#2E86C1', bg: '#E4F2FB', title: 'What We Collect', text: 'FixIt collects only the information necessary to connect requesters with fixers: your name, email, profile photo, and location when you post or browse tasks.' },
-                    { icon: 'hand-back-right-off-outline', color: '#C62828', bg: '#FFEBEE', title: 'What We Don\'t Do', text: 'We do not sell your personal data to third parties. Your exact address is never shown publicly. Only a general area is displayed until a bid is accepted.' },
-                    { icon: 'chat-remove-outline', color: '#6A1B9A', bg: '#F3E5F5', title: 'Chat & Messages', text: 'Chat messages are stored securely and deleted automatically when a task is completed. We do not read, analyze, or share your private conversations.' },
-                    { icon: 'bell-outline', color: '#E65100', bg: '#FFF3E0', title: 'Push Notifications', text: 'Push notification tokens are used solely for delivering app notifications. We never send marketing push notifications without your explicit consent.' },
-                    { icon: 'account-cog-outline', color: '#0D7C6E', bg: '#E0F5F3', title: 'Your Data, Your Control', text: 'You can update your details or delete your account at any time from the app settings. Deleting your account removes your personal data from the platform.' },
+                    { icon: 'database-outline', color: '#2E86C1', bg: '#E4F2FB', title: t('landing.privacy.collectTitle'), text: t('landing.privacy.collectDesc') },
+                    { icon: 'hand-back-right-off-outline', color: '#C62828', bg: '#FFEBEE', title: t('landing.privacy.dontTitle'), text: t('landing.privacy.dontDesc') },
+                    { icon: 'chat-remove-outline', color: '#6A1B9A', bg: '#F3E5F5', title: t('landing.privacy.chatTitle'), text: t('landing.privacy.chatDesc') },
+                    { icon: 'bell-outline', color: '#E65100', bg: '#FFF3E0', title: t('landing.privacy.pushTitle'), text: t('landing.privacy.pushDesc') },
+                    { icon: 'account-cog-outline', color: '#0D7C6E', bg: '#E0F5F3', title: t('landing.privacy.controlTitle'), text: t('landing.privacy.controlDesc') },
                   ].map((s, i) => (
                     <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', background: 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', border: '1px solid rgba(28,60,86,0.1)', borderRadius: '24px 24px 24px 8px', padding: '22px 26px', boxShadow: '0 16px 40px -28px rgba(28,60,86,0.4)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${150 + i * 100}ms forwards` }}>
                       <div style={{ width: 48, height: 48, borderRadius: 14, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><LandingIcon name={s.icon} size={26} /></div>
@@ -977,24 +977,24 @@ export default function LandingScreen({
         {/* ── TERMS ─────────────────────────── */}
         {subPage === 'terms' && (
           <>
-            {spHero('file-document-check-outline', 'Terms of Service', 'The rules of the road. By using FixIt, you agree to these terms.', 'linear-gradient(135deg, #fdf6e3 0%, #f0f4f8 50%, #e0f5f3 100%)')}
+            {spHero('file-document-check-outline', t('landing.terms.title'), t('landing.terms.sub'), 'linear-gradient(135deg, #fdf6e3 0%, #f0f4f8 50%, #e0f5f3 100%)')}
             {spSection(
               <>
-                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>Last updated: May 2026</div>
+                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 32, textAlign: 'center' }}>{t('landing.terms.lastUpdated')}</div>
                 <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {[
-                    { num: '01', title: 'Eligibility', text: 'You must be at least 18 years old to use the FixIt platform. By creating an account, you confirm that you meet this requirement.' },
-                    { num: '02', title: 'Accuracy', text: 'You are responsible for the accuracy of information you provide, including task descriptions, profile information, and bid details.' },
-                    { num: '03', title: 'Marketplace Role', text: 'FixIt is a marketplace that connects requesters and fixers. We are not responsible for the quality, safety, or legality of work performed.' },
-                    { num: '04', title: 'Payments', text: 'Payment is handled directly between requesters and fixers via Bit or Paybox. FixIt does not process, hold, or guarantee any payments.' },
-                    { num: '05', title: 'Conduct', text: 'Abusive behavior, spam, fraudulent listings, or harassment will result in immediate account suspension and potential permanent ban.' },
-                    { num: '06', title: 'Updates', text: 'FixIt may update these terms at any time. Continued use of the platform constitutes acceptance of the updated terms.' },
-                  ].map((t, i) => (
+                    { num: '01', title: t('landing.terms.t1Title'), text: t('landing.terms.t1Desc') },
+                    { num: '02', title: t('landing.terms.t2Title'), text: t('landing.terms.t2Desc') },
+                    { num: '03', title: t('landing.terms.t3Title'), text: t('landing.terms.t3Desc') },
+                    { num: '04', title: t('landing.terms.t4Title'), text: t('landing.terms.t4Desc') },
+                    { num: '05', title: t('landing.terms.t5Title'), text: t('landing.terms.t5Desc') },
+                    { num: '06', title: t('landing.terms.t6Title'), text: t('landing.terms.t6Desc') },
+                  ].map((term, i) => (
                     <div key={i} style={{ display: 'flex', gap: 20, alignItems: 'flex-start', padding: '24px 28px', background: 'linear-gradient(165deg, #ffffff 0%, #fdfaf3 100%)', borderRadius: '24px 24px 24px 8px', border: '1px solid rgba(28,60,86,0.1)', boxShadow: '0 16px 40px -28px rgba(28,60,86,0.4)', opacity: 0, animation: `rise 600ms cubic-bezier(0.16,1,0.3,1) ${100 + i * 80}ms forwards` }}>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px rgba(212,154,42,0.5)', lineHeight: 1, flexShrink: 0, width: 48, textAlign: 'center' }}>{t.num}</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 800, color: 'transparent', WebkitTextStroke: '1.5px rgba(212,154,42,0.5)', lineHeight: 1, flexShrink: 0, width: 48, textAlign: 'center' }}>{term.num}</div>
                       <div>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 6px' }}>{t.title}</h3>
-                        <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{t.text}</p>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--primary)', margin: '0 0 6px' }}>{term.title}</h3>
+                        <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>{term.text}</p>
                       </div>
                     </div>
                   ))}

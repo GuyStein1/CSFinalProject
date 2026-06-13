@@ -246,6 +246,7 @@ function TaskSignal({
   label: string;
   tone: 'warning' | 'success' | 'neutral';
 }) {
+  const { isRTL } = useLanguage();
   const color =
     tone === 'success'
       ? brandColors.success
@@ -262,7 +263,7 @@ function TaskSignal({
   return (
     <View style={[styles.signal, { backgroundColor: background }]}>
       <MaterialCommunityIcons name={icon as never} size={14} color={color} />
-      <Text style={[typography.caption, styles.signalText, { color }]} numberOfLines={2}>
+      <Text style={[typography.caption, styles.signalText, { color, writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
         {label}
       </Text>
     </View>

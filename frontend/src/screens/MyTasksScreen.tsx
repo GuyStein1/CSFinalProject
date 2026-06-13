@@ -30,6 +30,7 @@ interface Task {
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   suggested_price: number | null;
   general_location_name: string;
+  general_location_name_en?: string | null;
   bid_count?: number;
   assigned_fixer_name?: string;
   assigned_fixer_id?: string;
@@ -54,6 +55,7 @@ interface ConfirmationOptions {
 
 export default function MyTasksScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const { isRTL, language } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -273,7 +275,11 @@ export default function MyTasksScreen({ navigation }: Props) {
       : pastTasks;
 
   // Year/month filtering for past tasks
-  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
+  const getMonthName = (month: number) => {
+    const d = new Date(2024, month, 1);
+    return d.toLocaleDateString(dateLocale, { month: 'short' });
+  };
 
   const availableYears = [...new Set(
     filteredPastTasksBase.map((t) => new Date(t.completed_at ?? t.created_at).getFullYear()),
@@ -302,7 +308,7 @@ export default function MyTasksScreen({ navigation }: Props) {
 
   if (loadError && tasks.length === 0) {
     return (
-      <View style={styles.root}>
+      <View style={[styles.root, isRTL && { direction: 'rtl' as const }]}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
           refreshControl={
@@ -420,7 +426,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                   category={task.category}
                   status={task.status}
                   suggestedPrice={task.suggested_price}
-                  locationName={task.general_location_name}
+                  locationName={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : task.general_location_name}
                   bidCount={task.bid_count}
                   fixerName={task.assigned_fixer_name}
                   onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
@@ -491,7 +497,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                     {availableMonths.map((month) => (
                       <FChip
                         key={month}
-                        label={MONTH_NAMES[month]}
+                        label={getMonthName(month)}
                         selected={selectedMonth === month}
                         onPress={() => setSelectedMonth(month === selectedMonth ? null : month)}
                         compact
@@ -512,7 +518,7 @@ export default function MyTasksScreen({ navigation }: Props) {
                     category={task.category}
                     status={task.status}
                     suggestedPrice={task.suggested_price}
-                    locationName={task.general_location_name}
+                    locationName={(language === 'en' && task.general_location_name_en) ? task.general_location_name_en : task.general_location_name}
                     onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
                     onReactivate={
                       task.status === 'CANCELED' ? () => reactivateTask(task) : undefined
@@ -568,9 +574,9 @@ function WorkspaceHeader({
     >
       <View style={[styles.headerTop, wide && styles.headerTopWide]}>
         <View style={styles.headerCopy}>
-          <Text style={[styles.headerEyebrow, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.eyebrow')}</Text>
-          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.title')}</Text>
-          <Text style={[styles.headerBody, { textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.header.body')}</Text>
+          <Text style={[styles.headerEyebrow, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.eyebrow')}</Text>
+          <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.title')}</Text>
+          <Text style={[styles.headerBody, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.header.body')}</Text>
         </View>
       </View>
 
@@ -666,14 +672,14 @@ function SectionHeader({
       <View style={[styles.sectionAccent, muted && styles.sectionAccentMuted]} />
       <View style={styles.sectionCopy}>
         <View style={styles.sectionTitleRow}>
-          <Text style={[typography.h2, { color: muted ? brandColors.textSecondary : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[typography.h2, { color: muted ? brandColors.textSecondary : brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {label}
           </Text>
           <View style={[styles.countBadge, muted && styles.countBadgeMuted]}>
             <Text style={[typography.caption, styles.countText]}>{count}</Text>
           </View>
         </View>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{helper}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{helper}</Text>
       </View>
     </View>
   );
@@ -695,8 +701,8 @@ function InlineEmpty({
         <MaterialCommunityIcons name={icon as never} size={20} color={brandColors.primaryMuted} />
       </View>
       <View style={styles.inlineEmptyCopy}>
-        <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{message}</Text>
+        <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{title}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{message}</Text>
       </View>
     </View>
   );
@@ -711,8 +717,8 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
         <MaterialCommunityIcons name="alert-circle-outline" size={18} color={brandColors.danger} />
       </View>
       <View style={styles.errorCopy}>
-        <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{t('myTasks.error.refreshTitle')}</Text>
-        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{message}</Text>
+        <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myTasks.error.refreshTitle')}</Text>
+        <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{message}</Text>
       </View>
       <FButton onPress={onRetry} variant="outline" size="sm" icon="refresh">
         {t('myTasks.empty.couldNotLoad.retry')}

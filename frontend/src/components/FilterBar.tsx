@@ -12,6 +12,7 @@ import {
 import { Text } from 'react-native-paper';
 import Feather from '@expo/vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { FChip } from './ui';
 import { CATEGORY_LIST, type Category } from '../constants/categories';
 import { getCategoryLabel } from '../utils/categoryMetadata';
@@ -51,6 +52,8 @@ interface FilterBarProps {
 
 // --- Single-thumb slider for distance ---
 function DistanceSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const trackRef = useRef<View>(null);
   const trackLayout = useRef({ x: 0, width: 0 });
   const onChangeRef = useRef(onChange);
@@ -72,27 +75,30 @@ function DistanceSlider({ value, onChange }: { value: number; onChange: (v: numb
       onPanResponderGrant: (e) => {
         const { x, width } = trackLayout.current;
         if (width === 0) return;
-        const f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        let f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        if (isRTL) f = 1 - f;
         onChangeRef.current(fromFraction(f));
       },
       onPanResponderMove: (e) => {
         const { x, width } = trackLayout.current;
         if (width === 0) return;
-        const f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        let f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        if (isRTL) f = 1 - f;
         onChangeRef.current(fromFraction(f));
       },
     }),
   ).current;
 
   const fraction = (value - DISTANCE_MIN) / (DISTANCE_MAX - DISTANCE_MIN);
+  const positionProp = isRTL ? 'right' : 'left';
 
   return (
     <View style={sliderStyles.container}>
       <View style={sliderStyles.labelRow}>
         <Feather name="navigation" size={13} color={brandColors.textMuted} />
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Distance</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('discovery.filterBar.distance')}</Text>
         <Text style={[typography.label, { color: brandColors.primary, marginLeft: 'auto' }]}>
-          {value} km
+          {isRTL ? `${t('discoveryCard.km')} ${value}` : `${value} ${t('discoveryCard.km')}`}
         </Text>
       </View>
       <View
@@ -102,8 +108,8 @@ function DistanceSlider({ value, onChange }: { value: number; onChange: (v: numb
         {...panResponder.panHandlers}
       >
         <View style={sliderStyles.track} />
-        <View style={[sliderStyles.trackFilled, { width: `${fraction * 100}%` }]} />
-        <View style={[sliderStyles.thumbWrapper, { left: `${fraction * 100}%`, marginLeft: -THUMB_SIZE / 2 }]}>
+        <View style={[sliderStyles.trackFilled, { [positionProp]: 0, width: `${fraction * 100}%` }]} />
+        <View style={[sliderStyles.thumbWrapper, { [positionProp]: `${fraction * 100}%`, marginLeft: isRTL ? 0 : -THUMB_SIZE / 2, marginRight: isRTL ? -THUMB_SIZE / 2 : 0 }]}>
           <View style={sliderStyles.thumbBubble}>
             <Text style={sliderStyles.thumbBubbleText}>{value}</Text>
           </View>
@@ -124,6 +130,8 @@ function PriceRangeSlider({
   maxValue: number;
   onChange: (min: number, max: number) => void;
 }) {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const trackRef = useRef<View>(null);
   const trackLayout = useRef({ x: 0, width: 0 });
   const dragging = useRef<'min' | 'max' | null>(null);
@@ -155,7 +163,8 @@ function PriceRangeSlider({
       onPanResponderGrant: (e) => {
         const { x, width } = trackLayout.current;
         if (width === 0) return;
-        const f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        let f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        if (isRTL) f = 1 - f;
         const { min, max } = valuesRef.current;
         const minF = toFrac(min);
         const maxF = toFrac(max);
@@ -170,7 +179,8 @@ function PriceRangeSlider({
       onPanResponderMove: (e) => {
         const { x, width } = trackLayout.current;
         if (width === 0) return;
-        const f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        let f = Math.max(0, Math.min(1, (e.nativeEvent.pageX - x) / width));
+        if (isRTL) f = 1 - f;
         const val = fromFrac(f);
         const { min, max } = valuesRef.current;
         if (dragging.current === 'min') {
@@ -186,6 +196,7 @@ function PriceRangeSlider({
 
   const minF = toFrac(minValue);
   const maxF = toFrac(maxValue);
+  const positionProp = isRTL ? 'right' : 'left';
 
   const formatPrice = (v: number) => (v >= PRICE_MAX ? '5000+' : `${v}`);
 
@@ -193,10 +204,10 @@ function PriceRangeSlider({
     <View style={sliderStyles.container}>
       <View style={sliderStyles.labelRow}>
         <Feather name="dollar-sign" size={13} color={brandColors.textMuted} />
-        <Text style={[typography.caption, { color: brandColors.textMuted }]}>Budget</Text>
+        <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('discovery.filterBar.budget')}</Text>
         <Text style={[typography.label, { color: brandColors.primary, marginLeft: 'auto' }]}>
           {minValue === PRICE_MIN && maxValue >= PRICE_MAX
-            ? 'Any budget'
+            ? t('discovery.filterBar.anyBudget')
             : `₪${formatPrice(minValue)} – ₪${formatPrice(maxValue)}`}
         </Text>
       </View>
@@ -210,16 +221,16 @@ function PriceRangeSlider({
         <View
           style={[
             sliderStyles.trackFilled,
-            { left: `${minF * 100}%`, width: `${(maxF - minF) * 100}%` },
+            { [positionProp]: `${minF * 100}%`, width: `${(maxF - minF) * 100}%` },
           ]}
         />
-        <View style={[sliderStyles.thumbWrapper, { left: `${minF * 100}%`, marginLeft: -THUMB_SIZE / 2 }]}>
+        <View style={[sliderStyles.thumbWrapper, { [positionProp]: `${minF * 100}%`, marginLeft: isRTL ? 0 : -THUMB_SIZE / 2, marginRight: isRTL ? -THUMB_SIZE / 2 : 0 }]}>
           <View style={sliderStyles.thumbBubble}>
             <Text style={sliderStyles.thumbBubbleText}>{formatPrice(minValue)}</Text>
           </View>
           <View style={sliderStyles.thumb} />
         </View>
-        <View style={[sliderStyles.thumbWrapper, { left: `${maxF * 100}%`, marginLeft: -THUMB_SIZE / 2 }]}>
+        <View style={[sliderStyles.thumbWrapper, { [positionProp]: `${maxF * 100}%`, marginLeft: isRTL ? 0 : -THUMB_SIZE / 2, marginRight: isRTL ? -THUMB_SIZE / 2 : 0 }]}>
           <View style={sliderStyles.thumbBubble}>
             <Text style={sliderStyles.thumbBubbleText}>{formatPrice(maxValue)}</Text>
           </View>
@@ -248,6 +259,7 @@ export default function FilterBar({
 }: FilterBarProps) {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const isCompact = compact ?? (Platform.OS === 'web' && width >= 900);
   const [expanded, setExpanded] = useState(false);
   const isExpanded = forceExpanded || expanded;
@@ -312,7 +324,7 @@ export default function FilterBar({
         >
           <Feather name="sliders" size={14} color={isExpanded ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.caption, { color: isExpanded ? brandColors.primary : brandColors.textMuted }]}>
-            {radius} km · {budgetSummary}
+            {isRTL ? `${t('discoveryCard.km')} ${radius}` : `${radius} ${t('discoveryCard.km')}`} · {budgetSummary}
           </Text>
           <Feather name={isExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={brandColors.textMuted} />
         </Pressable>
