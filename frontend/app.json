@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FixIt",
-    "slug": "frontend",
+    "slug": "fixit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,6 +34,12 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "backgroundColor": "#F5F1E8"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/590098a4-2855-46b2-8afe-066e14687968"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "extra": {
       "eas": {
