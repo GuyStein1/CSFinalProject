@@ -262,7 +262,7 @@ router.post(
       const notifType = action === 'approve' ? 'CERTIFICATION_APPROVED' : 'CERTIFICATION_REJECTED';
       const key = action === 'approve' ? 'certificationApproved' : 'certificationRejected';
       const certNt = await getNotificationText(certification.fixer_id, key as 'certificationApproved' | 'certificationRejected', { category: categoryLabel, reason: rejection_note || '' });
-      await sendNotification(certification.fixer_id, certNt.title, certNt.body, notifType, certification.id, 'certification');
+      await sendNotification(certification.fixer_id, certNt.title, certNt.body, notifType, certification.id, 'certification', 'fixer');
 
       res.json({ message: `Certification ${action}d` });
     } catch (err) {

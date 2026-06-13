@@ -491,7 +491,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
 
       for (const bid of affectedBids) {
         const nt = await getNotificationText(bid.fixer_id, 'taskCanceledBidder', { taskTitle: task.title });
-        await sendNotification(bid.fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task');
+        await sendNotification(bid.fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task', 'fixer');
       }
     } else if (task.status === 'IN_PROGRESS' && newStatus === 'CANCELED') {
       if (task.is_payment_confirmed) {
@@ -504,7 +504,7 @@ router.put('/:id/status', validate(updateTaskStatusSchema), async (req: Request,
 
       if (task.assigned_fixer_id) {
         const nt = await getNotificationText(task.assigned_fixer_id, 'taskCanceledFixer', { taskTitle: task.title });
-        await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task');
+        await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_CANCELED', task.id, 'Task', 'fixer');
       }
     }
 
@@ -574,7 +574,7 @@ router.put('/:id/confirm-payment', async (req: Request, res: Response, next: Nex
     // Notify fixer that payment was confirmed
     if (task.assigned_fixer_id) {
       const nt = await getNotificationText(task.assigned_fixer_id, 'paymentConfirmed', { taskTitle: task.title });
-      await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_COMPLETED', task.id, 'Task');
+      await sendNotification(task.assigned_fixer_id, nt.title, nt.body, 'TASK_COMPLETED', task.id, 'Task', 'fixer');
     }
 
     res.json({ task: updated });
@@ -644,10 +644,10 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
     if (result === 'COMPLETED') {
       // Notify both sides
       const reqNt = await getNotificationText(task.requester_id, 'taskCompleted', { taskTitle: task.title });
-      await sendNotification(task.requester_id, reqNt.title, reqNt.body, 'TASK_COMPLETED', task.id, 'Task');
+      await sendNotification(task.requester_id, reqNt.title, reqNt.body, 'TASK_COMPLETED', task.id, 'Task', 'requester');
       if (task.assigned_fixer_id) {
         const fixNt = await getNotificationText(task.assigned_fixer_id, 'taskCompleted', { taskTitle: task.title });
-        await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task');
+        await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task', 'fixer');
       }
       // Review nudge — only if the requester hasn't already left a review
       const existingReview = await prisma.review.findUnique({
@@ -659,14 +659,15 @@ router.put('/:id/confirm-completion', async (req: Request, res: Response, next: 
           select: { full_name: true },
         });
         const revNt = await getNotificationText(task.requester_id, 'leaveReview', { taskTitle: task.title, fixerName: fixer?.full_name || 'the fixer' });
-        await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task');
+        await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task', 'requester');
       }
     } else {
       // Notify the other side
       const otherUserId = isRequester ? task.assigned_fixer_id : task.requester_id;
+      const otherRole = isRequester ? 'fixer' : 'requester';
       if (otherUserId) {
         const confNt = await getNotificationText(otherUserId, 'completionConfirmed', { taskTitle: task.title });
-        await sendNotification(otherUserId, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task');
+        await sendNotification(otherUserId, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task', otherRole);
       }
     }
 
@@ -742,7 +743,7 @@ router.post('/:id/bids', validate(createBidSchema), async (req: Request, res: Re
     }
 
     const bidNt = await getNotificationText(task.requester_id, 'newBid', { price: String(offered_price), taskTitle: task.title });
-    await sendNotification(task.requester_id, bidNt.title, bidNt.body, 'NEW_BID', task.id, 'Task');
+    await sendNotification(task.requester_id, bidNt.title, bidNt.body, 'NEW_BID', task.id, 'Task', 'requester');
 
     res.status(201).json({ bid, has_existing_bid: false });
   } catch (err) {

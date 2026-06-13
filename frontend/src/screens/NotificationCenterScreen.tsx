@@ -13,6 +13,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { useNotificationContext, type AppNotification, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
+import { useActiveMode } from '../context/ActiveModeContext';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton } from '../components/ui';
@@ -139,9 +140,9 @@ function NotificationItem({
 export default function NotificationCenterScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { activeMode } = useActiveMode();
   const {
     notifications,
-    unreadCount: unreadCountFn,
     loading,
     refetch,
     markAsRead,
@@ -149,7 +150,12 @@ export default function NotificationCenterScreen() {
     deleteOne,
     deleteAll,
   } = useNotificationContext();
-  const unreadCount = unreadCountFn();
+
+  // Filter by active mode: show notifications for this mode + null-role (legacy) records
+  const filtered = notifications.filter(
+    n => n.user_role === activeMode || n.user_role === null,
+  );
+  const unreadCount = filtered.filter(n => !n.is_read).length;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -184,7 +190,13 @@ export default function NotificationCenterScreen() {
     }
 
     if (!notification.related_entity_id) return;
-    const nav = navigation as never as { navigate: (s: string, p: object) => void };
+    const nav = navigation as never as { navigate: (s: string, p?: object) => void };
+
+    // Auto-switch to the correct mode before navigating
+    const notifRole = notification.user_role;
+    if (notifRole && notifRole !== activeMode) {
+      nav.navigate('Main', { screen: notifRole === 'fixer' ? 'FixerMode' : 'RequesterMode' });
+    }
 
     if (notification.type === 'NEW_MESSAGE') {
       nav.navigate('Chat', { taskId: notification.related_entity_id });
@@ -192,7 +204,8 @@ export default function NotificationCenterScreen() {
     }
 
     if (notification.related_entity_type === 'Task') {
-      const isFixerNotif = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED'].includes(notification.type);
+      const isFixerNotif = notifRole === 'fixer' ||
+        ['BID_ACCEPTED', 'BID_REJECTED'].includes(notification.type);
       nav.navigate(
         isFixerNotif ? 'TaskDetailsFixer' : 'TaskDetails',
         { taskId: notification.related_entity_id },
@@ -200,14 +213,14 @@ export default function NotificationCenterScreen() {
     }
   };
 
-  if (loading && notifications.length === 0) {
+  if (loading && filtered.length === 0) {
     return <LoadingScreen label={t('notifications.loading')} />;
   }
 
   return (
     <View style={styles.container}>
       {/* Top action bar */}
-      {notifications.length > 0 && (
+      {filtered.length > 0 && (
         <View style={styles.topBar}>
           {unreadCount > 0 ? (
             <FButton variant="ghost" size="sm" onPress={markAllAsRead}>
@@ -223,12 +236,12 @@ export default function NotificationCenterScreen() {
       )}
 
       <FlatList
-        data={notifications}
+        data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <NotificationItem notification={item} onPress={handlePress} onDelete={deleteOne} />
         )}
-        contentContainerStyle={notifications.length === 0 ? styles.emptyContainer : styles.listContent}
+        contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : styles.listContent}
         refreshing={loading}
         onRefresh={refetch}
         ItemSeparatorComponent={() => (

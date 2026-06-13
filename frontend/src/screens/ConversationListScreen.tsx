@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
+import { useActiveMode } from '../context/ActiveModeContext';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -41,15 +42,15 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
   const { isRTL, language } = useLanguage();
+  const { activeMode } = useActiveMode();
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const mode = route?.params?.mode;
+  const mode = route?.params?.mode ?? activeMode;
 
   const load = useCallback(async () => {
     try {
-      const params = mode ? { mode } : {};
-      const res = await api.get('/api/conversations', { params });
+      const res = await api.get('/api/conversations', { params: { mode } });
       setConversations(res.data.conversations ?? []);
     } catch {
       // non-fatal
