@@ -4,40 +4,7 @@ import { NavigationContainer, useNavigationContainerRef, type LinkingOptions } f
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Platform, ScrollView, Text as RNText, View } from 'react-native';
-
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <View style={{ flex: 1, backgroundColor: '#111', padding: 24, paddingTop: 60 }}>
-          <ScrollView>
-            <RNText style={{ color: '#ff4444', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
-              {'CRASH — copy this and send to dev:'}
-            </RNText>
-            <RNText style={{ color: '#fff', fontSize: 12 }}>
-              {this.state.error.message}
-            </RNText>
-            <RNText style={{ color: '#aaa', fontSize: 10, marginTop: 12 }}>
-              {this.state.error.stack}
-            </RNText>
-          </ScrollView>
-        </View>
-      );
-    }
-    return this.props.children;
-  }
-}
+import { Platform } from 'react-native';
 import useAuthBootstrap from './src/hooks/useAuthBootstrap';
 import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -259,18 +226,16 @@ function RootContent() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <PaperProvider theme={theme}>
-          <LanguageProvider>
-            <AccessibilityProvider>
-              <RootContent />
-              <AccessibilityWidget />
-            </AccessibilityProvider>
-          </LanguageProvider>
-          <StatusBar style="light" />
-        </PaperProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <LanguageProvider>
+          <AccessibilityProvider>
+            <RootContent />
+            <AccessibilityWidget />
+          </AccessibilityProvider>
+        </LanguageProvider>
+        <StatusBar style="light" />
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
