@@ -3,7 +3,8 @@ import { TaskStatus, BidStatus } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
-import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { NotFoundError, ConflictError, ForbiddenError, UnauthorizedError } from '../utils/errors';
+import admin from '../config/firebaseAdmin';
 import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema, submitVerificationSchema, submitCertificationSchema } from '../schemas';
 
 const router = Router();
@@ -134,6 +135,31 @@ router.put('/me', validate(updateUserSchema), async (req: Request, res: Response
       return next(new ConflictError('Phone number is already in use'));
     }
     next(err);
+  }
+});
+
+// PATCH /api/users/me/email-verified — mark email as verified (checks Firebase token)
+router.patch('/me/email-verified', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Re-verify the Firebase token to get the latest emailVerified status
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedError('Missing or invalid Authorization header');
+    }
+    const token = authHeader.slice(7);
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    if (!decoded.email_verified) {
+      return res.status(403).json({ error: { code: 'EMAIL_NOT_VERIFIED', message: 'Email is not yet verified in Firebase' } });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { email_verified: true },
+    });
+    res.json({ user });
+  } catch (err) {
+    next(err as Error);
   }
 });
 

@@ -31,6 +31,7 @@ router.post('/sync', validate(authSyncSchema), async (req: Request, res: Respons
         email: decoded.email ?? '',
         full_name,
         phone_number,
+        email_verified: decoded.email_verified ?? false,
       },
     });
 

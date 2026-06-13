@@ -119,6 +119,14 @@
       "sentDescription": "Check your inbox. We sent a reset link to {{email}}.",
       "failed": "Failed to send reset email"
     },
+    "emailVerify": {
+      "title": "Verify your email",
+      "message": "We sent a verification link to {{email}}. Please check your inbox and click the link to continue.",
+      "resend": "Resend email",
+      "resent": "Email sent!",
+      "checkButton": "I've verified my email",
+      "signOut": "Sign out"
+    },
     "needsSync": {
       "title": "Finish your account setup",
       "description": "You are signed in with Firebase, but this account does not exist in the FixIt database yet.",

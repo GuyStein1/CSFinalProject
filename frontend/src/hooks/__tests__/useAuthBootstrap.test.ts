@@ -28,6 +28,7 @@ const mockUser = {
   uid: 'test-uid',
   email: 'test@example.com',
   displayName: 'Test User',
+  emailVerified: true,
 };
 
 beforeEach(() => {
@@ -64,6 +65,13 @@ describe('useAuthBootstrap', () => {
     expect(result.current.userEmail).toBe('test@example.com');
     expect(result.current.suggestedFullName).toBe('Test User');
     expect(mockApi.get).toHaveBeenCalledWith('/api/users/me');
+  });
+
+  it('sets status="needs_email_verify" when emailVerified is false', async () => {
+    const unverifiedUser = { ...mockUser, emailVerified: false };
+    const { result } = renderHook(() => useAuthBootstrap());
+    await act(async () => { capturedCallback!(unverifiedUser); });
+    await waitFor(() => expect(result.current.status).toBe('needs_email_verify'));
   });
 
   it('sets status="needs_sync" when /me returns 404', async () => {

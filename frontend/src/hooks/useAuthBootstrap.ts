@@ -35,7 +35,7 @@ async function registerPushTokenSilently(): Promise<void> {
   }
 }
 
-export type AuthBootstrapStatus = 'checking' | 'signed_out' | 'needs_sync' | 'ready' | 'error';
+export type AuthBootstrapStatus = 'checking' | 'signed_out' | 'needs_sync' | 'needs_email_verify' | 'ready' | 'error';
 
 function getApiErrorStatus(error: unknown) {
   const response = (error as { response?: { status?: unknown } } | null)?.response;
@@ -88,6 +88,11 @@ export default function useAuthBootstrap() {
 
       try {
         await verifyLocalUser();
+        // Check if email is verified via Firebase (Google users are auto-verified)
+        if (!user.emailVerified) {
+          setStatus('needs_email_verify');
+          return;
+        }
         setStatus('ready');
         if (!pushRegistered.current) {
           pushRegistered.current = true;
@@ -156,6 +161,11 @@ export default function useAuthBootstrap() {
           phone_number: phoneNumber.trim() || undefined,
         });
         await verifyLocalUser();
+        // New email/password users won't be verified yet
+        if (!auth.currentUser?.emailVerified) {
+          setStatus('needs_email_verify');
+          return;
+        }
         setStatus('ready');
       } catch (nextError) {
         if (getApiErrorStatus(nextError) === 409) {
@@ -185,6 +195,26 @@ export default function useAuthBootstrap() {
     await bootstrapSignedInUser(auth.currentUser);
   }, [bootstrapSignedInUser]);
 
+  const recheckEmailVerification = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    await user.reload();
+    if (user.emailVerified) {
+      // Sync verified status to backend
+      try {
+        await user.getIdToken(true); // force token refresh so backend sees updated claims
+        await api.patch('/api/users/me/email-verified');
+      } catch {
+        // non-fatal — the user is verified in Firebase, backend will catch up
+      }
+      setStatus('ready');
+      if (!pushRegistered.current) {
+        pushRegistered.current = true;
+        void registerPushTokenSilently();
+      }
+    }
+  }, []);
+
   const logOut = useCallback(async () => {
     disconnectSocket(); // disconnect before Firebase sign-out so the socket doesn't linger
     await signOut(auth);
@@ -198,6 +228,7 @@ export default function useAuthBootstrap() {
     isAdmin,
     signIn,
     syncLocalAccount,
+    recheckEmailVerification,
     retry,
     logOut,
   };

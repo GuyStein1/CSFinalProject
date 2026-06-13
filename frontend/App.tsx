@@ -10,6 +10,7 @@ import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import AdminNavigator from './src/navigation/AdminNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import EmailVerifyScreen from './src/screens/EmailVerifyScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { ActiveModeProvider } from './src/context/ActiveModeContext';
@@ -183,6 +184,16 @@ function RootContent() {
   const authInitialMode: LandingAuthMode | 'welcome' = USE_SIGNED_OUT_LANDING
     ? signedOutSurface === 'auth' ? authMode : 'welcome'
     : 'login';
+
+  if (authState.status === 'needs_email_verify') {
+    return (
+      <EmailVerifyScreen
+        email={authState.userEmail}
+        onRecheck={authState.recheckEmailVerification}
+        onLogOut={handleAuthLogOut}
+      />
+    );
+  }
 
   if (authState.status !== 'ready') {
     return (
