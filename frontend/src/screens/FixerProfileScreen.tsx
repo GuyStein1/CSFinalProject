@@ -351,6 +351,10 @@ export default function FixerProfileScreen() {
           end={heroGradientFixer.end}
           style={[styles.profileHero, isWide && styles.profileHeroWide]}
         >
+          <View
+            ref={(el: unknown) => { if (el && Platform.OS === 'web') { (el as HTMLElement).dir = 'ltr'; } }}
+            style={styles.heroInnerRow}
+          >
           <View style={styles.avatarWrapper}>
             <Pressable
               onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
@@ -416,6 +420,7 @@ export default function FixerProfileScreen() {
             </Text>
           </Pressable>
 
+          </View>
         </LinearGradient>
 
         <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
@@ -930,12 +935,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,
     overflow: 'hidden' as const,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(Platform.OS === 'web' ? { direction: 'ltr' } : {}) as any,
     ...shadows.md,
   },
   profileHeroWide: {
     padding: spacing.xl,
+  },
+  heroInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    flex: 1,
   },
   avatarWrapper: {
     position: 'relative',
