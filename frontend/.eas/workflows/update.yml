@@ -1,0 +1,12 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    name: EAS Update
+    type: update
+    params:
+      channel: production
+      message: Auto update from ${{ github.sha }}
