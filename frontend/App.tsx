@@ -34,7 +34,7 @@ const DEFAULT_SIGNED_OUT_SURFACE: SignedOutSurface = USE_SIGNED_OUT_LANDING ? 'l
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const linking: LinkingOptions<any> = {
-  prefixes: [typeof window !== 'undefined' ? window.location.origin : ''],
+  prefixes: [Platform.OS === 'web' ? window.location.origin : ''],
   config: {
     screens: {
       Main: {
