@@ -3,6 +3,7 @@ import { Image, View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { FButton } from './ui';
+import { useLanguage } from '../context/LanguageContext';
 import { brandColors, radii, spacing, typography } from '../theme';
 
 interface EmptyStateProps {
@@ -14,6 +15,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+  const { isRTL } = useLanguage();
   return (
     <View style={styles.container}>
       {/* Mascot watermark — sits behind everything */}
@@ -30,9 +32,9 @@ export default function EmptyState({ icon, title, message, actionLabel, onAction
         </View>
       </View>
 
-      <Text style={[typography.h2, styles.title]}>{title}</Text>
+      <Text style={[typography.h2, styles.title, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{title}</Text>
       {message && (
-        <Text style={[typography.body, styles.message]}>{message}</Text>
+        <Text style={[typography.body, styles.message, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{message}</Text>
       )}
       {actionLabel && onAction && (
         <FButton onPress={onAction} size="md" style={styles.button}>

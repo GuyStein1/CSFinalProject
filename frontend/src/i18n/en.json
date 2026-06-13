@@ -18,6 +18,16 @@
       "openFixer": "Open Fixer Workspace",
       "openRequester": "Open Requester Workspace",
       "becomeFixer": "Become a Fixer"
+    },
+    "screenTitle": {
+      "createTask": "Create Task",
+      "taskDetails": "Task Details",
+      "jobDetails": "Job Details",
+      "settings": "Settings",
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "pastConversations": "Past Conversations",
+      "chat": "Chat"
     }
   },
   "categories": {
@@ -57,9 +67,13 @@
     "or": "or",
     "yesterday": "Yesterday",
     "justNow": "Just now",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "profanityError": "Comment contains inappropriate language"
   },
   "auth": {
+    "orContinueWith": "or continue with",
+    "continueGoogle": "Continue with Google",
+    "signingIn": "Signing in...",
     "loading": {
       "checkingSession": "Checking your session..."
     },
@@ -340,12 +354,15 @@
   "myBids": {
     "header": {
       "kicker": "Fixer Workspace",
-      "title": "Bid pipeline",
+      "title": "My Bids",
       "sub": "{{tab}} bids · {{pending}} pending · {{active}} active jobs",
       "subAll": "{{pending}} pending · {{active}} active jobs",
       "subPending": "{{pending}} pending bids",
       "subAccepted": "{{active}} active jobs",
-      "subTab": "{{tab}} bids"
+      "subTab": "{{tab}} bids",
+      "subCompleted": "Completed bids",
+      "subRejected": "Rejected bids",
+      "subWithdrawn": "Withdrawn bids"
     },
     "tabs": {
       "active": "Active",
@@ -365,7 +382,9 @@
       "cancelJob": "Cancel job",
       "chat": "Chat",
       "reactivate": "Reactivate",
-      "locationNotSet": "Location not set"
+      "locationNotSet": "Location not set",
+      "winningBid": "Winning bid: ₪{{price}}",
+      "winningBidRating": "Winning bid: ₪{{price}} · Rating: {{rating}}★"
     },
     "stats": {
       "inView": "In view",
@@ -391,6 +410,26 @@
       "filtered": {
         "title": "No {{tab}} bids",
         "message": "No {{tab}} bids found."
+      },
+      "pending": {
+        "title": "No pending bids",
+        "message": "You don't have any pending bids right now."
+      },
+      "accepted": {
+        "title": "No accepted bids",
+        "message": "None of your bids have been accepted yet."
+      },
+      "completed": {
+        "title": "No completed jobs",
+        "message": "You haven't completed any jobs yet."
+      },
+      "rejected": {
+        "title": "No rejected bids",
+        "message": "None of your bids have been rejected."
+      },
+      "withdrawn": {
+        "title": "No withdrawn bids",
+        "message": "You haven't withdrawn any bids."
       }
     },
     "error": {
@@ -494,7 +533,10 @@
       "budgetAny": "Budget: Any",
       "budgetRange": "Budget: ₪{{min}}–₪{{max}}",
       "clearFilters": "Clear filters",
-      "currentLocation": "Current location"
+      "currentLocation": "Current location",
+      "distance": "Distance",
+      "budget": "Budget",
+      "anyBudget": "Any budget"
     }
   },
   "chat": {
@@ -558,6 +600,12 @@
       "days": "{{count}}d ago"
     }
   },
+  "taskStatus": {
+    "OPEN": "Open",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELED": "Canceled"
+  },
   "taskDetails": {
     "loading": "Loading task details...",
     "notFound": "Task not found",
@@ -602,6 +650,8 @@
       "emptyMessage": "No bids yet. Fixers in your area will see your task!",
       "seeReviews": "see reviews",
       "noReviewsYet": "No reviews yet",
+      "workedTogether_one": "Worked together {{count}} time before",
+      "workedTogether_other": "Worked together {{count}} times before",
       "accept": {
         "title": "Accept this bid?",
         "confirm": "Accept bid"
@@ -698,6 +748,7 @@
     },
     "detail": {
       "generalArea": "General Area",
+      "exactAddress": "Exact Address",
       "posted": "Posted",
       "bids": "{{count}} bids submitted",
       "bid": "{{count}} bid submitted"
@@ -923,7 +974,7 @@
       "fullName": "Full Name",
       "bio": "Bio",
       "phone": "Phone Number",
-      "paymentLink": "Payment Link (Bit / Paybox URL)"
+      "paymentLink": "Payment Link (Bit / Paybox)"
     },
     "actions": {
       "save": "Save Profile",
@@ -1004,6 +1055,8 @@
     "review": "review",
     "reviews": "reviews",
     "respondsIn": "Responds in ~{{value}} {{unit}}",
+    "tasksCompleted_one": "{{count}} task completed",
+    "tasksCompleted_other": "{{count}} tasks completed",
     "report": {
       "title": "Report Review",
       "prompt": "Why are you reporting this review?",
@@ -1146,6 +1199,7 @@
       "privacyLink": "Privacy",
       "termsLink": "Terms"
     },
+    "backToHome": "Back to home",
     "language": {
       "toggle": "EN | עב"
     },
@@ -1170,7 +1224,7 @@
       "eyebrow": "How it works",
       "title": "Three simple steps.",
       "titleAccent": "All in one place.",
-      "sub": "Describe it once, compare offers, and hire. All without leaving the app.",
+      "sub": "Describe it once, compare offers, and hire a fixer. All without leaving the app.",
       "step1": {
         "title": "Describe your task",
         "desc": "Snap a photo, set your budget, pick a category. Sign in once, then your task is ready for local Fixers."
@@ -1304,6 +1358,120 @@
       },
       "ctaTitle": "Ready to take on your first job?",
       "ctaBody": "Every FixIt account can post tasks and work as a Fixer, and you can switch anytime. Sign in, set up your Fixer profile, and start bidding."
+    },
+    "pricing": {
+      "title": "Pricing? It's",
+      "titleAccent": "free",
+      "sub": "No commissions, no subscriptions, no hidden fees. Just connect and get the job done.",
+      "forever": "forever",
+      "requester": {
+        "plan": "Requester",
+        "desc": "For homeowners who need things fixed.",
+        "f1": "Post unlimited tasks",
+        "f2": "Receive bids from local fixers",
+        "f3": "In-app chat with fixers",
+        "f4": "Rate and review fixers",
+        "f5": "Location privacy until bid accepted"
+      },
+      "fixer": {
+        "plan": "Fixer",
+        "desc": "For skilled professionals looking for jobs.",
+        "f1": "Browse jobs on the map",
+        "f2": "Place unlimited bids",
+        "f3": "Build your portfolio & reputation",
+        "f4": "In-app chat with requesters",
+        "f5": "Push notifications for new jobs"
+      }
+    },
+    "faq": {
+      "title": "FAQ",
+      "sub": "Everything you need to know about using FixIt.",
+      "q1": "How do I post a task?",
+      "a1": "Sign in, choose a category, describe what you need, set a budget and location, and submit. Fixers in your area will start bidding within minutes.",
+      "q2": "How do I become a Fixer?",
+      "a2": "Every account can be both a requester and a fixer. Switch to Fixer mode using the toggle in the navigation bar and start browsing jobs near you.",
+      "q3": "Is FixIt free?",
+      "a3": "Yes! There are no fees for posting tasks or placing bids. Payment is handled directly between you and the fixer in cash, via Bit, or Paybox.",
+      "q4": "How does payment work?",
+      "a4": "Once the job is done, the requester pays the fixer directly in cash, via Bit, or Paybox. FixIt does not process payments. We just connect people.",
+      "q5": "How do I know a fixer is reliable?",
+      "a5": "Every fixer has a public profile with ratings, reviews from past clients, and a portfolio of their work. Review these before accepting a bid.",
+      "q6": "Can I cancel a task?",
+      "a6": "Yes, you can cancel an open task at any time. If a fixer is already assigned, contact them via chat first to coordinate.",
+      "q7": "What areas does FixIt cover?",
+      "a7": "FixIt works across Israel. Jobs are shown based on proximity, so fixers see tasks near their current location."
+    },
+    "about": {
+      "title": "About Fix<accent>I</accent>t",
+      "sub": "A neighborhood task marketplace connecting homeowners with skilled local professionals.",
+      "problemEyebrow": "The problem",
+      "problemTitle": "All kinds of small jobs need a hand. Getting one is harder than it should be.",
+      "card1Title": "Everyday tasks, no pro needed",
+      "card1Desc": "Moving a couch, building IKEA furniture, hanging a shelf, painting a wall, mounting a TV, a quick deep clean. Anyone handy with free time could do these. But hiring for jobs this small isn't common, so you lean on friends, a number someone passed along, or just do it yourself.",
+      "card2Title": "Jobs that need a pro",
+      "card2Desc": "Electrical, plumbing, AC repair, gardening, renovation, pest control. These need real skills or gear. Hiring is normal, but finding someone means digging through WhatsApp groups, Facebook, and contractor sites, then waiting to hear back.",
+      "solutionEyebrow": "The solution",
+      "solutionTitle": "FixIt centralizes the whole local-services marketplace.",
+      "sol1": "Post one request with photos, budget, and location",
+      "sol2": "Compare clear bids from nearby Fixers",
+      "sol3": "Accept the best offer and coordinate in chat",
+      "sol4": "Finish the job, pay, and review",
+      "whoEyebrow": "Who we are",
+      "whoTitle": "Three students, with one shared itch to fix things.",
+      "storyTitle": "Our Story",
+      "storyDesc": "Founded in 2026 in Tel Aviv by three CS students who saw a gap between people who need help around the house and skilled workers looking for flexible jobs nearby.",
+      "missionTitle": "Our Mission",
+      "missionDesc": "Make home maintenance accessible, transparent, and fair for everyone: homeowners posting their first task and fixers building their reputation alike.",
+      "teamTitle": "The Team",
+      "teamDesc": "A team of three developers passionate about great products and real-world impact. We build, test, and ship every feature together."
+    },
+    "trust": {
+      "title": "Trust & Safety",
+      "sub": "Your safety is our priority. Here's how FixIt keeps the community trustworthy.",
+      "verifiedTitle": "Verified Accounts",
+      "verifiedDesc": "Every user signs in with a verified email address through Firebase Authentication. No anonymous profiles.",
+      "reviewsTitle": "Reviews & Ratings",
+      "reviewsDesc": "After every completed task, the requester can leave an honest review. Ratings are public and build real reputation.",
+      "chatTitle": "In-App Chat",
+      "chatDesc": "All communication stays on the platform for transparency. When a task is completed, the chat moves to a read-only archive. We do not read, analyze, or share your private conversations.",
+      "locationTitle": "Location Privacy",
+      "locationDesc": "Your exact address is only shared after you accept a bid. Before that, only a general area is shown on the map.",
+      "reportTitle": "Report System",
+      "reportDesc": "Flag inappropriate behavior at any time. Every report is reviewed, and accounts that break the rules are suspended.",
+      "paymentsTitle": "Secure Payments",
+      "paymentsDesc": "Payments go directly between parties via Bit or Paybox. FixIt never stores payment information."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "sub": "We take your privacy seriously. Here's exactly what we collect and why.",
+      "lastUpdated": "Last updated: May 2026",
+      "collectTitle": "What We Collect",
+      "collectDesc": "FixIt collects only the information necessary to connect requesters with fixers: your name, email, profile photo, and location when you post or browse tasks.",
+      "dontTitle": "What We Don't Do",
+      "dontDesc": "We do not sell your personal data to third parties. Your exact address is never shown publicly. Only a general area is displayed until a bid is accepted.",
+      "chatTitle": "Chat & Messages",
+      "chatDesc": "Chat messages are stored securely and deleted automatically when a task is completed. We do not read, analyze, or share your private conversations.",
+      "pushTitle": "Push Notifications",
+      "pushDesc": "Push notification tokens are used solely for delivering app notifications. We never send marketing push notifications without your explicit consent.",
+      "controlTitle": "Your Data, Your Control",
+      "controlDesc": "You can update your details or delete your account at any time from the app settings. Deleting your account removes your personal data from the platform."
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "sub": "The rules of the road. By using FixIt, you agree to these terms.",
+      "lastUpdated": "Last updated: May 2026",
+      "t1Title": "Eligibility",
+      "t1Desc": "You must be at least 18 years old to use the FixIt platform. By creating an account, you confirm that you meet this requirement.",
+      "t2Title": "Accuracy",
+      "t2Desc": "You are responsible for the accuracy of information you provide, including task descriptions, profile information, and bid details.",
+      "t3Title": "Marketplace Role",
+      "t3Desc": "FixIt is a marketplace that connects requesters and fixers. We are not responsible for the quality, safety, or legality of work performed.",
+      "t4Title": "Payments",
+      "t4Desc": "Payment is handled directly between requesters and fixers via Bit or Paybox. FixIt does not process, hold, or guarantee any payments.",
+      "t5Title": "Conduct",
+      "t5Desc": "Abusive behavior, spam, fraudulent listings, or harassment will result in immediate account suspension and potential permanent ban.",
+      "t6Title": "Updates",
+      "t6Desc": "FixIt may update these terms at any time. Continued use of the platform constitutes acceptance of the updated terms."
     }
   },
   "placeholder": {
@@ -1329,7 +1497,10 @@
     "selectedJob": "Selected job",
     "bidAlreadySent": "Bid already sent",
     "viewYourBid": "View Your Bid",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "km": "km",
+    "bids_one": "{{count}} bid",
+    "bids_other": "{{count}} bids"
   },
   "status": {
     "open": "Open",
@@ -1447,6 +1618,16 @@
         "label": "Finish confidently",
         "detail": "Track progress, mark completion, and keep the record in one place."
       }
+    }
+  },
+  "admin": {
+    "errors": {
+      "loadFlagged": "Failed to load flagged reviews",
+      "hideReview": "Failed to hide review",
+      "dismissReports": "Failed to dismiss reports",
+      "verification": "Failed to {{action}} verification",
+      "certification": "Failed to {{action}} certification",
+      "downloadPhoto": "Failed to download photo"
     }
   }
 }

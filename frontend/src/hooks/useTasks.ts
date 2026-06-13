@@ -15,6 +15,7 @@ export interface DiscoveryTask {
   urgency: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   generalLocationName: string;
+  generalLocationNameEn: string | null;
   isPaymentConfirmed: boolean;
   createdAt: string;
   updatedAt: string;
@@ -46,6 +47,7 @@ type ApiTask = {
   urgency: 'FLEXIBLE' | 'THIS_WEEK' | 'TODAY';
   status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
   general_location_name: string;
+  general_location_name_en: string | null;
   is_payment_confirmed: boolean;
   created_at: string;
   updated_at: string;
@@ -193,6 +195,7 @@ export default function useTasks({
         urgency: task.urgency ?? 'FLEXIBLE',
         status: task.status,
         generalLocationName: task.general_location_name,
+        generalLocationNameEn: task.general_location_name_en ?? null,
         isPaymentConfirmed: task.is_payment_confirmed,
         createdAt: task.created_at,
         updatedAt: task.updated_at,

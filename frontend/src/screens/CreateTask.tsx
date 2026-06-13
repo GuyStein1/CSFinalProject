@@ -399,7 +399,7 @@ export default function CreateTask({ navigation, route }: Props) {
         const isActive = stepNum === step;
         const isDone = stepNum < step;
         return (
-          <View key={icon} style={styles.stepItem}>
+          <View key={icon} style={[styles.stepItem, isRTL && { direction: 'rtl' as const }]}>
             <View
               style={[
                 styles.stepDot,
@@ -442,8 +442,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 1:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step1.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step1.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step1.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step1.subtitle')}</Text>
             <FInput
               label={t('createTask.step1.titleLabel')}
               value={title}
@@ -467,8 +467,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 2:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step2.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step2.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step2.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step2.subtitle')}</Text>
             <View style={styles.photoGrid}>
               {photos.map((uri, index) => (
                 <View key={index} style={styles.photoContainer}>
@@ -488,7 +488,7 @@ export default function CreateTask({ navigation, route }: Props) {
                   onPress={pickImage}
                 >
                   <MaterialCommunityIcons name="camera-plus-outline" size={28} color={brandColors.primaryMuted} />
-                  <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('createTask.step2.add')}</Text>
+                  <Text style={[typography.caption, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step2.add')}</Text>
                 </Pressable>
               )}
             </View>
@@ -498,8 +498,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 3:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step3.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step3.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step3.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step3.subtitle')}</Text>
             <View style={styles.categoryGrid}>
               {CATEGORY_LIST.map((cat) => {
                 const isSelected = category === cat.value;
@@ -521,7 +521,7 @@ export default function CreateTask({ navigation, route }: Props) {
                     <View style={[styles.categoryIconCircle, { backgroundColor: cat.color }]}>
                       <MaterialCommunityIcons name={cat.icon as never} size={24} color={brandColors.white} />
                     </View>
-                    <Text style={[typography.label, { color: brandColors.textPrimary }]}>{cat.label}</Text>
+                    <Text style={[typography.label, { color: brandColors.textPrimary }]}>{getCategoryLabel(cat.value, t)}</Text>
                   </Pressable>
                 );
               })}
@@ -532,8 +532,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 4:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step4.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step4.subtitle')}</Text>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step4.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step4.subtitle')}</Text>
             <SegmentedButtons
               value={budgetType}
               onValueChange={(v) => setBudgetType(v as 'fixed' | 'quote')}
@@ -555,14 +555,14 @@ export default function CreateTask({ navigation, route }: Props) {
             ) : (
               <View style={styles.quoteNote}>
                 <MaterialCommunityIcons name="information-outline" size={18} color={brandColors.primaryMuted} />
-                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.body, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {t('createTask.step4.quoteNote')}
                 </Text>
               </View>
             )}
 
             <View style={{ marginTop: spacing.xl }}>
-              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, marginBottom: spacing.sm, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('createTask.step4.urgency.title')}
               </Text>
               <View style={styles.urgencyRow}>
@@ -601,8 +601,8 @@ export default function CreateTask({ navigation, route }: Props) {
       case 5:
         return (
           <View style={styles.stepContent}>
-            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('createTask.step5.title')}</Text>
-            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[typography.h2, styles.stepTitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.step5.title')}</Text>
+            <Text style={[typography.bodySm, styles.stepSubtitle, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('createTask.step5.subtitle')}
             </Text>
 
@@ -678,13 +678,13 @@ export default function CreateTask({ navigation, route }: Props) {
                   }}
                 />
                 {pinCoords && (
-                  <Text style={[typography.caption, { color: brandColors.success, textAlign: 'center', marginTop: spacing.xs }]}>
+                  <Text style={[typography.caption, { color: brandColors.success, textAlign: 'center', marginTop: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     <MaterialCommunityIcons name="check-circle" size={12} color={brandColors.success} />
                     {' '}{t('createTask.step5.pinPlaced')}
                   </Text>
                 )}
                 {!pinCoords && (
-                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                  <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                     {t('createTask.step5.enterAddress')}
                   </Text>
                 )}
@@ -693,7 +693,7 @@ export default function CreateTask({ navigation, route }: Props) {
             {Platform.OS !== 'web' && locationPermission === 'denied' && (
               <View style={styles.locationDeniedNote}>
                 <MaterialCommunityIcons name="map-marker-off-outline" size={18} color={brandColors.textMuted} />
-                <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {t('createTask.step5.locationDenied')}
                 </Text>
               </View>
@@ -701,7 +701,7 @@ export default function CreateTask({ navigation, route }: Props) {
 
             <View style={styles.addressNote}>
               <MaterialCommunityIcons name="shield-lock-outline" size={16} color={brandColors.primaryMuted} />
-              <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 }]}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('createTask.step5.privacyNote')}
               </Text>
             </View>
@@ -771,7 +771,7 @@ export default function CreateTask({ navigation, route }: Props) {
           onDismiss={() => setShowReview(false)}
           contentContainerStyle={styles.modal}
         >
-          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[typography.h2, { color: brandColors.textPrimary, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('createTask.review.title')}
           </Text>
 
@@ -785,7 +785,7 @@ export default function CreateTask({ navigation, route }: Props) {
               <ReviewRow icon="camera-outline" label={t('createTask.review.photosLabel')} value={t('createTask.review.photoCount', { count: 0 })} />
             ) : (
               <View style={styles.reviewPhotoSection}>
-                <Text style={styles.reviewPhotoLabel}>{t('createTask.review.photosLabel')}</Text>
+                <Text style={[styles.reviewPhotoLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('createTask.review.photosLabel')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewPhotoScroll}>
                   {photos.map((uri, idx) => (
                     <Image key={idx} source={{ uri }} style={styles.reviewThumb} />
@@ -825,10 +825,10 @@ export default function CreateTask({ navigation, route }: Props) {
           <View style={styles.rationaleIconWrap}>
             <MaterialCommunityIcons name="map-marker-radius-outline" size={40} color={brandColors.primary} />
           </View>
-          <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: 'center', marginBottom: spacing.sm }]}>
+          <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: 'center', marginBottom: spacing.sm , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('createTask.locationRationale.title')}
           </Text>
-          <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.xl }]}>
+          <Text style={[typography.body, { color: brandColors.textMuted, textAlign: 'center', marginBottom: spacing.xl , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('createTask.locationRationale.description')}
           </Text>
           <FButton onPress={() => handleLocationPermissionResponse(true)} fullWidth>

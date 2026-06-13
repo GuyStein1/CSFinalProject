@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
 import AppLogo from '../components/AppLogo';
 import LoadingScreen from '../components/LoadingScreen';
@@ -41,6 +42,7 @@ export default function AuthScreen({
 }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -148,8 +150,8 @@ export default function AuthScreen({
       <>
         <View style={styles.dividerRow}>
           <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
-          <Text style={[typography.caption, { color: dividerTextColor, marginHorizontal: spacing.sm }]}>
-            or continue with
+          <Text style={[typography.caption, { color: dividerTextColor, marginHorizontal: spacing.sm }, rtlText]}>
+            {t('auth.orContinueWith')}
           </Text>
           <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
         </View>
@@ -166,13 +168,15 @@ export default function AuthScreen({
             source={{ uri: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cGF0aCBmaWxsPSIjRkZDMTA3IiBkPSJNNDMuNjExIDIwLjA4M0g0MlYyMEgyNHY4aDExLjMwM2MtMS42NDkgNC42NTctNi4wOCA4LTExLjMwMyA4LTYuNjI3IDAtMTItNS4zNzMtMTItMTJzNS4zNzMtMTIgMTItMTJjMy4wNTkgMCA1Ljg0MiAxLjE1NCA3Ljk2MSAzLjAzOWw1LjY1Ny01LjY1N0MzNC4wNDYgNi4wNTMgMjkuMjY4IDQgMjQgNCA5LjI1NCA0LTMuOTYgMjAuMTI2IDcuMzggMzVjMy4wODkgNC4wNTUgNy44NCA2LjcxNCAxMy4xNjQgNi43NTdDMzMuNjQyIDQxLjk3IDQ0LjU1MiAzNC4yODIgNDQuNTUyIDI0YzAtMS4zMjQtLjEzOC0yLjYxNi0uNDAyLTMuODM2Ii8+PHBhdGggZmlsbD0iI0ZGM0QwMCIgZD0iTTYuMzA2IDE0LjY5MWw2LjU3MSA0LjgxOUMxNC42NTUgMTUuMTA4IDE4Ljk2MSAxMiAyNCAxMmMzLjA1OSAwIDUuODQyIDEuMTU0IDcuOTYxIDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0NiA2LjA1MyAyOS4yNjggNCAyNCA0IDEyLjk1NSA0IDMuMiAxMS40MjcgNi4zMDYgMTQuNjkxIi8+PHBhdGggZmlsbD0iIzRDQUY1MCIgZD0iTTI0IDQ0YzUuMTY2IDAgOS44Ni0xLjk3NyAxMy40MDktNS4xOTJsLTYuMTktNS4yMzhBMTEuOTEgMTEuOTEgMCAwIDEgMjQgMzZjLTUuMjAyIDAtOS42MTktMy4zMTctMTEuMjgzLTcuOTQ2bC02LjUyMiA1LjAyNUM5LjUwNSAzOS41NTYgMTYuMjI3IDQ0IDI0IDQ0Ii8+PHBhdGggZmlsbD0iIzE5NzZEMiIgZD0iTTQzLjYxMSAyMC4wODNINDJWMjBIMjR2OGgxMS4zMDNhMTIuMDQgMTIuMDQgMCAwIDEtNC4wODcgNS41NzFsLjAwMy0uMDAyIDYuMTkgNS4yMzhDMzYuOTcxIDM5LjIwNSA0NCAzNCA0NCAyNGMwLTEuMzI0LS4xMzgtMi42MTYtLjQwMi0zLjkxNyIvPjwvc3ZnPg==' }}
             style={{ width: 20, height: 20 }}
           />
-          <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
-            {socialLoading === 'google' ? 'Signing in...' : 'Continue with Google'}
+          <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }, rtlText]}>
+            {socialLoading === 'google' ? t('auth.signingIn') : t('auth.continueGoogle')}
           </Text>
         </Pressable>
       </>
     );
   };
+
+  const rtlText = isRTL ? { writingDirection: 'rtl' as const } : {};
 
   const renderShell = (content: React.ReactNode) => (
     <LinearGradient
@@ -191,7 +195,7 @@ export default function AuthScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <FCard style={styles.card} shadow="lg">
+          <FCard style={{ ...styles.card, ...(isRTL ? { direction: 'rtl' as const } : {}) }} shadow="lg">
             {content}
           </FCard>
         </ScrollView>
@@ -209,8 +213,8 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>{t('auth.needsSync.title')}</Text>
-        <Text style={[typography.body, styles.body]}>
+        <Text style={[typography.h1, styles.title, rtlText]}>{t('auth.needsSync.title')}</Text>
+        <Text style={[typography.body, styles.body, rtlText]}>
           {t('auth.needsSync.description')}
         </Text>
 
@@ -256,8 +260,8 @@ export default function AuthScreen({
         <View style={styles.errorIconCircle}>
           <MaterialCommunityIcons name="alert-circle-outline" size={36} color={brandColors.danger} />
         </View>
-        <Text style={[typography.h1, styles.title]}>{t('auth.error.title')}</Text>
-        <Text style={[typography.body, styles.body]}>
+        <Text style={[typography.h1, styles.title, rtlText]}>{t('auth.error.title')}</Text>
+        <Text style={[typography.body, styles.body, rtlText]}>
           {error ?? 'We could not verify your session with the backend.'}
         </Text>
         <FButton onPress={() => void onRetry()} fullWidth icon="refresh">
@@ -283,7 +287,7 @@ export default function AuthScreen({
         <View style={styles.welcomeCenter}>
           <AppLogo iconOnly />
           <Text style={styles.welcomeWordmark}>FixIt</Text>
-          <Text style={styles.welcomeTagline}>{t('auth.welcome.tagline')}</Text>
+          <Text style={[styles.welcomeTagline, rtlText]}>{t('auth.welcome.tagline')}</Text>
         </View>
         <View style={styles.welcomeActions}>
           <FButton onPress={() => goTo('login')} variant="secondary" fullWidth>
@@ -296,12 +300,12 @@ export default function AuthScreen({
               { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
-            <Text style={styles.welcomeGhostText}>{t('auth.welcome.createAccount')}</Text>
+            <Text style={[styles.welcomeGhostText, rtlText]}>{t('auth.welcome.createAccount')}</Text>
           </Pressable>
 
           {renderSocialButtons('light')}
 
-          <Text style={styles.welcomeFootnote}>
+          <Text style={[styles.welcomeFootnote, rtlText]}>
             {t('auth.welcome.footnote')}
           </Text>
         </View>
@@ -314,7 +318,7 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>{t('auth.login.title')}</Text>
+        <Text style={[typography.h1, styles.title, rtlText]}>{t('auth.login.title')}</Text>
 
         <FInput
           label={t('auth.login.email')}
@@ -348,16 +352,16 @@ export default function AuthScreen({
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={[typography.caption, { color: brandColors.textMuted, marginHorizontal: spacing.sm }]}>{t('common.or')}</Text>
+          <Text style={[typography.caption, { color: brandColors.textMuted, marginHorizontal: spacing.sm }, rtlText]}>{t('common.or')}</Text>
           <View style={styles.dividerLine} />
         </View>
         {renderSocialButtons()}
 
-        <FButton variant="ghost" onPress={() => goTo('register')} fullWidth>
+        <FButton variant="outline" onPress={() => goTo('register')} fullWidth>
           {t('auth.login.noAccount')}
         </FButton>
 
-        <FButton variant="ghost" onPress={() => goTo('welcome')} fullWidth>
+        <FButton variant="outline" onPress={() => goTo('welcome')} fullWidth icon="arrow-left">
           {t('common.back')}
         </FButton>
       </View>
@@ -369,7 +373,7 @@ export default function AuthScreen({
     return renderShell(
       <View style={styles.content}>
         <AppLogo compact showTagline />
-        <Text style={[typography.h1, styles.title]}>{t('auth.register.title')}</Text>
+        <Text style={[typography.h1, styles.title, rtlText]}>{t('auth.register.title')}</Text>
 
         <FInput
           label={t('auth.register.fullName')}
@@ -419,7 +423,7 @@ export default function AuthScreen({
 
         {renderSocialButtons()}
 
-        <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>
+        <FButton variant="outline" onPress={() => goTo('login')} fullWidth>
           {t('auth.register.alreadyHave')}
         </FButton>
       </View>
@@ -430,14 +434,14 @@ export default function AuthScreen({
   return renderShell(
     <View style={styles.content}>
       <AppLogo compact showTagline />
-      <Text style={[typography.h1, styles.title]}>{t('auth.forgot.title')}</Text>
+      <Text style={[typography.h1, styles.title, rtlText]}>{t('auth.forgot.title')}</Text>
 
       {forgotSent ? (
         <>
           <View style={styles.successIconCircle}>
             <MaterialCommunityIcons name="email-check-outline" size={36} color={brandColors.success} />
           </View>
-          <Text style={[typography.body, styles.body]}>
+          <Text style={[typography.body, styles.body, rtlText]}>
             {t('auth.forgot.sentDescription', { email: forgotEmail })}
           </Text>
           <FButton onPress={() => goTo('login')} fullWidth icon="login">
@@ -446,7 +450,7 @@ export default function AuthScreen({
         </>
       ) : (
         <>
-          <Text style={[typography.body, styles.body]}>
+          <Text style={[typography.body, styles.body, rtlText]}>
             {t('auth.forgot.description')}
           </Text>
           <FInput

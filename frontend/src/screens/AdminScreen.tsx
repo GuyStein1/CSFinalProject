@@ -18,6 +18,7 @@ import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FCard } from '../components/ui';
+import { useTranslation } from 'react-i18next';
 import { brandColors, spacing, radii, typography, shadows } from '../theme';
 
 type AdminTab = 'reviews' | 'verifications' | 'certifications';
@@ -93,6 +94,7 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export default function AdminScreen() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<AdminTab>('reviews');
   const [reviews, setReviews] = useState<FlaggedReview[]>([]);
   const [verifications, setVerifications] = useState<PendingVerification[]>([]);
@@ -106,12 +108,12 @@ export default function AdminScreen() {
       const res = await api.get('/api/admin/flagged-reviews');
       setReviews(res.data.reviews ?? []);
     } catch {
-      const msg = 'Failed to load flagged reviews';
+      const msg = t('admin.errors.loadFlagged');
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       } else {
-        Alert.alert('Error', msg);
+        Alert.alert(t('common.error'), msg);
       }
     } finally {
       setLoading(false);
@@ -149,12 +151,12 @@ export default function AdminScreen() {
       await api.post(`/api/admin/reviews/${reviewId}/hide`);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
     } catch {
-      const msg = 'Failed to hide review';
+      const msg = t('admin.errors.hideReview');
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       } else {
-        Alert.alert('Error', msg);
+        Alert.alert(t('common.error'), msg);
       }
     }
   };
@@ -164,12 +166,12 @@ export default function AdminScreen() {
       await api.post(`/api/admin/reviews/${reviewId}/dismiss`);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
     } catch {
-      const msg = 'Failed to dismiss reports';
+      const msg = t('admin.errors.dismissReports');
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       } else {
-        Alert.alert('Error', msg);
+        Alert.alert(t('common.error'), msg);
       }
     }
   };
@@ -179,12 +181,12 @@ export default function AdminScreen() {
       await api.post(`/api/admin/users/${userId}/verify`, { action });
       setVerifications((prev) => prev.filter((v) => v.id !== userId));
     } catch {
-      const msg = `Failed to ${action} verification`;
+      const msg = t('admin.errors.verification', { action });
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       } else {
-        Alert.alert('Error', msg);
+        Alert.alert(t('common.error'), msg);
       }
     }
   };
@@ -194,12 +196,12 @@ export default function AdminScreen() {
       await api.post(`/api/admin/certifications/${certId}/review`, { action });
       setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
     } catch {
-      const msg = `Failed to ${action} certification`;
+      const msg = t('admin.errors.certification', { action });
       if (Platform.OS === 'web') {
         // eslint-disable-next-line no-alert
         window.alert(msg);
       } else {
-        Alert.alert('Error', msg);
+        Alert.alert(t('common.error'), msg);
       }
     }
   };
@@ -498,7 +500,7 @@ export default function AdminScreen() {
                   document.body.removeChild(a);
                   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
                 } catch {
-                  Alert.alert('Error', 'Failed to download photo.');
+                  Alert.alert(t('common.error'), t('admin.errors.downloadPhoto'));
                 }
               }}
               hitSlop={12}

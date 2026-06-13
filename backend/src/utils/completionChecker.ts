@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { sendNotification } from '../services/notificationService';
+import { getNotificationText } from './notificationMessages';
 
 const REMINDER_HOURS = 48;
 const AUTO_COMPLETE_DAYS = 7;
@@ -50,23 +51,11 @@ export async function checkPendingCompletions(): Promise<void> {
           }
         });
 
-        await sendNotification(
-          task.requester_id,
-          'Task Auto-Completed',
-          `Task "${task.title}" was automatically completed after 7 days without response.`,
-          'TASK_COMPLETED',
-          task.id,
-          'Task',
-        );
+        const autoNt = await getNotificationText(task.requester_id, 'taskAutoCompleted', { taskTitle: task.title });
+        await sendNotification(task.requester_id, autoNt.title, autoNt.body, 'TASK_COMPLETED', task.id, 'Task');
         if (task.assigned_fixer_id) {
-          await sendNotification(
-            task.assigned_fixer_id,
-            'Task Completed',
-            `Task "${task.title}" has been automatically completed.`,
-            'TASK_COMPLETED',
-            task.id,
-            'Task',
-          );
+          const fixNt = await getNotificationText(task.assigned_fixer_id, 'taskCompletedAuto', { taskTitle: task.title });
+          await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task');
         }
 
         // Review nudge — only if no review exists yet
@@ -74,14 +63,8 @@ export async function checkPendingCompletions(): Promise<void> {
           where: { task_id_reviewer_id: { task_id: task.id, reviewer_id: task.requester_id } },
         });
         if (!existingReview) {
-          await sendNotification(
-            task.requester_id,
-            'Leave a Review',
-            `Task "${task.title}" is complete! Let ${task.fixer?.full_name || 'the fixer'} know how they did.`,
-            'TASK_COMPLETED',
-            task.id,
-            'Task',
-          );
+          const revNt = await getNotificationText(task.requester_id, 'leaveReview', { taskTitle: task.title, fixerName: task.fixer?.full_name || 'the fixer' });
+          await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task');
         }
 
         console.log(`[completionChecker] Auto-completed task ${task.id}`);
@@ -91,20 +74,18 @@ export async function checkPendingCompletions(): Promise<void> {
           where: {
             user_id: task.requester_id,
             related_entity_id: task.id,
-            title: 'Confirm Completion',
+            title: { in: ['Confirm Completion', 'אשר השלמה'] },
             created_at: { gte: new Date(now - REMINDER_HOURS * 60 * 60 * 1000) },
           },
         });
 
         if (!recentReminder) {
-          await sendNotification(
-            task.requester_id,
-            'Confirm Completion',
-            `${task.fixer?.full_name || 'The fixer'} marked "${task.title}" as done ${Math.floor(elapsedHours)}h ago. Please confirm completion.`,
-            'TASK_COMPLETED',
-            task.id,
-            'Task',
-          );
+          const confNt = await getNotificationText(task.requester_id, 'confirmCompletion', {
+            taskTitle: task.title,
+            fixerName: task.fixer?.full_name || 'The fixer',
+            hours: String(Math.floor(elapsedHours)),
+          });
+          await sendNotification(task.requester_id, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task');
           console.log(`[completionChecker] Sent reminder for task ${task.id}`);
         }
       }

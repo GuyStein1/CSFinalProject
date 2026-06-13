@@ -19,7 +19,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FCard } from '../components/ui';
 import { brandColors, spacing, radii, typography } from '../theme';
-import { getCategoryMeta } from '../utils/categoryMetadata';
+import { getCategoryMeta, getCategoryLabel } from '../utils/categoryMetadata';
 
 interface PortfolioItem {
   id: string;
@@ -64,12 +64,13 @@ const REPORT_REASONS = ['SPAM', 'OFFENSIVE', 'MISLEADING', 'OTHER'] as const;
 function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: string | null }) {
   const canReport = currentUserId === review.reviewee_id;
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REPORT_REASONS[number] | null>(null);
   const [otherDetails, setOtherDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const date = new Date(review.created_at).toLocaleDateString(undefined, {
+  const date = new Date(review.created_at).toLocaleDateString(dateLocale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -110,7 +111,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
 
   return (
     <FCard style={styles.reviewCard}>
-      <View style={styles.reviewHeader}>
+      <View style={[styles.reviewHeader, isRTL && { direction: 'rtl' as const }]}>
         <View style={styles.reviewerInfo}>
           <Avatar.Icon
             size={32}
@@ -118,11 +119,11 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
             style={{ backgroundColor: brandColors.primaryMuted }}
           />
           <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[typography.bodyMedium, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {review.reviewer?.full_name ?? t('publicProfile.anonymous')}
             </Text>
             {review.task?.title && (
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {review.task.title}
               </Text>
             )}
@@ -141,7 +142,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
       <StarRating rating={review.rating} size={14} />
 
       {review.comment ? (
-        <Text style={[typography.body, { color: brandColors.textSecondary, marginTop: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
+        <Text style={[typography.body, { color: brandColors.textSecondary, marginTop: spacing.sm, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
           {review.comment}
         </Text>
       ) : null}
@@ -153,10 +154,10 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
           onDismiss={() => { setReportModalVisible(false); setSelectedReason(null); setOtherDetails(''); }}
           contentContainerStyle={styles.reportModal}
         >
-          <Text style={[typography.h3, { color: brandColors.textPrimary, marginBottom: spacing.xs }]}>
+          <Text style={[typography.h3, { color: brandColors.textPrimary, marginBottom: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('publicProfile.report.title')}
           </Text>
-          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md }]}>
+          <Text style={[typography.bodySm, { color: brandColors.textMuted, marginBottom: spacing.md , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('publicProfile.report.prompt')}
           </Text>
           {REPORT_REASONS.map((reason) => (
@@ -170,7 +171,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
                 size={20}
                 color={selectedReason === reason ? brandColors.primary : brandColors.textMuted}
               />
-              <Text style={[typography.body, { color: selectedReason === reason ? brandColors.primary : brandColors.textPrimary }]}>
+              <Text style={[typography.body, { color: selectedReason === reason ? brandColors.primary : brandColors.textPrimary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t(`publicProfile.report.reasons.${reason}`)}
               </Text>
             </Pressable>
@@ -185,7 +186,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
             style={{ marginTop: spacing.sm, backgroundColor: brandColors.surface }}
           />
           {selectedReason === 'OTHER' && !otherDetails.trim() && (
-            <Text style={[typography.caption, { color: brandColors.danger, marginTop: spacing.xs }]}>
+            <Text style={[typography.caption, { color: brandColors.danger, marginTop: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('publicProfile.report.detailsRequired')}
             </Text>
           )}
@@ -194,14 +195,14 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
               style={[styles.reportBtn, styles.reportBtnCancel]}
               onPress={() => { setReportModalVisible(false); setSelectedReason(null); setOtherDetails(''); }}
             >
-              <Text style={[typography.label, { color: brandColors.textMuted }]}>{t('common.cancel')}</Text>
+              <Text style={[typography.label, { color: brandColors.textMuted , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               style={[styles.reportBtn, styles.reportBtnSubmit, (!selectedReason || (selectedReason === 'OTHER' && !otherDetails.trim())) && { opacity: 0.5 }]}
               onPress={() => void submitReport()}
               disabled={!selectedReason || (selectedReason === 'OTHER' && !otherDetails.trim()) || submitting}
             >
-              <Text style={[typography.label, { color: brandColors.white }]}>
+              <Text style={[typography.label, { color: brandColors.white , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {submitting ? t('common.loading') : t('common.submit')}
               </Text>
             </Pressable>
@@ -216,7 +217,8 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
 export default function PublicProfileScreen({ route }: { route: any }) {
   const { userId } = route.params;
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = React.useState(true);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
@@ -258,7 +260,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
 
   const avgRating = profile?.average_rating_as_fixer;
   const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+    ? new Date(profile.created_at).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long' })
     : null;
 
   return (
@@ -294,10 +296,10 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {avgRating != null && avgRating > 0 && (
             <View style={styles.ratingRow}>
               <StarRating rating={avgRating} size={20} />
-              <Text style={[typography.bodyMedium, { color: brandColors.textSecondary, marginLeft: spacing.sm }]}>
+              <Text style={[typography.bodyMedium, { color: brandColors.textSecondary, marginLeft: spacing.sm, writingDirection: 'ltr' }]}>
                 {avgRating.toFixed(1)}
               </Text>
-              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs }]}>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 ({t('publicProfile.reviewCount', { count: total })})
               </Text>
             </View>
@@ -308,15 +310,15 @@ export default function PublicProfileScreen({ route }: { route: any }) {
             {(profile?.completed_tasks_as_fixer ?? 0) > 0 && (
               <View style={styles.statChip}>
                 <MaterialCommunityIcons name="check-circle-outline" size={14} color={brandColors.success} />
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
-                  {profile!.completed_tasks_as_fixer} tasks completed
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t('publicProfile.tasksCompleted', { count: profile!.completed_tasks_as_fixer })}
                 </Text>
               </View>
             )}
             {profile?.avg_response_time_minutes != null && (
               <View style={styles.statChip}>
                 <MaterialCommunityIcons name="clock-fast" size={14} color={brandColors.primary} />
-                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {formatResponseTime(profile.avg_response_time_minutes)}
                 </Text>
               </View>
@@ -327,7 +329,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {memberSince && (
             <View style={styles.metaRow}>
               <MaterialCommunityIcons name="calendar-outline" size={14} color={brandColors.textMuted} />
-              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs, textAlign: isRTL ? 'right' : 'left' }]}>
+              <Text style={[typography.bodySm, { color: brandColors.textMuted, marginLeft: spacing.xs, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                 {t('publicProfile.memberSince', { date: memberSince })}
               </Text>
             </View>
@@ -341,8 +343,8 @@ export default function PublicProfileScreen({ route }: { route: any }) {
                 return (
                   <View key={s} style={[styles.specChip, { backgroundColor: meta.bg }]}>
                     <MaterialCommunityIcons name={meta.icon as never} size={14} color={meta.color} />
-                    <Text style={[typography.caption, { color: meta.color }]}>
-                      {meta.label}
+                    <Text style={[typography.caption, { color: meta.color, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {getCategoryLabel(s as never, t)}
                     </Text>
                   </View>
                 );
@@ -358,7 +360,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
                 return (
                   <View key={cert.id} style={[styles.certBadge, { backgroundColor: meta.bg }]}>
                     <MaterialCommunityIcons name="check-decagram" size={14} color={meta.color} />
-                    <Text style={[typography.caption, { color: meta.color, fontWeight: '700' }]}>
+                    <Text style={[typography.caption, { color: meta.color, fontWeight: '700' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t(`fixerProfile.certifications.badge.${cert.category}`)}
                     </Text>
                   </View>
@@ -373,7 +375,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
               <Divider style={styles.divider} />
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="image-multiple-outline" size={18} color={brandColors.primaryMuted} />
-                <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                   {t('publicProfile.portfolioTitle', { count: profile!.portfolio_items.length })}
                 </Text>
               </View>
@@ -390,7 +392,7 @@ export default function PublicProfileScreen({ route }: { route: any }) {
           {/* Reviews section header */}
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="star" size={18} color={brandColors.secondary} />
-            <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[typography.h3, { color: brandColors.textPrimary, marginLeft: spacing.sm, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
               {t('publicProfile.reviewsTitle', { count: total })}
             </Text>
           </View>

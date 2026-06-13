@@ -26,21 +26,22 @@ export interface Conversation {
   unreadCount: number;
 }
 
-export function formatConversationTime(dateStr: string, t: (key: string) => string): string {
+export function formatConversationTime(dateStr: string, t: (key: string) => string, locale?: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (diffDays === 0) return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   if (diffDays === 1) return t('conversations.yesterday');
-  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'short' });
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (diffDays < 7) return date.toLocaleDateString(locale, { weekday: 'short' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 export default function ConversationListScreen({ route }: { route?: { params?: { mode?: string } } }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const mode = route?.params?.mode;
@@ -74,7 +75,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
       data={activeConversations}
       keyExtractor={(item) => item.taskId}
       contentContainerStyle={activeConversations.length === 0 && pastCount === 0 ? styles.emptyContainer : styles.listContent}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ItemSeparatorComponent={() => <View style={[styles.separator, isRTL && { direction: 'rtl' as const }]} />}
       ListEmptyComponent={
         <EmptyState
           icon="chat-outline"
@@ -88,7 +89,7 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
           onPress={() => navigation.navigate('PastConversations', { mode })}
         >
           <MaterialCommunityIcons name="archive-outline" size={20} color={brandColors.textMuted} />
-          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 }]}>
+          <Text style={[typography.label, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
             {t('conversations.past')} ({pastCount})
           </Text>
           <MaterialCommunityIcons name="chevron-right" size={20} color={brandColors.outlineLight} />
@@ -129,28 +130,28 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
 
             <View style={styles.content}>
               <View style={styles.topRow}>
-                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {other?.full_name || 'User'}
                 </Text>
                 {item.lastMessage && (
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                    {formatConversationTime(item.lastMessage.timestamp, t)}
+                    {formatConversationTime(item.lastMessage.timestamp, t, dateLocale)}
                   </Text>
                 )}
               </View>
               <View style={styles.titleRow}>
-                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {item.taskTitle}
                 </Text>
                 <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-                  <Text style={styles.rolePillText}>{t(`nav.mode.${item.userRole}`)}</Text>
+                  <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${item.userRole}`)}</Text>
                 </View>
               </View>
               <View style={styles.bottomRow}>
                 <Text
                   style={[
                     typography.bodySm,
-                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left' },
+                    { color: item.unreadCount > 0 ? brandColors.textPrimary : brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
                   ]}
                   numberOfLines={1}
                 >
