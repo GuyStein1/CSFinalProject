@@ -69,6 +69,7 @@ export default function FixerTabs() {
       <Tab.Screen
         name="Messages"
         component={ConversationListScreen}
+        initialParams={{ mode: 'fixer' }}
         options={{
           tabBarLabel: t('nav.messages'),
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,

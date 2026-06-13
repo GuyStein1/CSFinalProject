@@ -65,7 +65,7 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
 
     // Notify accepted fixer
     const acceptedText = await getNotificationText(bid.fixer_id, 'bidAccepted', { price: String(bid.offered_price), taskTitle: bid.task.title });
-    await sendNotification(bid.fixer_id, acceptedText.title, acceptedText.body, 'BID_ACCEPTED', bid.task_id, 'Task');
+    await sendNotification(bid.fixer_id, acceptedText.title, acceptedText.body, 'BID_ACCEPTED', bid.task_id, 'Task', 'fixer');
 
     // Notify auto-rejected fixers
     const autoRejected = await prisma.bid.findMany({
@@ -74,7 +74,7 @@ router.put('/:id/accept', async (req: Request, res: Response, next: NextFunction
     });
     for (const rejected of autoRejected) {
       const rejText = await getNotificationText(rejected.fixer_id, 'bidRejectedChosen', { taskTitle: bid.task.title });
-      await sendNotification(rejected.fixer_id, rejText.title, rejText.body, 'BID_REJECTED', bid.task_id, 'Task');
+      await sendNotification(rejected.fixer_id, rejText.title, rejText.body, 'BID_REJECTED', bid.task_id, 'Task', 'fixer');
     }
 
     const updated = await prisma.bid.findUnique({ where: { id: bid.id } });
@@ -108,7 +108,7 @@ router.put('/:id/reject', validate(rejectBidSchema), async (req: Request, res: R
     });
 
     const rejNotif = await getNotificationText(bid.fixer_id, 'bidRejected', { price: String(bid.offered_price), taskTitle: bid.task.title });
-    await sendNotification(bid.fixer_id, rejNotif.title, rejNotif.body, 'BID_REJECTED', bid.task_id, 'Task');
+    await sendNotification(bid.fixer_id, rejNotif.title, rejNotif.body, 'BID_REJECTED', bid.task_id, 'Task', 'fixer');
 
     res.json({ bid: updated });
   } catch (err) {
@@ -134,7 +134,7 @@ router.put('/:id/withdraw', async (req: Request, res: Response, next: NextFuncti
     });
 
     const wdNotif = await getNotificationText(bid.task.requester_id, 'bidWithdrawn', { price: String(bid.offered_price), taskTitle: bid.task.title });
-    await sendNotification(bid.task.requester_id, wdNotif.title, wdNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task');
+    await sendNotification(bid.task.requester_id, wdNotif.title, wdNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task', 'requester');
 
     res.json({ bid: updated });
   } catch (err) {
@@ -167,7 +167,7 @@ router.put('/:id/cancel-accepted', async (req: Request, res: Response, next: Nex
     });
 
     const cancelNotif = await getNotificationText(bid.task.requester_id, 'fixerCanceled', { taskTitle: bid.task.title });
-    await sendNotification(bid.task.requester_id, cancelNotif.title, cancelNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task');
+    await sendNotification(bid.task.requester_id, cancelNotif.title, cancelNotif.body, 'BID_WITHDRAWN', bid.task_id, 'Task', 'requester');
 
     // Notify open chat rooms so the chat updates in real-time
     const io = getIO();

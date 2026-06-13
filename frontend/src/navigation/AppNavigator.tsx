@@ -27,6 +27,7 @@ import PastConversationsScreen from '../screens/PastConversationsScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
+import { useActiveMode } from '../context/ActiveModeContext';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useLanguage } from '../context/LanguageContext';
 import { brandColors, headerTint, heroGradientRequester, heroGradientFixer, spacing, radii, shadows, typography } from '../theme';
@@ -211,40 +212,40 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
               <Text style={styles.modeLabelText}>{t('nav.workspace.requesterBadge')}</Text>
             </View>
           )}
+        </View>
 
-          <View style={styles.desktopPageTabs}>
-            {workspaceTabs.map((item) => {
-              const selected = activeScreen === item.screen;
-              const showMsgBadge = item.screen === 'Messages' && unreadMsgCount > 0;
-              return (
-                <Pressable
-                  key={item.screen}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${item.label}`}
-                  accessibilityState={{ selected }}
-                  onPress={() => openWorkspaceScreen(item.screen)}
-                  style={({ pressed }) => [
-                    styles.desktopPageTab,
-                    selected && (mode === 'fixer' ? styles.desktopPageTabActiveFixer : styles.desktopPageTabActive),
-                    pressed && styles.desktopActionPressed,
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={item.icon as never}
-                    size={16}
-                    color={selected ? (mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary) : brandColors.textMuted}
-                  />
-                  <Text style={[
-                    styles.desktopPageTabText,
-                    selected && (mode === 'fixer' ? styles.desktopPageTabTextActiveFixer : styles.desktopPageTabTextActive),
-                  ]}>
-                    {item.label}
-                  </Text>
-                  {showMsgBadge && <NotifBadge count={unreadMsgCount} />}
-                </Pressable>
-              );
-            })}
-          </View>
+        <View style={styles.desktopPageTabs}>
+          {workspaceTabs.map((item) => {
+            const selected = activeScreen === item.screen;
+            const showMsgBadge = item.screen === 'Messages' && unreadMsgCount > 0;
+            return (
+              <Pressable
+                key={item.screen}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.label}`}
+                accessibilityState={{ selected }}
+                onPress={() => openWorkspaceScreen(item.screen)}
+                style={({ pressed }) => [
+                  styles.desktopPageTab,
+                  selected && (mode === 'fixer' ? styles.desktopPageTabActiveFixer : styles.desktopPageTabActive),
+                  pressed && styles.desktopActionPressed,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={item.icon as never}
+                  size={16}
+                  color={selected ? (mode === 'fixer' ? brandColors.secondaryDark : brandColors.primary) : brandColors.textMuted}
+                />
+                <Text style={[
+                  styles.desktopPageTabText,
+                  selected && (mode === 'fixer' ? styles.desktopPageTabTextActiveFixer : styles.desktopPageTabTextActive),
+                ]}>
+                  {item.label}
+                </Text>
+                {showMsgBadge && <NotifBadge count={unreadMsgCount} />}
+              </Pressable>
+            );
+          })}
         </View>
 
         <View style={styles.desktopActions}>
@@ -517,6 +518,7 @@ function MainHeader(props: BottomTabHeaderProps) {
 
 function MainNavigator() {
   const theme = useTheme();
+  const { setActiveMode } = useActiveMode();
 
   return (
     <ModeTabs.Navigator
@@ -525,6 +527,13 @@ function MainNavigator() {
         header: (props: BottomTabHeaderProps) => <MainHeader {...props} />,
         tabBarStyle: { display: 'none' },
         sceneStyle: { backgroundColor: theme.colors.background },
+      }}
+      screenListeners={{
+        state: (e) => {
+          const navState = e.data.state;
+          const activeRoute = navState?.routes[navState.index ?? 0];
+          setActiveMode(activeRoute?.name === 'FixerMode' ? 'fixer' : 'requester');
+        },
       }}
     >
       <ModeTabs.Screen name="RequesterMode" component={RequesterTabs} options={{ title: 'Requester' }} />
@@ -613,23 +622,21 @@ const styles = StyleSheet.create({
   },
   desktopBarInner: {
     width: '100%',
-    maxWidth: 1240,
-    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.lg,
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   forceLtr: Platform.OS === 'web' ? { direction: 'ltr' } as any : {},
-  // Logo + nav tabs grouped together on the left; actions sit on the right.
+  // Logo + workspace badge on the left; flex: 1 so it occupies an equal side to actions.
   desktopLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    flexShrink: 1,
   },
   desktopActions: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',

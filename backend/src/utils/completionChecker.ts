@@ -52,10 +52,10 @@ export async function checkPendingCompletions(): Promise<void> {
         });
 
         const autoNt = await getNotificationText(task.requester_id, 'taskAutoCompleted', { taskTitle: task.title });
-        await sendNotification(task.requester_id, autoNt.title, autoNt.body, 'TASK_COMPLETED', task.id, 'Task');
+        await sendNotification(task.requester_id, autoNt.title, autoNt.body, 'TASK_COMPLETED', task.id, 'Task', 'requester');
         if (task.assigned_fixer_id) {
           const fixNt = await getNotificationText(task.assigned_fixer_id, 'taskCompletedAuto', { taskTitle: task.title });
-          await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task');
+          await sendNotification(task.assigned_fixer_id, fixNt.title, fixNt.body, 'TASK_COMPLETED', task.id, 'Task', 'fixer');
         }
 
         // Review nudge — only if no review exists yet
@@ -64,7 +64,7 @@ export async function checkPendingCompletions(): Promise<void> {
         });
         if (!existingReview) {
           const revNt = await getNotificationText(task.requester_id, 'leaveReview', { taskTitle: task.title, fixerName: task.fixer?.full_name || 'the fixer' });
-          await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task');
+          await sendNotification(task.requester_id, revNt.title, revNt.body, 'TASK_COMPLETED', task.id, 'Task', 'requester');
         }
 
         console.log(`[completionChecker] Auto-completed task ${task.id}`);
@@ -85,7 +85,7 @@ export async function checkPendingCompletions(): Promise<void> {
             fixerName: task.fixer?.full_name || 'The fixer',
             hours: String(Math.floor(elapsedHours)),
           });
-          await sendNotification(task.requester_id, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task');
+          await sendNotification(task.requester_id, confNt.title, confNt.body, 'TASK_COMPLETED', task.id, 'Task', 'requester');
           console.log(`[completionChecker] Sent reminder for task ${task.id}`);
         }
       }

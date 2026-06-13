@@ -12,6 +12,7 @@ import AdminNavigator from './src/navigation/AdminNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { ActiveModeProvider } from './src/context/ActiveModeContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
@@ -208,6 +209,7 @@ function RootContent() {
   }
 
   return (
+    <ActiveModeProvider>
     <NotificationProvider>
       <NavigationContainer
         ref={navigationRef}
@@ -221,6 +223,7 @@ function RootContent() {
       </NavigationContainer>
       <GlobalCelebration />
     </NotificationProvider>
+    </ActiveModeProvider>
   );
 }
 
