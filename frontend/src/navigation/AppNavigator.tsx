@@ -622,8 +622,6 @@ const styles = StyleSheet.create({
   },
   desktopBarInner: {
     width: '100%',
-    maxWidth: 1240,
-    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
