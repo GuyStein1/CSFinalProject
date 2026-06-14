@@ -84,6 +84,30 @@ describe('useUnreadMessages', () => {
     expect(result.current.unreadCount).toBe(0);
   });
 
+  it('passes mode param to API when provided', async () => {
+    mockApi.get.mockResolvedValue({
+      data: { conversations: [{ taskId: 't1', unreadCount: 1, taskStatus: 'IN_PROGRESS' }] },
+    });
+
+    const { result } = renderHook(() => useUnreadMessages('fixer'));
+    await waitFor(() => {
+      expect(mockApi.get).toHaveBeenCalledWith('/api/conversations', { params: { mode: 'fixer' } });
+      expect(result.current.unreadCount).toBe(1);
+    });
+  });
+
+  it('passes requester mode param to API', async () => {
+    mockApi.get.mockResolvedValue({
+      data: { conversations: [{ taskId: 't1', unreadCount: 2, taskStatus: 'IN_PROGRESS' }] },
+    });
+
+    const { result } = renderHook(() => useUnreadMessages('requester'));
+    await waitFor(() => {
+      expect(mockApi.get).toHaveBeenCalledWith('/api/conversations', { params: { mode: 'requester' } });
+      expect(result.current.unreadCount).toBe(1);
+    });
+  });
+
   it('listens to socket events for real-time updates', async () => {
     mockApi.get.mockResolvedValue({ data: { conversations: [{ taskId: 't1', unreadCount: 1 }] } });
 
