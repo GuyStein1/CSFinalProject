@@ -161,7 +161,7 @@ describe('GET /api/admin/pending-verifications', () => {
     await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', FIXER_AUTH)
-      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+      .send({ verification_photo_url: 'https://example.com/id.jpg', verification_selfie_url: 'https://example.com/selfie.jpg' });
 
     __setUid('admin-uid');
     const res = await request(app)
@@ -189,7 +189,7 @@ describe('POST /api/admin/users/:id/verify', () => {
     await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', FIXER_AUTH)
-      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+      .send({ verification_photo_url: 'https://example.com/id.jpg', verification_selfie_url: 'https://example.com/selfie.jpg' });
     const meRes = await request(app).get('/api/users/me').set('Authorization', FIXER_AUTH);
     fixerDbId = meRes.body.user.id;
   });

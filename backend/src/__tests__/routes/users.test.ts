@@ -172,28 +172,34 @@ describe('POST /api/users/me/push-token', () => {
 });
 
 describe('POST /api/users/me/verification', () => {
-  it('submits verification photo', async () => {
+  const verificationPayload = {
+    verification_photo_url: 'https://example.com/id.jpg',
+    verification_selfie_url: 'https://example.com/selfie.jpg',
+  };
+
+  it('submits verification photos', async () => {
     const res = await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', AUTH)
-      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+      .send(verificationPayload);
     expect(res.status).toBe(200);
 
     const user = await prisma.user.findFirst({ where: { firebase_uid: 'test-uid' } });
     expect(user?.verification_status).toBe('PENDING');
     expect(user?.verification_photo_url).toBe('https://example.com/id.jpg');
+    expect(user?.verification_selfie_url).toBe('https://example.com/selfie.jpg');
   });
 
   it('returns 409 if already pending', async () => {
     await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', AUTH)
-      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+      .send(verificationPayload);
 
     const res = await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', AUTH)
-      .send({ verification_photo_url: 'https://example.com/id2.jpg' });
+      .send(verificationPayload);
     expect(res.status).toBe(409);
   });
 
@@ -206,15 +212,23 @@ describe('POST /api/users/me/verification', () => {
     const res = await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', AUTH)
-      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+      .send(verificationPayload);
     expect(res.status).toBe(409);
+  });
+
+  it('returns 400 for missing selfie URL', async () => {
+    const res = await request(app)
+      .post('/api/users/me/verification')
+      .set('Authorization', AUTH)
+      .send({ verification_photo_url: 'https://example.com/id.jpg' });
+    expect(res.status).toBe(400);
   });
 
   it('returns 400 for invalid URL', async () => {
     const res = await request(app)
       .post('/api/users/me/verification')
       .set('Authorization', AUTH)
-      .send({ verification_photo_url: 'not-a-url' });
+      .send({ verification_photo_url: 'not-a-url', verification_selfie_url: 'https://example.com/selfie.jpg' });
     expect(res.status).toBe(400);
   });
 });

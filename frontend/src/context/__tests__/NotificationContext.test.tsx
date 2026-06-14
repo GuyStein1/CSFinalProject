@@ -5,7 +5,7 @@ import api from '../../api/axiosInstance';
 
 const mockApi = api as jest.Mocked<typeof api>;
 
-const makeNotif = (overrides: Partial<{ id: string; type: string; is_read: boolean }> = {}) => ({
+const makeNotif = (overrides: Partial<{ id: string; type: string; is_read: boolean; user_role: string | null }> = {}) => ({
   id: overrides.id ?? 'n1',
   user_id: 'u1',
   title: 'Hello',
@@ -13,6 +13,7 @@ const makeNotif = (overrides: Partial<{ id: string; type: string; is_read: boole
   type: overrides.type ?? 'NEW_BID',
   related_entity_id: 'task-1',
   related_entity_type: 'Task',
+  user_role: overrides.user_role !== undefined ? overrides.user_role : null,
   is_read: overrides.is_read ?? false,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
@@ -89,7 +90,7 @@ describe('NotificationContext', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => { await result.current.markAllAsRead(); });
-    expect(mockApi.put).toHaveBeenCalledWith('/api/notifications/read-all');
+    expect(mockApi.put).toHaveBeenCalledWith('/api/notifications/read-all', null, { params: {} });
     expect(result.current.notifications.every((n) => n.is_read)).toBe(true);
   });
 
@@ -207,6 +208,42 @@ describe('NotificationContext', () => {
     const callsBefore = mockApi.get.mock.calls.length;
     await act(async () => { await result.current.deleteOne('n1'); });
     await waitFor(() => expect(mockApi.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('unreadCount filters by roleFilter when provided', async () => {
+    const notifs = [
+      makeNotif({ id: 'n1', type: 'NEW_MESSAGE', user_role: 'fixer', is_read: false }),
+      makeNotif({ id: 'n2', type: 'NEW_MESSAGE', user_role: 'requester', is_read: false }),
+      makeNotif({ id: 'n3', type: 'NEW_BID', user_role: null, is_read: false }),
+    ];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // fixer role: n1 (fixer) + n3 (null) = 2
+    expect(result.current.unreadCount(['NEW_MESSAGE', 'NEW_BID'], 'fixer')).toBe(2);
+    // requester role: n2 (requester) + n3 (null) = 2
+    expect(result.current.unreadCount(['NEW_MESSAGE', 'NEW_BID'], 'requester')).toBe(2);
+    // only NEW_MESSAGE + fixer: n1 only = 1
+    expect(result.current.unreadCount(['NEW_MESSAGE'], 'fixer')).toBe(1);
+  });
+
+  it('markAllAsRead with mode only marks matching role notifications', async () => {
+    const notifs = [
+      makeNotif({ id: 'n1', type: 'NEW_MESSAGE', user_role: 'fixer', is_read: false }),
+      makeNotif({ id: 'n2', type: 'NEW_MESSAGE', user_role: 'requester', is_read: false }),
+    ];
+    mockApi.get.mockResolvedValue({ data: { notifications: notifs } });
+
+    const { result } = renderHook(() => useNotificationContext(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.markAllAsRead('fixer'); });
+    expect(mockApi.put).toHaveBeenCalledWith('/api/notifications/read-all', null, { params: { mode: 'fixer' } });
+    // n1 (fixer) should be read, n2 (requester) should remain unread
+    expect(result.current.notifications.find((n) => n.id === 'n1')?.is_read).toBe(true);
+    expect(result.current.notifications.find((n) => n.id === 'n2')?.is_read).toBe(false);
   });
 
   it('refetches (rollback) when deleteAll API call fails', async () => {

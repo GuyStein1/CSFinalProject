@@ -31,7 +31,7 @@ export default function FixerTabs() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
-  const { unreadCount } = useUnreadMessages();
+  const { unreadCount } = useUnreadMessages('fixer');
 
   return (
     <Tab.Navigator

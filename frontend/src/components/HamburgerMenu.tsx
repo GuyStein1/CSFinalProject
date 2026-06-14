@@ -35,6 +35,7 @@ interface HamburgerMenuProps {
   onNotificationsPress?: () => void;
   onSettingsPress: () => void;
   notificationCount?: number;
+  otherModeBadge?: number;
 }
 
 export default function HamburgerMenu({
@@ -53,6 +54,7 @@ export default function HamburgerMenu({
   onNotificationsPress,
   onSettingsPress,
   notificationCount = 0,
+  otherModeBadge = 0,
 }: HamburgerMenuProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -121,6 +123,7 @@ export default function HamburgerMenu({
                 icon={isRTL ? 'chevron-right' : 'chevron-left'}
                 label={t('menu.openRequester')}
                 description={t('menu.backToRequester')}
+                badge={otherModeBadge > 0 ? String(otherModeBadge) : undefined}
                 isRTL={isRTL}
                 onPress={() => { onModeChange('requester'); (onRequesterHomePress ?? (() => {}))(); onClose(); }}
               />
@@ -233,7 +236,13 @@ export default function HamburgerMenu({
                     {fixerActivated ? t('menu.fixerWorkspaceDesc') : t('menu.becomeFixerDesc')}
                   </Text>
                 </View>
-                <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
+                {otherModeBadge > 0 ? (
+                  <View style={styles.menuBadge}>
+                    <Text style={styles.menuBadgeText}>{otherModeBadge}</Text>
+                  </View>
+                ) : (
+                  <MaterialCommunityIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={brandColors.textMuted} />
+                )}
               </Pressable>
             </>
           )}

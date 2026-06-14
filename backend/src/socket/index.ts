@@ -48,6 +48,10 @@ export function initSocket(httpServer: HttpServer): SocketServer {
   io.on('connection', (socket: Socket) => {
     const authedSocket = socket as AuthenticatedSocket;
 
+    // Join a personal room so we can push events (e.g. notification updates)
+    // to a specific user regardless of which chat rooms they've joined
+    socket.join(`user_${authedSocket.userId}`);
+
     // join_chat — only the task requester or the accepted fixer may join
     socket.on('join_chat', async (taskId: string) => {
       try {
@@ -124,7 +128,33 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
           io.to(`task_chat_${taskId}`).emit('receive_message', message);
 
-          // Push-notify recipient only if they are not currently in the room
+          // Always create/update a bell notification (deduplicated per task)
+          const existingNotif = await prisma.notification.findFirst({
+            where: {
+              user_id: recipientId,
+              type: NotificationType.NEW_MESSAGE,
+              related_entity_id: taskId,
+              is_read: false,
+            },
+          });
+
+          const recipientRole = recipientId === task.requester_id ? 'requester' : 'fixer';
+          const senderName = message.sender.full_name;
+          const msgNt = await getNotificationText(recipientId, 'newMessage', { senderName, taskTitle: task.title });
+
+          if (existingNotif) {
+            await prisma.notification.update({
+              where: { id: existingNotif.id },
+              data: { title: msgNt.title, body: msgNt.body },
+            });
+          } else {
+            await sendNotification(recipientId, msgNt.title, msgNt.body, NotificationType.NEW_MESSAGE, taskId, 'Task', recipientRole);
+          }
+
+          // Notify recipient's personal room so bell badge refreshes instantly
+          io.to(`user_${recipientId}`).emit('notification_update');
+
+          // Send mobile push only if recipient is not currently in this chat room
           const room = io.sockets.adapter.rooms.get(`task_chat_${taskId}`);
           const recipientInRoom = room
             ? [...room].some((sid) => {
@@ -134,9 +164,24 @@ export function initSocket(httpServer: HttpServer): SocketServer {
             : false;
 
           if (!recipientInRoom) {
-            const recipientRole = recipientId === task.requester_id ? 'requester' : 'fixer';
-            const msgNt = await getNotificationText(recipientId, 'newMessage', {});
-            await sendNotification(recipientId, msgNt.title, content.trim(), NotificationType.NEW_MESSAGE, taskId, 'Task', recipientRole);
+            try {
+              const user = await prisma.user.findUnique({
+                where: { id: recipientId },
+                select: { push_token: true },
+              });
+              const { Expo } = await import('expo-server-sdk');
+              if (user?.push_token && Expo.isExpoPushToken(user.push_token)) {
+                const expo = new Expo();
+                await expo.sendPushNotificationsAsync([{
+                  to: user.push_token,
+                  title: msgNt.title,
+                  body: msgNt.body,
+                  data: { type: NotificationType.NEW_MESSAGE, relatedEntityId: taskId, relatedEntityType: 'Task' },
+                }]);
+              }
+            } catch (pushErr) {
+              console.error('[socket] push notification error', pushErr);
+            }
           }
         } catch (err) {
           console.error('[socket] send_message error', err);

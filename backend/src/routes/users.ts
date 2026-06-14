@@ -247,6 +247,7 @@ router.post('/me/verification', validate(submitVerificationSchema), async (req: 
       data: {
         verification_status: 'PENDING',
         verification_photo_url: req.body.verification_photo_url,
+        verification_selfie_url: req.body.verification_selfie_url,
       },
     });
     res.json({ message: 'Verification submitted' });

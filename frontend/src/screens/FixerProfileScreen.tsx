@@ -109,6 +109,9 @@ export default function FixerProfileScreen() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [verificationExpanded, setVerificationExpanded] = useState(false);
+  const [idPhotoUri, setIdPhotoUri] = useState<string | null>(null);
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [uploadingCert, setUploadingCert] = useState<string | null>(null);
   const [langOpen, setLangOpen] = useState(false);
@@ -276,18 +279,33 @@ export default function FixerProfileScreen() {
     }
   };
 
-  const handleSubmitVerification = async () => {
+  const pickVerificationPhoto = async (target: 'id' | 'selfie') => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.8,
       allowsEditing: true,
     });
-    if (result.canceled || !profile) return;
+    if (result.canceled) return;
+    if (target === 'id') setIdPhotoUri(result.assets[0].uri);
+    else setSelfieUri(result.assets[0].uri);
+  };
+
+  const handleSubmitVerification = async () => {
+    if (!idPhotoUri || !selfieUri || !profile) return;
     setUploadingVerification(true);
     try {
-      const url = await uploadImage(result.assets[0].uri, `verification/${profile.id}/${Date.now()}.jpg`);
-      await api.post('/api/users/me/verification', { verification_photo_url: url });
+      const [idUrl, selfieUrl] = await Promise.all([
+        uploadImage(idPhotoUri, `verification/${profile.id}/id_${Date.now()}.jpg`),
+        uploadImage(selfieUri, `verification/${profile.id}/selfie_${Date.now()}.jpg`),
+      ]);
+      await api.post('/api/users/me/verification', {
+        verification_photo_url: idUrl,
+        verification_selfie_url: selfieUrl,
+      });
       setProfile(p => p ? { ...p, verification_status: 'PENDING' } : p);
+      setVerificationExpanded(false);
+      setIdPhotoUri(null);
+      setSelfieUri(null);
       Alert.alert(t('fixerProfile.alerts.verificationSubmitted.title'), t('fixerProfile.alerts.verificationSubmitted.message'));
     } catch {
       Alert.alert(t('common.error'), t('fixerProfile.alerts.verificationError'));
@@ -669,20 +687,69 @@ export default function FixerProfileScreen() {
                       {t('fixerProfile.verification.pendingMsg')}
                     </Text>
                   </View>
-                ) : (
+                ) : !verificationExpanded ? (
                   <>
                     <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.verification.uploadMsg')}
                     </Text>
                     <FButton
                       variant="secondary"
-                      icon="camera-outline"
-                      onPress={() => void handleSubmitVerification()}
-                      loading={uploadingVerification}
-                      disabled={uploadingVerification}
+                      icon="shield-check-outline"
+                      onPress={() => setVerificationExpanded(true)}
                       fullWidth
                     >
-                      {t('fixerProfile.verification.uploadBtn')}
+                      {t('fixerProfile.verification.startBtn')}
+                    </FButton>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {t('fixerProfile.verification.pickPhotosMsg')}
+                    </Text>
+                    <View style={styles.verificationPhotos}>
+                      {/* ID Photo */}
+                      <View style={styles.verificationPhotoSlot}>
+                        <Pressable
+                          onPress={() => void pickVerificationPhoto('id')}
+                          style={[styles.verificationPhotoBtn, idPhotoUri && styles.verificationPhotoBtnFilled]}
+                        >
+                          {idPhotoUri ? (
+                            <Image source={{ uri: idPhotoUri }} style={styles.verificationPhotoPreview} />
+                          ) : (
+                            <MaterialCommunityIcons name="plus" size={32} color={brandColors.primary} />
+                          )}
+                        </Pressable>
+                        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                          {t('fixerProfile.verification.idLabel')}
+                        </Text>
+                      </View>
+                      {/* Selfie */}
+                      <View style={styles.verificationPhotoSlot}>
+                        <Pressable
+                          onPress={() => void pickVerificationPhoto('selfie')}
+                          style={[styles.verificationPhotoBtn, selfieUri && styles.verificationPhotoBtnFilled]}
+                        >
+                          {selfieUri ? (
+                            <Image source={{ uri: selfieUri }} style={styles.verificationPhotoPreview} />
+                          ) : (
+                            <MaterialCommunityIcons name="plus" size={32} color={brandColors.primary} />
+                          )}
+                        </Pressable>
+                        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                          {t('fixerProfile.verification.selfieLabel')}
+                        </Text>
+                      </View>
+                    </View>
+                    <FButton
+                      variant="primary"
+                      icon="send"
+                      onPress={() => void handleSubmitVerification()}
+                      loading={uploadingVerification}
+                      disabled={uploadingVerification || !idPhotoUri || !selfieUri}
+                      fullWidth
+                      style={{ marginTop: spacing.lg }}
+                    >
+                      {t('fixerProfile.verification.submitBtn')}
                     </FButton>
                   </>
                 )}
@@ -1082,6 +1149,35 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     backgroundColor: brandColors.surfaceAlt,
+  },
+  verificationPhotos: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xl,
+  },
+  verificationPhotoSlot: {
+    alignItems: 'center',
+  },
+  verificationPhotoBtn: {
+    width: 100,
+    height: 100,
+    borderRadius: radii.lg,
+    borderWidth: 2,
+    borderColor: brandColors.outline,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  verificationPhotoBtnFilled: {
+    borderStyle: 'solid',
+    borderColor: brandColors.primary,
+    overflow: 'hidden',
+  },
+  verificationPhotoPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.lg - 2,
   },
   chipsWrap: {
     flexDirection: 'row',

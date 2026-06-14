@@ -178,13 +178,13 @@ const messages: Record<string, Record<Lang, (vars: Record<string, string>) => No
     }),
   },
   newMessage: {
-    en: () => ({
-      title: 'New message',
-      body: '',
+    en: (v) => ({
+      title: `New message from ${v.senderName}`,
+      body: `Regarding "${v.taskTitle}"`,
     }),
-    he: () => ({
-      title: 'הודעה חדשה',
-      body: '',
+    he: (v) => ({
+      title: `הודעה חדשה מ-${v.senderName}`,
+      body: `בנוגע ל-"${v.taskTitle}"`,
     }),
   },
   certificationApproved: {
@@ -195,6 +195,26 @@ const messages: Record<string, Record<Lang, (vars: Record<string, string>) => No
     he: (v) => ({
       title: 'ההסמכה אושרה!',
       body: `ההסמכה שלך ב${v.category} אושרה. תג יופיע כעת בפרופיל שלך.`,
+    }),
+  },
+  verificationApproved: {
+    en: () => ({
+      title: 'Verification Approved!',
+      body: 'Your identity has been verified. A badge will now appear on your profile.',
+    }),
+    he: () => ({
+      title: 'האימות אושר!',
+      body: 'זהותך אומתה. תג יופיע כעת בפרופיל שלך.',
+    }),
+  },
+  verificationRejected: {
+    en: () => ({
+      title: 'Verification Rejected',
+      body: 'Your verification was not approved. You can resubmit with a clearer photo.',
+    }),
+    he: () => ({
+      title: 'האימות נדחה',
+      body: 'האימות שלך לא אושר. תוכל לשלוח שוב עם תמונה ברורה יותר.',
     }),
   },
   certificationRejected: {

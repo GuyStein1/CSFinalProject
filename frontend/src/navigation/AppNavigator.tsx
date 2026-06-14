@@ -80,10 +80,15 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const [activeScreenOverride, setActiveScreenOverride] = useState<string | null>(null);
   const [fixerActivated, setFixerActivated] = useState(true); // default true avoids flicker
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+  const otherMode: Mode = mode === 'fixer' ? 'requester' : 'fixer';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
+  const otherTypeFilter = mode === 'fixer' ? REQUESTER_NOTIF_TYPES : FIXER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
-  const notificationCount = unreadCount(typeFilter);
-  const { unreadCount: unreadMsgCount } = useUnreadMessages();
+  const notificationCount = unreadCount(typeFilter, mode);
+  const otherModeNotifCount = unreadCount(otherTypeFilter, otherMode);
+  const { unreadCount: unreadMsgCount } = useUnreadMessages(mode);
+  const { unreadCount: otherMsgCount } = useUnreadMessages(otherMode);
+  const otherModeBadge = otherModeNotifCount + otherMsgCount;
   const { language, changeLanguage, isRTL } = useLanguage();
   const { t } = useTranslation();
 
@@ -176,7 +181,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         { label: t('nav.home'),     screen: 'Dashboard', icon: 'home-outline' },
         { label: t('nav.myTasks'),  screen: 'MyTasks',   icon: 'clipboard-list-outline' },
         { label: t('nav.messages'), screen: 'Messages',  icon: 'chat-outline' },
-        { label: t('nav.account'),  screen: 'Profile',   icon: 'account-circle-outline' },
       ];
 
   return (
@@ -317,6 +321,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
                 {fixerActivated ? t('nav.workspace.openFixer') : t('nav.workspace.becomeFixer')}
               </Text>
               {!isRTL && fixerActivated && <MaterialCommunityIcons name="chevron-right" size={13} color={brandColors.secondaryDark} />}
+              {otherModeBadge > 0 && (
+                <View style={styles.inlineBadge}>
+                  <Text style={styles.inlineBadgeText}>{otherModeBadge > 9 ? '9+' : otherModeBadge}</Text>
+                </View>
+              )}
             </Pressable>
           ) : (
             <Pressable
@@ -328,6 +337,11 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
             >
               <MaterialCommunityIcons name={isRTL ? 'chevron-right' : 'chevron-left'} size={14} color={brandColors.primary} />
               <Text style={styles.desktopBackHomeBtnText}>{t('nav.workspace.openRequester')}</Text>
+              {otherModeBadge > 0 && (
+                <View style={styles.inlineBadge}>
+                  <Text style={styles.inlineBadgeText}>{otherModeBadge > 9 ? '9+' : otherModeBadge}</Text>
+                </View>
+              )}
             </Pressable>
           )}
         </View>
@@ -343,9 +357,14 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [fixerActivated, setFixerActivated] = useState(true);
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
+  const otherMode: Mode = mode === 'fixer' ? 'requester' : 'fixer';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
+  const otherTypeFilter = mode === 'fixer' ? REQUESTER_NOTIF_TYPES : FIXER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
-  const notificationCount = unreadCount(typeFilter);
+  const notificationCount = unreadCount(typeFilter, mode);
+  const otherModeNotifCount = unreadCount(otherTypeFilter, otherMode);
+  const { unreadCount: otherMsgCount } = useUnreadMessages(otherMode);
+  const otherModeBadge = otherModeNotifCount + otherMsgCount;
   const { language, changeLanguage } = useLanguage();
 
   useEffect(() => {
@@ -507,6 +526,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
         onNotificationsPress={openNotifications}
         onSettingsPress={openSettings}
         notificationCount={notificationCount}
+        otherModeBadge={otherModeBadge}
       />
     </>
   );
@@ -843,6 +863,24 @@ const styles = StyleSheet.create({
     fontWeight: '800' as const,
     color: brandColors.white,
     lineHeight: 12,
+  },
+
+  // Inline badge (for workspace switcher buttons)
+  inlineBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: brandColors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    marginLeft: spacing.xs,
+  },
+  inlineBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
   },
 
   // Notification badge
