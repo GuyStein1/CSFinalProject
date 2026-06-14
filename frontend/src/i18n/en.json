@@ -661,6 +661,7 @@
       "markCompleted": "Mark as Completed",
       "payFixer": "Pay Fixer",
       "confirmPayment": "Confirm Payment",
+      "paidCash": "Paid in Cash",
       "leaveReview": "Leave a Review",
       "editTask": "Edit Task",
       "chatWithBidder": "Chat"

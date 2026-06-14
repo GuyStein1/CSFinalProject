@@ -630,12 +630,17 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     </Text>
                   </>
                 ) : (
-                  <View style={styles.noPaymentLink}>
-                    <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
-                    <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                      {t('taskDetails.payment.noPaymentLink')}
-                    </Text>
-                  </View>
+                  <>
+                    <View style={styles.noPaymentLink}>
+                      <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
+                      <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                        {t('taskDetails.payment.noPaymentLink')}
+                      </Text>
+                    </View>
+                    <FButton variant="outline" icon="cash" onPress={confirmPayment} loading={actionLoading === 'payment'} disabled={actionLoading !== null} fullWidth style={{ marginTop: spacing.sm }}>
+                      {t('taskDetails.actions.paidCash')}
+                    </FButton>
+                  </>
                 )}
               </FCard>
             )}
@@ -857,19 +862,24 @@ export default function TaskDetails({ route, navigation }: { route: any; navigat
                     </Text>
                   </>
                 ) : (
-                  <View style={styles.noPaymentLink}>
-                    <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
-                    <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                      {t('taskDetails.payment.noPaymentLink')}
-                    </Text>
-                    {acceptedBid?.fixer?.phone_number && (
-                      <Pressable onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}>
-                        <Text style={[typography.label, { color: brandColors.primaryMuted }]}>
-                          {acceptedBid.fixer.phone_number}
-                        </Text>
-                      </Pressable>
-                    )}
-                  </View>
+                  <>
+                    <View style={styles.noPaymentLink}>
+                      <MaterialCommunityIcons name="information-outline" size={20} color={brandColors.textMuted} />
+                      <Text style={[typography.body, { color: brandColors.textMuted, flex: 1 , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                        {t('taskDetails.payment.noPaymentLink')}
+                      </Text>
+                      {acceptedBid?.fixer?.phone_number && (
+                        <Pressable onPress={() => Linking.openURL(`tel:${acceptedBid.fixer!.phone_number}`)}>
+                          <Text style={[typography.label, { color: brandColors.primaryMuted }]}>
+                            {acceptedBid.fixer.phone_number}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                    <FButton variant="outline" icon="cash" onPress={confirmPayment} loading={actionLoading === 'payment'} disabled={actionLoading !== null} fullWidth style={{ marginTop: spacing.sm }}>
+                      {t('taskDetails.actions.paidCash')}
+                    </FButton>
+                  </>
                 )}
               </View>
             )}
