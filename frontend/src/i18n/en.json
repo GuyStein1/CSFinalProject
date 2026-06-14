@@ -1035,8 +1035,12 @@
       "verifiedMsg": "Your identity has been verified. A badge appears on your public profile.",
       "pending": "Pending review",
       "pendingMsg": "Your verification photo is being reviewed by an admin.",
-      "uploadMsg": "Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.",
-      "uploadBtn": "Upload ID Photo"
+      "uploadMsg": "Upload a photo of your ID and a selfie to get a verified badge on your profile. This helps requesters trust you.",
+      "startBtn": "Start Verification",
+      "pickPhotosMsg": "Upload a photo of your ID and a selfie of your face. Both are required.",
+      "idLabel": "ID Photo",
+      "selfieLabel": "Selfie",
+      "submitBtn": "Submit for Review"
     },
     "certifications": {
       "kicker": "Credentials",
@@ -1650,6 +1654,55 @@
     }
   },
   "admin": {
+    "header": {
+      "kicker": "FixIt Admin",
+      "title": "Review Moderation"
+    },
+    "tabs": {
+      "reviews": "Reviews ({{count}})",
+      "verifications": "Verifications ({{count}})",
+      "certifications": "Certifications ({{count}})"
+    },
+    "reviews": {
+      "reviewer": "Reviewer",
+      "reviewee": "Reviewee",
+      "task": "Task: {{title}}",
+      "reports": "Reports ({{count}}):",
+      "by": "by {{name}}",
+      "hideReview": "Hide Review",
+      "dismiss": "Dismiss"
+    },
+    "verifications": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "idPhoto": "ID Photo",
+      "selfie": "Selfie",
+      "submitted": "Submitted: {{date}}"
+    },
+    "certifications": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "submitted": "Submitted: {{date}}"
+    },
+    "reasons": {
+      "SPAM": "Spam",
+      "OFFENSIVE": "Offensive",
+      "MISLEADING": "Misleading",
+      "OTHER": "Other"
+    },
+    "categories": {
+      "ELECTRICITY": "Electricity",
+      "PLUMBING": "Plumbing"
+    },
+    "empty": {
+      "reviewsTitle": "All clear!",
+      "reviewsMessage": "No flagged reviews to moderate.",
+      "verificationsTitle": "No pending verifications",
+      "verificationsMessage": "All verification requests have been handled.",
+      "certificationsTitle": "No pending certifications",
+      "certificationsMessage": "All certification requests have been handled."
+    },
+    "loading": "Loading flagged reviews...",
     "errors": {
       "loadFlagged": "Failed to load flagged reviews",
       "hideReview": "Failed to hide review",

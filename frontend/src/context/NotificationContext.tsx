@@ -34,10 +34,10 @@ interface NotificationContextValue {
   notifications: AppNotification[];
   loading: boolean;
   error: string | null;
-  unreadCount: (typeFilter?: string[]) => number;
+  unreadCount: (typeFilter?: string[], roleFilter?: string) => number;
   refetch: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
+  markAllAsRead: (mode?: string) => Promise<void>;
   deleteOne: (id: string) => Promise<void>;
   deleteAll: () => Promise<void>;
   getFiltered: (typeFilter?: string[]) => AppNotification[];
@@ -76,10 +76,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [fetchNotifications]);
 
-  const markAllAsRead = useCallback(async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+  const markAllAsRead = useCallback(async (mode?: string) => {
+    setNotifications((prev) => prev.map((n) => {
+      if (mode && n.user_role !== null && n.user_role !== mode) return n;
+      return { ...n, is_read: true };
+    }));
     try {
-      await api.put('/api/notifications/read-all');
+      const params: Record<string, string> = {};
+      if (mode) params.mode = mode;
+      await api.put('/api/notifications/read-all', null, { params });
     } catch {
       fetchNotifications();
     }
@@ -104,10 +109,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [fetchNotifications]);
 
   const unreadCount = useCallback(
-    (typeFilter?: string[]) => {
-      const filtered = typeFilter
+    (typeFilter?: string[], roleFilter?: string) => {
+      let filtered = typeFilter
         ? notifications.filter((n) => typeFilter.includes(n.type))
         : notifications;
+      if (roleFilter) {
+        filtered = filtered.filter((n) => n.user_role === roleFilter || n.user_role === null);
+      }
       return filtered.filter((n) => !n.is_read).length;
     },
     [notifications],
@@ -134,21 +142,27 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchNotifications]);
 
-  // Global socket listener — refresh bell badge instantly on any incoming message,
-  // regardless of which screen the user is currently on.
+  // Global socket listener — refresh bell badge instantly on notification_update
+  // (sent to the user's personal room) or on any incoming message.
   useEffect(() => {
     let mounted = true;
     let cleanup: (() => void) | null = null;
 
     void (async () => {
       const socket = await getSocket();
-      const handler = (msg: { sender?: { firebase_uid?: string } }) => {
-        // Only refresh notifications for messages received from someone else
+      const notifHandler = () => {
+        if (mounted) void fetchNotifications();
+      };
+      const msgHandler = (msg: { sender?: { firebase_uid?: string } }) => {
         const sentByMe = msg?.sender?.firebase_uid === auth.currentUser?.uid;
         if (mounted && !sentByMe) void fetchNotifications();
       };
-      socket.on('receive_message', handler);
-      cleanup = () => socket.off('receive_message', handler);
+      socket.on('notification_update', notifHandler);
+      socket.on('receive_message', msgHandler);
+      cleanup = () => {
+        socket.off('notification_update', notifHandler);
+        socket.off('receive_message', msgHandler);
+      };
     })();
 
     return () => {

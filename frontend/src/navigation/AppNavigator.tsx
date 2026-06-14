@@ -82,8 +82,8 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
-  const notificationCount = unreadCount(typeFilter);
-  const { unreadCount: unreadMsgCount } = useUnreadMessages();
+  const notificationCount = unreadCount(typeFilter, mode);
+  const { unreadCount: unreadMsgCount } = useUnreadMessages(mode);
   const { language, changeLanguage, isRTL } = useLanguage();
   const { t } = useTranslation();
 
@@ -176,7 +176,6 @@ function DesktopHeader({ navigation, route }: BottomTabHeaderProps) {
         { label: t('nav.home'),     screen: 'Dashboard', icon: 'home-outline' },
         { label: t('nav.myTasks'),  screen: 'MyTasks',   icon: 'clipboard-list-outline' },
         { label: t('nav.messages'), screen: 'Messages',  icon: 'chat-outline' },
-        { label: t('nav.account'),  screen: 'Profile',   icon: 'account-circle-outline' },
       ];
 
   return (
@@ -345,7 +344,7 @@ function MobileHeader({ navigation, route }: BottomTabHeaderProps) {
   const mode: Mode = route.name === 'FixerMode' ? 'fixer' : 'requester';
   const typeFilter = mode === 'fixer' ? FIXER_NOTIF_TYPES : REQUESTER_NOTIF_TYPES;
   const { unreadCount } = useNotificationContext();
-  const notificationCount = unreadCount(typeFilter);
+  const notificationCount = unreadCount(typeFilter, mode);
   const { language, changeLanguage } = useLanguage();
 
   useEffect(() => {

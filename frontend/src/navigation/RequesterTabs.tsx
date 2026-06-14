@@ -40,7 +40,7 @@ export default function RequesterTabs() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
-  const { unreadCount } = useUnreadMessages();
+  const { unreadCount } = useUnreadMessages('requester');
   const [tutorialState, setTutorialState] = useState<'checking' | 'show' | 'done'>('checking');
 
   useEffect(() => {

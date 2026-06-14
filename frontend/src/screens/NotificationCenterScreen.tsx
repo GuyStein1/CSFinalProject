@@ -156,9 +156,9 @@ export default function NotificationCenterScreen() {
     React.useCallback(() => {
       refetch().then(() => {
         // Mark all as read after a short delay so user sees the unread styling briefly
-        setTimeout(() => markAllAsRead(), 1500);
+        setTimeout(() => markAllAsRead(activeMode), 1500);
       });
-    }, [refetch, markAllAsRead]),
+    }, [refetch, markAllAsRead, activeMode]),
   );
 
   const handleDeleteAll = () => {
@@ -218,7 +218,7 @@ export default function NotificationCenterScreen() {
       {filtered.length > 0 && (
         <View style={styles.topBar}>
           {unreadCount > 0 ? (
-            <FButton variant="ghost" size="sm" onPress={markAllAsRead}>
+            <FButton variant="ghost" size="sm" onPress={() => markAllAsRead(activeMode)}>
               {t('notifications.markAllRead')}
             </FButton>
           ) : (

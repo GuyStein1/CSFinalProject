@@ -89,7 +89,7 @@ describe('NotificationContext', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => { await result.current.markAllAsRead(); });
-    expect(mockApi.put).toHaveBeenCalledWith('/api/notifications/read-all');
+    expect(mockApi.put).toHaveBeenCalledWith('/api/notifications/read-all', null, { params: {} });
     expect(result.current.notifications.every((n) => n.is_read)).toBe(true);
   });
 

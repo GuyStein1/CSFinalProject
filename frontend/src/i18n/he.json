@@ -1041,8 +1041,12 @@
       "verifiedMsg": "זהותך אומתה. תג מופיע בפרופיל הציבורי שלך.",
       "pending": "ממתין לסקירה",
       "pendingMsg": "תמונת האימות שלך נמצאת בסקירה על ידי מנהל.",
-      "uploadMsg": "העלה תמונה של תעודת הזהות שלך כדי לקבל תג מאומת בפרופיל שלך. זה עוזר למזמינים לבטוח בך.",
-      "uploadBtn": "העלה תמונת תעודת זהות"
+      "uploadMsg": "העלה תמונה של תעודת הזהות שלך וסלפי כדי לקבל תג מאומת בפרופיל שלך. זה עוזר למזמינים לבטוח בך.",
+      "startBtn": "התחל אימות",
+      "pickPhotosMsg": "העלה תמונה של תעודת הזהות שלך וסלפי של הפנים שלך. שניהם נדרשים.",
+      "idLabel": "תעודת זהות",
+      "selfieLabel": "סלפי",
+      "submitBtn": "שלח לבדיקה"
     },
     "certifications": {
       "kicker": "הסמכות",
@@ -1664,6 +1668,55 @@
     }
   },
   "admin": {
+    "header": {
+      "kicker": "FixIt ניהול",
+      "title": "ניהול ביקורות"
+    },
+    "tabs": {
+      "reviews": "ביקורות ({{count}})",
+      "verifications": "אימותים ({{count}})",
+      "certifications": "הסמכות ({{count}})"
+    },
+    "reviews": {
+      "reviewer": "מבקר",
+      "reviewee": "מבוקר",
+      "task": "משימה: {{title}}",
+      "reports": "דיווחים ({{count}}):",
+      "by": "על ידי {{name}}",
+      "hideReview": "הסתר ביקורת",
+      "dismiss": "דחה"
+    },
+    "verifications": {
+      "reject": "דחה",
+      "approve": "אשר",
+      "idPhoto": "תעודת זהות",
+      "selfie": "סלפי",
+      "submitted": "הוגש: {{date}}"
+    },
+    "certifications": {
+      "reject": "דחה",
+      "approve": "אשר",
+      "submitted": "הוגש: {{date}}"
+    },
+    "reasons": {
+      "SPAM": "ספאם",
+      "OFFENSIVE": "פוגעני",
+      "MISLEADING": "מטעה",
+      "OTHER": "אחר"
+    },
+    "categories": {
+      "ELECTRICITY": "חשמל",
+      "PLUMBING": "אינסטלציה"
+    },
+    "empty": {
+      "reviewsTitle": "הכל נקי!",
+      "reviewsMessage": "אין ביקורות מסומנות לניהול.",
+      "verificationsTitle": "אין אימותים ממתינים",
+      "verificationsMessage": "כל בקשות האימות טופלו.",
+      "certificationsTitle": "אין הסמכות ממתינות",
+      "certificationsMessage": "כל בקשות ההסמכה טופלו."
+    },
+    "loading": "טוען ביקורות מסומנות...",
     "errors": {
       "loadFlagged": "טעינת הביקורות המסומנות נכשלה",
       "hideReview": "הסתרת הביקורת נכשלה",
