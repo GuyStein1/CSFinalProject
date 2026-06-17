@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -13,7 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { sendEmailVerification } from 'firebase/auth';
+
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { auth } from '../config/firebase';
@@ -32,8 +32,6 @@ interface Props {
 }
 
 export default function RequesterDashboard({ navigation }: Props) {
-  const [emailVerified, setEmailVerified] = useState(true);
-  const [verificationSent, setVerificationSent] = useState(false);
   const [latestOpenTask, setLatestOpenTask] = useState<{
     id: string;
     title: string;
@@ -56,10 +54,6 @@ export default function RequesterDashboard({ navigation }: Props) {
       ? t('dashboard.greeting.afternoon')
       : t('dashboard.greeting.evening');
 
-  useEffect(() => {
-    if (user && !user.emailVerified) setEmailVerified(false);
-  }, [user]);
-
   const fetchLatestOpenTask = useCallback(async () => {
     try {
       const res = await api.get('/api/users/me/tasks', { params: { limit: 50 } });
@@ -78,16 +72,6 @@ export default function RequesterDashboard({ navigation }: Props) {
       void fetchLatestOpenTask();
     }, [fetchLatestOpenTask]),
   );
-
-  const handleResendVerification = async () => {
-    if (!user) return;
-    try {
-      await sendEmailVerification(user);
-      setVerificationSent(true);
-    } catch {
-      // silently fail
-    }
-  };
 
   const navigateToCreate = (category?: Category) => {
     navigation.navigate('CreateTask', category ? { category } : undefined);
@@ -180,7 +164,7 @@ export default function RequesterDashboard({ navigation }: Props) {
         {latestOpenTask && (() => {
           const meta = CATEGORY_METADATA[latestOpenTask.category as keyof typeof CATEGORY_METADATA];
           return (
-            <View style={[styles.quickAccess, isRTL && styles.quickAccessRTL]}>
+            <View style={styles.quickAccess}>
               <Pressable
                 onPress={() => navigation.navigate('TaskDetails', { taskId: latestOpenTask.id })}
                 accessibilityRole="button"
@@ -211,34 +195,6 @@ export default function RequesterDashboard({ navigation }: Props) {
         })()}
 
         <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
-          {!emailVerified && (
-            <View style={styles.verifyBanner}>
-            <View style={styles.verifyIcon}>
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={18}
-                color={brandColors.warning}
-              />
-            </View>
-            <View style={styles.verifyCopy}>
-              <Text style={[typography.label, { color: brandColors.textPrimary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.verify.title')}</Text>
-              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                {verificationSent ? t('dashboard.verify.sent') : t('dashboard.verify.pending')}
-              </Text>
-            </View>
-            {!verificationSent && (
-              <Pressable
-                onPress={() => void handleResendVerification()}
-                accessibilityRole="button"
-                accessibilityLabel="Resend verification email"
-                style={({ pressed }) => [styles.verifyBtn, { opacity: pressed ? 0.75 : 1 }]}
-              >
-                <Text style={[typography.caption, styles.verifyBtnText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('dashboard.verify.resend')}</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
-
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
@@ -517,41 +473,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 1120,
     alignSelf: 'center',
-  },
-  verifyBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: brandColors.surface,
-    borderWidth: 1,
-    borderColor: brandColors.warningSoft,
-    ...shadows.sm,
-  },
-  verifyIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: brandColors.warningSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifyCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  verifyBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.pill,
-    backgroundColor: brandColors.warningSoft,
-  },
-  verifyBtnText: {
-    color: brandColors.warning,
-    fontWeight: '700',
   },
   section: {
     marginTop: spacing.xxxl,

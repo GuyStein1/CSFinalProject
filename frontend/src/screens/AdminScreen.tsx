@@ -19,6 +19,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton, FCard } from '../components/ui';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import { brandColors, spacing, radii, typography, shadows } from '../theme';
 
 type AdminTab = 'reviews' | 'verifications' | 'certifications';
@@ -49,6 +50,7 @@ interface PendingVerification {
   email: string;
   avatar_url: string | null;
   verification_photo_url: string | null;
+  verification_selfie_url: string | null;
   created_at: string;
 }
 
@@ -66,16 +68,9 @@ interface PendingCertification {
   };
 }
 
-const CERT_CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
-  ELECTRICITY: { label: 'Electricity', color: '#D4A017' },
-  PLUMBING: { label: 'Plumbing', color: '#0D7C6E' },
-};
-
-const REASON_LABELS: Record<string, string> = {
-  SPAM: 'Spam',
-  OFFENSIVE: 'Offensive',
-  MISLEADING: 'Misleading',
-  OTHER: 'Other',
+const CERT_CATEGORY_COLORS: Record<string, string> = {
+  ELECTRICITY: '#D4A017',
+  PLUMBING: '#0D7C6E',
 };
 
 function StarRow({ rating }: { rating: number }) {
@@ -95,6 +90,7 @@ function StarRow({ rating }: { rating: number }) {
 
 export default function AdminScreen() {
   const { t } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState<AdminTab>('reviews');
   const [reviews, setReviews] = useState<FlaggedReview[]>([]);
   const [verifications, setVerifications] = useState<PendingVerification[]>([]);
@@ -210,33 +206,41 @@ export default function AdminScreen() {
     await signOut(auth);
   };
 
-  if (loading) return <LoadingScreen label="Loading flagged reviews..." />;
+  if (loading) return <LoadingScreen label={t('admin.loading')} />;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { direction: 'ltr' }]}>
         <View style={styles.headerLeft}>
           <View style={styles.headerIconShell}>
             <MaterialCommunityIcons name="shield-account" size={20} color={brandColors.secondary} />
           </View>
-          <View>
-            <Text style={styles.headerKicker}>FixIt Admin</Text>
-            <Text style={styles.headerTitle}>Review Moderation</Text>
-          </View>
+          <Text style={styles.headerTitle}>{t('admin.header.kicker')}</Text>
         </View>
-        <Pressable onPress={() => void handleLogout()} style={styles.logoutBtn}>
-          <MaterialCommunityIcons name="logout" size={18} color={brandColors.danger} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Pressable
+            onPress={() => void changeLanguage(language === 'en' ? 'he' : 'en')}
+            style={styles.langBtn}
+          >
+            <MaterialCommunityIcons name="web" size={22} color={brandColors.secondary} />
+            <View style={styles.langBadge}>
+              <Text style={styles.langBadgeText}>{language === 'en' ? 'EN' : 'עב'}</Text>
+            </View>
+          </Pressable>
+          <Pressable onPress={() => void handleLogout()} style={styles.logoutBtn}>
+            <MaterialCommunityIcons name="logout" size={18} color={brandColors.danger} />
+          </Pressable>
+        </View>
       </View>
 
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { direction: 'ltr' }]}>
         <Pressable
           style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
           onPress={() => setActiveTab('reviews')}
         >
           <MaterialCommunityIcons name="flag-outline" size={16} color={activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.bodyMedium, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
-            Reviews ({reviews.length})
+            {t('admin.tabs.reviews', { count: reviews.length })}
           </Text>
         </Pressable>
         <Pressable
@@ -245,7 +249,7 @@ export default function AdminScreen() {
         >
           <MaterialCommunityIcons name="shield-check-outline" size={16} color={activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.bodyMedium, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
-            Verifications ({verifications.length})
+            {t('admin.tabs.verifications', { count: verifications.length })}
           </Text>
         </Pressable>
         <Pressable
@@ -254,7 +258,7 @@ export default function AdminScreen() {
         >
           <MaterialCommunityIcons name="certificate-outline" size={16} color={activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted} />
           <Text style={[typography.bodyMedium, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
-            Certifications ({pendingCerts.length})
+            {t('admin.tabs.certifications', { count: pendingCerts.length })}
           </Text>
         </Pressable>
       </View>
@@ -265,17 +269,17 @@ export default function AdminScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const catMeta = CERT_CATEGORY_LABELS[item.category];
+            const catColor = CERT_CATEGORY_COLORS[item.category] ?? brandColors.primary;
             return (
-              <FCard style={{ ...styles.reviewCard, borderLeftColor: catMeta?.color ?? brandColors.primary }}>
+              <FCard style={{ ...styles.reviewCard, borderLeftColor: catColor }}>
                 <View style={styles.reviewMeta}>
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>{item.fixer.full_name}</Text>
                     <Text style={[typography.caption, { color: brandColors.textMuted }]}>{item.fixer.email}</Text>
                   </View>
-                  <View style={[styles.reasonBadge, { backgroundColor: (catMeta?.color ?? brandColors.primary) + '20' }]}>
-                    <Text style={[typography.caption, { color: catMeta?.color ?? brandColors.primary, fontWeight: '700' }]}>
-                      {catMeta?.label ?? item.category}
+                  <View style={[styles.reasonBadge, { backgroundColor: catColor + '20' }]}>
+                    <Text style={[typography.caption, { color: catColor, fontWeight: '700' }]}>
+                      {t(`admin.categories.${item.category}`, { defaultValue: item.category })}
                     </Text>
                   </View>
                 </View>
@@ -287,7 +291,7 @@ export default function AdminScreen() {
                 )}
 
                 <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                  Submitted: {new Date(item.created_at).toLocaleDateString()}
+                  {t('admin.certifications.submitted', { date: new Date(item.created_at).toLocaleDateString() })}
                 </Text>
 
                 <View style={styles.actions}>
@@ -298,7 +302,7 @@ export default function AdminScreen() {
                     onPress={() => void handleCertReview(item.id, 'reject')}
                     style={{ flex: 1 }}
                   >
-                    Reject
+                    {t('admin.certifications.reject')}
                   </FButton>
                   <FButton
                     size="sm"
@@ -306,7 +310,7 @@ export default function AdminScreen() {
                     onPress={() => void handleCertReview(item.id, 'approve')}
                     style={{ flex: 1 }}
                   >
-                    Approve
+                    {t('admin.certifications.approve')}
                   </FButton>
                 </View>
               </FCard>
@@ -315,8 +319,8 @@ export default function AdminScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="certificate-outline"
-              title="No pending certifications"
-              message="All certification requests have been handled."
+              title={t('admin.empty.certificationsTitle')}
+              message={t('admin.empty.certificationsMessage')}
             />
           }
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -334,20 +338,36 @@ export default function AdminScreen() {
                   <Text style={[typography.caption, { color: brandColors.textMuted }]}>{item.email}</Text>
                 </View>
                 <Text style={[typography.caption, { color: brandColors.textMuted }]}>
-                  {new Date(item.created_at).toLocaleDateString()}
+                  {t('admin.verifications.submitted', { date: new Date(item.created_at).toLocaleDateString() })}
                 </Text>
               </View>
-              {item.verification_photo_url && (
-                <Pressable onPress={() => setViewingPhotoUrl(item.verification_photo_url)}>
-                  <Image
-                    source={{ uri: item.verification_photo_url }}
-                    style={{ width: '100%', height: 200, borderRadius: radii.md, marginVertical: spacing.sm }}
-                    resizeMode="contain"
-                  />
-                  <Text style={[typography.caption, { color: brandColors.primary, textAlign: 'center', marginBottom: spacing.xs }]}>
-                    Tap to view full size
-                  </Text>
-                </Pressable>
+              {(item.verification_photo_url || item.verification_selfie_url) && (
+                <View style={{ flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.sm }}>
+                  {item.verification_photo_url && (
+                    <Pressable onPress={() => setViewingPhotoUrl(item.verification_photo_url)} style={{ flex: 1 }}>
+                      <Image
+                        source={{ uri: item.verification_photo_url }}
+                        style={{ width: '100%', height: 160, borderRadius: radii.md }}
+                        resizeMode="contain"
+                      />
+                      <Text style={[typography.caption, { color: brandColors.primary, textAlign: 'center', marginTop: spacing.xs }]}>
+                        {t('admin.verifications.idPhoto')}
+                      </Text>
+                    </Pressable>
+                  )}
+                  {item.verification_selfie_url && (
+                    <Pressable onPress={() => setViewingPhotoUrl(item.verification_selfie_url)} style={{ flex: 1 }}>
+                      <Image
+                        source={{ uri: item.verification_selfie_url }}
+                        style={{ width: '100%', height: 160, borderRadius: radii.md }}
+                        resizeMode="contain"
+                      />
+                      <Text style={[typography.caption, { color: brandColors.primary, textAlign: 'center', marginTop: spacing.xs }]}>
+                        {t('admin.verifications.selfie')}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               )}
               <View style={styles.actions}>
                 <FButton
@@ -357,7 +377,7 @@ export default function AdminScreen() {
                   onPress={() => void handleVerify(item.id, 'reject')}
                   style={{ flex: 1 }}
                 >
-                  Reject
+                  {t('admin.verifications.reject')}
                 </FButton>
                 <FButton
                   size="sm"
@@ -365,7 +385,7 @@ export default function AdminScreen() {
                   onPress={() => void handleVerify(item.id, 'approve')}
                   style={{ flex: 1 }}
                 >
-                  Approve
+                  {t('admin.verifications.approve')}
                 </FButton>
               </View>
             </FCard>
@@ -373,8 +393,8 @@ export default function AdminScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="shield-check-outline"
-              title="No pending verifications"
-              message="All verification requests have been handled."
+              title={t('admin.empty.verificationsTitle')}
+              message={t('admin.empty.verificationsMessage')}
             />
           }
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -388,14 +408,14 @@ export default function AdminScreen() {
           <FCard style={styles.reviewCard}>
             <View style={styles.reviewMeta}>
               <View style={styles.metaBlock}>
-                <Text style={[typography.caption, { color: brandColors.textMuted }]}>Reviewer</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('admin.reviews.reviewer')}</Text>
                 <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
                   {item.reviewer.full_name}
                 </Text>
               </View>
               <MaterialCommunityIcons name="arrow-right" size={16} color={brandColors.textMuted} />
               <View style={styles.metaBlock}>
-                <Text style={[typography.caption, { color: brandColors.textMuted }]}>Reviewee</Text>
+                <Text style={[typography.caption, { color: brandColors.textMuted }]}>{t('admin.reviews.reviewee')}</Text>
                 <Text style={[typography.bodyMedium, { color: brandColors.textPrimary }]}>
                   {item.reviewee.full_name}
                 </Text>
@@ -404,7 +424,7 @@ export default function AdminScreen() {
 
             {item.task && (
               <Text style={[typography.caption, { color: brandColors.textMuted, marginBottom: spacing.xs }]}>
-                Task: {item.task.title}
+                {t('admin.reviews.task', { title: item.task.title })}
               </Text>
             )}
 
@@ -420,18 +440,18 @@ export default function AdminScreen() {
 
             <View style={styles.reportsSection}>
               <Text style={[typography.bodyMedium, { color: brandColors.danger, marginBottom: spacing.xs }]}>
-                Reports ({item.reports.length}):
+                {t('admin.reviews.reports', { count: item.reports.length })}
               </Text>
               {item.reports.map((report) => (
                 <View key={report.id} style={{ marginBottom: spacing.xs }}>
                   <View style={styles.reportRow}>
                     <View style={[styles.reasonBadge, { backgroundColor: brandColors.dangerSoft }]}>
                       <Text style={[typography.caption, { color: brandColors.danger }]}>
-                        {REASON_LABELS[report.reason] ?? report.reason}
+                        {t(`admin.reasons.${report.reason}`, { defaultValue: report.reason })}
                       </Text>
                     </View>
                     <Text style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}>
-                      by {report.reporter.full_name}
+                      {t('admin.reviews.by', { name: report.reporter.full_name })}
                     </Text>
                   </View>
                   {report.details ? (
@@ -451,7 +471,7 @@ export default function AdminScreen() {
                 onPress={() => void handleHide(item.id)}
                 style={{ flex: 1 }}
               >
-                Hide Review
+                {t('admin.reviews.hideReview')}
               </FButton>
               <FButton
                 variant="secondary"
@@ -460,7 +480,7 @@ export default function AdminScreen() {
                 onPress={() => void handleDismiss(item.id)}
                 style={{ flex: 1 }}
               >
-                Dismiss
+                {t('admin.reviews.dismiss')}
               </FButton>
             </View>
           </FCard>
@@ -468,8 +488,8 @@ export default function AdminScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="check-circle-outline"
-            title="All clear!"
-            message="No flagged reviews to moderate."
+            title={t('admin.empty.reviewsTitle')}
+            message={t('admin.empty.reviewsMessage')}
           />
         }
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -553,16 +573,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(241,181,69,0.22)',
   },
-  headerKicker: {
-    ...typography.caption,
-    color: brandColors.secondary,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: brandColors.textOnDark,
+  },
+  langBtn: {
+    position: 'relative' as const,
+    padding: spacing.xs,
+  },
+  langBadge: {
+    position: 'absolute' as const,
+    bottom: 0,
+    right: -2,
+    backgroundColor: brandColors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 3,
+    minWidth: 16,
+    alignItems: 'center' as const,
+  },
+  langBadgeText: {
+    fontSize: 8,
+    fontWeight: '800' as const,
+    color: brandColors.white,
+    lineHeight: 12,
   },
   logoutBtn: {
     flexDirection: 'row',

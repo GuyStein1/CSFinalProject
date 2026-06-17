@@ -3,7 +3,8 @@ import { TaskStatus, BidStatus } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { prisma } from '../config/prisma';
-import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { NotFoundError, ConflictError, ForbiddenError, UnauthorizedError } from '../utils/errors';
+import admin from '../config/firebaseAdmin';
 import { updateUserSchema, pushTokenSchema, createPortfolioItemSchema, submitVerificationSchema, submitCertificationSchema } from '../schemas';
 
 const router = Router();
@@ -137,6 +138,61 @@ router.put('/me', validate(updateUserSchema), async (req: Request, res: Response
   }
 });
 
+// PATCH /api/users/me/email-verified — mark email as verified (checks Firebase token)
+router.patch('/me/email-verified', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Re-verify the Firebase token to get the latest emailVerified status
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedError('Missing or invalid Authorization header');
+    }
+    const token = authHeader.slice(7);
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    if (!decoded.email_verified) {
+      return res.status(403).json({ error: { code: 'EMAIL_NOT_VERIFIED', message: 'Email is not yet verified in Firebase' } });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { email_verified: true },
+    });
+    res.json({ user });
+  } catch (err) {
+    next(err as Error);
+  }
+});
+
+// DELETE /api/users/me — delete account from both database and Firebase
+router.delete('/me', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete related records in dependency order
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { user_id: userId } }),
+      prisma.message.deleteMany({ where: { sender_id: userId } }),
+      prisma.review.deleteMany({ where: { reviewer_id: userId } }),
+      prisma.portfolioItem.deleteMany({ where: { fixer_id: userId } }),
+      prisma.certification.deleteMany({ where: { fixer_id: userId } }),
+      prisma.bid.deleteMany({ where: { fixer_id: userId } }),
+      prisma.task.deleteMany({ where: { requester_id: userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    // Delete from Firebase
+    try {
+      await admin.auth().deleteUser(req.user.firebase_uid);
+    } catch {
+      // If Firebase deletion fails (e.g. user already deleted), continue
+    }
+
+    res.json({ message: 'Account deleted' });
+  } catch (err) {
+    next(err as Error);
+  }
+});
+
 // POST /api/users/me/push-token — register or update Expo push token
 router.post('/me/push-token', validate(pushTokenSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -191,6 +247,7 @@ router.post('/me/verification', validate(submitVerificationSchema), async (req: 
       data: {
         verification_status: 'PENDING',
         verification_photo_url: req.body.verification_photo_url,
+        verification_selfie_url: req.body.verification_selfie_url,
       },
     });
     res.json({ message: 'Verification submitted' });

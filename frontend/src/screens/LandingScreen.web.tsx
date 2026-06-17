@@ -76,6 +76,7 @@ const LANDING_CSS = `
 .fi-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; gap: 32px; padding: 18px 48px;
+  direction: ltr;
   background: rgba(245,241,232,0.82);
   backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-bottom: 1px solid rgba(201,190,175,0.4);

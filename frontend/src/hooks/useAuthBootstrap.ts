@@ -35,7 +35,7 @@ async function registerPushTokenSilently(): Promise<void> {
   }
 }
 
-export type AuthBootstrapStatus = 'checking' | 'signed_out' | 'needs_sync' | 'ready' | 'error';
+export type AuthBootstrapStatus = 'checking' | 'signed_out' | 'needs_sync' | 'needs_email_verify' | 'ready' | 'error';
 
 function getApiErrorStatus(error: unknown) {
   const response = (error as { response?: { status?: unknown } } | null)?.response;
@@ -69,7 +69,7 @@ export default function useAuthBootstrap() {
   const [isAdmin, setIsAdmin] = useState(false);
   const pushRegistered = useRef(false);
 
-  const verifyLocalUser = useCallback(async () => {
+  const verifyLocalUser = useCallback(async (): Promise<boolean> => {
     const res = await api.get('/api/users/me');
     setIsAdmin(res.data.user?.is_admin === true);
     // If the user activated fixer mode on another device, sync the local flag.
@@ -77,6 +77,8 @@ export default function useAuthBootstrap() {
       const key = `fixerOnboardingSeen_${auth.currentUser.uid}`;
       await AsyncStorage.setItem(key, 'true');
     }
+    // Return whether the backend considers this user email-verified
+    return res.data.user?.email_verified === true;
   }, []);
 
   const bootstrapSignedInUser = useCallback(
@@ -87,7 +89,13 @@ export default function useAuthBootstrap() {
       setSuggestedFullName(user.displayName ?? '');
 
       try {
-        await verifyLocalUser();
+        const backendVerified = await verifyLocalUser();
+        // Skip verification if backend already marks user as verified (e.g. seed users)
+        // or if Firebase says verified (e.g. Google sign-in)
+        if (!user.emailVerified && !backendVerified) {
+          setStatus('needs_email_verify');
+          return;
+        }
         setStatus('ready');
         if (!pushRegistered.current) {
           pushRegistered.current = true;
@@ -97,6 +105,27 @@ export default function useAuthBootstrap() {
         const status = getApiErrorStatus(nextError);
 
         if (status === 404) {
+          // Auto-sync: create local account from Firebase user data
+          try {
+            const name = user.displayName || user.email?.split('@')[0] || 'User';
+            await api.post('/api/auth/sync', {
+              full_name: name,
+              phone_number: undefined,
+            });
+            const bv = await verifyLocalUser();
+            if (!user.emailVerified && !bv) {
+              setStatus('needs_email_verify');
+              return;
+            }
+            setStatus('ready');
+            if (!pushRegistered.current) {
+              pushRegistered.current = true;
+              void registerPushTokenSilently();
+            }
+            return;
+          } catch {
+            // If auto-sync fails, fall through to error
+          }
           setStatus('needs_sync');
           return;
         }
@@ -155,12 +184,21 @@ export default function useAuthBootstrap() {
           full_name: fullName.trim(),
           phone_number: phoneNumber.trim() || undefined,
         });
-        await verifyLocalUser();
+        const backendVerified = await verifyLocalUser();
+        // New email/password users won't be verified yet
+        if (!auth.currentUser?.emailVerified && !backendVerified) {
+          setStatus('needs_email_verify');
+          return;
+        }
         setStatus('ready');
       } catch (nextError) {
         if (getApiErrorStatus(nextError) === 409) {
           try {
-            await verifyLocalUser();
+            const bv = await verifyLocalUser();
+            if (!auth.currentUser?.emailVerified && !bv) {
+              setStatus('needs_email_verify');
+              return;
+            }
             setStatus('ready');
             return;
           } catch {
@@ -185,6 +223,28 @@ export default function useAuthBootstrap() {
     await bootstrapSignedInUser(auth.currentUser);
   }, [bootstrapSignedInUser]);
 
+  const recheckEmailVerification = useCallback(async (): Promise<boolean> => {
+    const user = auth.currentUser;
+    if (!user) return false;
+    await user.reload();
+    if (user.emailVerified) {
+      // Sync verified status to backend
+      try {
+        await user.getIdToken(true); // force token refresh so backend sees updated claims
+        await api.patch('/api/users/me/email-verified');
+      } catch {
+        // non-fatal — the user is verified in Firebase, backend will catch up
+      }
+      setStatus('ready');
+      if (!pushRegistered.current) {
+        pushRegistered.current = true;
+        void registerPushTokenSilently();
+      }
+      return true;
+    }
+    return false;
+  }, []);
+
   const logOut = useCallback(async () => {
     disconnectSocket(); // disconnect before Firebase sign-out so the socket doesn't linger
     await signOut(auth);
@@ -198,6 +258,7 @@ export default function useAuthBootstrap() {
     isAdmin,
     signIn,
     syncLocalAccount,
+    recheckEmailVerification,
     retry,
     logOut,
   };

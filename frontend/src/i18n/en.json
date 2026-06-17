@@ -119,6 +119,18 @@
       "sentDescription": "Check your inbox. We sent a reset link to {{email}}.",
       "failed": "Failed to send reset email"
     },
+    "emailVerify": {
+      "title": "Verify your email",
+      "message": "We sent a verification link to {{email}}. Please check your inbox and click the link to continue.",
+      "resend": "Resend email",
+      "resent": "Email sent!",
+      "resentMessage": "A verification email has been sent. Please check your inbox.",
+      "checkButton": "I've verified my email",
+      "signOut": "Sign out",
+      "notVerifiedYet": "Your email is not verified yet. Please check your inbox and click the verification link, then try again.",
+      "signOutConfirmTitle": "Sign out",
+      "signOutConfirmMessage": "Are you sure you want to sign out?"
+    },
     "needsSync": {
       "title": "Finish your account setup",
       "description": "You are signed in with Firebase, but this account does not exist in the FixIt database yet.",
@@ -149,12 +161,14 @@
       "eyebrow": "Workspace",
       "secureSession": "Secure session",
       "verifiedEmail": "Verified email",
-      "emailNotVerified": "Email not verified"
+      "emailNotVerified": "Email not verified",
+      "defaultName": "FixIt account"
     },
     "section": {
       "account": "Account",
       "preferences": "Preferences",
-      "session": "Session"
+      "session": "Session",
+      "danger": "Danger Zone"
     },
     "account": {
       "email": {
@@ -183,7 +197,9 @@
     },
     "session": {
       "copy": "Log out of this device. Your posted tasks, bids, and profile details stay saved.",
-      "logout": "Log Out"
+      "logout": "Log Out",
+      "deleteAccount": "Delete Account",
+      "deleteCopy": "Permanently delete your account and all associated data. This action cannot be undone."
     },
     "alerts": {
       "logOut": {
@@ -191,10 +207,17 @@
         "message": "Are you sure you want to log out?",
         "confirm": "Log Out"
       },
+      "deleteAccount": {
+        "title": "Delete Account",
+        "message": "Are you sure you want to permanently delete your account? This will remove all your data, tasks, bids, and messages. This cannot be undone.",
+        "confirm": "Delete Account",
+        "error": "Failed to delete account."
+      },
       "passwordReset": {
         "successTitle": "Success",
         "success": "Check your inbox for a password reset link.",
-        "error": "Failed to send password reset email."
+        "error": "Failed to send password reset email.",
+        "sentLabel": "Reset link sent"
       },
       "phone": {
         "savedTitle": "Saved",
@@ -638,6 +661,7 @@
       "markCompleted": "Mark as Completed",
       "payFixer": "Pay Fixer",
       "confirmPayment": "Confirm Payment",
+      "paidCash": "Paid in Cash",
       "leaveReview": "Leave a Review",
       "editTask": "Edit Task",
       "chatWithBidder": "Chat"
@@ -932,7 +956,8 @@
       "trades": "Trades",
       "photos": "Photos",
       "profileCompletion": "Profile",
-      "tapToView": "Tap to view reviews"
+      "tapToView": "Tap to view reviews",
+      "new": "New"
     },
     "pushNotifications": {
       "label": "Push Notifications",
@@ -1011,8 +1036,12 @@
       "verifiedMsg": "Your identity has been verified. A badge appears on your public profile.",
       "pending": "Pending review",
       "pendingMsg": "Your verification photo is being reviewed by an admin.",
-      "uploadMsg": "Upload a photo of your ID to get a verified badge on your profile. This helps requesters trust you.",
-      "uploadBtn": "Upload ID Photo"
+      "uploadMsg": "Upload a photo of your ID and a selfie to get a verified badge on your profile. This helps requesters trust you.",
+      "startBtn": "Start Verification",
+      "pickPhotosMsg": "Upload a photo of your ID and a selfie of your face. Both are required.",
+      "idLabel": "ID Photo",
+      "selfieLabel": "Selfie",
+      "submitBtn": "Submit for Review"
     },
     "certifications": {
       "kicker": "Credentials",
@@ -1055,6 +1084,11 @@
     "review": "review",
     "reviews": "reviews",
     "respondsIn": "Responds in ~{{value}} {{unit}}",
+    "timeUnit": {
+      "min": "min",
+      "hr": "hr",
+      "days": "days"
+    },
     "tasksCompleted_one": "{{count}} task completed",
     "tasksCompleted_other": "{{count}} tasks completed",
     "report": {
@@ -1621,6 +1655,55 @@
     }
   },
   "admin": {
+    "header": {
+      "kicker": "FixIt Admin",
+      "title": "Review Moderation"
+    },
+    "tabs": {
+      "reviews": "Reviews ({{count}})",
+      "verifications": "Verifications ({{count}})",
+      "certifications": "Certifications ({{count}})"
+    },
+    "reviews": {
+      "reviewer": "Reviewer",
+      "reviewee": "Reviewee",
+      "task": "Task: {{title}}",
+      "reports": "Reports ({{count}}):",
+      "by": "by {{name}}",
+      "hideReview": "Hide Review",
+      "dismiss": "Dismiss"
+    },
+    "verifications": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "idPhoto": "ID Photo",
+      "selfie": "Selfie",
+      "submitted": "Submitted: {{date}}"
+    },
+    "certifications": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "submitted": "Submitted: {{date}}"
+    },
+    "reasons": {
+      "SPAM": "Spam",
+      "OFFENSIVE": "Offensive",
+      "MISLEADING": "Misleading",
+      "OTHER": "Other"
+    },
+    "categories": {
+      "ELECTRICITY": "Electricity",
+      "PLUMBING": "Plumbing"
+    },
+    "empty": {
+      "reviewsTitle": "All clear!",
+      "reviewsMessage": "No flagged reviews to moderate.",
+      "verificationsTitle": "No pending verifications",
+      "verificationsMessage": "All verification requests have been handled.",
+      "certificationsTitle": "No pending certifications",
+      "certificationsMessage": "All certification requests have been handled."
+    },
+    "loading": "Loading flagged reviews...",
     "errors": {
       "loadFlagged": "Failed to load flagged reviews",
       "hideReview": "Failed to hide review",

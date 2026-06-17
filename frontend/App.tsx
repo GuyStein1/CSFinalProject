@@ -10,8 +10,10 @@ import { navigationTheme, theme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import AdminNavigator from './src/navigation/AdminNavigator';
 import AuthScreen from './src/screens/AuthScreen';
+import EmailVerifyScreen from './src/screens/EmailVerifyScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { ActiveModeProvider } from './src/context/ActiveModeContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
@@ -173,15 +175,25 @@ function RootContent() {
     );
   }
 
-  // On web, show the standard loading screen while auth is checking so the user
-  // doesn't see a flash of the AuthScreen before the landing page appears.
-  if (USE_SIGNED_OUT_LANDING && authState.status === 'checking') {
+  // Show the standard loading screen while auth is checking so the user
+  // doesn't see a flash between screens.
+  if (authState.status === 'checking') {
     return <LoadingScreen />;
   }
 
   const authInitialMode: LandingAuthMode | 'welcome' = USE_SIGNED_OUT_LANDING
     ? signedOutSurface === 'auth' ? authMode : 'welcome'
     : 'login';
+
+  if (authState.status === 'needs_email_verify') {
+    return (
+      <EmailVerifyScreen
+        email={authState.userEmail}
+        onRecheck={authState.recheckEmailVerification}
+        onLogOut={handleAuthLogOut}
+      />
+    );
+  }
 
   if (authState.status !== 'ready') {
     return (
@@ -208,6 +220,7 @@ function RootContent() {
   }
 
   return (
+    <ActiveModeProvider>
     <NotificationProvider>
       <NavigationContainer
         ref={navigationRef}
@@ -221,6 +234,7 @@ function RootContent() {
       </NavigationContainer>
       <GlobalCelebration />
     </NotificationProvider>
+    </ActiveModeProvider>
   );
 }
 

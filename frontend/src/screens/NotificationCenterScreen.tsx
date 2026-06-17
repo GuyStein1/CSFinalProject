@@ -13,6 +13,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { useNotificationContext, type AppNotification, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
+import { useActiveMode } from '../context/ActiveModeContext';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
 import { FButton } from '../components/ui';
@@ -67,7 +68,6 @@ function NotificationItem({
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const accent = getAccentColor(notification.type);
   const icon = getIcon(notification.type);
-  const role = getNotificationRole(notification);
 
   const timeAgo = (dateStr: string): string => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -106,11 +106,6 @@ function NotificationItem({
           >
             {notification.title}
           </Text>
-          {role && (
-            <View style={[styles.rolePill, { backgroundColor: role === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-              <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${role}`)}</Text>
-            </View>
-          )}
           <Text
             style={[typography.bodySm, { color: brandColors.textSecondary, marginTop: 2, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
             numberOfLines={2}
@@ -139,9 +134,9 @@ function NotificationItem({
 export default function NotificationCenterScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { activeMode } = useActiveMode();
   const {
     notifications,
-    unreadCount: unreadCountFn,
     loading,
     refetch,
     markAsRead,
@@ -149,15 +144,21 @@ export default function NotificationCenterScreen() {
     deleteOne,
     deleteAll,
   } = useNotificationContext();
-  const unreadCount = unreadCountFn();
+
+  // Filter by active mode using inferred role so old null-role records are classified by type
+  const filtered = notifications.filter(n => {
+    const role = getNotificationRole(n);
+    return role === activeMode || role === null;
+  });
+  const unreadCount = filtered.filter(n => !n.is_read).length;
 
   useFocusEffect(
     React.useCallback(() => {
       refetch().then(() => {
         // Mark all as read after a short delay so user sees the unread styling briefly
-        setTimeout(() => markAllAsRead(), 1500);
+        setTimeout(() => markAllAsRead(activeMode), 1500);
       });
-    }, [refetch, markAllAsRead]),
+    }, [refetch, markAllAsRead, activeMode]),
   );
 
   const handleDeleteAll = () => {
@@ -184,7 +185,13 @@ export default function NotificationCenterScreen() {
     }
 
     if (!notification.related_entity_id) return;
-    const nav = navigation as never as { navigate: (s: string, p: object) => void };
+    const nav = navigation as never as { navigate: (s: string, p?: object) => void };
+
+    // Auto-switch to the correct mode before navigating
+    const notifRole = notification.user_role;
+    if (notifRole && notifRole !== activeMode) {
+      nav.navigate('Main', { screen: notifRole === 'fixer' ? 'FixerMode' : 'RequesterMode' });
+    }
 
     if (notification.type === 'NEW_MESSAGE') {
       nav.navigate('Chat', { taskId: notification.related_entity_id });
@@ -192,7 +199,8 @@ export default function NotificationCenterScreen() {
     }
 
     if (notification.related_entity_type === 'Task') {
-      const isFixerNotif = ['BID_ACCEPTED', 'BID_REJECTED', 'TASK_COMPLETED', 'TASK_CANCELED'].includes(notification.type);
+      const isFixerNotif = notifRole === 'fixer' ||
+        ['BID_ACCEPTED', 'BID_REJECTED'].includes(notification.type);
       nav.navigate(
         isFixerNotif ? 'TaskDetailsFixer' : 'TaskDetails',
         { taskId: notification.related_entity_id },
@@ -200,17 +208,17 @@ export default function NotificationCenterScreen() {
     }
   };
 
-  if (loading && notifications.length === 0) {
+  if (loading && filtered.length === 0) {
     return <LoadingScreen label={t('notifications.loading')} />;
   }
 
   return (
     <View style={styles.container}>
       {/* Top action bar */}
-      {notifications.length > 0 && (
+      {filtered.length > 0 && (
         <View style={styles.topBar}>
           {unreadCount > 0 ? (
-            <FButton variant="ghost" size="sm" onPress={markAllAsRead}>
+            <FButton variant="ghost" size="sm" onPress={() => markAllAsRead(activeMode)}>
               {t('notifications.markAllRead')}
             </FButton>
           ) : (
@@ -223,12 +231,12 @@ export default function NotificationCenterScreen() {
       )}
 
       <FlatList
-        data={notifications}
+        data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <NotificationItem notification={item} onPress={handlePress} onDelete={deleteOne} />
         )}
-        contentContainerStyle={notifications.length === 0 ? styles.emptyContainer : styles.listContent}
+        contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : styles.listContent}
         refreshing={loading}
         onRefresh={refetch}
         ItemSeparatorComponent={() => (
@@ -315,19 +323,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: brandColors.outlineLight,
     marginLeft: spacing.lg + 40 + spacing.md, // aligned with content
-  },
-  rolePill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 3,
-    marginBottom: 2,
-  },
-  rolePillText: {
-    color: brandColors.white,
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 14,
   },
 });

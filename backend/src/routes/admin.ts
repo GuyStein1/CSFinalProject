@@ -121,6 +121,7 @@ router.get(
             email: true,
             avatar_url: true,
             verification_photo_url: true,
+            verification_selfie_url: true,
             created_at: true,
           },
           orderBy: { updated_at: 'asc' },
@@ -155,19 +156,11 @@ router.post(
         data: { verification_status: status },
       });
 
-      // Notify the fixer
-      await prisma.notification.create({
-        data: {
-          user_id: user.id,
-          title: action === 'approve' ? 'Verification approved!' : 'Verification rejected',
-          body: action === 'approve'
-            ? 'Your identity has been verified. A badge will now appear on your profile.'
-            : 'Your verification was not approved. You can resubmit with a clearer photo.',
-          type: action === 'approve' ? 'VERIFICATION_APPROVED' : 'VERIFICATION_REJECTED',
-          related_entity_id: user.id,
-          related_entity_type: 'user',
-        },
-      });
+      // Notify the fixer (i18n-aware)
+      const ntKey = action === 'approve' ? 'verificationApproved' : 'verificationRejected';
+      const notifType = action === 'approve' ? 'VERIFICATION_APPROVED' : 'VERIFICATION_REJECTED';
+      const nt = await getNotificationText(user.id, ntKey);
+      await sendNotification(user.id, nt.title, nt.body, notifType, user.id, 'user', 'fixer');
 
       res.json({ message: `Verification ${action}d` });
     } catch (err) {
@@ -262,7 +255,7 @@ router.post(
       const notifType = action === 'approve' ? 'CERTIFICATION_APPROVED' : 'CERTIFICATION_REJECTED';
       const key = action === 'approve' ? 'certificationApproved' : 'certificationRejected';
       const certNt = await getNotificationText(certification.fixer_id, key as 'certificationApproved' | 'certificationRejected', { category: categoryLabel, reason: rejection_note || '' });
-      await sendNotification(certification.fixer_id, certNt.title, certNt.body, notifType, certification.id, 'certification');
+      await sendNotification(certification.fixer_id, certNt.title, certNt.body, notifType, certification.id, 'certification', 'fixer');
 
       res.json({ message: `Certification ${action}d` });
     } catch (err) {

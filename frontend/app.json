@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "FixIt",
+    "owner": "fixit.dev",
     "slug": "fixit",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -40,7 +41,7 @@
       "url": "https://u.expo.dev/590098a4-2855-46b2-8afe-066e14687968"
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "extra": {
       "eas": {

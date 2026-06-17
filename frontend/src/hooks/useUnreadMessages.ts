@@ -6,27 +6,31 @@ import { auth } from '../config/firebase';
 const POLL_INTERVAL = 5_000;
 
 /**
- * Tracks total unread message count across all conversations.
+ * Tracks total unread message count across conversations.
+ * Accepts an optional mode ('requester' | 'fixer') to filter by role.
  * Refreshes on socket `receive_message` events and periodically.
  */
-export function useUnreadMessages() {
+export function useUnreadMessages(mode?: 'requester' | 'fixer') {
   const [unreadCount, setUnreadCount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetch = useCallback(async () => {
     if (!auth.currentUser) return;
     try {
-      const res = await api.get('/api/conversations');
+      const params: Record<string, string> = {};
+      if (mode) params.mode = mode;
+      const res = await api.get('/api/conversations', { params });
       const conversations: { unreadCount: number; taskStatus?: string }[] = res.data.conversations ?? [];
-      // Only count unread messages from active (IN_PROGRESS) conversations
+      // Count conversations with unread messages (not individual messages)
+      // so multiple messages from the same person count as one badge unit
       const total = conversations
-        .filter((c) => c.taskStatus === 'IN_PROGRESS')
-        .reduce((sum, c) => sum + c.unreadCount, 0);
+        .filter((c) => c.taskStatus === 'IN_PROGRESS' && c.unreadCount > 0)
+        .length;
       setUnreadCount(total);
     } catch {
       // non-fatal
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     void fetch();

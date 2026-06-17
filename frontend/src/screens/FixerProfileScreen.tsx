@@ -109,6 +109,9 @@ export default function FixerProfileScreen() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [verificationExpanded, setVerificationExpanded] = useState(false);
+  const [idPhotoUri, setIdPhotoUri] = useState<string | null>(null);
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [uploadingCert, setUploadingCert] = useState<string | null>(null);
   const [langOpen, setLangOpen] = useState(false);
@@ -276,18 +279,33 @@ export default function FixerProfileScreen() {
     }
   };
 
-  const handleSubmitVerification = async () => {
+  const pickVerificationPhoto = async (target: 'id' | 'selfie') => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.8,
       allowsEditing: true,
     });
-    if (result.canceled || !profile) return;
+    if (result.canceled) return;
+    if (target === 'id') setIdPhotoUri(result.assets[0].uri);
+    else setSelfieUri(result.assets[0].uri);
+  };
+
+  const handleSubmitVerification = async () => {
+    if (!idPhotoUri || !selfieUri || !profile) return;
     setUploadingVerification(true);
     try {
-      const url = await uploadImage(result.assets[0].uri, `verification/${profile.id}/${Date.now()}.jpg`);
-      await api.post('/api/users/me/verification', { verification_photo_url: url });
+      const [idUrl, selfieUrl] = await Promise.all([
+        uploadImage(idPhotoUri, `verification/${profile.id}/id_${Date.now()}.jpg`),
+        uploadImage(selfieUri, `verification/${profile.id}/selfie_${Date.now()}.jpg`),
+      ]);
+      await api.post('/api/users/me/verification', {
+        verification_photo_url: idUrl,
+        verification_selfie_url: selfieUrl,
+      });
       setProfile(p => p ? { ...p, verification_status: 'PENDING' } : p);
+      setVerificationExpanded(false);
+      setIdPhotoUri(null);
+      setSelfieUri(null);
       Alert.alert(t('fixerProfile.alerts.verificationSubmitted.title'), t('fixerProfile.alerts.verificationSubmitted.message'));
     } catch {
       Alert.alert(t('common.error'), t('fixerProfile.alerts.verificationError'));
@@ -351,6 +369,10 @@ export default function FixerProfileScreen() {
           end={heroGradientFixer.end}
           style={[styles.profileHero, isWide && styles.profileHeroWide]}
         >
+          <View
+            ref={(el: unknown) => { if (el && Platform.OS === 'web') { (el as HTMLElement).dir = 'ltr'; } }}
+            style={styles.heroInnerRow}
+          >
           <View style={styles.avatarWrapper}>
             <Pressable
               onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
@@ -388,15 +410,15 @@ export default function FixerProfileScreen() {
               <View style={styles.headerIconShell}>
                 <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
               </View>
-              <Text style={[styles.headerKicker, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
+              <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Text style={[styles.heroName, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start' }}>
+              <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
             </View>
-            <Text style={[styles.heroEmail, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
+            <Text style={[styles.heroEmail, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
           </View>
 
           <Pressable
@@ -408,7 +430,7 @@ export default function FixerProfileScreen() {
             }}
           >
             <Text style={styles.heroStatValue}>
-              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : 'New'}
+              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
             </Text>
             <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
             <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
@@ -416,6 +438,7 @@ export default function FixerProfileScreen() {
             </Text>
           </Pressable>
 
+          </View>
         </LinearGradient>
 
         <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
@@ -664,20 +687,69 @@ export default function FixerProfileScreen() {
                       {t('fixerProfile.verification.pendingMsg')}
                     </Text>
                   </View>
-                ) : (
+                ) : !verificationExpanded ? (
                   <>
                     <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.md, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
                       {t('fixerProfile.verification.uploadMsg')}
                     </Text>
                     <FButton
                       variant="secondary"
-                      icon="camera-outline"
-                      onPress={() => void handleSubmitVerification()}
-                      loading={uploadingVerification}
-                      disabled={uploadingVerification}
+                      icon="shield-check-outline"
+                      onPress={() => setVerificationExpanded(true)}
                       fullWidth
                     >
-                      {t('fixerProfile.verification.uploadBtn')}
+                      {t('fixerProfile.verification.startBtn')}
+                    </FButton>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[typography.body, { color: brandColors.textMuted, marginBottom: spacing.lg, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {t('fixerProfile.verification.pickPhotosMsg')}
+                    </Text>
+                    <View style={styles.verificationPhotos}>
+                      {/* ID Photo */}
+                      <View style={styles.verificationPhotoSlot}>
+                        <Pressable
+                          onPress={() => void pickVerificationPhoto('id')}
+                          style={[styles.verificationPhotoBtn, idPhotoUri && styles.verificationPhotoBtnFilled]}
+                        >
+                          {idPhotoUri ? (
+                            <Image source={{ uri: idPhotoUri }} style={styles.verificationPhotoPreview} />
+                          ) : (
+                            <MaterialCommunityIcons name="plus" size={32} color={brandColors.primary} />
+                          )}
+                        </Pressable>
+                        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                          {t('fixerProfile.verification.idLabel')}
+                        </Text>
+                      </View>
+                      {/* Selfie */}
+                      <View style={styles.verificationPhotoSlot}>
+                        <Pressable
+                          onPress={() => void pickVerificationPhoto('selfie')}
+                          style={[styles.verificationPhotoBtn, selfieUri && styles.verificationPhotoBtnFilled]}
+                        >
+                          {selfieUri ? (
+                            <Image source={{ uri: selfieUri }} style={styles.verificationPhotoPreview} />
+                          ) : (
+                            <MaterialCommunityIcons name="plus" size={32} color={brandColors.primary} />
+                          )}
+                        </Pressable>
+                        <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: 'center', marginTop: spacing.xs }]}>
+                          {t('fixerProfile.verification.selfieLabel')}
+                        </Text>
+                      </View>
+                    </View>
+                    <FButton
+                      variant="primary"
+                      icon="send"
+                      onPress={() => void handleSubmitVerification()}
+                      loading={uploadingVerification}
+                      disabled={uploadingVerification || !idPhotoUri || !selfieUri}
+                      fullWidth
+                      style={{ marginTop: spacing.lg }}
+                    >
+                      {t('fixerProfile.verification.submitBtn')}
                     </FButton>
                   </>
                 )}
@@ -924,16 +996,22 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     flexGrow: 0,
     flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.lg,
     borderBottomWidth: 3,
     borderBottomColor: brandColors.secondary,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
     ...shadows.md,
   },
   profileHeroWide: {
     padding: spacing.xl,
+  },
+  heroInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    flex: 1,
   },
   avatarWrapper: {
     position: 'relative',
@@ -1071,6 +1149,35 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     backgroundColor: brandColors.surfaceAlt,
+  },
+  verificationPhotos: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xl,
+  },
+  verificationPhotoSlot: {
+    alignItems: 'center',
+  },
+  verificationPhotoBtn: {
+    width: 100,
+    height: 100,
+    borderRadius: radii.lg,
+    borderWidth: 2,
+    borderColor: brandColors.outline,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: brandColors.surfaceAlt,
+  },
+  verificationPhotoBtnFilled: {
+    borderStyle: 'solid',
+    borderColor: brandColors.primary,
+    overflow: 'hidden',
+  },
+  verificationPhotoPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.lg - 2,
   },
   chipsWrap: {
     flexDirection: 'row',

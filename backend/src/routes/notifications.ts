@@ -8,25 +8,33 @@ const router = Router();
 router.use(authMiddleware);
 
 // GET /api/notifications — fetch user's notifications
+// Optional ?mode=requester|fixer filters by user_role (also includes null-role records as fallback)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       page = '1',
       limit = '20',
-    } = req.query as { page?: string; limit?: string };
+      mode,
+    } = req.query as { page?: string; limit?: string; mode?: string };
 
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
     const offset = (pageNum - 1) * limitNum;
 
+    const modeFilter = (mode === 'requester' || mode === 'fixer')
+      ? { OR: [{ user_role: mode }, { user_role: null }] }
+      : {};
+
+    const where = { user_id: req.user.id, ...modeFilter };
+
     const [notifications, total] = await prisma.$transaction([
       prisma.notification.findMany({
-        where: { user_id: req.user.id },
+        where,
         orderBy: { created_at: 'desc' },
         skip: offset,
         take: limitNum,
       }),
-      prisma.notification.count({ where: { user_id: req.user.id } }),
+      prisma.notification.count({ where }),
     ]);
 
     res.json({ notifications, total, page: pageNum, limit: limitNum });
@@ -37,10 +45,16 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 // PUT /api/notifications/read-all — mark all notifications as read
 // Must be defined BEFORE /:id/read so Express doesn't match "read-all" as :id
+// Optional ?mode=requester|fixer — only marks notifications for that role as read
 router.put('/read-all', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const mode = req.query.mode as string | undefined;
+    const modeFilter = (mode === 'requester' || mode === 'fixer')
+      ? { OR: [{ user_role: mode }, { user_role: null }] }
+      : {};
+
     await prisma.notification.updateMany({
-      where: { user_id: req.user.id, is_read: false },
+      where: { user_id: req.user.id, is_read: false, ...modeFilter },
       data: { is_read: true },
     });
 

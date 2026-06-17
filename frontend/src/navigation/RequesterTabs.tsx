@@ -40,7 +40,7 @@ export default function RequesterTabs() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
-  const { unreadCount } = useUnreadMessages();
+  const { unreadCount } = useUnreadMessages('requester');
   const [tutorialState, setTutorialState] = useState<'checking' | 'show' | 'done'>('checking');
 
   useEffect(() => {
@@ -97,6 +97,7 @@ export default function RequesterTabs() {
       <Tab.Screen
         name="Messages"
         component={ConversationListScreen}
+        initialParams={{ mode: 'requester' }}
         options={{
           tabBarLabel: t('nav.messages'),
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,

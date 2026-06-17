@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
+import { useActiveMode } from '../context/ActiveModeContext';
 import api from '../api/axiosInstance';
 import LoadingScreen from '../components/LoadingScreen';
 import EmptyState from '../components/EmptyState';
@@ -41,15 +42,15 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
   const { isRTL, language } = useLanguage();
+  const { activeMode } = useActiveMode();
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const mode = route?.params?.mode;
+  const mode = route?.params?.mode ?? activeMode;
 
   const load = useCallback(async () => {
     try {
-      const params = mode ? { mode } : {};
-      const res = await api.get('/api/conversations', { params });
+      const res = await api.get('/api/conversations', { params: { mode } });
       setConversations(res.data.conversations ?? []);
     } catch {
       // non-fatal
@@ -139,14 +140,9 @@ export default function ConversationListScreen({ route }: { route?: { params?: {
                   </Text>
                 )}
               </View>
-              <View style={styles.titleRow}>
-                <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
-                  {item.taskTitle}
-                </Text>
-                <View style={[styles.rolePill, { backgroundColor: item.userRole === 'requester' ? brandColors.primary : brandColors.secondary }]}>
-                  <Text style={[styles.rolePillText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t(`nav.mode.${item.userRole}`)}</Text>
-                </View>
-              </View>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
+                {item.taskTitle}
+              </Text>
               <View style={styles.bottomRow}>
                 <Text
                   style={[
@@ -227,23 +223,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: brandColors.white,
     fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 14,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  rolePill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.sm,
-  },
-  rolePillText: {
-    color: brandColors.white,
-    fontSize: 10,
     fontWeight: '700',
     lineHeight: 14,
   },

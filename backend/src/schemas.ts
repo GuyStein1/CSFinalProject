@@ -86,6 +86,7 @@ export const createPortfolioItemSchema = z.object({
 
 export const submitVerificationSchema = z.object({
   verification_photo_url: z.url(),
+  verification_selfie_url: z.url(),
 });
 
 export const completionPhotosSchema = z.object({

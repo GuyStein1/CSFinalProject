@@ -101,8 +101,10 @@ model User {
   avg_response_time_minutes  Float?
   verification_status        VerificationStatus @default(NONE)
   verification_photo_url     String?
+  verification_selfie_url    String?
   is_fixer                   Boolean            @default(false)
   is_admin                   Boolean            @default(false)
+  email_verified             Boolean            @default(false)
   created_at                 DateTime           @default(now())
   updated_at                 DateTime           @updatedAt
 

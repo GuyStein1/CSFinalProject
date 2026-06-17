@@ -116,8 +116,20 @@
       "emailPlaceholder": "הזן את כתובת האימייל שלך",
       "submit": "שלח קישור לאיפוס",
       "backToSignIn": "חזרה לכניסה",
-      "sentDescription": "בדוק את תיבת הדואר הנכנס. שלחנו קישור לאיפוס לכתובת {{email}}.",
+      "sentDescription": "בדוק את תיבת הדואר הנכנס. שלחנו קישור לאיפוס לכתובת \u2066{{email}}\u2069.",
       "failed": "שליחת האימייל לאיפוס נכשלה"
+    },
+    "emailVerify": {
+      "title": "אמת את המייל שלך",
+      "message": "שלחנו לינק אימות ל-\u2066{{email}}\u2069. בדוק את תיבת הדואר ולחץ על הלינק כדי להמשיך.",
+      "resend": "שלח שוב",
+      "resent": "המייל נשלח\u200F!",
+      "resentMessage": "מייל אימות נשלח. יש לבדוק את תיבת הדואר הנכנס.",
+      "checkButton": "אימתתי את המייל",
+      "signOut": "התנתק",
+      "notVerifiedYet": "המייל שלך עדיין לא אומת\u200F. יש לבדוק את תיבת הדואר הנכנס וללחוץ על הלינק לאימות\u200F, ואז לנסות שוב\u200F.",
+      "signOutConfirmTitle": "התנתקות",
+      "signOutConfirmMessage": "בטוח שאתה רוצה להתנתק\u200F?"
     },
     "needsSync": {
       "title": "השלם את הגדרת החשבון",
@@ -149,12 +161,14 @@
       "eyebrow": "סביבת עבודה",
       "secureSession": "סשן מאובטח",
       "verifiedEmail": "אימייל מאומת",
-      "emailNotVerified": "אימייל לא מאומת"
+      "emailNotVerified": "אימייל לא מאומת",
+      "defaultName": "חשבון FixIt"
     },
     "section": {
       "account": "חשבון",
       "preferences": "העדפות",
-      "session": "סשן"
+      "session": "סשן",
+      "danger": "אזור מסוכן"
     },
     "account": {
       "email": {
@@ -183,7 +197,9 @@
     },
     "session": {
       "copy": "התנתק מהמכשיר הזה. המשימות, ההצעות ופרטי הפרופיל שלך ישמרו.",
-      "logout": "התנתקות"
+      "logout": "התנתקות",
+      "deleteAccount": "מחיקת חשבון",
+      "deleteCopy": "מחיקת החשבון לצמיתות כולל כל הנתונים. לא ניתן לבטל פעולה זו."
     },
     "alerts": {
       "logOut": {
@@ -191,10 +207,17 @@
         "message": "האם אתה בטוח שברצונך להתנתק?",
         "confirm": "התנתקות"
       },
+      "deleteAccount": {
+        "title": "מחיקת חשבון",
+        "message": "בטוח שאתה רוצה למחוק את החשבון לצמיתות? כל הנתונים, המשימות, ההצעות וההודעות יימחקו. לא ניתן לבטל פעולה זו.",
+        "confirm": "מחק חשבון",
+        "error": "מחיקת החשבון נכשלה."
+      },
       "passwordReset": {
         "successTitle": "הצלחה",
         "success": "בדוק את תיבת הדואר הנכנס לקישור לאיפוס הסיסמה.",
-        "error": "שליחת האימייל לאיפוס הסיסמה נכשלה."
+        "error": "שליחת האימייל לאיפוס הסיסמה נכשלה.",
+        "sentLabel": "קישור איפוס נשלח"
       },
       "phone": {
         "savedTitle": "נשמר",
@@ -638,6 +661,7 @@
       "markCompleted": "סמן כהושלם",
       "payFixer": "שלם לפיקסר",
       "confirmPayment": "אשר תשלום",
+      "paidCash": "שולם במזומן",
       "leaveReview": "כתוב ביקורת",
       "editTask": "ערוך משימה",
       "chatWithBidder": "שוחח"
@@ -936,7 +960,8 @@
       "trades": "מקצועות",
       "photos": "תמונות",
       "profileCompletion": "פרופיל",
-      "tapToView": "לחץ לצפייה בביקורות"
+      "tapToView": "לחץ לצפייה בביקורות",
+      "new": "חדש"
     },
     "pushNotifications": {
       "label": "התראות",
@@ -1017,8 +1042,12 @@
       "verifiedMsg": "זהותך אומתה. תג מופיע בפרופיל הציבורי שלך.",
       "pending": "ממתין לסקירה",
       "pendingMsg": "תמונת האימות שלך נמצאת בסקירה על ידי מנהל.",
-      "uploadMsg": "העלה תמונה של תעודת הזהות שלך כדי לקבל תג מאומת בפרופיל שלך. זה עוזר למזמינים לבטוח בך.",
-      "uploadBtn": "העלה תמונת תעודת זהות"
+      "uploadMsg": "העלה תמונה של תעודת הזהות שלך וסלפי כדי לקבל תג מאומת בפרופיל שלך. זה עוזר למזמינים לבטוח בך.",
+      "startBtn": "התחל אימות",
+      "pickPhotosMsg": "העלה תמונה של תעודת הזהות שלך וסלפי של הפנים שלך. שניהם נדרשים.",
+      "idLabel": "תעודת זהות",
+      "selfieLabel": "סלפי",
+      "submitBtn": "שלח לבדיקה"
     },
     "certifications": {
       "kicker": "הסמכות",
@@ -1063,6 +1092,11 @@
     "review": "ביקורת",
     "reviews": "ביקורות",
     "respondsIn": "מגיב תוך ~{{value}} {{unit}}",
+    "timeUnit": {
+      "min": "דק׳",
+      "hr": "שע׳",
+      "days": "ימים"
+    },
     "tasksCompleted_one": "משימה אחת הושלמה",
     "tasksCompleted_two": "{{count}} משימות הושלמו",
     "tasksCompleted_many": "{{count}} משימות הושלמו",
@@ -1635,6 +1669,55 @@
     }
   },
   "admin": {
+    "header": {
+      "kicker": "FixIt ניהול",
+      "title": "ניהול ביקורות"
+    },
+    "tabs": {
+      "reviews": "ביקורות ({{count}})",
+      "verifications": "אימותים ({{count}})",
+      "certifications": "הסמכות ({{count}})"
+    },
+    "reviews": {
+      "reviewer": "מבקר",
+      "reviewee": "מבוקר",
+      "task": "משימה: {{title}}",
+      "reports": "דיווחים ({{count}}):",
+      "by": "על ידי {{name}}",
+      "hideReview": "הסתר ביקורת",
+      "dismiss": "דחה"
+    },
+    "verifications": {
+      "reject": "דחה",
+      "approve": "אשר",
+      "idPhoto": "תעודת זהות",
+      "selfie": "סלפי",
+      "submitted": "הוגש: {{date}}"
+    },
+    "certifications": {
+      "reject": "דחה",
+      "approve": "אשר",
+      "submitted": "הוגש: {{date}}"
+    },
+    "reasons": {
+      "SPAM": "ספאם",
+      "OFFENSIVE": "פוגעני",
+      "MISLEADING": "מטעה",
+      "OTHER": "אחר"
+    },
+    "categories": {
+      "ELECTRICITY": "חשמל",
+      "PLUMBING": "אינסטלציה"
+    },
+    "empty": {
+      "reviewsTitle": "הכל נקי!",
+      "reviewsMessage": "אין ביקורות מסומנות לניהול.",
+      "verificationsTitle": "אין אימותים ממתינים",
+      "verificationsMessage": "כל בקשות האימות טופלו.",
+      "certificationsTitle": "אין הסמכות ממתינות",
+      "certificationsMessage": "כל בקשות ההסמכה טופלו."
+    },
+    "loading": "טוען ביקורות מסומנות...",
     "errors": {
       "loadFlagged": "טעינת הביקורות המסומנות נכשלה",
       "hideReview": "הסתרת הביקורת נכשלה",
