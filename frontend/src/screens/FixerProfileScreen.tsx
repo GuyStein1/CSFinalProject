@@ -1079,7 +1079,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heroStat: {
-    flex: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
