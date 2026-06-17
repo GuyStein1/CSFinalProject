@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "FixIt",
+    "owner": "fixit.dev",
     "slug": "fixit",
     "version": "1.0.0",
     "orientation": "portrait",
