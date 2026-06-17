@@ -578,6 +578,7 @@ export default function AppNavigator() {
         headerShadowVisible: false,
         headerTitleStyle: { ...typography.h3, color: brandColors.textPrimary },
         contentStyle: { backgroundColor: theme.colors.background },
+        headerBackTitle: '',
       }}
     >
       <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
