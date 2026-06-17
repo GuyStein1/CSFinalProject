@@ -5,7 +5,6 @@ import {
   FlatList,
   Image,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -423,11 +422,7 @@ export default function TaskDetailsFixer({ route }: Props) {
 
           {/* Requester */}
           {task.requester && (
-            <Pressable
-              style={({ pressed }) => [styles.requesterRow, pressed && { opacity: 0.7 }]}
-              onPress={() => navigation.navigate('PublicProfile', { userId: task.requester_id })}
-              accessibilityRole="button"
-            >
+            <View style={styles.requesterRow}>
               {task.requester.avatar_url ? (
                 <Avatar.Image size={48} source={{ uri: task.requester.avatar_url }} />
               ) : (
@@ -441,12 +436,7 @@ export default function TaskDetailsFixer({ route }: Props) {
                   {t('taskDetailsFixer.requester')}
                 </Text>
               </View>
-              <MaterialCommunityIcons
-                name={isRTL ? 'chevron-left' : 'chevron-right'}
-                size={20}
-                color={brandColors.textMuted}
-              />
-            </Pressable>
+            </View>
           )}
 
           {/* Existing bid info */}
