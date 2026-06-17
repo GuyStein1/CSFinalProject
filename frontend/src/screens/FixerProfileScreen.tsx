@@ -406,22 +406,24 @@ export default function FixerProfileScreen() {
               </Pressable>
             </View>
 
-            <Pressable
-              style={styles.heroStat}
-              onPress={() => {
-                if (profile?.id) {
-                  navigation.navigate('PublicProfile', { userId: profile.id });
-                }
-              }}
-            >
-              <Text style={styles.heroStatValue}>
-                {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
-              </Text>
-              <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
-              <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                {t('fixerProfile.stats.tapToView')}
-              </Text>
-            </Pressable>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Pressable
+                style={styles.heroStat}
+                onPress={() => {
+                  if (profile?.id) {
+                    navigation.navigate('PublicProfile', { userId: profile.id });
+                  }
+                }}
+              >
+                <Text style={styles.heroStatValue}>
+                  {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
+                </Text>
+                <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
+                <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t('fixerProfile.stats.tapToView')}
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.heroCopy}>
