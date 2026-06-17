@@ -412,8 +412,10 @@ export default function FixerProfileScreen() {
               </View>
               <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start' }}>
-              <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{displayName}</Text>
+              </View>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
@@ -1061,7 +1063,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.textPrimary,
-    flex: 1,
   },
   heroEmail: {
     ...typography.bodySm,
