@@ -7,6 +7,18 @@ jobs:
   update:
     name: EAS Update
     type: update
+    env:
+      EXPO_PUBLIC_API_BASE_URL: "https://fixit-api-production.up.railway.app"
+      EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyAvNbDDvybBbgoUGUNcwCHLH4HTXQiqkIU"
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "fixit-dev-fd366.firebaseapp.com"
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID: "fixit-dev-fd366"
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "fixit-dev-fd366.firebasestorage.app"
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "621890219970"
+      EXPO_PUBLIC_FIREBASE_APP_ID: "1:621890219970:web:cd750b1a6435b0c43e705b"
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: "AIzaSyAvNbDDvybBbgoUGUNcwCHLH4HTXQiqkIU"
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: "621890219970-tdjilfo9uccptis5sjiaioi74ujugoo0.apps.googleusercontent.com"
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: "621890219970-vvds43iemsn80383fgq3ijga69eealro.apps.googleusercontent.com"
+      EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: "621890219970-jhq3m0dbvi533n40cihlb6o7ermcuv8c.apps.googleusercontent.com"
     params:
       channel: production
       message: Auto update from ${{ github.sha }}
