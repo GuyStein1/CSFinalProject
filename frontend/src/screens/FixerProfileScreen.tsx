@@ -373,35 +373,54 @@ export default function FixerProfileScreen() {
             ref={(el: unknown) => { if (el && Platform.OS === 'web') { (el as HTMLElement).dir = 'ltr'; } }}
             style={styles.heroInnerRow}
           >
-          <View style={styles.avatarWrapper}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.avatarWrapper}>
+              <Pressable
+                onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
+                accessibilityRole="button"
+                accessibilityLabel={profile?.avatar_url ? 'View profile photo' : 'Add profile photo'}
+                accessibilityState={{ busy: uploadingAvatar }}
+              >
+                {profile?.avatar_url ? (
+                  <Avatar.Image size={104} source={{ uri: profile.avatar_url }} />
+                ) : (
+                  <Avatar.Icon
+                    size={104}
+                    icon="account"
+                    style={{ backgroundColor: brandColors.primaryMuted }}
+                  />
+                )}
+              </Pressable>
+              <Pressable
+                style={styles.cameraBadge}
+                onPress={() => void pickNewAvatar()}
+                accessibilityRole="button"
+                accessibilityLabel="Change profile photo"
+                accessibilityState={{ busy: uploadingAvatar }}
+              >
+                {uploadingAvatar ? (
+                  <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
+                ) : (
+                  <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
+                )}
+              </Pressable>
+            </View>
+
             <Pressable
-              onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
-              accessibilityRole="button"
-              accessibilityLabel={profile?.avatar_url ? 'View profile photo' : 'Add profile photo'}
-              accessibilityState={{ busy: uploadingAvatar }}
+              style={styles.heroStat}
+              onPress={() => {
+                if (profile?.id) {
+                  navigation.navigate('PublicProfile', { userId: profile.id });
+                }
+              }}
             >
-              {profile?.avatar_url ? (
-                <Avatar.Image size={104} source={{ uri: profile.avatar_url }} />
-              ) : (
-                <Avatar.Icon
-                  size={104}
-                  icon="account"
-                  style={{ backgroundColor: brandColors.primaryMuted }}
-                />
-              )}
-            </Pressable>
-            <Pressable
-              style={styles.cameraBadge}
-              onPress={() => void pickNewAvatar()}
-              accessibilityRole="button"
-              accessibilityLabel="Change profile photo"
-              accessibilityState={{ busy: uploadingAvatar }}
-            >
-              {uploadingAvatar ? (
-                <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
-              ) : (
-                <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
-              )}
+              <Text style={styles.heroStatValue}>
+                {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
+              </Text>
+              <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
+              <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                {t('fixerProfile.stats.tapToView')}
+              </Text>
             </Pressable>
           </View>
 
@@ -412,31 +431,16 @@ export default function FixerProfileScreen() {
               </View>
               <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start' }}>
-              <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>{displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{displayName}</Text>
+              </View>
               {profile?.verification_status === 'APPROVED' && (
                 <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
               )}
             </View>
             <Text style={[styles.heroEmail, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
           </View>
-
-          <Pressable
-            style={styles.heroStat}
-            onPress={() => {
-              if (profile?.id) {
-                navigation.navigate('PublicProfile', { userId: profile.id });
-              }
-            }}
-          >
-            <Text style={styles.heroStatValue}>
-              {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
-            </Text>
-            <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
-            <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-              {t('fixerProfile.stats.tapToView')}
-            </Text>
-          </Pressable>
 
           </View>
         </LinearGradient>
@@ -1008,10 +1012,14 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   heroInnerRow: {
+    flexDirection: 'column',
+    gap: spacing.md,
+    flex: 1,
+  },
+  heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    flex: 1,
   },
   avatarWrapper: {
     position: 'relative',
@@ -1032,7 +1040,6 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   heroCopy: {
-    flex: 1,
     gap: spacing.xs,
   },
   headerKickerRow: {
@@ -1061,7 +1068,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0,
     color: brandColors.textPrimary,
-    flex: 1,
   },
   heroEmail: {
     ...typography.bodySm,
@@ -1073,8 +1079,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heroStat: {
-    minWidth: 82,
-    maxWidth: 100,
+    flex: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
