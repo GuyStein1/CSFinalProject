@@ -395,9 +395,7 @@ export default function FixerProfileScreen() {
         <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{displayName}</Text>
-        </View>
+        <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr', flexShrink: 1 }]}>{displayName}</Text>
         {profile?.verification_status === 'APPROVED' && (
           <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
         )}
