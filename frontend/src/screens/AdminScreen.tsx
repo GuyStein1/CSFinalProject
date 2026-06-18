@@ -238,8 +238,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
           onPress={() => setActiveTab('reviews')}
         >
-          <MaterialCommunityIcons name="flag-outline" size={16} color={activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.reviews', { count: reviews.length })}
           </Text>
         </Pressable>
@@ -247,8 +246,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'verifications' && styles.tabActive]}
           onPress={() => setActiveTab('verifications')}
         >
-          <MaterialCommunityIcons name="shield-check-outline" size={16} color={activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.verifications', { count: verifications.length })}
           </Text>
         </Pressable>
@@ -256,8 +254,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'certifications' && styles.tabActive]}
           onPress={() => setActiveTab('certifications')}
         >
-          <MaterialCommunityIcons name="certificate-outline" size={16} color={activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.certifications', { count: pendingCerts.length })}
           </Text>
         </Pressable>
