@@ -1711,6 +1711,38 @@
       "verification": "Failed to {{action}} verification",
       "certification": "Failed to {{action}} certification",
       "downloadPhoto": "Failed to download photo"
+    },
+    "confirm": {
+      "approveVerification": {
+        "title": "Approve {{name}}?",
+        "message": "This will grant them verified fixer status.",
+        "confirmLabel": "Approve"
+      },
+      "rejectVerification": {
+        "title": "Reject {{name}}?",
+        "message": "This will decline their verification request.",
+        "confirmLabel": "Reject"
+      },
+      "approveCertification": {
+        "title": "Approve {{name}}?",
+        "message": "This will approve their certification.",
+        "confirmLabel": "Approve"
+      },
+      "rejectCertification": {
+        "title": "Reject {{name}}?",
+        "message": "This will decline their certification request.",
+        "confirmLabel": "Reject"
+      },
+      "hideReview": {
+        "title": "Hide review by {{name}}?",
+        "message": "This will hide the review from public view.",
+        "confirmLabel": "Hide"
+      },
+      "dismissReports": {
+        "title": "Dismiss reports for {{name}}'s review?",
+        "message": "The reports will be cleared and the review kept visible.",
+        "confirmLabel": "Dismiss"
+      }
     }
   }
 }

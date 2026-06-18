@@ -162,9 +162,9 @@ export default function AdminScreen() {
 
   const handleHide = (reviewId: string, displayName: string) => {
     confirmAction(
-      `Hide review by ${displayName}?`,
-      'This will hide the review from public view.',
-      'Hide',
+      t('admin.confirm.hideReview.title', { name: displayName }),
+      t('admin.confirm.hideReview.message'),
+      t('admin.confirm.hideReview.confirmLabel'),
       true,
       async () => {
         try {
@@ -185,9 +185,9 @@ export default function AdminScreen() {
 
   const handleDismiss = (reviewId: string, displayName: string) => {
     confirmAction(
-      `Dismiss reports for ${displayName}'s review?`,
-      'The reports will be cleared and the review kept visible.',
-      'Dismiss',
+      t('admin.confirm.dismissReports.title', { name: displayName }),
+      t('admin.confirm.dismissReports.message'),
+      t('admin.confirm.dismissReports.confirmLabel'),
       false,
       async () => {
         try {
@@ -208,12 +208,11 @@ export default function AdminScreen() {
 
   const handleVerify = (userId: string, action: 'approve' | 'reject', displayName: string) => {
     const isApprove = action === 'approve';
+    const verifyKey = isApprove ? 'approveVerification' : 'rejectVerification';
     confirmAction(
-      isApprove ? `Approve ${displayName}?` : `Reject ${displayName}?`,
-      isApprove
-        ? 'This will grant them verified fixer status.'
-        : 'This will decline their verification request.',
-      isApprove ? 'Approve' : 'Reject',
+      t(`admin.confirm.${verifyKey}.title`, { name: displayName }),
+      t(`admin.confirm.${verifyKey}.message`),
+      t(`admin.confirm.${verifyKey}.confirmLabel`),
       !isApprove,
       async () => {
         try {
@@ -234,12 +233,11 @@ export default function AdminScreen() {
 
   const handleCertReview = (certId: string, action: 'approve' | 'reject', displayName: string) => {
     const isApprove = action === 'approve';
+    const certKey = isApprove ? 'approveCertification' : 'rejectCertification';
     confirmAction(
-      isApprove ? `Approve ${displayName}?` : `Reject ${displayName}?`,
-      isApprove
-        ? 'This will approve their certification.'
-        : 'This will decline their certification request.',
-      isApprove ? 'Approve' : 'Reject',
+      t(`admin.confirm.${certKey}.title`, { name: displayName }),
+      t(`admin.confirm.${certKey}.message`),
+      t(`admin.confirm.${certKey}.confirmLabel`),
       !isApprove,
       async () => {
         try {

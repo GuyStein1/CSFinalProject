@@ -1725,6 +1725,38 @@
       "verification": "{{action}} האימות נכשל",
       "certification": "{{action}} ההסמכה נכשל",
       "downloadPhoto": "הורדת התמונה נכשלה"
+    },
+    "confirm": {
+      "approveVerification": {
+        "title": "לאשר את {{name}}?",
+        "message": "פעולה זו תעניק להם מעמד מתקן מאומת.",
+        "confirmLabel": "אשר"
+      },
+      "rejectVerification": {
+        "title": "לדחות את {{name}}?",
+        "message": "פעולה זו תדחה את בקשת האימות שלהם.",
+        "confirmLabel": "דחה"
+      },
+      "approveCertification": {
+        "title": "לאשר את {{name}}?",
+        "message": "פעולה זו תאשר את ההסמכה שלהם.",
+        "confirmLabel": "אשר"
+      },
+      "rejectCertification": {
+        "title": "לדחות את {{name}}?",
+        "message": "פעולה זו תדחה את בקשת ההסמכה שלהם.",
+        "confirmLabel": "דחה"
+      },
+      "hideReview": {
+        "title": "להסתיר ביקורת של {{name}}?",
+        "message": "פעולה זו תסתיר את הביקורת מהצפייה הציבורית.",
+        "confirmLabel": "הסתר"
+      },
+      "dismissReports": {
+        "title": "לדחות דיווחים על ביקורת של {{name}}?",
+        "message": "הדיווחים יימחקו והביקורת תישאר גלויה.",
+        "confirmLabel": "דחה"
+      }
     }
   }
 }
