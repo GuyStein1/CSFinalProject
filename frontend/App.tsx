@@ -18,6 +18,7 @@ import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AccessibilityWidget from './src/components/AccessibilityWidget';
 import GlobalCelebration from './src/components/GlobalCelebration';
+import IdleLogoutWarning from './src/components/IdleLogoutWarning';
 import OnboardingNudge from './src/components/OnboardingNudge';
 import LoadingScreen from './src/components/LoadingScreen';
 import {
@@ -215,6 +216,7 @@ function RootContent() {
     return (
       <NavigationContainer theme={navigationTheme} documentTitle={{ formatter: () => 'FixIt' }}>
         <AdminNavigator />
+        {Platform.OS === 'web' && <IdleLogoutWarning onLogout={() => void handleAuthLogOut()} />}
       </NavigationContainer>
     );
   }
@@ -233,6 +235,7 @@ function RootContent() {
         <OnboardingNudge />
       </NavigationContainer>
       <GlobalCelebration />
+      {Platform.OS === 'web' && <IdleLogoutWarning onLogout={() => void handleAuthLogOut()} />}
     </NotificationProvider>
     </ActiveModeProvider>
   );

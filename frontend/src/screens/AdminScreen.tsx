@@ -142,64 +142,120 @@ export default function AdminScreen() {
     }, [fetchFlagged, fetchVerifications, fetchCertifications]),
   );
 
-  const handleHide = async (reviewId: string) => {
-    try {
-      await api.post(`/api/admin/reviews/${reviewId}/hide`);
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-    } catch {
-      const msg = t('admin.errors.hideReview');
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
+  const confirmAction = (
+    title: string,
+    message: string,
+    confirmLabel: string,
+    destructive: boolean,
+    onConfirm: () => void,
+  ) => {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+      return;
     }
+    Alert.alert(title, message, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: confirmLabel, style: destructive ? 'destructive' : 'default', onPress: onConfirm },
+    ]);
   };
 
-  const handleDismiss = async (reviewId: string) => {
-    try {
-      await api.post(`/api/admin/reviews/${reviewId}/dismiss`);
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-    } catch {
-      const msg = t('admin.errors.dismissReports');
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleHide = (reviewId: string, displayName: string) => {
+    confirmAction(
+      `Hide review by ${displayName}?`,
+      'This will hide the review from public view.',
+      'Hide',
+      true,
+      async () => {
+        try {
+          await api.post(`/api/admin/reviews/${reviewId}/hide`);
+          setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        } catch {
+          const msg = t('admin.errors.hideReview');
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
-  const handleVerify = async (userId: string, action: 'approve' | 'reject') => {
-    try {
-      await api.post(`/api/admin/users/${userId}/verify`, { action });
-      setVerifications((prev) => prev.filter((v) => v.id !== userId));
-    } catch {
-      const msg = t('admin.errors.verification', { action });
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleDismiss = (reviewId: string, displayName: string) => {
+    confirmAction(
+      `Dismiss reports for ${displayName}'s review?`,
+      'The reports will be cleared and the review kept visible.',
+      'Dismiss',
+      false,
+      async () => {
+        try {
+          await api.post(`/api/admin/reviews/${reviewId}/dismiss`);
+          setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        } catch {
+          const msg = t('admin.errors.dismissReports');
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
-  const handleCertReview = async (certId: string, action: 'approve' | 'reject') => {
-    try {
-      await api.post(`/api/admin/certifications/${certId}/review`, { action });
-      setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
-    } catch {
-      const msg = t('admin.errors.certification', { action });
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleVerify = (userId: string, action: 'approve' | 'reject', displayName: string) => {
+    const isApprove = action === 'approve';
+    confirmAction(
+      isApprove ? `Approve ${displayName}?` : `Reject ${displayName}?`,
+      isApprove
+        ? 'This will grant them verified fixer status.'
+        : 'This will decline their verification request.',
+      isApprove ? 'Approve' : 'Reject',
+      !isApprove,
+      async () => {
+        try {
+          await api.post(`/api/admin/users/${userId}/verify`, { action });
+          setVerifications((prev) => prev.filter((v) => v.id !== userId));
+        } catch {
+          const msg = t('admin.errors.verification', { action });
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
+  };
+
+  const handleCertReview = (certId: string, action: 'approve' | 'reject', displayName: string) => {
+    const isApprove = action === 'approve';
+    confirmAction(
+      isApprove ? `Approve ${displayName}?` : `Reject ${displayName}?`,
+      isApprove
+        ? 'This will approve their certification.'
+        : 'This will decline their certification request.',
+      isApprove ? 'Approve' : 'Reject',
+      !isApprove,
+      async () => {
+        try {
+          await api.post(`/api/admin/certifications/${certId}/review`, { action });
+          setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
+        } catch {
+          const msg = t('admin.errors.certification', { action });
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
   const handleLogout = async () => {
@@ -296,7 +352,7 @@ export default function AdminScreen() {
                     variant="outline"
                     size="sm"
                     icon="close-circle-outline"
-                    onPress={() => void handleCertReview(item.id, 'reject')}
+                    onPress={() => handleCertReview(item.id, 'reject', item.fixer.full_name)}
                     style={{ flex: 1 }}
                   >
                     {t('admin.certifications.reject')}
@@ -304,7 +360,7 @@ export default function AdminScreen() {
                   <FButton
                     size="sm"
                     icon="check-circle-outline"
-                    onPress={() => void handleCertReview(item.id, 'approve')}
+                    onPress={() => handleCertReview(item.id, 'approve', item.fixer.full_name)}
                     style={{ flex: 1 }}
                   >
                     {t('admin.certifications.approve')}
@@ -371,7 +427,7 @@ export default function AdminScreen() {
                   variant="outline"
                   size="sm"
                   icon="close-circle-outline"
-                  onPress={() => void handleVerify(item.id, 'reject')}
+                  onPress={() => handleVerify(item.id, 'reject', item.full_name)}
                   style={{ flex: 1 }}
                 >
                   {t('admin.verifications.reject')}
@@ -379,7 +435,7 @@ export default function AdminScreen() {
                 <FButton
                   size="sm"
                   icon="check-circle-outline"
-                  onPress={() => void handleVerify(item.id, 'approve')}
+                  onPress={() => handleVerify(item.id, 'approve', item.full_name)}
                   style={{ flex: 1 }}
                 >
                   {t('admin.verifications.approve')}
@@ -465,7 +521,7 @@ export default function AdminScreen() {
                 variant="outline"
                 size="sm"
                 icon="eye-off-outline"
-                onPress={() => void handleHide(item.id)}
+                onPress={() => handleHide(item.id, item.reviewer.full_name)}
                 style={{ flex: 1 }}
               >
                 {t('admin.reviews.hideReview')}
@@ -474,7 +530,7 @@ export default function AdminScreen() {
                 variant="secondary"
                 size="sm"
                 icon="check-circle-outline"
-                onPress={() => void handleDismiss(item.id)}
+                onPress={() => handleDismiss(item.id, item.reviewer.full_name)}
                 style={{ flex: 1 }}
               >
                 {t('admin.reviews.dismiss')}
