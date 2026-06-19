@@ -352,6 +352,72 @@ export default function FixerProfileScreen() {
   const currentPaymentLinkValid = currentPaymentLink.length > 0 && isValidUrl(currentPaymentLink);
   const hasSpecializationChanges = !sameStringSet(specializations, profile?.specializations ?? []);
 
+  const heroAvatarContent = (
+    <View style={styles.avatarWrapper}>
+      <Pressable
+        onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
+        accessibilityRole="button"
+        accessibilityLabel={profile?.avatar_url ? 'View profile photo' : 'Add profile photo'}
+        accessibilityState={{ busy: uploadingAvatar }}
+      >
+        {profile?.avatar_url ? (
+          <Avatar.Image size={104} source={{ uri: profile.avatar_url }} />
+        ) : (
+          <Avatar.Icon
+            size={104}
+            icon="account"
+            style={{ backgroundColor: brandColors.primaryMuted }}
+          />
+        )}
+      </Pressable>
+      <Pressable
+        style={styles.cameraBadge}
+        onPress={() => void pickNewAvatar()}
+        accessibilityRole="button"
+        accessibilityLabel="Change profile photo"
+        accessibilityState={{ busy: uploadingAvatar }}
+      >
+        {uploadingAvatar ? (
+          <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
+        ) : (
+          <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
+        )}
+      </Pressable>
+    </View>
+  );
+
+  const heroCopyInner = (
+    <>
+      <View style={styles.headerKickerRow}>
+        <View style={styles.headerIconShell}>
+          <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
+        </View>
+        <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+        <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr', flexShrink: 1 }]}>{displayName}</Text>
+        {profile?.verification_status === 'APPROVED' && (
+          <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
+        )}
+      </View>
+      <Text style={[styles.heroEmail, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
+    </>
+  );
+
+  const heroRatingStat = (
+    <Pressable
+      style={styles.heroStat}
+      onPress={() => { if (profile?.id) navigation.navigate('PublicProfile', { userId: profile.id }); }}
+    >
+      <Text style={styles.heroStatValue}>
+        {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
+      </Text>
+      <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
+      <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+        {t('fixerProfile.stats.tapToView')}
+      </Text>
+    </Pressable>
+  );
 
   return (
     <ScrollView
@@ -369,82 +435,26 @@ export default function FixerProfileScreen() {
           end={heroGradientFixer.end}
           style={[styles.profileHero, isWide && styles.profileHeroWide]}
         >
-          <View
-            ref={(el: unknown) => { if (el && Platform.OS === 'web') { (el as HTMLElement).dir = 'ltr'; } }}
-            style={styles.heroInnerRow}
-          >
-          <View style={styles.heroTopRow}>
-            <View style={styles.avatarWrapper}>
-              <Pressable
-                onPress={() => profile?.avatar_url ? setViewingAvatar(true) : void pickNewAvatar()}
-                accessibilityRole="button"
-                accessibilityLabel={profile?.avatar_url ? 'View profile photo' : 'Add profile photo'}
-                accessibilityState={{ busy: uploadingAvatar }}
-              >
-                {profile?.avatar_url ? (
-                  <Avatar.Image size={104} source={{ uri: profile.avatar_url }} />
-                ) : (
-                  <Avatar.Icon
-                    size={104}
-                    icon="account"
-                    style={{ backgroundColor: brandColors.primaryMuted }}
-                  />
-                )}
-              </Pressable>
-              <Pressable
-                style={styles.cameraBadge}
-                onPress={() => void pickNewAvatar()}
-                accessibilityRole="button"
-                accessibilityLabel="Change profile photo"
-                accessibilityState={{ busy: uploadingAvatar }}
-              >
-                {uploadingAvatar ? (
-                  <MaterialCommunityIcons name="loading" size={14} color={brandColors.white} />
-                ) : (
-                  <MaterialCommunityIcons name="camera" size={14} color={brandColors.white} />
-                )}
-              </Pressable>
+          {Platform.OS === 'web' ? (
+            // Web: horizontal row — avatar | copy (flex:1) | rating
+            <View
+              ref={(el: unknown) => { if (el) (el as HTMLElement).dir = 'ltr'; }}
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}
+            >
+              {heroAvatarContent}
+              <View style={[styles.heroCopy, { flex: 1 }]}>{heroCopyInner}</View>
+              {heroRatingStat}
             </View>
-
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Pressable
-                style={styles.heroStat}
-                onPress={() => {
-                  if (profile?.id) {
-                    navigation.navigate('PublicProfile', { userId: profile.id });
-                  }
-                }}
-              >
-                <Text style={styles.heroStatValue}>
-                  {avgRating != null && avgRating > 0 ? avgRating.toFixed(1) : t('fixerProfile.stats.new')}
-                </Text>
-                <Text style={[styles.heroStatLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.stats.rating')}</Text>
-                <Text numberOfLines={1} style={[typography.caption, { color: brandColors.secondaryDark, marginTop: spacing.xs, textDecorationLine: 'underline', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                  {t('fixerProfile.stats.tapToView')}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.heroCopy}>
-            <View style={styles.headerKickerRow}>
-              <View style={styles.headerIconShell}>
-                <MaterialCommunityIcons name="account-hard-hat-outline" size={17} color={brandColors.secondaryDark} />
+          ) : (
+            // Native: avatar+rating top row, copy below
+            <View style={styles.heroInnerRow}>
+              <View style={styles.heroTopRow}>
+                {heroAvatarContent}
+                <View style={{ flex: 1, alignItems: 'center' }}>{heroRatingStat}</View>
               </View>
-              <Text style={[styles.headerKicker, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('fixerProfile.headerKicker')}</Text>
+              <View style={styles.heroCopy}>{heroCopyInner}</View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.heroName, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{displayName}</Text>
-              </View>
-              {profile?.verification_status === 'APPROVED' && (
-                <MaterialCommunityIcons name="check-decagram" size={22} color="#29B6F6" />
-              )}
-            </View>
-            <Text style={[styles.heroEmail, { textAlign: 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{profile?.email}</Text>
-          </View>
-
-          </View>
+          )}
         </LinearGradient>
 
         <View style={[styles.profileGrid, isWide && styles.profileGridWide]}>
