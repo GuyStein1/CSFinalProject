@@ -73,7 +73,7 @@ export default function ChatScreen({ route }: { route: any }) {
   const socketRef = useRef<Awaited<ReturnType<typeof getSocket>> | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
 
-  const isReadOnly = liveTaskStatus === 'COMPLETED' || liveTaskStatus === 'CANCELED' || liveTaskStatus === 'OPEN';
+  const isReadOnly = liveTaskStatus === 'COMPLETED' || liveTaskStatus === 'CANCELED';
 
   // Fetch live task status on mount
   useEffect(() => {
@@ -329,7 +329,7 @@ export default function ChatScreen({ route }: { route: any }) {
         <View style={styles.readOnlyBar}>
           <MaterialCommunityIcons name="lock-outline" size={14} color={brandColors.textMuted} />
           <Text style={[typography.caption, { color: brandColors.textMuted, marginLeft: spacing.xs , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-            {liveTaskStatus === 'CANCELED' ? t('chat.readonlyCanceled') : liveTaskStatus === 'OPEN' ? t('chat.readonlyFixerLeft') : t('chat.readonlyCompleted')}
+            {liveTaskStatus === 'CANCELED' ? t('chat.readonlyCanceled') : t('chat.readonlyCompleted')}
           </Text>
         </View>
       ) : (
