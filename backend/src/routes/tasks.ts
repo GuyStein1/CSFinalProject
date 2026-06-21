@@ -80,14 +80,16 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
       throw new ValidationError('Location appears to be in the sea. Please pick a valid address on land.');
     }
 
-    // Reverse-geocode in English to get the English location name and address
+    // Reverse-geocode in both English and Hebrew so location names display correctly in both languages
     let generalLocationNameEn: string | null = null;
     let exactAddressEn: string | null = null;
+    let generalLocationNameHe: string | null = null;
+    let exactAddressHe: string | null = null;
     const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
     if (apiKey) {
-      try {
+      const geocodeInLang = async (lang: string) => {
         const geoRes = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=${apiKey}`,
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=${lang}&key=${apiKey}`,
         );
         const geoData = (await geoRes.json()) as { status: string; results: { formatted_address: string; address_components?: { long_name: string; types: string[] }[] }[] };
         if (geoData.status === 'OK' && geoData.results?.length) {
@@ -96,13 +98,31 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
           const sublocality = components.find(c => c.types.includes('sublocality'))?.long_name;
           const locality = components.find(c => c.types.includes('locality'))?.long_name;
           const parts = [neighborhood || sublocality, locality].filter(Boolean);
-          generalLocationNameEn = parts.length > 0 ? parts.join(', ') : null;
-          exactAddressEn = geoData.results[0].formatted_address || null;
+          return {
+            locationName: parts.length > 0 ? parts.join(', ') : null,
+            address: geoData.results[0].formatted_address || null,
+          };
         }
+        return { locationName: null, address: null };
+      };
+
+      try {
+        const [enResult, heResult] = await Promise.all([
+          geocodeInLang('en'),
+          geocodeInLang('he'),
+        ]);
+        generalLocationNameEn = enResult.locationName;
+        exactAddressEn = enResult.address;
+        generalLocationNameHe = heResult.locationName;
+        exactAddressHe = heResult.address;
       } catch {
-        // Non-critical — English names just won't be available
+        // Non-critical — translated names just won't be available
       }
     }
+
+    // Always store Hebrew in the primary field, English in the _en field
+    const finalLocationName = generalLocationNameHe || general_location_name;
+    const finalExactAddress = exactAddressHe || exact_address;
 
     // Insert with PostGIS point — must use raw SQL for the geometry column.
     // ST_MakePoint takes (longitude, latitude) — longitude first.
@@ -121,9 +141,9 @@ router.post('/', validate(createTaskSchema), async (req: Request, res: Response,
         ${suggested_price ?? null},
         ${urgency ?? 'FLEXIBLE'}::"TaskUrgency",
         'OPEN'::"TaskStatus",
-        ${general_location_name},
+        ${finalLocationName},
         ${generalLocationNameEn},
-        ${exact_address},
+        ${finalExactAddress},
         ${exactAddressEn},
         ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
         '{}'::text[],

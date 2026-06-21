@@ -467,7 +467,7 @@ export default function AuthScreen({
           {localError && (
             <Text style={[typography.bodySm, { color: brandColors.danger }]}>{localError}</Text>
           )}
-          <FButton onPress={() => void submitForgot()} loading={submitting} disabled={submitting} fullWidth icon="email-send">
+          <FButton onPress={() => void submitForgot()} loading={submitting} disabled={submitting} fullWidth icon="email-fast-outline">
             {t('auth.forgot.submit')}
           </FButton>
           <FButton variant="ghost" onPress={() => goTo('login')} fullWidth>

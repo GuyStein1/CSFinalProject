@@ -16,7 +16,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const { isRTL, language } = useLanguage();
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
       const res = await api.get('/api/conversations', { params });
       const all: Conversation[] = res.data.conversations ?? [];
       setConversations(
-        all.filter((c) => c.taskStatus !== 'IN_PROGRESS'),
+        all.filter((c) => c.taskStatus !== 'IN_PROGRESS' && c.taskStatus !== 'OPEN'),
       );
     } catch {
       // non-fatal
@@ -163,7 +163,7 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
 
             <View style={styles.content}>
               <View style={styles.topRow}>
-                <Text style={[typography.label, styles.name]} numberOfLines={1}>
+                <Text style={[typography.label, styles.name, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                   {other?.full_name || 'User'}
                 </Text>
                 {item.lastMessage && (
@@ -172,11 +172,11 @@ export default function PastConversationsScreen({ route }: { route?: { params?: 
                   </Text>
                 )}
               </View>
-              <Text style={[typography.caption, { color: brandColors.textMuted }]} numberOfLines={1}>
+              <Text style={[typography.caption, { color: brandColors.textMuted, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {item.taskTitle}
               </Text>
               <Text
-                style={[typography.bodySm, { color: brandColors.textMuted, flex: 1 }]}
+                style={[typography.bodySm, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
                 numberOfLines={1}
               >
                 {item.lastMessage?.content || t('conversations.noMessages')}
@@ -238,11 +238,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
   },
   name: {
     flex: 1,
     color: brandColors.textPrimary,
-    marginRight: spacing.sm,
   },
   deleteBtn: {
     width: 36,

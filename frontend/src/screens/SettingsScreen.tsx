@@ -33,8 +33,6 @@ export default function SettingsScreen() {
   const [backendName, setBackendName] = useState('');
   const accountName = user?.displayName?.trim() || backendName || t('settings.hero.defaultName');
   const accountEmail = user?.email || 'Not signed in';
-  const verificationLabel = user?.emailVerified ? t('settings.hero.verifiedEmail') : t('settings.hero.emailNotVerified');
-  const verificationColor = user?.emailVerified ? brandColors.success : brandColors.warning;
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -179,16 +177,8 @@ export default function SettingsScreen() {
             <Text style={[typography.bodySm, styles.heroSub, { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{accountEmail}</Text>
           </View>
         </View>
-        <View style={styles.heroMetaRow}>
-          <View style={styles.heroPill}>
-            <View style={[styles.statusDot, { backgroundColor: verificationColor }]} />
-            <Text style={[typography.caption, { color: brandColors.textPrimary }]}>{verificationLabel}</Text>
-          </View>
-          <View style={styles.heroPill}>
-            <MaterialCommunityIcons name="shield-check-outline" size={13} color={brandColors.secondaryDark} />
-            <Text style={[typography.caption, { color: brandColors.textSecondary , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('settings.hero.secureSession')}</Text>
-          </View>
-        </View>
+
+
       </FCard>
 
       {/* Account Section */}
