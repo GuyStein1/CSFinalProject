@@ -47,7 +47,33 @@ function formatDate(dateString: string, locale?: string): string {
   });
 }
 
+// Accepted + in progress + payment confirmed, but the fixer hasn't confirmed yet:
+// the job is waiting on the fixer's final tap to be marked COMPLETED.
+function needsFixerConfirm(bid: UserBid): boolean {
+  return (
+    bid.status === 'ACCEPTED' &&
+    bid.task.status === 'IN_PROGRESS' &&
+    !!bid.task.is_payment_confirmed &&
+    !bid.task.fixer_completed
+  );
+}
+
+// A bid whose outcome is "the requester canceled the task" — covers:
+//   • the bid was accepted and the task was then canceled,
+//   • the bid was still pending when the task was canceled, and
+//   • the bid was rejected specifically because the task was canceled.
+// Note: a bid rejected for another reason (e.g. CHOSE_ANOTHER) whose task is
+// later canceled stays a normal "Rejected" — the fixer lost it on its own merits.
+function isTaskCanceledOutcome(bid: UserBid): boolean {
+  return (
+    (bid.task.status === 'CANCELED' && (bid.status === 'ACCEPTED' || bid.status === 'PENDING')) ||
+    (bid.status === 'REJECTED' && bid.rejection_reason === 'TASK_CANCELED')
+  );
+}
+
 function getBidAccentColor(bid: UserBid): string {
+  if (needsFixerConfirm(bid)) return brandColors.secondary;
+  if (isTaskCanceledOutcome(bid)) return brandColors.danger;
   if (bid.status === 'ACCEPTED' && bid.task.status === 'COMPLETED') return brandColors.success;
   if (bid.status === 'ACCEPTED') return brandColors.secondaryDark;
   if (bid.status === 'PENDING') return brandColors.primary;
@@ -63,15 +89,24 @@ interface BidCardProps {
   onEdit: (bid: UserBid) => void;
   onCancelAccepted: (bid: UserBid) => void;
   onChat: (bid: UserBid) => void;
+  onConfirmCompletion: (bid: UserBid) => void;
 }
 
-function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted, onChat }: BidCardProps) {
+function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccepted, onChat, onConfirmCompletion }: BidCardProps) {
   const { t } = useTranslation();
   const { isRTL, language } = useLanguage();
   const dateLocale = language === 'he' ? 'he-IL' : 'en-US';
   const translateX = useRef(new Animated.Value(0)).current;
-  const isPending = bid.status === 'PENDING';
+  // A pending bid whose task was canceled is shown under Rejected as "Task
+  // canceled", so it must not offer pending actions (swipe/edit/withdraw).
+  const isPending = bid.status === 'PENDING' && !isTaskCanceledOutcome(bid);
   const catMeta = getCategoryMeta(bid.task.category);
+
+  // Accepted job, in progress: once the requester confirms payment, the fixer's
+  // final confirmation is the only thing left before the task is COMPLETED.
+  const acceptedActive = bid.status === 'ACCEPTED' && bid.task.status === 'IN_PROGRESS';
+  const needsCompletion = acceptedActive && !!bid.task.is_payment_confirmed && !bid.task.fixer_completed;
+  const fixerDoneWaiting = acceptedActive && !!bid.task.fixer_completed && !bid.task.requester_completed;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -142,7 +177,15 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                 </Text>
               </View>
             </View>
-            <StatusBadge status={bid.status === 'ACCEPTED' && bid.task.status === 'COMPLETED' ? 'COMPLETED' : bid.status} />
+            <StatusBadge
+              status={
+                isTaskCanceledOutcome(bid)
+                  ? 'TASK_CANCELED'
+                  : bid.status === 'ACCEPTED' && bid.task.status === 'COMPLETED'
+                    ? 'COMPLETED'
+                    : bid.status
+              }
+            />
           </View>
 
           <View style={styles.bidDetails}>
@@ -160,7 +203,50 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
             </Text>
           </View>
 
-          {bid.status === 'REJECTED' && bid.rejection_reason && (
+          {needsCompletion && (
+            <View style={styles.completionBanner}>
+              <View style={styles.completionHeader}>
+                <MaterialCommunityIcons name="alert-decagram" size={15} color={brandColors.secondaryDark} />
+                <Text style={[typography.caption, styles.completionBadgeText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t('myBids.card.actionNeeded')}
+                </Text>
+              </View>
+              <Text style={[typography.bodySm, { color: brandColors.textSecondary, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                {t('myBids.card.confirmCompletionHint')}
+              </Text>
+              <Pressable
+                style={[styles.actionBtn, styles.successActionBtn, { alignSelf: isRTL ? 'flex-end' : 'flex-start' }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('myBids.card.confirmCompletion')}
+                onPress={(e) => { e.stopPropagation(); onConfirmCompletion(bid); }}
+              >
+                <MaterialCommunityIcons name="check-decagram" size={13} color={brandColors.success} />
+                <Text style={[typography.caption, { color: brandColors.success, fontWeight: '700', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t('myBids.card.confirmCompletion')}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {fixerDoneWaiting && (
+            <View style={styles.waitingNote}>
+              <MaterialCommunityIcons name="clock-outline" size={14} color={brandColors.warning} />
+              <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                {t('myBids.card.waitingRequester')}
+              </Text>
+            </View>
+          )}
+
+          {isTaskCanceledOutcome(bid) && (
+            <View style={styles.waitingNote}>
+              <MaterialCommunityIcons name="close-circle-outline" size={14} color={brandColors.danger} />
+              <Text style={[typography.caption, { color: brandColors.textMuted, flex: 1, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                {t('myBids.card.taskCanceledNote')}
+              </Text>
+            </View>
+          )}
+
+          {bid.status === 'REJECTED' && bid.rejection_reason && bid.rejection_reason !== 'TASK_CANCELED' && (
             <View style={styles.rejectionBanner}>
               <View style={styles.rejectionHeader}>
                 <MaterialCommunityIcons name="information-outline" size={14} color={brandColors.danger} />
@@ -215,7 +301,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   </Pressable>
                 </>
               )}
-              {bid.status === 'ACCEPTED' && bid.task.status !== 'COMPLETED' && (
+              {bid.status === 'ACCEPTED' && bid.task.status === 'IN_PROGRESS' && (
                 <>
                   <Pressable
                     style={[styles.actionBtn, styles.chatActionBtn]}
@@ -288,7 +374,15 @@ export default function MyBidsScreen() {
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const [selectedYear, setSelectedYear] = useState<number | null>(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<string | null>(currentMonthKey);
-  const statusFilter = activeTab === 'COMPLETED' ? 'ACCEPTED' : activeTab === 'ALL' ? null : activeTab;
+  // COMPLETED is a synthetic tab over ACCEPTED bids (narrowed by task status).
+  // REJECTED fetches everything (null) because it also surfaces accepted bids
+  // whose task was later canceled — which aren't REJECTED server-side.
+  const statusFilter =
+    activeTab === 'COMPLETED'
+      ? 'ACCEPTED'
+      : activeTab === 'ALL' || activeTab === 'REJECTED'
+        ? null
+        : activeTab;
 
   const { bids: rawBids, loading, error, refetch, updateBidLocally, removeBidLocally } = useBids({
     status: statusFilter as BidStatus | null,
@@ -322,8 +416,19 @@ export default function MyBidsScreen() {
 
   const bids = rawBids
     .filter((b) => {
-      if (activeTab === 'ALL') return b.status !== 'REJECTED' && !(b.status === 'ACCEPTED' && b.task.status === 'COMPLETED');
-      if (activeTab === 'ACCEPTED') return b.status === 'ACCEPTED' && b.task.status !== 'COMPLETED';
+      if (activeTab === 'ALL') {
+        // Active pipeline only — exclude rejected, canceled-task outcomes, and
+        // accepted bids whose task already finished (completed).
+        if (b.status === 'REJECTED') return false;
+        if (isTaskCanceledOutcome(b)) return false;
+        if (b.status === 'ACCEPTED' && b.task.status === 'COMPLETED') return false;
+        return true;
+      }
+      // Pending tab excludes bids whose task was canceled — those move to Rejected.
+      if (activeTab === 'PENDING') return b.status === 'PENDING' && !isTaskCanceledOutcome(b);
+      if (activeTab === 'ACCEPTED') return b.status === 'ACCEPTED' && b.task.status === 'IN_PROGRESS';
+      // Rejected bucket also holds every canceled-task outcome (pending/accepted/rejected).
+      if (activeTab === 'REJECTED') return b.status === 'REJECTED' || isTaskCanceledOutcome(b);
       if (activeTab === 'COMPLETED') {
         if (b.status !== 'ACCEPTED' || b.task.status !== 'COMPLETED') return false;
         if (effectiveYear == null) return false; // no year selected — show nothing
@@ -337,6 +442,10 @@ export default function MyBidsScreen() {
       return true;
     })
     .sort((a, b) => {
+      // Jobs awaiting the fixer's final confirmation float to the very top.
+      const an = needsFixerConfirm(a) ? 1 : 0;
+      const bn = needsFixerConfirm(b) ? 1 : 0;
+      if (an !== bn) return bn - an;
       if (a.status === 'ACCEPTED' && b.status !== 'ACCEPTED') return -1;
       if (b.status === 'ACCEPTED' && a.status !== 'ACCEPTED') return 1;
       return 0;
@@ -512,6 +621,27 @@ export default function MyBidsScreen() {
     [confirmBidAction, refetch],
   );
 
+  const handleConfirmCompletion = useCallback(
+    (bid: UserBid) => {
+      const doConfirm = async () => {
+        try {
+          await api.put(`/api/tasks/${bid.task_id}/confirm-completion`);
+          refetch();
+        } catch {
+          Alert.alert(t('common.error'), t('myBids.actions.confirmCompletion.error'));
+        }
+      };
+
+      confirmBidAction({
+        title: t('myBids.actions.confirmCompletion.title'),
+        message: t('myBids.actions.confirmCompletion.message', { title: bid.task.title }),
+        confirmLabel: t('myBids.actions.confirmCompletion.confirm'),
+        onConfirm: doConfirm,
+      });
+    },
+    [confirmBidAction, refetch, t],
+  );
+
   const handleEditSave = useCallback(async () => {
     if (!editingBid) return;
     setEditSaving(true);
@@ -531,7 +661,7 @@ export default function MyBidsScreen() {
 
   const handleDeleteAll = useCallback(() => {
     const targetBids = bids.filter(
-      (b) => b.status === 'REJECTED' || b.status === 'WITHDRAWN',
+      (b) => b.status === 'REJECTED' || b.status === 'WITHDRAWN' || isTaskCanceledOutcome(b),
     );
     if (targetBids.length === 0) return;
 
@@ -766,9 +896,10 @@ export default function MyBidsScreen() {
                   onEdit={handleEdit}
                   onCancelAccepted={handleCancelAccepted}
                   onChat={handleChat}
+                  onConfirmCompletion={handleConfirmCompletion}
                 />
               </View>
-              {(item.status === 'REJECTED' || item.status === 'WITHDRAWN') && (
+              {(item.status === 'REJECTED' || item.status === 'WITHDRAWN' || isTaskCanceledOutcome(item)) && (
                 <Pressable
                   style={styles.trashBtn}
                   hitSlop={8}
@@ -1091,6 +1222,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(192,57,43,0.15)',
     gap: spacing.xs,
+  },
+  completionBanner: {
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.warningSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(155,109,42,0.18)',
+    gap: spacing.sm,
+  },
+  completionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  completionBadgeText: {
+    color: brandColors.secondaryDark,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  waitingNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: brandColors.surfaceAlt,
   },
   rejectionHeader: {
     flexDirection: 'row',

@@ -7,28 +7,33 @@ import { brandColors, radii, spacing, typography } from '../theme';
 type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 
-type Status = TaskStatus | BidStatus;
+// TASK_CANCELED is a synthetic badge (not a real enum) used when a fixer's bid
+// outcome is "the requester canceled the task" — distinct from the fixer's own
+// REJECTED/CANCELED so it's clear the fixer didn't back out.
+type Status = TaskStatus | BidStatus | 'TASK_CANCELED';
 
 const STATUS_CONFIG: Record<Status, { bg: string; text: string; dotColor: string; border: string }> = {
-  OPEN:        { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
-  IN_PROGRESS: { bg: brandColors.infoSoft,     text: brandColors.primaryMuted, dotColor: brandColors.primaryMuted, border: brandColors.outlineLight },
-  COMPLETED:   { bg: brandColors.surfaceAlt,   text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
-  CANCELED:    { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
-  PENDING:     { bg: brandColors.warningSoft,  text: brandColors.warning,      dotColor: brandColors.warning,      border: brandColors.outlineLight },
-  ACCEPTED:    { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
-  REJECTED:    { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
-  WITHDRAWN:   { bg: brandColors.neutralSoft,  text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
+  OPEN:          { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
+  IN_PROGRESS:   { bg: brandColors.infoSoft,     text: brandColors.primaryMuted, dotColor: brandColors.primaryMuted, border: brandColors.outlineLight },
+  COMPLETED:     { bg: brandColors.surfaceAlt,   text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
+  CANCELED:      { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
+  TASK_CANCELED: { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
+  PENDING:       { bg: brandColors.warningSoft,  text: brandColors.warning,      dotColor: brandColors.warning,      border: brandColors.outlineLight },
+  ACCEPTED:      { bg: brandColors.successSoft,  text: brandColors.success,      dotColor: brandColors.success,      border: brandColors.outlineLight },
+  REJECTED:      { bg: brandColors.dangerSoft,   text: brandColors.danger,       dotColor: brandColors.danger,       border: brandColors.outlineLight },
+  WITHDRAWN:     { bg: brandColors.neutralSoft,  text: brandColors.textMuted,    dotColor: brandColors.textMuted,    border: brandColors.outlineLight },
 };
 
 const STATUS_KEY: Record<Status, string> = {
-  OPEN:        'status.open',
-  IN_PROGRESS: 'status.inProgress',
-  COMPLETED:   'status.completed',
-  CANCELED:    'status.canceled',
-  PENDING:     'status.pending',
-  ACCEPTED:    'status.accepted',
-  REJECTED:    'status.rejected',
-  WITHDRAWN:   'status.withdrawn',
+  OPEN:          'status.open',
+  IN_PROGRESS:   'status.inProgress',
+  COMPLETED:     'status.completed',
+  CANCELED:      'status.canceled',
+  TASK_CANCELED: 'status.taskCanceled',
+  PENDING:       'status.pending',
+  ACCEPTED:      'status.accepted',
+  REJECTED:      'status.rejected',
+  WITHDRAWN:     'status.withdrawn',
 };
 
 interface StatusBadgeProps {

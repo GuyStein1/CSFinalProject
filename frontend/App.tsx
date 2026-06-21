@@ -248,7 +248,9 @@ export default function App() {
         <LanguageProvider>
           <AccessibilityProvider>
             <RootContent />
-            <AccessibilityWidget />
+            {/* Web-only: WCAG 2.0 AA / ת"י 5568 compliance applies to the website,
+                not the native app — keep the provider, hide the floating widget. */}
+            {Platform.OS === 'web' && <AccessibilityWidget />}
           </AccessibilityProvider>
         </LanguageProvider>
         <StatusBar style="light" />

@@ -24,6 +24,9 @@ interface TaskCardProps {
   onReactivate?: () => void;
   onCancel?: () => void;
   onMarkCompleted?: () => void;
+  markCompletedLabel?: string;
+  markCompletedIcon?: string;
+  awaitingFixer?: boolean;
   onEdit?: () => void;
   onReview?: () => void;
   onChat?: () => void;
@@ -43,6 +46,9 @@ export default function TaskCard({
   onReactivate,
   onCancel,
   onMarkCompleted,
+  markCompletedLabel,
+  markCompletedIcon,
+  awaitingFixer = false,
   onEdit,
   onReview,
   onChat,
@@ -128,6 +134,13 @@ export default function TaskCard({
           tone="success"
         />
       )}
+      {awaitingFixer && (
+        <TaskSignal
+          icon="progress-clock"
+          label={t('taskCard.awaitingFixer')}
+          tone="warning"
+        />
+      )}
       {onReview && (
         <TaskSignal
           icon="star-outline"
@@ -180,8 +193,8 @@ export default function TaskCard({
           )}
           {onMarkCompleted && (
             <ActionButton
-              icon="check-circle-outline"
-              label={t('taskCard.markComplete')}
+              icon={markCompletedIcon ?? 'check-circle-outline'}
+              label={markCompletedLabel ?? t('taskCard.markComplete')}
               tone="success"
               onPress={onMarkCompleted}
             />

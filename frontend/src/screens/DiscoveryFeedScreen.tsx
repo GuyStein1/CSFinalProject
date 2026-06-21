@@ -674,11 +674,18 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
           {!loading && !error && tasks.length === 0 && (
             <View style={styles.loadingOverlay}>
               <FCard style={styles.overlayCard} shadow="md">
-                <EmptyState
-                  icon="map-search-outline"
-                  title={t('discovery.empty.noTasks.title')}
-                  message={t('discovery.empty.noTasks.message')}
-                />
+                {/* Lightweight inline empty state — the full EmptyState's
+                    rotated diamond + watermark get clipped by the card's
+                    overflow:hidden on native, so render plainly here. */}
+                <View style={styles.emptyOverlayContent}>
+                  <MaterialCommunityIcons name="map-search-outline" size={32} color={brandColors.primaryMuted} />
+                  <Text style={[typography.h3, { color: brandColors.textPrimary, textAlign: 'center', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t('discovery.empty.noTasks.title')}
+                  </Text>
+                  <Text style={[typography.bodySm, { color: brandColors.textMuted, textAlign: 'center', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t('discovery.empty.noTasks.message')}
+                  </Text>
+                </View>
               </FCard>
             </View>
           )}
@@ -988,6 +995,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  emptyOverlayContent: {
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   previewCardWrapper: {
     position: 'absolute',
