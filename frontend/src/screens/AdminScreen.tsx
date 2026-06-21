@@ -142,64 +142,118 @@ export default function AdminScreen() {
     }, [fetchFlagged, fetchVerifications, fetchCertifications]),
   );
 
-  const handleHide = async (reviewId: string) => {
-    try {
-      await api.post(`/api/admin/reviews/${reviewId}/hide`);
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-    } catch {
-      const msg = t('admin.errors.hideReview');
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
+  const confirmAction = (
+    title: string,
+    message: string,
+    confirmLabel: string,
+    destructive: boolean,
+    onConfirm: () => void,
+  ) => {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+      return;
     }
+    Alert.alert(title, message, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: confirmLabel, style: destructive ? 'destructive' : 'default', onPress: onConfirm },
+    ]);
   };
 
-  const handleDismiss = async (reviewId: string) => {
-    try {
-      await api.post(`/api/admin/reviews/${reviewId}/dismiss`);
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-    } catch {
-      const msg = t('admin.errors.dismissReports');
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleHide = (reviewId: string, displayName: string) => {
+    confirmAction(
+      t('admin.confirm.hideReview.title', { name: displayName }),
+      t('admin.confirm.hideReview.message'),
+      t('admin.confirm.hideReview.confirmLabel'),
+      true,
+      async () => {
+        try {
+          await api.post(`/api/admin/reviews/${reviewId}/hide`);
+          setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        } catch {
+          const msg = t('admin.errors.hideReview');
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
-  const handleVerify = async (userId: string, action: 'approve' | 'reject') => {
-    try {
-      await api.post(`/api/admin/users/${userId}/verify`, { action });
-      setVerifications((prev) => prev.filter((v) => v.id !== userId));
-    } catch {
-      const msg = t('admin.errors.verification', { action });
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleDismiss = (reviewId: string, displayName: string) => {
+    confirmAction(
+      t('admin.confirm.dismissReports.title', { name: displayName }),
+      t('admin.confirm.dismissReports.message'),
+      t('admin.confirm.dismissReports.confirmLabel'),
+      false,
+      async () => {
+        try {
+          await api.post(`/api/admin/reviews/${reviewId}/dismiss`);
+          setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        } catch {
+          const msg = t('admin.errors.dismissReports');
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
-  const handleCertReview = async (certId: string, action: 'approve' | 'reject') => {
-    try {
-      await api.post(`/api/admin/certifications/${certId}/review`, { action });
-      setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
-    } catch {
-      const msg = t('admin.errors.certification', { action });
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(msg);
-      } else {
-        Alert.alert(t('common.error'), msg);
-      }
-    }
+  const handleVerify = (userId: string, action: 'approve' | 'reject', displayName: string) => {
+    const isApprove = action === 'approve';
+    const verifyKey = isApprove ? 'approveVerification' : 'rejectVerification';
+    confirmAction(
+      t(`admin.confirm.${verifyKey}.title`, { name: displayName }),
+      t(`admin.confirm.${verifyKey}.message`),
+      t(`admin.confirm.${verifyKey}.confirmLabel`),
+      !isApprove,
+      async () => {
+        try {
+          await api.post(`/api/admin/users/${userId}/verify`, { action });
+          setVerifications((prev) => prev.filter((v) => v.id !== userId));
+        } catch {
+          const msg = t('admin.errors.verification', { action });
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
+  };
+
+  const handleCertReview = (certId: string, action: 'approve' | 'reject', displayName: string) => {
+    const isApprove = action === 'approve';
+    const certKey = isApprove ? 'approveCertification' : 'rejectCertification';
+    confirmAction(
+      t(`admin.confirm.${certKey}.title`, { name: displayName }),
+      t(`admin.confirm.${certKey}.message`),
+      t(`admin.confirm.${certKey}.confirmLabel`),
+      !isApprove,
+      async () => {
+        try {
+          await api.post(`/api/admin/certifications/${certId}/review`, { action });
+          setPendingCerts((prev) => prev.filter((c) => c.id !== certId));
+        } catch {
+          const msg = t('admin.errors.certification', { action });
+          if (Platform.OS === 'web') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          } else {
+            Alert.alert(t('common.error'), msg);
+          }
+        }
+      },
+    );
   };
 
   const handleLogout = async () => {
@@ -238,8 +292,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
           onPress={() => setActiveTab('reviews')}
         >
-          <MaterialCommunityIcons name="flag-outline" size={16} color={activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'reviews' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.reviews', { count: reviews.length })}
           </Text>
         </Pressable>
@@ -247,8 +300,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'verifications' && styles.tabActive]}
           onPress={() => setActiveTab('verifications')}
         >
-          <MaterialCommunityIcons name="shield-check-outline" size={16} color={activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'verifications' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.verifications', { count: verifications.length })}
           </Text>
         </Pressable>
@@ -256,8 +308,7 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'certifications' && styles.tabActive]}
           onPress={() => setActiveTab('certifications')}
         >
-          <MaterialCommunityIcons name="certificate-outline" size={16} color={activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted} />
-          <Text style={[typography.bodyMedium, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
+          <Text style={[typography.label, { color: activeTab === 'certifications' ? brandColors.primary : brandColors.textMuted }]}>
             {t('admin.tabs.certifications', { count: pendingCerts.length })}
           </Text>
         </Pressable>
@@ -299,7 +350,7 @@ export default function AdminScreen() {
                     variant="outline"
                     size="sm"
                     icon="close-circle-outline"
-                    onPress={() => void handleCertReview(item.id, 'reject')}
+                    onPress={() => handleCertReview(item.id, 'reject', item.fixer.full_name)}
                     style={{ flex: 1 }}
                   >
                     {t('admin.certifications.reject')}
@@ -307,7 +358,7 @@ export default function AdminScreen() {
                   <FButton
                     size="sm"
                     icon="check-circle-outline"
-                    onPress={() => void handleCertReview(item.id, 'approve')}
+                    onPress={() => handleCertReview(item.id, 'approve', item.fixer.full_name)}
                     style={{ flex: 1 }}
                   >
                     {t('admin.certifications.approve')}
@@ -374,7 +425,7 @@ export default function AdminScreen() {
                   variant="outline"
                   size="sm"
                   icon="close-circle-outline"
-                  onPress={() => void handleVerify(item.id, 'reject')}
+                  onPress={() => handleVerify(item.id, 'reject', item.full_name)}
                   style={{ flex: 1 }}
                 >
                   {t('admin.verifications.reject')}
@@ -382,7 +433,7 @@ export default function AdminScreen() {
                 <FButton
                   size="sm"
                   icon="check-circle-outline"
-                  onPress={() => void handleVerify(item.id, 'approve')}
+                  onPress={() => handleVerify(item.id, 'approve', item.full_name)}
                   style={{ flex: 1 }}
                 >
                   {t('admin.verifications.approve')}
@@ -468,7 +519,7 @@ export default function AdminScreen() {
                 variant="outline"
                 size="sm"
                 icon="eye-off-outline"
-                onPress={() => void handleHide(item.id)}
+                onPress={() => handleHide(item.id, item.reviewer.full_name)}
                 style={{ flex: 1 }}
               >
                 {t('admin.reviews.hideReview')}
@@ -477,7 +528,7 @@ export default function AdminScreen() {
                 variant="secondary"
                 size="sm"
                 icon="check-circle-outline"
-                onPress={() => void handleDismiss(item.id)}
+                onPress={() => handleDismiss(item.id, item.reviewer.full_name)}
                 style={{ flex: 1 }}
               >
                 {t('admin.reviews.dismiss')}
