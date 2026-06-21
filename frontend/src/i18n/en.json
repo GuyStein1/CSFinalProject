@@ -405,6 +405,7 @@
       "cancelJob": "Cancel job",
       "chat": "Chat",
       "reactivate": "Reactivate",
+      "taskAssigned": "Task assigned to someone else, cannot reactivate",
       "locationNotSet": "Location not set",
       "winningBid": "Winning bid: ₪{{price}}",
       "winningBidRating": "Winning bid: ₪{{price}} · Rating: {{rating}}★",
@@ -412,7 +413,7 @@
       "confirmCompletionHint": "Payment is confirmed — mark the job done on your side to close it out.",
       "confirmCompletion": "Confirm completion",
       "waitingRequester": "Waiting for the requester to confirm",
-      "taskCanceledNote": "The requester canceled this task — no action is needed on your part."
+      "taskCanceledNote": "The requester canceled this task, no action is needed on your part."
     },
     "stats": {
       "inView": "In view",

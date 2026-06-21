@@ -323,7 +323,7 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   </Pressable>
                 </>
               )}
-              {bid.status === 'WITHDRAWN' && (
+              {bid.status === 'WITHDRAWN' && bid.task.status === 'OPEN' && (
                 <Pressable
                   style={[styles.actionBtn, styles.successActionBtn]}
                   accessibilityRole="button"
@@ -333,6 +333,12 @@ function BidCard({ bid, onPress, onWithdraw, onReactivate, onEdit, onCancelAccep
                   <MaterialCommunityIcons name="refresh" size={13} color={brandColors.success} />
                   <Text style={[typography.caption, { color: brandColors.success, fontWeight: '600' , writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.reactivate')}</Text>
                 </Pressable>
+              )}
+              {bid.status === 'WITHDRAWN' && bid.task.status !== 'OPEN' && (
+                <View style={[styles.actionBtn, { backgroundColor: brandColors.dangerSoft }]}>
+                  <MaterialCommunityIcons name="account-switch-outline" size={13} color={brandColors.danger} />
+                  <Text style={[typography.caption, { color: brandColors.danger, fontWeight: '600', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('myBids.card.taskAssigned')}</Text>
+                </View>
               )}
             </View>
           </View>
