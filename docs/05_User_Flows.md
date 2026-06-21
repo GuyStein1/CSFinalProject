@@ -87,7 +87,7 @@ stateDiagram-v2
     [*] --> OPEN : Requester publishes task
     OPEN --> IN_PROGRESS : Requester accepts a bid
     OPEN --> CANCELED : Requester cancels before acceptance
-    IN_PROGRESS --> COMPLETED : Requester marks as completed
+    IN_PROGRESS --> COMPLETED : Both sides confirm (after payment)
     IN_PROGRESS --> CANCELED : Requester cancels after acceptance
     CANCELED --> OPEN : Requester reopens (Planned)
     COMPLETED --> [*]
@@ -101,7 +101,7 @@ stateDiagram-v2
 | — | OPEN | Requester creates task | Task visible on discovery feed |
 | OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, chat channel activated, Fixer notified |
 | OPEN | CANCELED | Requester cancels | All PENDING bids auto-rejected, task removed from feed |
-| IN_PROGRESS | COMPLETED | Requester taps "Mark as Completed" | Status set to COMPLETED immediately; payment prompt shown; review prompt shown to Requester (available for 14 days) |
+| IN_PROGRESS | COMPLETED | **Both** Requester and Fixer confirm completion (after the Requester confirms payment) | Status flips to COMPLETED only once both `requester_completed` and `fixer_completed` are set; `completed_at` recorded; review prompt shown to Requester (available for 14 days) |
 | IN_PROGRESS | CANCELED | Requester cancels | Fixer notified |
 | CANCELED | OPEN | Requester reopens task *(Planned)* | `assigned_fixer_id` cleared, task reappears on discovery feed; previously rejected bids stay rejected |
 
@@ -152,13 +152,17 @@ stateDiagram-v2
 
 ### 3.5 Completion & Payment
 
-1. Once the Fixer finishes the work, the Requester taps "Mark as Completed".
-2. Task status → `COMPLETED` immediately. The Requester receives a prompt to leave a review (available for 14 days).
-3. A "Pay Fixer" button appears on the completed task screen.
+Completion is **payment-first and dual-confirmed** — the task only reaches `COMPLETED` once the Requester has confirmed payment and **both** sides have confirmed the work is done.
+
+1. **Pay the Fixer first.** Once the Fixer finishes the work, the Requester sees a "Pay Fixer" button on the Task Details screen.
    * If the Fixer has set a `payment_link`: the button deep-links to their Bit/Paybox app with the agreed amount.
    * If the Fixer has **not** set a `payment_link`: the button is replaced with a message — "This Fixer hasn't set up a payment link. Contact them directly to arrange payment." Their phone number (if provided) is shown as a fallback.
-4. After paying externally, the Requester taps "Confirm Payment". This calls `PUT /api/tasks/:id/confirm-payment`, setting `Task.is_payment_confirmed = true`.
-5. The "Pay Fixer" button is replaced with "Payment Confirmed ✓".
+2. After paying externally, the Requester taps "Confirm Payment". This calls `PUT /api/tasks/:id/confirm-payment`, setting `Task.is_payment_confirmed = true`. The button becomes "Payment Confirmed ✓".
+3. **Only now** does a "Mark as Completed" button appear. The Requester taps it → `PUT /api/tasks/:id/confirm-completion`, which sets `requester_completed = true`. The task stays `IN_PROGRESS` and shows "Waiting for the Fixer to confirm".
+4. The Fixer confirms completion on their own Task Details screen → `PUT /api/tasks/:id/confirm-completion` sets `fixer_completed = true`.
+5. When **both** flags are set, the task flips to `COMPLETED`, `completed_at` is recorded, and the Requester receives a prompt to leave a review (available for 14 days).
+
+> **Why dual confirmation?** Requiring both sides to confirm — gated behind payment — reduces "marked done but never paid / never finished" disputes. The trade-off is that completion is no longer a single tap; the entry point (e.g. the "Complete & Pay" button on a task card) opens this flow rather than completing the task outright.
 
 ### 3.6 Rating the Fixer
 
@@ -272,7 +276,7 @@ flowchart TD
 ### 4.7 Post-Job: Payment
 
 1. Receives payment externally via Bit/Paybox.
-2. No further action required from the Fixer — the Requester is responsible for marking the task as completed and submitting a review.
+2. After the Requester confirms payment and marks the task complete, the Fixer must **also confirm completion** on their Task Details screen (`PUT /api/tasks/:id/confirm-completion`). The task only becomes `COMPLETED` once both sides have confirmed. (The Requester is still the one who submits the review.)
 
 ### 4.8 Withdrawing a Bid
 

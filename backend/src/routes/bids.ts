@@ -249,14 +249,19 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// DELETE /api/bids/:id — fixer deletes a rejected or withdrawn bid
+// DELETE /api/bids/:id — fixer deletes a rejected/withdrawn bid, or any bid
+// whose task was canceled by the requester (the job is dead either way)
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const bid = await prisma.bid.findUnique({ where: { id: req.params.id } });
+    const bid = await prisma.bid.findUnique({
+      where: { id: req.params.id },
+      include: { task: { select: { status: true } } },
+    });
     if (!bid) throw new NotFoundError('Bid not found');
     if (req.user.id !== bid.fixer_id) throw new ForbiddenError('Only the fixer can delete their bid');
-    if (bid.status !== 'REJECTED' && bid.status !== 'WITHDRAWN') {
-      throw new ValidationError('Only rejected or withdrawn bids can be deleted');
+    const taskCanceled = bid.task?.status === 'CANCELED';
+    if (bid.status !== 'REJECTED' && bid.status !== 'WITHDRAWN' && !taskCanceled) {
+      throw new ValidationError('Only rejected, withdrawn, or canceled-task bids can be deleted');
     }
     await prisma.bid.delete({ where: { id: bid.id } });
     res.json({ message: 'Bid deleted' });
