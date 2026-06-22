@@ -46,12 +46,32 @@ const DEFAULT_CENTER: DiscoveryCenter = { lat: 32.0853, lng: 34.7818, label: 'Te
 
 const PRICE_SLIDER_MAX = 5000;
 
+// Native talks to Google Places over REST directly — React Native has no CORS,
+// and the app already ships this key for rendering the map. (Web can't do this
+// because browsers block the Places REST API by CORS, so web uses the JS SDK.)
+const GOOGLE_MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
+
+async function fetchPlacePredictions(
+  input: string,
+  language: string,
+): Promise<{ placeId: string; description: string }[]> {
+  const url =
+    `${PLACES_BASE}/autocomplete/json?input=${encodeURIComponent(input)}` +
+    `&types=geocode&language=${language}&key=${GOOGLE_MAPS_KEY}`;
+  const res = await fetch(url);
+  const data = (await res.json()) as { predictions?: { place_id: string; description: string }[] };
+  return (data.predictions ?? []).slice(0, 5).map((p) => ({ placeId: p.place_id, description: p.description }));
+}
+
 export default function DiscoveryFeedScreen({ navigation }: Props) {
   const { t } = useTranslation();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
-  const supportsWorkAreaSearch = Platform.OS === 'web';
+  // Web resolves places via the Google Maps JS SDK; native calls the Google
+  // Places REST API directly. Both platforms support the search now.
+  const supportsWorkAreaSearch = true;
   const [permissionState, setPermissionState] = useState<PermissionState>('checking');
   const [centerMode, setCenterMode] = useState<CenterMode>('gps');
   const [center, setCenter] = useState<DiscoveryCenter | null>(null);
@@ -270,6 +290,30 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
   }
 
   const geocodeByPlaceId = useCallback((placeId: string, label: string) => {
+    // Native: resolve the placeId → coordinates straight from Google Places.
+    if (Platform.OS !== 'web') {
+      setSearchLoading(true);
+      setSearchError(null);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      fetch(
+        `${PLACES_BASE}/details/json?place_id=${encodeURIComponent(placeId)}` +
+        `&fields=geometry,formatted_address,name&language=${language}&key=${GOOGLE_MAPS_KEY}`,
+      )
+        .then((r) => r.json())
+        .then((data: { result?: { geometry?: { location?: { lat: number; lng: number } } } }) => {
+          const loc = data.result?.geometry?.location;
+          if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+            syncCenter({ lat: loc.lat, lng: loc.lng, label }, 'manual');
+          } else {
+            setSearchError(t('discovery.error.couldNotResolve'));
+          }
+        })
+        .catch(() => setSearchError(t('discovery.error.couldNotResolve')))
+        .finally(() => setSearchLoading(false));
+      return;
+    }
+
     const service = getOrCreatePlacesService();
     if (!service) {
       setSearchError(t('discovery.error.mapsNotReady'));
@@ -291,16 +335,31 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         }
       },
     );
-  }, [syncCenter]);
+  }, [syncCenter, language, t]);
 
   const fetchSuggestions = useCallback((text: string) => {
-    if (Platform.OS !== 'web' || text.trim().length < 2) {
+    if (text.trim().length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
+      // Native: query Google Places autocomplete directly.
+      if (Platform.OS !== 'web') {
+        fetchPlacePredictions(text.trim(), language)
+          .then((preds) => {
+            setSuggestions(preds);
+            setShowSuggestions(preds.length > 0);
+          })
+          .catch(() => {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          });
+        return;
+      }
+
+      // Web: use the Google Maps JS SDK already loaded for the map.
       try {
         if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
           autocompleteRef.current = new google.maps.places.AutocompleteService();
@@ -325,7 +384,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         // Places library not loaded yet — ignore
       }
     }, 300);
-  }, []);
+  }, [language]);
 
   const handleSearchTextChange = useCallback((text: string) => {
     setSearchText(text);
@@ -345,6 +404,26 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
     const query = searchText.trim();
     if (!query) return;
     setShowSuggestions(false);
+
+    // Native: resolve the typed query via Google Places (top match).
+    if (Platform.OS !== 'web') {
+      setSearchLoading(true);
+      setSearchError(null);
+      fetchPlacePredictions(query, language)
+        .then((preds) => {
+          if (preds[0]) {
+            geocodeByPlaceId(preds[0].placeId, preds[0].description);
+          } else {
+            setSearchLoading(false);
+            setSearchError(t('discovery.error.noResults'));
+          }
+        })
+        .catch(() => {
+          setSearchLoading(false);
+          setSearchError(t('discovery.error.noResults'));
+        });
+      return;
+    }
 
     if (!autocompleteRef.current && typeof google !== 'undefined' && google.maps?.places) {
       autocompleteRef.current = new google.maps.places.AutocompleteService();
@@ -367,7 +446,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         }
       },
     );
-  }, [searchText, geocodeByPlaceId]);
+  }, [searchText, geocodeByPlaceId, language, t]);
 
   const handleViewDetails = () => {
     if (!selectedTask) return;
@@ -527,7 +606,7 @@ export default function DiscoveryFeedScreen({ navigation }: Props) {
         ) : undefined}
       />
 
-      {/* Work-area search uses Google Places on web; native keeps GPS/default centers only. */}
+      {/* Work-area search: Google Places JS SDK on web, Places REST direct on native. */}
       {supportsWorkAreaSearch && searchExpanded && (
         <View style={[styles.workAreaStrip, isWide && styles.workAreaStripWide]}>
           <Pressable
