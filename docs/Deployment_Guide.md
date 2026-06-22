@@ -1,73 +1,124 @@
 # Deployment Guide
 
-## Backend — Render
+FixIt is deployed across two platforms. Every push to `main` redeploys automatically — no manual
+steps after a PR merges.
 
-### Option A: Blueprint (recommended)
-1. Push `render.yaml` to `main`
-2. Go to [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**
-3. Connect the GitHub repo → Render reads `render.yaml` and creates the service
-4. Set the required environment variables (see below)
+| Service | Platform | Notes |
+|---|---|---|
+| Backend API | **Railway** | Node.js + Express; runs `prisma migrate deploy` then starts the server |
+| Database | **Railway** | `postgis/postgis:16-master` Docker image (PostgreSQL 16 + PostGIS) |
+| Frontend (web) | **Vercel** | `expo export --platform web` → static build |
 
-### Option B: Manual
-1. Go to Render → **New Web Service**
-2. Connect the repo, set **Root Directory** to `backend`
-3. Build command: `npm install && npx prisma generate && npm run build`
-4. Start command: `npx prisma migrate deploy && npm run start`
-5. Set environment variables
+**Live URLs**
 
-### Environment Variables
+| Service | URL |
+|---|---|
+| Web app | https://fixit-one-mocha.vercel.app |
+| API | https://fixit-api-production.up.railway.app |
+| API health check | https://fixit-api-production.up.railway.app/health |
+
+---
+
+## Backend — Railway
+
+The backend redeploys on every push to `main`. On each deploy Railway runs
+`npx prisma migrate deploy` and then starts the server.
+
+### Environment variables (Railway — `fixit-api` service)
 
 | Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL+PostGIS connection string (from Supabase) |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string (auto-provided by the Railway PostGIS service) |
 | `FIREBASE_PROJECT_ID` | Firebase project ID |
-| `FIREBASE_CLIENT_EMAIL` | Service account email |
-| `FIREBASE_PRIVATE_KEY` | Service account private key (preserve `\n` newlines) |
-| `GOOGLE_MAPS_API_KEY` | Google Maps API key |
+| `FIREBASE_CLIENT_EMAIL` | Firebase Admin SDK service account email |
+| `FIREBASE_PRIVATE_KEY` | Firebase Admin SDK private key (preserve `\n` newlines) |
 | `NODE_ENV` | `production` |
-| `PORT` | Auto-set by Render |
 
----
+Production env vars live in Railway — they are **not** in the repo.
 
-## Database — Supabase (PostGIS)
-
-1. Create a new project on [Supabase](https://supabase.com)
-2. PostGIS is enabled by default
-3. Copy the **Connection String** (Settings → Database → URI)
-4. Use it as `DATABASE_URL` on Render
-5. Run migrations: they run automatically on deploy (`npx prisma migrate deploy`)
-6. Seed (optional): `npx prisma db seed` locally with `DATABASE_URL` pointing to Supabase
-
----
-
-## Frontend — Vercel (Zilber's task)
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. From `frontend/`: `npx expo export --platform web`
-3. Deploy: `vercel --prod` (or connect repo on Vercel dashboard)
-4. Set `EXPO_PUBLIC_API_URL` to the Render backend URL
-
----
-
-## Post-Deploy Verification
-
-1. Hit `GET <backend-url>/health` → should return `{ "status": "ok" }`
-2. Hit `GET <backend-url>/api/tasks?lat=32.08&lng=34.78&radius=50` → should return seeded tasks
-3. Open frontend → login with seeded account → verify dashboard loads
-
----
-
-## Seeding Production Database
+### Railway CLI
 
 ```bash
-# Point DATABASE_URL to production
-export DATABASE_URL="postgresql://..."
-cd backend
-npx prisma db seed
+npm install -g @railway/cli
+
+railway login        # opens browser to authenticate
+railway link         # guystein1's Projects → fixit → production → fixit-api
+
+railway logs                                     # tail live backend logs
+railway status                                   # deployment status of all services
+railway run npx prisma migrate deploy            # run migrations manually
+railway variables list --service fixit-api --kv  # view all env vars
+railway variables set KEY=value --service fixit-api
 ```
 
-⚠️ The seed script has a safety check — it will NOT run if `NODE_ENV=production`. To seed production, temporarily unset it or run:
+---
+
+## Database — Railway (PostGIS)
+
+The database runs on Railway using the official `postgis/postgis:16-master` image.
+
+- **Internal hostname:** `postgis.railway.internal:5432`
+- **Database name:** `railway`
+- **Migrations:** run automatically on each backend deploy (`npx prisma migrate deploy`)
+- **PostGIS:** enabled — powers geospatial task queries (tasks near a location, distance sorting)
+
+Add a new migration locally:
 
 ```bash
-NODE_ENV=development npx prisma db seed
+cd backend
+npx prisma migrate dev --name describe_your_change
+```
+
+---
+
+## Frontend — Vercel
+
+The web build redeploys on every push to `main`: Vercel runs `expo export --platform web` and
+serves the static output. All `EXPO_PUBLIC_*` variables from `frontend/.env` are configured in
+the Vercel dashboard under **Project Settings → Environment Variables**.
+
+### Vercel CLI
+
+The Vercel CLI is already a dev dependency. Link the project once:
+
+```bash
+cd frontend
+npx vercel link     # guy-stein-s-projects → fixit
+
+npx vercel ls                      # list deployments and status
+npx vercel logs <deployment-url>   # logs for a specific deployment
+npx vercel inspect <deployment-url>
+```
+
+---
+
+## Firebase — authorized domains
+
+For login to work on a deployed URL, that domain must be whitelisted in Firebase:
+
+1. Open the [Firebase Console → Authentication → Settings](https://console.firebase.google.com/project/fixit-dev-fd366/authentication/settings)
+2. Go to **Authorized domains**
+3. Add the domain (e.g. `fixit-one-mocha.vercel.app` — already added)
+
+> Deploying to a new domain (or a teammate's preview URL) requires adding it here before login works.
+
+---
+
+## Post-deploy verification
+
+1. `GET <api-url>/health` → `{ "status": "ok" }`
+2. `GET <api-url>/api/tasks?lat=32.08&lng=34.78&radius=50` → returns tasks
+3. Open the web app → sign in with a [demo account](Demo_Users.md) → confirm the dashboard loads
+
+---
+
+## Seeding
+
+The local seed (`backend/prisma/seed.ts`) refuses to run when `NODE_ENV=production` as a safety
+check. The shared playground database is seeded separately; see the team's internal notes before
+running any seed against a hosted database.
+
+```bash
+cd backend
+npx prisma db seed     # local only
 ```
