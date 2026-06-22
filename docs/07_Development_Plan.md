@@ -622,7 +622,7 @@ Builds the authentication screens and the navigation structure that controls wha
 > **⚠ Priority:** Complete the reusable UI component library **first** in Phase 3, before Stein and Zilber begin building screens. Stein's maps and Zilber's auth screens depend on shared components.
 
 - **Design System Setup** (`frontend/src/theme.ts`):
-  - Configure `MD3LightTheme` from React Native Paper with the Fixlt color palette: Primary = Deep Navy Blue (`#1A237E`), Secondary = Golden Yellow (`#FFC107`), Surface = Light Gray (`#F5F5F5`).
+  - Configure `MD3LightTheme` from React Native Paper with the FixIt color palette: Primary = Deep Navy Blue (`#1A237E`), Secondary = Golden Yellow (`#FFC107`), Surface = Light Gray (`#F5F5F5`).
   - Wrap the app root in `<PaperProvider theme={theme}>`.
   - All screens use Paper primitives directly: `Button`, `TextInput`, `Card`, `Avatar`, `Chip`, `Badge`, `FAB`, `Portal`/`Modal` for bottom sheets.
 - **Thin wrapper components** (`frontend/src/components/`) — only where Paper doesn't cover the use case:

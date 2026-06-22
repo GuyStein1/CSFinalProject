@@ -114,7 +114,7 @@ stateDiagram-v2
 1. Taps the "+" floating action button or "Create New Task" card.
 2. **Step 1 — Details:** Enters Title and Description.
 3. **Step 2 — Media:** Uploads up to 5 photos from camera or gallery.
-4. **Step 3 — Category:** Selects one category (Electricity, Plumbing, Carpentry, Painting, Moving, General).
+4. **Step 3 — Category:** Selects one category (Assembly, Mounting, Moving, Painting, Plumbing, Electricity, Outdoors, Cleaning, Other).
 5. **Step 4 — Budget:** Chooses one of:
    * **Fixed Price** — enters a specific amount.
    * **Quote Required** — leaves price blank, expects Fixers to name their price.
