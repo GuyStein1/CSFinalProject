@@ -24,7 +24,7 @@ If a visual reference is needed before coding, duplicate a free **Material Desig
 ## 1. Authentication Screens
 
 ### 1.1 Welcome / Landing Screen
-* **Logo:** Fixlt branding and tagline centered on screen.
+* **Logo:** FixIt branding and tagline centered on screen.
 * **Language Toggle:** EN / HE switch at the top-right corner. *(Added when Hebrew support is implemented — not present in Phase 1.)*
 * **Actions:** Two prominent buttons stacked vertically — "Log In" and "Create Account".
 * **Background:** Subtle illustration or gradient conveying handyman/services theme.
@@ -60,7 +60,7 @@ If a visual reference is needed before coding, duplicate a free **Material Desig
 ## 2. Global UI Elements
 
 ### 2.1 Top Navigation Bar
-* **Left:** App logo / name ("Fixlt").
+* **Left:** App logo / name ("FixIt").
 * **Center:** Mode Toggle — segmented control switching between "Requester" and "Fixer". The active mode is visually highlighted.
 * **Right:** Notification Bell (with unread count badge) and Language Toggle (EN/HE). *(Language toggle added when Hebrew support is implemented.)*
 
@@ -119,7 +119,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 
 **Step 3 — Category:**
 * **Grid:** Visual grid of category cards with icons and labels:
-  * ⚡ Electricity | 🔧 Plumbing | 🔨 Carpentry | 🎨 Painting | 📦 Moving | 🛠 General
+  * 🪛 Assembly | 🔩 Mounting | 📦 Moving | 🎨 Painting | 🔧 Plumbing | ⚡ Electricity | 🌳 Outdoors | 🧹 Cleaning | 🛠 Other
 * **Selection:** Single-select. Selected card is visually highlighted.
 * **Navigation:** "Back" and "Next" buttons.
 
@@ -131,7 +131,7 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 
 **Location Permission (triggered on entering Step 5):**
 Before displaying the map, the app checks whether location permission has been granted.
-- If **not yet asked**: Show a rationale modal — "Fixlt needs your location to drop a pin for your task's general area. Your exact home address is entered separately and stays private." — with "Allow" and "Skip for now" buttons. "Allow" triggers the native iOS/Android permission dialog.
+- If **not yet asked**: Show a rationale modal — "FixIt needs your location to drop a pin for your task's general area. Your exact home address is entered separately and stays private." — with "Allow" and "Skip for now" buttons. "Allow" triggers the native iOS/Android permission dialog.
 - If **denied**: The map is replaced with a text input labeled "General Area (e.g., 'Hadar, Haifa')" and a note: "Location access was denied. You can enable it in your device Settings, or type your neighborhood manually."
 - If **granted**: Map loads normally.
 
@@ -193,7 +193,7 @@ Before displaying the map, the app checks whether location permission has been g
 
 **On first load — Location Permission Check:**
 Before rendering the map or fetching tasks, the app checks location permission.
-- If **not yet asked**: Show a rationale modal — "Fixlt needs your location to show you tasks nearby. You can change this anytime in Settings." — "Allow" triggers the native dialog.
+- If **not yet asked**: Show a rationale modal — "FixIt needs your location to show you tasks nearby. You can change this anytime in Settings." — "Allow" triggers the native dialog.
 - If **denied**: Full-screen fallback shown — a city/neighborhood search bar ("Enter your city or area") lets the Fixer manually enter a location to use as the discovery center point. A banner reads: "Using manual location. Enable GPS in Settings for automatic detection."
 - If **granted**: Map loads with the Fixer's current GPS position centered.
 
@@ -203,7 +203,7 @@ Before rendering the map or fetching tasks, the app checks location permission.
   * "View Details" button.
 * **Filters Bar:** Horizontal scrollable chips above the map:
   * Distance: 5km / 10km / 25km / 50km (single select).
-  * Category: Electricity / Plumbing / Carpentry / etc. (multi-select).
+  * Category: Assembly / Mounting / Plumbing / Electricity / etc. (multi-select).
   * Price: "₪0–100" / "₪100–500" / "₪500+" (single select or custom range).
 * **Toggle:** "Map | List" switch in the top-right.
 
@@ -254,7 +254,7 @@ Before rendering the map or fetching tasks, the app checks location permission.
 * **Edit Profile Button:** Opens an editable form for name, bio, phone number.
 * **Specializations Section:**
   * Label: "What do you work on?"
-  * Multi-select chips for each Category: Electricity / Plumbing / Carpentry / Painting / Moving / General.
+  * Multi-select chips for each Category: Assembly / Mounting / Moving / Painting / Plumbing / Electricity / Outdoors / Cleaning / Other.
   * Selected chips are highlighted. At least one should be selected.
 * **Payment Section:**
   * Label: "Payment Link (Bit / Paybox)"
@@ -265,9 +265,9 @@ Before rendering the map or fetching tasks, the app checks location permission.
   * Grid of uploaded images (3-column).
   * "+" card to add a new photo with an optional caption.
   * Long-press or "X" overlay to delete.
-* **Certifications Section:** *(Stretch Goal)*
-  * List of uploaded documents. Each item shows: title and upload date. No status badge.
-  * "Add Certification" button to upload a new document with a title.
+* **Certifications Section:**
+  * List of uploaded documents. Each item shows: category, title, upload date, and a review-status badge (Pending / Approved / Rejected).
+  * "Add Certification" button to upload a new document with a category and title; it enters admin review as `Pending`.
 * **Reviews Section:** "View My Reviews" link navigating to a list of received reviews.
 
 ---

@@ -1,7 +1,7 @@
 # System Architecture
 
 ## 1. Technical Architecture & Stack
-Fixlt utilizes an API-first architecture, strictly separating the frontend client from the backend engine to seamlessly power both web and mobile experiences. The project uses a Full-Stack TypeScript paradigm.
+FixIt utilizes an API-first architecture, strictly separating the frontend client from the backend engine to seamlessly power both web and mobile experiences. The project uses a Full-Stack TypeScript paradigm.
 
 ### Frontend (Cross-Platform)
 * **Mobile App:** React Native with Expo (TypeScript).
@@ -40,7 +40,7 @@ Fixlt utilizes an API-first architecture, strictly separating the frontend clien
 
 ## 3. Project Scope & Constraints
 * **Payments:** No in-app payment processing. Fixers link personal Bit or Paybox URLs. The app generates a "Pay Fixer" deep-link button upon task completion. The Requester can optionally confirm payment was sent via a "Confirm Payment" tap, tracked by `Task.is_payment_confirmed`.
-* **Trust & Liability:** Relies on the one-way rating system (Requesters rate Fixers). Certifications are user-uploaded for display only — no platform verification. Terms of Service waives platform liability.
+* **Trust & Liability:** Relies on the one-way rating system (Requesters rate Fixers), plus admin-reviewed Fixer identity verification and certification approval. Terms of Service waives platform liability.
 * **Email Verification:** Handled by Firebase Auth's built-in `sendEmailVerification()`. No custom SMTP setup needed. Phone number is collected for contact but not verified.
 * **Deployment:** Mobile app can be demonstrated through Expo during development, but camera/location/push flows should be validated on a physical device. Web app hosted locally or via Vercel.
 * **Cold Start Demo:** Database seeded with mock tasks/users in a specific area (e.g., Haifa/Be'er Sheva) to demonstrate filtering and maps.

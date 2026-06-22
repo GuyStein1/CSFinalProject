@@ -1,5 +1,5 @@
 {
-  "name": "fixlt",
+  "name": "fixit",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -9,6 +9,7 @@
   "scripts": {
     "dev:backend": "npm run dev --workspace backend",
     "dev:frontend": "npm run start --workspace frontend",
+    "docs": "npx docsify-cli serve docs",
     "prepare": "husky || true"
   },
   "lint-staged": {
