@@ -125,4 +125,4 @@ Users have a single unified account with both Requester and Fixer roles.
 5. Planned Additions (Hebrew/RTL i18n, task reopen, read receipts)
 6. Polish & Demo (seed data, deployment, integration testing)
 
-Team: Stein, Zilber, Shick. See `07_Development_Plan.md` for full task breakdown per member.
+Team: Guy Stein, Guy Zilber, Guy Shick. See `07_Development_Plan.md` for full task breakdown per member.

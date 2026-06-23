@@ -20,6 +20,9 @@ export interface BidTask {
   general_location_name: string;
   general_location_name_en?: string | null;
   completed_at: string | null;
+  is_payment_confirmed?: boolean;
+  requester_completed?: boolean;
+  fixer_completed?: boolean;
   requester?: {
     id: string;
     full_name: string;

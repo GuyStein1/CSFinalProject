@@ -1,12 +1,19 @@
 # Database Schema
 
-The system uses PostgreSQL with PostGIS for spatial queries, managed via Prisma ORM.
+The system uses PostgreSQL with PostGIS for spatial queries, managed via Prisma ORM. This page
+mirrors `backend/prisma/schema.prisma` — if the two ever disagree, the Prisma schema wins.
 
 ## 1. Enums
-* `Category`: ASSEMBLY, MOUNTING, MOVING, PAINTING, PLUMBING, ELECTRICITY, OUTDOORS, CLEANING
+
+* `Category`: ASSEMBLY, MOUNTING, MOVING, PAINTING, PLUMBING, ELECTRICITY, OUTDOORS, CLEANING, OTHER
 * `TaskStatus`: OPEN, IN_PROGRESS, COMPLETED, CANCELED
+* `TaskUrgency`: FLEXIBLE, THIS_WEEK, TODAY
 * `BidStatus`: PENDING, ACCEPTED, REJECTED, WITHDRAWN
-* `NotificationType`: NEW_BID, BID_ACCEPTED, BID_REJECTED, NEW_MESSAGE, TASK_COMPLETED, TASK_CANCELED
+* `BidRejectionReason`: PRICE_TOO_HIGH, BAD_TIMING, CHOSE_ANOTHER, NOT_QUALIFIED, TASK_CANCELED, OTHER
+* `ReportReason`: SPAM, OFFENSIVE, MISLEADING, OTHER
+* `NotificationType`: NEW_BID, BID_ACCEPTED, BID_REJECTED, BID_WITHDRAWN, NEW_MESSAGE, TASK_COMPLETED, TASK_CANCELED, VERIFICATION_APPROVED, VERIFICATION_REJECTED, CERTIFICATION_APPROVED, CERTIFICATION_REJECTED
+* `VerificationStatus`: NONE, PENDING, APPROVED, REJECTED — a Fixer's identity-verification state
+* `CertificationStatus`: PENDING, APPROVED, REJECTED — admin-review state of an uploaded credential
 
 ## 2. Entities
 
@@ -20,106 +27,136 @@ Represents the unified account for both Requesters and Fixers. Created in the da
 * `avatar_url` (String, Nullable)
 * `bio` (Text, Nullable)
 * `payment_link` (String, Nullable) - Bit/Paybox URL
-* `specializations` (Enum: Category[]) - Categories the Fixer works in (e.g., [ELECTRICITY, PLUMBING]). Multi-select, optional. Used for profile display and future smart recommendations.
-* `push_token` (String, Nullable) - Device push notification token, registered on app launch. For the initial mobile MVP this stores the Expo push token used by the notification service.
-* `average_rating_as_fixer` (Float, Default 0) - Recalculated on each new review submission.
-* `created_at` (Timestamp)
-* `updated_at` (Timestamp)
+* `specializations` (Category[]) - Categories the Fixer works in (e.g., [ELECTRICITY, PLUMBING]). Multi-select, optional.
+* `push_token` (String, Nullable) - Expo push token, registered on app launch. Used by the notification service.
+* `language` (String, Default `"en"`) - Persisted UI language preference (`"en"` | `"he"`), synced across devices.
+* `average_rating_as_fixer` (Float, Default 0) - Recalculated on each new review.
+* `completed_tasks_as_fixer` (Int, Default 0)
+* `avg_response_time_minutes` (Float, Nullable)
+* `verification_status` (VerificationStatus, Default NONE) - Identity-verification state, set by admin review.
+* `verification_photo_url` (String, Nullable) - ID document submitted for verification.
+* `verification_selfie_url` (String, Nullable) - Selfie submitted for verification.
+* `is_fixer` (Boolean, Default false)
+* `is_admin` (Boolean, Default false)
+* `email_verified` (Boolean, Default false) - Mirrored from Firebase so the backend can gate without a Firebase round-trip.
+* `created_at` / `updated_at` (Timestamps)
 
-> **Note:** Password hashing, email verification status, and session/token management are all handled by Firebase Auth — not stored in this database. The backend queries Firebase when it needs `emailVerified` status.
+> **Note:** Passwords and session/token management are handled by Firebase Auth — never stored here. `email_verified` is mirrored into the DB (synced from Firebase) so the backend can read it directly.
 
 ### Task
 The job created by a Requester.
 * `id` (UUID, PK)
-* `requester_id` (UUID, FK -> User.id)
+* `requester_id` (UUID, FK → User.id)
 * `title` (String)
 * `description` (Text)
-* `media_urls` (String[]) - Firebase Storage URLs. Maximum 5 items enforced at the application layer.
-* `category` (Enum: Category)
+* `media_urls` (String[]) - Firebase Storage URLs. Max 5 enforced at the application layer.
+* `category` (Category)
 * `suggested_price` (Float, Nullable) - Null means "Quote Required"
-* `status` (Enum: TaskStatus)
-* `general_location_name` (String) - Public
-* `exact_address` (String) - Hidden until bid accepted
-* `coordinates` (Geometry Point) - PostGIS for map/distance queries. **Must have a GIST spatial index** for `ST_DWithin` radius queries to be performant.
-* `assigned_fixer_id` (UUID, FK -> User.id, Nullable)
-* `is_payment_confirmed` (Boolean, Default false) - Set to true when Requester taps "Confirm Payment" after paying via Bit/Paybox. Separate from `COMPLETED` status, which marks work as done.
-* `completed_at` (Timestamp, Nullable) - Set when the Requester marks the task as `COMPLETED`. Used to enforce the 14-day review window.
-* `created_at` (Timestamp)
-* `updated_at` (Timestamp)
+* `urgency` (TaskUrgency, Default FLEXIBLE)
+* `status` (TaskStatus, Default OPEN)
+* `general_location_name` (String) - Public neighborhood-level name
+* `general_location_name_en` (String, Nullable) - English geocoding of the public location
+* `exact_address` (String) - Hidden until a bid is accepted
+* `exact_address_en` (String, Nullable) - English geocoding of the exact address
+* `coordinates` (Geometry(Point, 4326)) - PostGIS, with a **GiST spatial index** for `ST_DWithin` radius queries
+* `assigned_fixer_id` (UUID, FK → User.id, Nullable)
+* `completion_photos` (String[]) - Photos of finished work
+* `is_payment_confirmed` (Boolean, Default false) - Requester confirmed payment via Bit/Paybox. Separate from `COMPLETED`.
+* `requester_completed` (Boolean, Default false) - Requester's side of the two-sided completion handshake
+* `fixer_completed` (Boolean, Default false) - Fixer's side of the handshake
+* `fixer_completed_at` (Timestamp, Nullable)
+* `completed_at` (Timestamp, Nullable) - Set when the task reaches `COMPLETED`. Enforces the 14-day review window.
+* `created_at` / `updated_at` (Timestamps)
+
+> **Two-sided completion:** a task moves to `COMPLETED` once both `requester_completed` and `fixer_completed` are set. Either party can confirm first; the second confirmation finalizes it. Bilingual location fields (`*_en`) support the English/Hebrew UI.
 
 ### Bid
 The offer submitted by a Fixer.
 * `id` (UUID, PK)
-* `task_id` (UUID, FK -> Task.id)
-* `fixer_id` (UUID, FK -> User.id)
+* `task_id` (UUID, FK → Task.id)
+* `fixer_id` (UUID, FK → User.id)
 * `offered_price` (Float)
 * `description` (Text) - Fixer's pitch
-* `status` (Enum: BidStatus)
-* `created_at` (Timestamp)
-* `updated_at` (Timestamp) - Tracks when status last changed (e.g., when bid was accepted/rejected).
+* `status` (BidStatus, Default PENDING)
+* `rejection_reason` (BidRejectionReason, Nullable) - Why the bid was rejected (manual or auto)
+* `rejection_note` (String, Nullable) - Optional free-text note on rejection
+* `auto_rejected_winning_price` (Float, Nullable) - When auto-rejected because another bid was accepted, the winning bid's price (shown to the Fixer for context)
+* `auto_rejected_winning_rating` (Float, Nullable) - The winning Fixer's rating, for the same context
+* `created_at` / `updated_at` (Timestamps)
+* Unique on `task_id + fixer_id` (one bid per Fixer per task)
 
 ### Review
 The Requester rates the Fixer after task completion.
 * `id` (UUID, PK)
-* `task_id` (UUID, FK -> Task.id)
-* `reviewer_id` (UUID, FK -> User.id) - Always the Requester.
-* `reviewee_id` (UUID, FK -> User.id) - Always the Fixer (`assigned_fixer_id`).
-* `rating` (Integer, 1-5)
+* `task_id` (UUID, FK → Task.id)
+* `reviewer_id` (UUID, FK → User.id) - Always the Requester
+* `reviewee_id` (UUID, FK → User.id) - Always the Fixer
+* `rating` (Integer, 1–5)
 * `comment` (Text, Nullable)
+* `is_flagged` (Boolean, Default false) - Set when reported; surfaces in the admin moderation queue
+* `is_hidden` (Boolean, Default false) - Set by an admin to hide an abusive review
 * `created_at` (Timestamp)
+* Unique on `task_id + reviewer_id`
 
-> **Review window:** Reviews can only be submitted within **14 days** of the task reaching `COMPLETED` status. After this window, the review prompt is hidden and the endpoint rejects submissions. One review per task, enforced by a unique constraint on `task_id + reviewer_id`.
+> **Review window:** reviews can only be submitted within **14 days** of the task reaching `COMPLETED`. One review per task.
+
+### ReviewReport
+A report filed against a review, feeding the admin moderation queue.
+* `id` (UUID, PK)
+* `review_id` (UUID, FK → Review.id)
+* `reporter_id` (UUID, FK → User.id)
+* `reason` (ReportReason)
+* `details` (String, Nullable)
+* `created_at` (Timestamp)
+* Unique on `review_id + reporter_id` (one report per user per review)
 
 ### Message
 Powers real-time in-app chat.
 * `id` (UUID, PK)
-* `task_id` (UUID, FK -> Task.id)
-* `sender_id` (UUID, FK -> User.id)
-* `recipient_id` (UUID, FK -> User.id)
+* `task_id` (UUID, FK → Task.id)
+* `sender_id` (UUID, FK → User.id)
+* `recipient_id` (UUID, FK → User.id)
 * `content` (Text)
-* `is_read` (Boolean, Default false)
+* `is_read` (Boolean, Default false) - Drives read receipts
 * `created_at` (Timestamp)
 
 ### Notification
-Alerts for bids, status updates, and messages.
+Alerts for bids, status updates, messages, and verification/certification outcomes.
 * `id` (UUID, PK)
-* `user_id` (UUID, FK -> User.id)
-* `title` (String)
-* `body` (Text)
-* `type` (Enum: NotificationType)
-* `related_entity_id` (UUID) - ID of the linked entity. The entity type is determined by the notification type (see mapping below).
-* `related_entity_type` (String) - The entity type for deep-linking: `TASK`, `BID`, or `MESSAGE`. Mapping by notification type:
-  * `NEW_BID` → `TASK` (navigate to Task Details, Bids tab)
-  * `BID_ACCEPTED` / `BID_REJECTED` → `BID` (navigate to My Bids)
-  * `NEW_MESSAGE` → `MESSAGE` (navigate to Chat)
-  * `TASK_COMPLETED` / `TASK_CANCELED` → `TASK` (navigate to Task Details)
+* `user_id` (UUID, FK → User.id)
+* `title` (String) / `body` (Text)
+* `type` (NotificationType)
+* `related_entity_id` (String) - ID of the linked entity, for deep-linking
+* `related_entity_type` (String) - `TASK`, `BID`, or `MESSAGE`
+* `user_role` (String, Nullable) - Which role context (requester/fixer) the notification targets
 * `is_read` (Boolean, Default false)
 * `created_at` (Timestamp)
 
 ### PortfolioItem
 Visual gallery of past completed jobs for Fixers.
 * `id` (UUID, PK)
-* `fixer_id` (UUID, FK -> User.id)
+* `fixer_id` (UUID, FK → User.id)
 * `image_url` (String)
 * `description` (String, Nullable)
 * `created_at` (Timestamp)
 
 ### Certification
-Professional credentials uploaded by Fixers. Displayed as-is with no platform verification — no status tracking.
+Professional credentials uploaded by Fixers and reviewed by an admin.
 * `id` (UUID, PK)
-* `fixer_id` (UUID, FK -> User.id)
+* `fixer_id` (UUID, FK → User.id)
+* `category` (Category) - Trade the credential applies to
 * `title` (String)
 * `document_url` (String)
-* `created_at` (Timestamp)
+* `status` (CertificationStatus, Default PENDING) - Admin-review state
+* `reviewed_at` (Timestamp, Nullable)
+* `reviewed_by` (UUID, FK → User.id, Nullable) - The admin who reviewed it
+* `rejection_note` (String, Nullable)
+* `created_at` / `updated_at` (Timestamps)
+* Unique on `fixer_id + category`
 
-## 3. Entity Relationships Mapping
+> Certifications are **admin-reviewed**: a Fixer uploads a credential (status `PENDING`), and an admin approves or rejects it. Approved certifications surface as trusted badges on the public profile.
 
-The following diagram illustrates the primary connections and dependencies between the system entities.
-
-### Visual Diagram
-[View Interactive Graph in FigJam](https://www.figma.com/online-whiteboard/create-diagram/98992f5d-ee75-499b-afcd-e972921c4123?utm_source=other&utm_content=edit_in_figjam&oai_id=&request_id=ab59fac5-0611-46c9-9a48-9cf8046d734b)
-
-### Mermaid Syntax
+## 3. Entity Relationships
 
 ```mermaid
 graph LR
@@ -127,6 +164,7 @@ graph LR
     Task["Task"]
     Bid["Bid"]
     Review["Review"]
+    ReviewReport["ReviewReport"]
     Message["Message"]
     Notification["Notification"]
     PortfolioItem["PortfolioItem"]
@@ -137,14 +175,16 @@ graph LR
     User --"SubmittedBids (1:N)"--> Bid
     User --"ReviewsWritten (1:N)"--> Review
     User --"ReviewsReceived (1:N)"--> Review
-
     User --"MessagesSent (1:N)"--> Message
     User --"MessagesReceived (1:N)"--> Message
     User --"1:N"--> Notification
     User --"1:N"--> PortfolioItem
     User --"1:N"--> Certification
+    User --"FiledReports (1:N)"--> ReviewReport
+    User --"ReviewsCertifications (1:N)"--> Certification
 
     Task --"1:N"--> Bid
     Task --"1:N"--> Review
     Task --"1:N"--> Message
+    Review --"1:N"--> ReviewReport
 ```

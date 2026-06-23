@@ -405,9 +405,15 @@
       "cancelJob": "Cancel job",
       "chat": "Chat",
       "reactivate": "Reactivate",
+      "taskAssigned": "Task assigned to someone else, cannot reactivate",
       "locationNotSet": "Location not set",
       "winningBid": "Winning bid: ₪{{price}}",
-      "winningBidRating": "Winning bid: ₪{{price}} · Rating: {{rating}}★"
+      "winningBidRating": "Winning bid: ₪{{price}} · Rating: {{rating}}★",
+      "actionNeeded": "Action needed",
+      "confirmCompletionHint": "Payment is confirmed — mark the job done on your side to close it out.",
+      "confirmCompletion": "Confirm completion",
+      "waitingRequester": "Waiting for the requester to confirm",
+      "taskCanceledNote": "The requester canceled this task, no action is needed on your part."
     },
     "stats": {
       "inView": "In view",
@@ -478,6 +484,12 @@
         "title": "Cancel accepted job?",
         "message": "Cancel \"{{title}}\"? The task will reopen for other Fixers and the requester will lose your accepted job state.",
         "confirm": "Cancel job"
+      },
+      "confirmCompletion": {
+        "title": "Confirm completion?",
+        "message": "Confirm you finished \"{{title}}\"? Once both you and the requester confirm, the job is marked completed.",
+        "confirm": "Confirm completion",
+        "error": "Failed to confirm completion."
       },
       "delete": {
         "title": "Delete bid?",
@@ -1541,6 +1553,7 @@
     "inProgress": "In progress",
     "completed": "Completed",
     "canceled": "Canceled",
+    "taskCanceled": "Task canceled",
     "pending": "Pending",
     "accepted": "Accepted",
     "rejected": "Rejected",
@@ -1559,6 +1572,8 @@
     "leaveReview": "Leave review",
     "reopen": "Reopen",
     "markComplete": "Mark complete",
+    "completePay": "Complete & Pay",
+    "awaitingFixer": "Awaiting fixer confirmation",
     "chat": "Chat"
   },
   "becomeFixer": {

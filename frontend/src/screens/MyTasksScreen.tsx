@@ -36,6 +36,9 @@ interface Task {
   assigned_fixer_id?: string;
   assigned_fixer_avatar?: string | null;
   has_review?: boolean;
+  is_payment_confirmed?: boolean;
+  requester_completed?: boolean;
+  fixer_completed?: boolean;
   completed_at?: string;
   created_at: string;
 }
@@ -176,23 +179,11 @@ export default function MyTasksScreen({ navigation }: Props) {
     });
   };
 
-  const markCompleted = (task: Task) => {
-    const doComplete = async () => {
-      try {
-        await api.put(`/api/tasks/${task.id}/status`, { status: 'COMPLETED' });
-        navigation.navigate('TaskDetails', { taskId: task.id });
-      } catch {
-        Alert.alert(t('common.error'), t('myTasks.alerts.failedComplete'));
-      }
-    };
-
-    confirmAction({
-      title: t('myTasks.actions.complete.title'),
-      message: t('myTasks.actions.complete.message', { title: task.title }),
-      confirmLabel: t('myTasks.actions.complete.confirm'),
-      cancelLabel: t('myTasks.actions.complete.notYet'),
-      onConfirm: doComplete,
-    });
+  // Completion is a payment-gated, dual-confirmation flow (requester confirms
+  // payment, then both sides confirm) that lives on the TaskDetails screen.
+  // A one-tap list action can't represent it, so route there instead.
+  const goToCompletion = (task: Task) => {
+    navigation.navigate('TaskDetails', { taskId: task.id });
   };
 
   const reactivateTask = (task: Task) => {
@@ -419,7 +410,16 @@ export default function MyTasksScreen({ navigation }: Props) {
               helper={t('myTasks.sections.activeHelper')}
             />
             {filteredActiveTasks.length > 0 ? (
-              filteredActiveTasks.map((task) => (
+              filteredActiveTasks.map((task) => {
+                // Completion sub-state (only meaningful while IN_PROGRESS):
+                //   not paid              → "Complete & Pay"  (pay first)
+                //   paid, not yet marked  → "Mark complete"
+                //   paid + marked         → waiting on the fixer's confirmation
+                const paid = !!task.is_payment_confirmed;
+                const awaitingFixer =
+                  task.status === 'IN_PROGRESS' && paid && !!task.requester_completed && !task.fixer_completed;
+                const showComplete = task.status === 'IN_PROGRESS' && !awaitingFixer;
+                return (
                 <TaskCard
                   key={task.id}
                   title={task.title}
@@ -430,15 +430,17 @@ export default function MyTasksScreen({ navigation }: Props) {
                   bidCount={task.bid_count}
                   fixerName={task.assigned_fixer_name}
                   onPress={() => navigation.navigate('TaskDetails', { taskId: task.id })}
-                  onCancel={() => cancelTask(task)}
+                  // Backend forbids canceling once payment is confirmed.
+                  onCancel={paid ? undefined : () => cancelTask(task)}
                   onEdit={
                     task.status === 'OPEN'
                       ? () => navigation.navigate('TaskDetails', { taskId: task.id, openEdit: true })
                       : undefined
                   }
-                  onMarkCompleted={
-                    task.status === 'IN_PROGRESS' ? () => markCompleted(task) : undefined
-                  }
+                  onMarkCompleted={showComplete ? () => goToCompletion(task) : undefined}
+                  markCompletedLabel={paid ? t('taskCard.markComplete') : t('taskCard.completePay')}
+                  markCompletedIcon={paid ? 'check-circle-outline' : 'cash-check'}
+                  awaitingFixer={awaitingFixer}
                   onChat={
                     task.status === 'IN_PROGRESS' && task.assigned_fixer_id
                       ? () => navigation.navigate('Chat', {
@@ -452,7 +454,8 @@ export default function MyTasksScreen({ navigation }: Props) {
                       : undefined
                   }
                 />
-              ))
+                );
+              })
             ) : (
               <InlineEmpty
                 icon="clipboard-check-outline"

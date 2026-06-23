@@ -1,6 +1,6 @@
 # 8. Firebase Integration Guide
 
-This document outlines the required steps for developers to integrate Firebase into the Fixlt project. For the MVP, Firebase is used primarily for:
+This document outlines the required steps for developers to integrate Firebase into the FixIt project. For the MVP, Firebase is used primarily for:
 1. **Firebase Authentication:** User registration, login, email verification, and token validation.
 2. **Firebase Storage:** Hosting images (task photos and fixer portfolios).
 

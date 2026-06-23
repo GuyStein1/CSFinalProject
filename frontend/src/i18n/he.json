@@ -405,9 +405,15 @@
       "cancelJob": "בטל עבודה",
       "chat": "צ׳אט",
       "reactivate": "הפעל מחדש",
+      "taskAssigned": "המשימה הוקצתה למישהו אחר, לא ניתן להפעיל מחדש",
       "locationNotSet": "מיקום לא הוגדר",
       "winningBid": "הצעה שנבחרה: ₪{{price}}",
-      "winningBidRating": "הצעה שנבחרה: ₪{{price}} · דירוג: {{rating}}★"
+      "winningBidRating": "הצעה שנבחרה: ₪{{price}} · דירוג: {{rating}}★",
+      "actionNeeded": "נדרשת פעולה",
+      "confirmCompletionHint": "התשלום אושר — סמן שסיימת את העבודה כדי לסגור אותה.",
+      "confirmCompletion": "אשר השלמה",
+      "waitingRequester": "ממתין לאישור המבקש",
+      "taskCanceledNote": "המזמין ביטל את המשימה, לא נדרשת פעולה מצדך."
     },
     "stats": {
       "inView": "בתצוגה",
@@ -478,6 +484,12 @@
         "title": "בטל עבודה שאושרה?",
         "message": "לבטל את \"{{title}}\"? המשימה תיפתח מחדש לפיקסרים אחרים והמבקש יאבד את מצב העבודה המאושרת שלך.",
         "confirm": "בטל עבודה"
+      },
+      "confirmCompletion": {
+        "title": "לאשר השלמה?",
+        "message": "לאשר שסיימת את \"{{title}}\"? לאחר ששניכם — אתה והמבקש — תאשרו, העבודה תסומן כהושלמה.",
+        "confirm": "אשר השלמה",
+        "error": "אישור ההשלמה נכשל."
       },
       "delete": {
         "title": "מחק הצעה?",
@@ -1553,6 +1565,7 @@
     "inProgress": "בביצוע",
     "completed": "הושלם",
     "canceled": "בוטל",
+    "taskCanceled": "המשימה בוטלה",
     "pending": "ממתין",
     "accepted": "התקבל",
     "rejected": "נדחה",
@@ -1573,6 +1586,8 @@
     "leaveReview": "השאר ביקורת",
     "reopen": "פתח מחדש",
     "markComplete": "סמן כהושלם",
+    "completePay": "סיום ותשלום",
+    "awaitingFixer": "ממתין לאישור הפיקסר",
     "chat": "צ׳אט"
   },
   "becomeFixer": {
