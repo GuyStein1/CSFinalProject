@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
@@ -39,9 +40,19 @@ export default function RequesterTabs() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
   const { unreadCount } = useUnreadMessages('requester');
   const [tutorialState, setTutorialState] = useState<'checking' | 'show' | 'done'>('checking');
+
+  const tabBarStyle = useMemo(
+    () => ({
+      ...styles.tabBar,
+      height: styles.tabBar.height + insets.bottom,
+      paddingBottom: styles.tabBar.paddingBottom + insets.bottom,
+    }),
+    [insets.bottom],
+  );
 
   useEffect(() => {
     AsyncStorage.getItem(getRequesterTutorialKey()).then((seen) => {
@@ -68,7 +79,7 @@ export default function RequesterTabs() {
         tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
         sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarStyle: useDesktopNavigation ? styles.hiddenTabBar : styles.tabBar,
+        tabBarStyle: useDesktopNavigation ? styles.hiddenTabBar : tabBarStyle,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
         tabBarBackground: useDesktopNavigation ? undefined : () => <TabBarBackground />,

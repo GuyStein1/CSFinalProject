@@ -27,7 +27,7 @@ import PastConversationsScreen from '../screens/PastConversationsScreen';
 import AppLogo from '../components/AppLogo';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useNotificationContext, FIXER_NOTIF_TYPES, REQUESTER_NOTIF_TYPES } from '../context/NotificationContext';
-import { useActiveMode } from '../context/ActiveModeContext';
+import { useActiveMode, ACTIVE_MODE_STORAGE_KEY } from '../context/ActiveModeContext';
 import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { useLanguage } from '../context/LanguageContext';
 import { brandColors, headerTint, heroGradientRequester, heroGradientFixer, spacing, radii, shadows, typography } from '../theme';
@@ -542,10 +542,21 @@ function MainHeader(props: BottomTabHeaderProps) {
 function MainNavigator() {
   const theme = useTheme();
   const { setActiveMode } = useActiveMode();
+  const [initialRoute, setInitialRoute] = useState<'RequesterMode' | 'FixerMode' | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ACTIVE_MODE_STORAGE_KEY)
+      .then((stored) => {
+        setInitialRoute(stored === 'fixer' ? 'FixerMode' : 'RequesterMode');
+      })
+      .catch(() => setInitialRoute('RequesterMode'));
+  }, []);
+
+  if (!initialRoute) return null;
 
   return (
     <ModeTabs.Navigator
-      initialRouteName="RequesterMode"
+      initialRouteName={initialRoute}
       screenOptions={{
         header: (props: BottomTabHeaderProps) => <MainHeader {...props} />,
         tabBarStyle: { display: 'none' },
