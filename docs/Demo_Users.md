@@ -5,6 +5,7 @@ with tasks, bids, chats, notifications, and reviews so the app feels alive on fi
 
 > **Sign in:** [fixit-one-mocha.vercel.app](https://fixit-one-mocha.vercel.app)
 > **Password for every account below:** `guyguyguy`
+> **Finding tasks on the map:** the example open tasks are in **Tel Aviv** — in Fixer mode, search "Tel Aviv" in the discovery map/location search to see them.
 
 These are throwaway accounts in a shared playground database — please don't rely on their data
 staying put. There are no real users yet.

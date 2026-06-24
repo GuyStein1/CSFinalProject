@@ -122,6 +122,7 @@
     "emailVerify": {
       "title": "Verify your email",
       "message": "We sent a verification link to {{email}}. Please check your inbox and click the link to continue.",
+      "spamHint": "Don't see it? Check your spam or junk folder.",
       "resend": "Resend email",
       "resent": "Email sent!",
       "resentMessage": "A verification email has been sent. Please check your inbox.",
