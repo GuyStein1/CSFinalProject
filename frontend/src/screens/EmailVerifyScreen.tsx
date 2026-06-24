@@ -96,6 +96,9 @@ export default function EmailVerifyScreen({ email, onRecheck, onLogOut }: Props)
         <Text style={[typography.body, styles.message, isRTL && { writingDirection: 'rtl' }]}>
           {t('auth.emailVerify.message', { email: email ?? '' })}
         </Text>
+        <Text style={[typography.caption, styles.spamHint, isRTL && { writingDirection: 'rtl' }]}>
+          {t('auth.emailVerify.spamHint')}
+        </Text>
 
         <FButton
           onPress={() => void handleRecheck()}
@@ -152,6 +155,10 @@ const styles = StyleSheet.create({
     color: brandColors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  spamHint: {
+    color: brandColors.textMuted,
+    textAlign: 'center',
   },
   primaryBtn: {
     width: '100%',
