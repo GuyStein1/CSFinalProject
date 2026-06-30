@@ -69,7 +69,7 @@ All user endpoints require a valid Firebase ID Token (`Authorization: Bearer <fi
 * `GET /api/users/me/bids` - Fetch the authenticated Fixer's submitted bids. Supports filters for `status`, `page`, and `limit`. Used by the "My Bids" screen.
 * `PUT /api/bids/:id` - Fixer edits their own bid (`offered_price`, `description`) while it is still `PENDING`.
 * `DELETE /api/bids/:id` - Fixer permanently deletes their own bid.
-* `PUT /api/bids/:id/accept` - Requester accepts a bid. Side effects: Task status → `IN_PROGRESS`, `assigned_fixer_id` set, exact address revealed to Fixer, all other `PENDING` bids auto-rejected (each stamped with `auto_rejected_winning_price`/`auto_rejected_winning_rating` for context), chat channel activated, Fixer notified via push.
+* `PUT /api/bids/:id/accept` - Requester accepts a bid. Side effects: Task status → `IN_PROGRESS`, `assigned_fixer_id` set, exact address revealed to Fixer, all other `PENDING` bids auto-rejected (each stamped with `auto_rejected_winning_price`/`auto_rejected_winning_rating` for context), Fixer notified via push. Chat is **not** activated here — it is already available between the Requester and any `PENDING`/`ACCEPTED` bidder (see §7).
 * `PUT /api/bids/:id/reject` - Requester manually rejects a bid, with an optional `rejection_reason` and `rejection_note`.
 * `PUT /api/bids/:id/withdraw` - Fixer withdraws their own `PENDING` bid. Sets status to `WITHDRAWN` and notifies the Requester.
 * `PUT /api/bids/:id/reactivate` - Fixer re-activates a `WITHDRAWN` bid back to `PENDING`. Valid only while the bid is `WITHDRAWN` and the task is still `OPEN`.
@@ -93,9 +93,15 @@ All admin endpoints require an authenticated user with `is_admin = true` (enforc
 
 ## 7. Real-Time Chat (Socket.io)
 * **Namespace/Room:** Each task has a dedicated Socket room `task_chat_{taskId}`.
+* **Authorization model:** A user is allowed to read/send messages on a task's chat when **any** of the following is true:
+  * They are the Requester (`task.requester_id`).
+  * They are the assigned Fixer (`task.assigned_fixer_id`).
+  * They have a bid on the task whose status is `PENDING` or `ACCEPTED`.
+
+  This means the Requester can chat with any Fixer who has bid on the task even before accepting a bid (the UI only exposes the "Chat with bidder" affordance to the Requester; Fixers wait for acceptance before seeing the initiate-chat affordance, but can reply once the Requester has opened a thread). The same rule is enforced on `send_message`, `GET /api/tasks/:id/messages`, and `PUT /api/tasks/:id/messages/read`.
 * **Events:**
   * `join_chat` (Payload: taskId)
-  * `send_message` (Payload: taskId, senderId, content)
+  * `send_message` (Payload: taskId, senderId, content; optional `recipientId` for pre-acceptance Requester→bidder messages where `assigned_fixer_id` is not yet set)
   * `receive_message` (Payload: Message object)
   * `typing_indicator` (Payload: taskId, userId, isTyping) — *Stretch Goal: not in Phase 1.*
 * **REST Fallback:**

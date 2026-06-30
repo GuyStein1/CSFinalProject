@@ -99,7 +99,7 @@ stateDiagram-v2
 | From | To | Triggered By | Side Effects |
 |---|---|---|---|
 | — | OPEN | Requester creates task | Task visible on discovery feed |
-| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, chat channel activated, Fixer notified |
+| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, Fixer notified (chat between the two parties was already available pre-acceptance — see §5.2) |
 | OPEN | CANCELED | Requester cancels | All PENDING bids auto-rejected, task removed from feed |
 | IN_PROGRESS | COMPLETED | **Both** Requester and Fixer confirm completion (after the Requester confirms payment) | Status flips to COMPLETED only once both `requester_completed` and `fixer_completed` are set; `completed_at` recorded; review prompt shown to Requester (available for 14 days) |
 | IN_PROGRESS | CANCELED | Requester cancels | Fixer notified |
@@ -142,13 +142,13 @@ stateDiagram-v2
    * Exact address is revealed to the assigned Fixer.
    * All other `PENDING` bids are auto-rejected.
    * Fixer receives a push notification: "Your bid was accepted!"
-   * Chat channel between Requester and Fixer becomes active.
+   * The chat thread (which the Requester may already have opened with this Fixer pre-acceptance) becomes the active, bidirectional channel between the two parties.
 
 ### 3.4 Coordinating via Chat
 
-1. After bid acceptance, the Requester can open the chat from the Task Details screen.
+1. The Requester can open a chat with any bidder from the bid card on the Task Details screen, even before accepting a bid. Once a bid is accepted, the chat with the assigned Fixer remains open and becomes the coordination channel for the job.
 2. Uses real-time messaging to coordinate timing, special instructions, or share additional photos.
-3. Chat is scoped to the specific task — one chat thread per task.
+3. Chat is scoped to the specific task — one chat thread per (task, fixer) pair.
 
 ### 3.5 Completion & Payment
 
@@ -323,8 +323,9 @@ flowchart TD
 ### 5.2 Real-Time Chat
 
 **When is chat available?**
-* A chat channel for a task is only activated **after a bid is accepted** (task status: `IN_PROGRESS`).
-* Only the Requester and the assigned Fixer can participate — no other users.
+* A chat thread exists between the Requester and a Fixer for a given task as soon as the Fixer places a bid on it.
+* **Only the Requester can initiate the conversation** by opening the chat from the bid card on the Task Details screen. Fixers do not see a "Start chat" affordance until their bid is accepted, but once a thread exists (because the Requester initiated it), either side can send messages.
+* Once a bid is accepted (task → `IN_PROGRESS`), the chat with the assigned Fixer is the primary coordination channel; threads with other (now-rejected) bidders remain accessible as read-only history.
 
 **Chat flow:**
 1. Either party opens the task → taps "Chat".
@@ -337,10 +338,10 @@ flowchart TD
 **Chat availability by task status:**
 | Task Status | Chat Available? |
 |---|---|
-| OPEN | No |
-| IN_PROGRESS | Yes (active) |
-| COMPLETED | Yes (read-only archive) |
-| CANCELED | No (hidden) |
+| OPEN | Yes — Requester ↔ any Fixer who has a `PENDING` or `ACCEPTED` bid on the task. Only the Requester can initiate; either side can reply once the thread exists. |
+| IN_PROGRESS | Yes (active) — Requester ↔ assigned Fixer. |
+| COMPLETED | Yes (read-only archive). |
+| CANCELED | Yes (read-only archive with lock-bar). |
 
 ```mermaid
 sequenceDiagram
