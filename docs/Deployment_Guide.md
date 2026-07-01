@@ -6,7 +6,7 @@ steps after a PR merges.
 | Service | Platform | Notes |
 |---|---|---|
 | Backend API | **Railway** | Node.js + Express; runs `prisma migrate deploy` then starts the server |
-| Database | **Railway** | `postgis/postgis:16-master` Docker image (PostgreSQL 16 + PostGIS) |
+| Database | **Railway** | `postgis/postgis:16-3.4` Docker image (PostgreSQL 16 + PostGIS) |
 | Frontend (web) | **Vercel** | `expo export --platform web` → static build |
 
 **Live URLs**
@@ -33,6 +33,8 @@ The backend redeploys on every push to `main`. On each deploy Railway runs
 | `FIREBASE_CLIENT_EMAIL` | Firebase Admin SDK service account email |
 | `FIREBASE_PRIVATE_KEY` | Firebase Admin SDK private key (preserve `\n` newlines) |
 | `NODE_ENV` | `production` |
+| `PORT` | HTTP port for the Express server (Railway injects this; the app reads `process.env.PORT`) |
+| `CORS_ORIGINS` | Comma-separated allow-list of origins for CORS + the Socket.io handshake (e.g. `https://fixit-one-mocha.vercel.app,https://<preview>.vercel.app`) |
 
 Production env vars live in Railway — they are **not** in the repo.
 
@@ -55,7 +57,7 @@ railway variables set KEY=value --service fixit-api
 
 ## Database — Railway (PostGIS)
 
-The database runs on Railway using the official `postgis/postgis:16-master` image.
+The database runs on Railway using the official `postgis/postgis:16-3.4` image.
 
 - **Internal hostname:** `postgis.railway.internal:5432`
 - **Database name:** `railway`
@@ -79,16 +81,58 @@ the Vercel dashboard under **Project Settings → Environment Variables**.
 
 ### Vercel CLI
 
-The Vercel CLI is already a dev dependency. Link the project once:
+The Vercel CLI is **not** in the repo — install it globally the first time you need it, then link the project:
+
+```bash
+npm i -g vercel      # or: npx vercel@latest ...
+cd frontend
+vercel link          # guy-stein-s-projects → fixit
+
+vercel ls                          # list deployments and status
+vercel logs <deployment-url>       # logs for a specific deployment
+vercel inspect <deployment-url>
+```
+
+---
+
+## Mobile — EAS Build + EAS Update
+
+Mobile builds and over-the-air JS updates go through **Expo Application Services (EAS)**.
+
+### Build (native binary)
+
+Native builds are triggered manually with `eas build` and run in Expo's cloud. `frontend/eas.json` defines a `preview` profile that emits an Android **APK** (installable via sideload) with the `EXPO_PUBLIC_*` env vars baked in:
 
 ```bash
 cd frontend
-npx vercel link     # guy-stein-s-projects → fixit
-
-npx vercel ls                      # list deployments and status
-npx vercel logs <deployment-url>   # logs for a specific deployment
-npx vercel inspect <deployment-url>
+eas build -p android --profile preview    # Android APK
+eas build -p ios --profile preview        # iOS (requires an Apple team / provisioning)
 ```
+
+The build URL and download link are printed at the end and also visible at <https://expo.dev/accounts/fixit.dev/projects/fixit/builds>. The APK is signed with an EAS-managed Android keystore; the same keystore is reused across builds so the SHA-1 fingerprint (registered as an Android OAuth client on Firebase / Google Maps API key restrictions) stays stable.
+
+### OTA update (JS bundle only)
+
+Once a native binary is installed on a device, JS-only changes ship as an **EAS Update** on the `production` channel — no rebuild required. A GitHub Actions workflow at `frontend/.eas/workflows/update.yml` publishes an update automatically on every push to `main`. To publish manually:
+
+```bash
+cd frontend
+eas update --channel production --message "Short description of the change"
+```
+
+Devices pull the new bundle in the background on next launch.
+
+---
+
+## Local development database
+
+The local Postgres + PostGIS instance is defined in `docker-compose.yml` at the repo root:
+
+```bash
+docker compose up -d
+```
+
+The compose file currently provisions the database with the username `fixlt` (historical typo — kept for backwards compatibility with existing developer machines whose `.env` files already reference it). If you set up a fresh clone and edit your local `backend/.env` to use `fixit`, remember to update `docker-compose.yml` to match. The hosted database on Railway uses different credentials that Railway injects via `DATABASE_URL`.
 
 ---
 

@@ -37,16 +37,18 @@ Each feature is labeled with its planned status:
 
 ### 3.1 Authentication & Onboarding
 
-**`Phase 1`**
+**`Phase 1`** (email/password) | **`Shipped`** (Google sign-in, blocking email verification, idle auto-logout)
 
-Users register with their full name, email, and password. Phone number is optional at registration and can be added later — it's displayed to the other party once a task is in progress, for direct coordination.
+Users register with their full name, email, and password, or sign in with Google. Phone number is optional at registration and can be added later — it's displayed to the other party once a task is in progress, for direct coordination.
 
 Firebase Authentication handles the full auth lifecycle: registration, login, session persistence, password reset, and email verification. The backend never stores passwords.
 
-- **Email verification:** After registration, Firebase sends a verification email automatically. Until verified, the user's profile shows no badge. Once verified, an "Email Verified ✓" badge appears on their public profile. The app is fully usable before verification.
+- **Google Sign-In `Shipped`:** In addition to email/password, users can sign in with a Google account (dedicated OAuth client IDs are provisioned for Web / iOS / Android via `expo-auth-session`).
+- **Email verification `Shipped`:** After email/password registration, Firebase sends a verification email automatically. **New users are gated by a blocking `EmailVerifyScreen`** and cannot enter the app until they verify (Google sign-in bypasses this since the address is already verified by Google). Once verified, an "Email Verified ✓" badge appears on their public profile.
 - **Password reset:** Standard Firebase email-based reset flow. No custom implementation needed.
 - **Session persistence:** Firebase SDK persists the session on the device. Users stay logged in across app restarts; the token is silently refreshed in the background.
-- **Language selection:** Available in Settings once Hebrew support is added (see 3.10). In Phase 1, the app runs in English only with no language prompt on first launch.
+- **Idle auto-logout `Shipped`:** On the web app, users are automatically signed out after a period of inactivity with an "Are you still there?" warning shortly before.
+- **Language selection:** Available in Settings, in the Fixer Profile screen, and in the top nav bar globe icon (see 3.10). The selected language persists locally and to the user record.
 
 ---
 
@@ -56,14 +58,12 @@ Firebase Authentication handles the full auth lifecycle: registration, login, se
 
 The Requester's primary action — posting a job. Task creation is a guided multi-step wizard to make it easy and structured:
 
-1. **Title & Description** — A short title (max 80 characters) and a detailed description (max 500 characters) of what needs to be done.
-2. **Photos** — Up to 5 photos uploaded from the camera or gallery. Photos give Fixers a visual understanding of the job before bidding, which leads to more accurate quotes.
+1. **Title & Description** — A short title and a detailed description of what needs to be done. The client wizard nudges Requesters toward a concise title (a few words) and enough detail in the description for a Fixer to price it without a phone call.
+2. **Photos** — Up to 5 photos uploaded from the camera or gallery (cap enforced by the client). Photos give Fixers a visual understanding of the job before bidding, which leads to more accurate quotes.
 3. **Category** — Single-select from nine options: Assembly, Mounting, Moving, Painting, Plumbing, Electricity, Outdoors, Cleaning, Other. Used to filter tasks in the Fixer discovery feed.
-4. **Budget** — Two options:
-   - *Fixed Price:* Requester sets a specific amount (₪). Fixers know exactly what's on offer.
-   - *Quote Required:* No amount set. Fixers name their own price in their bid. Used when the Requester doesn't know the market rate or wants competitive quotes.
+4. **Budget & Urgency** — Budget has two options: *Fixed Price* (Requester sets a specific ₪ amount) or *Quote Required* (Fixers name their own price). Urgency is also captured on this step (`FLEXIBLE` / `THIS_WEEK` / `TODAY`) and is shown on the task card and pin so Fixers can prioritize.
 5. **Location** — Two location fields:
-   - *General area (public):* The Requester drops a pin on a map at neighborhood level. This is shown on the discovery feed so Fixers can filter by distance without seeing the exact home.
+   - *General area (public):* The Requester enters an address (autocomplete-backed); the map auto-pins the neighborhood-level pin used on the discovery feed. Fine adjustment via drag or tap is supported.
    - *Exact address (private):* A separate text field. This address is stored securely and only revealed to the Fixer whose bid is accepted.
 
 Before publishing, the Requester sees a summary screen to review all details and jump back to edit any step.
@@ -80,10 +80,11 @@ The primary screen in Fixer mode. Fixers see all open tasks near them and decide
 
 - **Map View (default):** A full-screen Google Map with color-coded pins representing open tasks, grouped by category. Tapping a pin shows a preview card with the task title, category, budget, and distance. Tapping the card opens the full task details.
 - **List View:** A vertical scrollable list of task cards, each showing the title, category, budget (or "Quote Required"), general location name, distance, time posted, and current bid count. Sorted by distance (nearest first).
-- **Filters:** A horizontal chip bar above both views lets Fixers filter by:
-  - Distance radius: 5 / 10 / 25 / 50 km
-  - Category: one or more
-  - Price range: preset brackets or custom input
+- **Filters:** A filter bar above both views lets Fixers filter by:
+  - Distance radius: a slider (up to a configurable maximum)
+  - Category: one or more (chips)
+  - Budget: a min/max range slider
+  - Fixers can also search a specific work area (`Shipped`) — the map re-centers on the searched location instead of the device GPS
 
 **Max bids per task:** `Phase 1` — Each task accepts a maximum of **15 bids**. Once reached, the "Submit Bid" button is replaced with "This task is no longer accepting bids." This prevents notification overload for the Requester and creates a sense of urgency for Fixers to bid early.
 
@@ -101,11 +102,11 @@ The core transaction mechanic of the platform. A Fixer submits a bid containing 
 
 Key rules:
 - A Fixer can submit **only one bid per task** (enforced by a unique constraint). They can **edit** the price or pitch of their own bid while it is still `PENDING`.
-- The Requester can accept or reject individual bids. **Accepting one bid auto-rejects all other pending bids**, and those Fixers are notified (the rejection shows the winning price/rating for context).
-- When a bid is accepted: the task moves to `IN_PROGRESS`, the exact address is revealed to the winning Fixer, and the in-app chat between the two parties is activated.
-- A Fixer can **withdraw** their own pending bid, and later **reactivate** it while the task is still open. If a Fixer needs to back out after being accepted, **cancel-accepted** returns the task to `OPEN` so the Requester can choose another Fixer.
+- The Requester can accept or manually reject individual bids. Manual rejection captures an optional structured reason. **Accepting one bid auto-rejects all other pending bids**, and those Fixers are notified — the rejection payload stamps `auto_rejected_winning_price` and `auto_rejected_winning_rating` so a Fixer sees the context that beat them.
+- When a bid is accepted: the task moves to `IN_PROGRESS`, the exact address is revealed to the winning Fixer, and the chat with the assigned Fixer becomes the primary coordination channel. (Chat is available with any bidder from the moment they bid — see §3.6.)
+- A Fixer can **withdraw** their own pending bid, and later **reactivate** it while the task is still `OPEN`. If a Fixer needs to back out after being accepted, **cancel-accepted** returns the task to `OPEN` so the Requester can choose another Fixer.
 
-The Requester can view each Fixer's full profile before accepting — including their bio, portfolio, specializations, rating, and past reviews. This is how trust is built before committing.
+The Requester can view each Fixer's full profile before accepting — including their bio, portfolio, specializations, rating, and past reviews. This is how trust is built before committing. The public **aggregate rating** uses a Bayesian shrinkage estimator so a Fixer with a single 5★ review isn't ranked above a Fixer with 20 reviews averaging 4.8★.
 
 ---
 
@@ -128,19 +129,21 @@ A Fixer's public profile is their storefront on the platform. It's the primary t
 
 ### 3.6 Real-Time Chat
 
-**`Phase 1`**
+**`Phase 1`** (with the assigned Fixer) | **`Shipped`** (pre-acceptance chat with any bidder, read receipts)
 
-After a bid is accepted, a private chat channel opens between the Requester and the assigned Fixer. Chat is scoped to the task — each task has its own conversation thread.
+Chat threads are per-task and per-Fixer. The **Requester** can open a chat with any Fixer who has a `PENDING` or `ACCEPTED` bid on the task — pre-acceptance chat is Requester-initiated only. Once opened, either side can send messages. After a bid is accepted, the chat with the assigned Fixer becomes the primary coordination channel; threads with other (now-rejected) bidders remain as read-only history.
 
-Chat is the primary coordination tool: agreeing on timing, sharing additional photos, confirming arrival, etc. It is **not** available before a bid is accepted (to prevent speculative conversations with many Fixers) and becomes **read-only** after a task is completed (preserved as a record).
+Chat is the primary coordination tool: agreeing on timing, sharing additional photos, confirming arrival, etc. It becomes **read-only** after a task is `COMPLETED` or `CANCELED` (preserved as a record with a lock-bar in the UI).
 
 - Messages are delivered in real time via WebSocket (Socket.io) when both parties are online.
 - If the recipient is offline, a push notification is sent instead.
 - Full message history is loaded from the database when opening a chat for the first time.
 
-**Read receipts:** `Shipped` — (✓ sent, ✓✓ read) shown on each message bubble, backed by per-message read state and real-time updates.
+**Read receipts `Shipped`** — (✓ sent, ✓✓ read) shown on each message bubble, backed by per-message read state and real-time `messages_read` events.
 
-**Typing indicator:** `Stretch Goal` — Shows "Fixer is typing..." in the chat header. Adds real-time polish but is not essential for the core experience.
+**Profanity filter `Shipped`** — Message content is passed through a lightweight profanity filter before being persisted.
+
+**Typing indicator** — Out of scope; not implemented.
 
 ---
 
@@ -153,10 +156,12 @@ Users receive push notifications for all key events, even when the app is in the
 | Event | Recipient |
 |---|---|
 | New bid submitted on your task | Requester |
+| Bid withdrawn | Requester |
 | Your bid was accepted | Fixer |
 | Your bid was rejected or task canceled | Fixer |
 | New chat message (recipient offline) | Other party |
-| Task marked as completed | Fixer |
+| Task marked as completed / payment confirmed | Both parties |
+| Certification / identity verification reviewed | Fixer |
 
 In addition to push notifications, a **Notification Center** (bell icon in the top bar) lists all notifications chronologically. Unread items are highlighted; tapping them marks as read and navigates to the relevant entity.
 
@@ -168,9 +173,11 @@ In addition to push notifications, a **Notification Center** (bell icon in the t
 
 Completion is **payment-first and two-sided**. While the task is `IN_PROGRESS`, the Requester first confirms payment was sent; only then can the work be marked done, and only when **both** the Requester and the assigned Fixer have confirmed completion does the task move to `COMPLETED` status — which opens the 14-day review window. The Fixer can also attach photos of the finished work. Requiring payment first, plus confirmation from both sides, reduces "marked done but never paid / never finished" disputes.
 
-**Payment:** FixIt does not process payments directly. Instead, the Requester taps "Pay Fixer," which deep-links to the Fixer's Bit or Paybox app, then confirms the payment was sent. Payment happens externally — no payment infrastructure, no fees, no liability on the platform.
+**Payment:** FixIt does not process payments directly. The Requester either taps "Pay Fixer" (which deep-links to the Fixer's Bit or Paybox app) or "Paid in Cash" if the transaction happened offline, then confirms the payment was sent. Payment happens externally — no payment infrastructure, no fees, no liability on the platform.
 
 - If the Fixer has not set a payment link, a fallback message is shown with their phone number so the parties can arrange payment directly.
+
+**Completion photos `Shipped`** — Before marking the work as complete, the Fixer can attach photos of the finished job so the Requester has a visual record.
 
 > In-app payment processing (credit card, Apple Pay) is listed as a future idea but is out of scope for this project.
 
@@ -201,7 +208,7 @@ When Hebrew is active:
 - All strings replaced with Hebrew translations.
 - Currency displayed in ₪ (Israeli Shekel) in both languages.
 
-The language toggle is available on the Welcome screen (before login) and in Settings (after login).
+The language toggle is available on the Welcome screen (before login), in Settings, in the Fixer Profile screen, and in the **top navigation bar's globe icon** on every workspace screen — one tap flips language and RTL direction at any time.
 
 - **Local storage:** The selected language is cached in device-local storage (AsyncStorage on mobile, localStorage on web) for instant load.
 - **DB persistence `Shipped`:** The preference is also stored as a `language` field (`'en' | 'he'`) on the `User` record (updated via `PUT /api/users/me`), so the choice syncs across devices.
@@ -217,9 +224,37 @@ The language toggle is available on the Welcome screen (before login) and in Set
 - Change password (triggers Firebase password reset email)
 - Language toggle (EN/HE)
 - Push notification on/off toggle
+- Delete Account (see below)
 - Log out
 
 **Account deletion** `Shipped` — Permanently deletes the user's account: active tasks are canceled, past reviews are anonymized, and the Firebase Auth account is deleted server-side via the Admin SDK.
+
+---
+
+### 3.12 Admin Dashboard
+
+**`Shipped`**
+
+A separate admin surface for platform moderation, accessible only to users with the `is_admin` flag. Under the hood it uses the same account switching pattern as Requester/Fixer, and every endpoint is gated by an `adminAuth` middleware.
+
+The dashboard covers:
+
+- **Pending Identity Verifications** — review Fixer-submitted ID photo + selfie; approve or reject with a reason. Approval flips `verification_status` to `APPROVED` and awards the verified badge.
+- **Pending Certifications** — review Fixer-uploaded certification documents (currently `PLUMBING` / `ELECTRICITY`); approve or reject with a reason. Approval turns on the certified-category badge on the public profile.
+- **Reported Reviews** — reviews that were reported by their subject (only the reviewed Fixer can report their own review). Admin can **hide** an abusive review or **dismiss** the report to clear the flag.
+- **User Management** — inspect and manage individual users.
+
+Notifications are sent to the affected Fixer whenever a verification or certification decision is made.
+
+---
+
+### 3.13 Accessibility
+
+**`Shipped`** (web accessibility widget) | **`Shipped`** (onboarding nudges)
+
+An on-page **Accessibility Widget** on the web app exposes user-facing accessibility controls (font scaling, contrast helpers, monochrome, reset) via a floating button in the corner. Aimed at WCAG 2.1 / Israeli standard 5568 compliance.
+
+The app also shows **onboarding nudges** when a user's profile is incomplete (e.g. missing avatar / bio), guiding them toward higher-quality first impressions on their bids.
 
 ---
 
@@ -232,6 +267,7 @@ Features that are part of the broader product vision but remain out of current s
 - **Live Fixer Tracking** — "Fixer is on the way" GPS tracking, similar to Wolt or Uber, once a bid is accepted and the Fixer is en route.
 - **Smart Recommendations & Direct Invites** — Algorithmically surface relevant tasks to Fixers based on their specializations and location. Allow Requesters to directly invite a specific top-rated Fixer to bid on their task.
 - **Dispute Resolution** — Structured process for when a task goes wrong: flagging, evidence submission, admin mediation.
-- **Keyword Search** — Search tasks by keyword in the discovery feed (e.g., "IKEA assembly", "washing machine"). Currently discovery is location + category + price.
+- **Keyword Search** — Search tasks by keyword in the discovery feed (e.g., "IKEA assembly", "washing machine"). Currently discovery is location + category + budget.
+- **Typing indicator in chat** — "Fixer is typing…" hint in the chat header. Not implemented.
 
-> **Already shipped:** an **Admin Dashboard** (moderation, identity verification, and certification approval) and **review reporting** (users flag reviews; admins hide or dismiss them) are implemented — see §3.5, §4, and the Admin & Moderation API.
+> **Already shipped:** the **Admin Dashboard** (§3.12), **Review Reporting** (users flag reviews; admins hide or dismiss them), **Accessibility Widget** (§3.13), **web idle auto-logout**, and **Bayesian rating aggregation** are all in production.

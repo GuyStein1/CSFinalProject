@@ -164,12 +164,15 @@ npm run dev:frontend    # Expo — press W (web), I (iOS), A (Android)
 ### Testing
 
 ```bash
-npm test --workspace backend     # Jest + supertest against a real Postgres
-npm test --workspace frontend    # Jest + React Native Testing Library
+npm test --workspace backend               # Jest + supertest against a real Postgres+PostGIS
+npm test --workspace frontend              # jest-expo + React Native Testing Library
+
+npm run test:coverage --workspace backend  # writes backend/coverage/lcov-report/index.html
+npm run test:coverage --workspace frontend # writes frontend/coverage/lcov-report/index.html
 ```
 
 CI (GitHub Actions) runs lint + typecheck + tests on both workspaces for every PR, and a
-pre-commit hook runs ESLint + typecheck on staged files.
+pre-commit hook runs ESLint on staged files plus a full workspace `tsc --noEmit`.
 
 ---
 
@@ -195,8 +198,12 @@ must pass before merging.
 | [API Design](docs/04_API_Design.md) | REST endpoints and Socket.io events |
 | [User Flows](docs/05_User_Flows.md) | Task creation, bidding, completion journeys |
 | [Screen Layouts](docs/06_Screen_Layouts.md) | Mobile and web UI/UX specs |
-| [Demo Accounts](docs/Demo_Users.md) | Ready-to-use logins for exploring the app |
+| [Firebase Integration Guide](docs/08_Firebase_Integration_Guide.md) | Firebase Admin + Client SDK setup, env vars, Google Sign-In |
 | [Testing Guide](docs/09_Testing_Guide.md) | Test strategy and coverage |
+| [Deployment Guide](docs/Deployment_Guide.md) | Railway (API) + Vercel (web) + EAS Build/Update (mobile) |
+| [Demo Accounts](docs/Demo_Users.md) | Ready-to-use logins for exploring the app |
+| [Demo Walkthrough](docs/Demo_Walkthrough.md) | Step-by-step demo script |
+| [Project Submission](docs/Project_Submission.md) | Self-contained course-submission doc |
 
 > The `docs/` folder began as up-front design specs and is kept as a living reference. Where a
 > spec and the code disagree, **the code is the source of truth.**
@@ -205,4 +212,4 @@ must pass before merging.
 
 ## Team
 
-Built by **Guy Stein**, **Guy Zilber**, and **Guy Shick**.
+Built by **Guy Stein**, **Guy Zilberstein**, and **Guy Shick**.

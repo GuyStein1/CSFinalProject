@@ -25,15 +25,17 @@ If a visual reference is needed before coding, duplicate a free **Material Desig
 
 ### 1.1 Welcome / Landing Screen
 * **Logo:** FixIt branding and tagline centered on screen.
-* **Language Toggle:** EN / HE switch at the top-right corner. *(Added when Hebrew support is implemented — not present in Phase 1.)*
-* **Actions:** Two prominent buttons stacked vertically — "Log In" and "Create Account".
+* **Language Toggle:** EN / HE globe icon in the top navigation bar. RTL layout flip is instant.
+* **Actions:** Two prominent buttons — "Sign In" and "Create Account", plus a "Continue with Google" button (uses `expo-auth-session` with a platform-appropriate OAuth client ID).
+* **Web landing page:** on the web target this screen is replaced by a marketing-style landing page (`LandingScreen.web.tsx`) with hero, services carousel, "how it works", categories, and a large sign-in CTA. Signed-in users are routed straight into the workspace.
 * **Background:** Subtle illustration or gradient conveying handyman/services theme.
 
 ### 1.2 Registration Screen
 * **Inputs:** Full Name, Email, Password, Confirm Password (stacked vertically).
 * **Optional Input:** Phone Number (labeled "Optional — for contact purposes").
 * **Validation:** Inline error messages beneath each field in real-time (e.g., "Passwords do not match", "Email already in use").
-* **Action:** "Create Account" button at the bottom. On success, navigates to the Dashboard.
+* **Actions:** "Create Account" button (email/password path) + "Continue with Google" (skips the email-verification gate since Google addresses are already verified).
+* **Post-registration:** email/password users are routed to the blocking **Email Verify Screen** (§1.5) — they cannot enter the workspace until they verify.
 * **Footer Link:** "Already have an account? Log In".
 
 ### 1.3 Login Screen
@@ -49,59 +51,74 @@ If a visual reference is needed before coding, duplicate a free **Material Desig
 * **Action:** "Send Reset Link" button.
 * **Success State:** Input and button replaced with a confirmation message: "Check your inbox for a reset link." and a "Back to Login" link.
 
-### 1.5 Email Verification Banner (Inline Component)
-* Not a separate screen. A persistent banner at the top of the Dashboard.
-* **Content:** "Please verify your email. Check your inbox or [Resend Link]."
-* **Style:** Amber/warning background, dismissible via an X button (reappears on next session if still unverified).
-* **Disappears** once `emailVerified` is true on the Firebase user object.
+### 1.5 Email Verify Screen (Blocking Gate)
+* Full-screen gate shown after email/password registration. Users cannot enter the workspace until they verify.
+* **Content:** headline ("Verify your email"), the address the verification was sent to, and a helper note ("check your spam / junk folder").
+* **Actions:**
+  * **Resend email** — calls Firebase `sendEmailVerification()` again with a short cooldown.
+  * **Change email** — signs out and returns to registration so the user can re-enter a correct address.
+  * **Refresh status** — reloads the Firebase user; on success (`emailVerified === true`) calls `PATCH /api/users/me/email-verified` and routes to the dashboard.
+  * **Log out** — signs out.
+* **Bypass:** Google sign-in bypasses this screen (Google addresses are pre-verified).
 
 ---
 
 ## 2. Global UI Elements
 
 ### 2.1 Top Navigation Bar
-* **Left:** App logo / name ("FixIt").
-* **Center:** Mode Toggle — segmented control switching between "Requester" and "Fixer". The active mode is visually highlighted.
-* **Right:** Notification Bell (with unread count badge) and Language Toggle (EN/HE). *(Language toggle added when Hebrew support is implemented.)*
+* **Left:** App logo / name ("FixIt") — tappable to jump to the mode's home screen.
+* **Center (desktop web) / Right:** Workspace navigation. On desktop web, tabs for the mode's screens (Dashboard / My Tasks / Messages / Profile in Requester mode; Find Jobs / My Bids / Messages / Fixer Profile in Fixer mode).
+* **Right side:**
+  * **Workspace switcher CTA** — a button ("Open Fixer Workspace" / "Open Requester Workspace") that switches modes. Users who have never activated the Fixer role see "Become a Fixer" instead, which routes them through the Become-a-Fixer onboarding.
+  * **Notification bell** with unread-count badge, filtered by the current role.
+  * **Globe icon (language toggle)** — one-tap EN ↔ HE with instant RTL flip.
+  * **Hamburger menu** (mobile-only) — surfaces overflow actions (Settings, mode switch, language, log out).
 
 ### 2.2 Bottom Tab Navigation (Mobile)
-Tabs change based on the active mode:
+Tabs change based on the active mode. There is no "Create Task" tab in Requester mode — creation is opened from the dashboard hero button, the services grid, or via the top nav.
 
 **Requester Mode:**
 | Tab | Icon | Screen |
 |---|---|---|
 | Home | House | Requester Dashboard |
-| Create | + Circle | Task Creation Wizard |
+| My Tasks | Clipboard | My Tasks Screen |
 | Messages | Chat Bubble | Conversation List |
-| Profile | Person | Profile & Settings |
+| Profile | Person | Settings (also entry to public profile) |
 
 **Fixer Mode:**
 | Tab | Icon | Screen |
 |---|---|---|
-| Find Jobs | Search / Map | Discovery Feed |
+| Find Jobs | Map + Search | Discovery Feed |
 | My Bids | List | Bid Tracker |
 | Messages | Chat Bubble | Conversation List |
-| Profile | Person | Profile & Settings |
+| Fixer Profile | Person | Fixer Profile Management (dedicated screen — not the Settings screen) |
 
-> **Navigation rule:** The Mode Toggle is only visible on **root screens** (Requester Dashboard, Discovery Feed, Conversation List, Profile). It is hidden automatically when the user is inside a focused flow — Task Creation Wizard, Chat Interface, Task Details, or any screen that is not a root tab. This prevents accidental mode switches that would lose in-progress work.
+> **Navigation rule:** the workspace switcher CTA lives in the top nav bar and is available on every screen, so mode switching does not require returning to a root tab. Bottom-tab safe-area insets are honored on Android to avoid overlap with the system gesture / navigation bar.
 
 ### 2.3 Web Navigation
-On web, the bottom tabs are replaced by a sidebar or horizontal top menu with the same items. The Mode Toggle remains in the top bar.
+On desktop web (`≥ 900 px`) the bottom tabs are replaced by a horizontal tab strip in the top nav bar carrying the same items. The workspace switcher CTA, notification bell, and language toggle sit alongside them.
 
 ---
 
 ## 3. Requester Mode Screens
 
 ### 3.1 Requester Dashboard
-* **Email Verification Banner** (if unverified) — at the very top.
-* **Header:** "Welcome back, [Name]" with avatar.
-* **Active Tasks Section:** Horizontal scrollable cards for tasks with status `OPEN` or `IN_PROGRESS`. Each card shows:
-  * Task title, category icon, status badge (color-coded).
-  * Bid count (e.g., "3 bids") for OPEN tasks.
-  * Assigned Fixer name and avatar for IN_PROGRESS tasks.
-* **Quick Action:** Floating action button (FAB) in bottom-right: "+" to create a new task.
-* **Past Tasks Section:** Vertical list of `COMPLETED` and `CANCELED` tasks. Each shows title, date, final price, and Fixer name.
-* **Empty State:** If no tasks exist: illustration + "Post your first task and get help today!" with a "Create Task" button.
+The dashboard is a marketing-style landing panel, not a task list — task management lives on the My Tasks screen (see §3.1a). It surfaces:
+
+* **Time-of-day greeting** with the user's name.
+* **Hero card:** large "Post a Task" call-to-action.
+* **Latest-task quick access:** a compact circular card linking to the user's most recent active task (if any), showing status and title. Tap to jump straight into Task Details.
+* **Services grid:** the 9 categories rendered as tappable cards with icon + label. Tapping a card opens the Task Creation wizard pre-selected on that category (Step 3).
+* **How it works section:** short 3-step explainer (Post → Get bids → Get it done).
+* **Onboarding nudge (dismissible):** if the profile is incomplete (missing avatar / bio / phone), a card prompts the user to complete it — dismissible, non-blocking.
+
+### 3.1a My Tasks Screen
+Reached via the "My Tasks" bottom tab (Requester mode). This is where the Requester manages their portfolio of tasks.
+
+* **Workspace header:** stat pills for **Open**, **In Progress**, **Pending Bids** (tasks with `bid_count > 0`), and **To Review** (completed tasks awaiting a review). Tapping a pill filters the list below; tapping the active pill clears the filter.
+* **Task list:** vertical scrollable cards. Each card shows title, category, budget, status badge, bid count (for OPEN), assigned Fixer chip (for IN_PROGRESS), and a "Complete & Pay" / "Leave Review" CTA where appropriate.
+* **Empty state:** "You haven't posted any tasks yet."
+* **Tapping a card** opens the appropriate Task Details view based on status (§3.3 / §3.4 / §3.5).
 
 ### 3.2 Task Creation Wizard (Multi-Step)
 
@@ -118,15 +135,14 @@ On web, the bottom tabs are replaced by a sidebar or horizontal top menu with th
 * **Navigation:** "Back" and "Next" buttons.
 
 **Step 3 — Category:**
-* **Grid:** Visual grid of category cards with icons and labels:
-  * 🪛 Assembly | 🔩 Mounting | 📦 Moving | 🎨 Painting | 🔧 Plumbing | ⚡ Electricity | 🌳 Outdoors | 🧹 Cleaning | 🛠 Other
+* **Grid:** Visual grid of category cards with `MaterialCommunityIcons` icons and labels:
+  * Assembly · Mounting · Moving · Painting · Plumbing · Electricity · Outdoors · Cleaning · Other
 * **Selection:** Single-select. Selected card is visually highlighted.
 * **Navigation:** "Back" and "Next" buttons.
 
-**Step 4 — Budget:**
-* **Toggle:** Two options — "Fixed Price" and "Quote Required".
-* **Fixed Price:** Shows a numeric input with currency symbol (₪). Placeholder: "Enter your budget".
-* **Quote Required:** No input — a label explains: "Fixers will propose their own price."
+**Step 4 — Budget & Urgency:**
+* **Budget toggle:** "Fixed Price" (numeric input with ₪) or "Quote Required" (Fixers propose their own price).
+* **Urgency selector:** three options — `FLEXIBLE`, `THIS_WEEK`, `TODAY`. Shown on the discovery feed and used as a filter.
 * **Navigation:** "Back" and "Next" buttons.
 
 **Location Permission (triggered on entering Step 5):**
@@ -136,7 +152,7 @@ Before displaying the map, the app checks whether location permission has been g
 - If **granted**: Map loads normally.
 
 **Step 5 — Location:**
-* **Map View:** Interactive Google Map. User drops a pin for the general area (neighborhood level). Below the map: auto-populated general location name (e.g., "Hadar, Haifa").
+* **General area:** Address text input with Google Places autocomplete. Selecting a suggestion auto-drops a pin on the map at that location; drag or tap the map to fine-tune. Reverse-geocoded neighborhood name is shown below the map.
 * **Exact Address Input:** Text field below the map labeled "Exact address (private — shared only with accepted Fixer)."
 * **Navigation:** "Back" and "Publish Task" button (primary action, green).
 
@@ -149,39 +165,46 @@ Before displaying the map, the app checks whether location permission has been g
 * **Header:** Task title, status badge ("Open" — green), category icon.
 * **Photo Carousel:** Horizontal swipeable gallery of task photos.
 * **Details Section:** Description, budget, general location on a small map.
-* **Bids Section (Bottom Sheet or Tab):**
-  * Header: "Received Bids ([count] / 15)"
+* **Bids Section:**
+  * Header: "Received Bids".
   * List of Bid Cards, each showing:
-    * Fixer avatar, full name, rating (e.g., "4.8 ★ (23 reviews)").
+    * Fixer avatar, full name, verification badge (if approved), rating (e.g., "4.8 ★ (23 reviews)"), certified-category badge (if the fixer has an approved certification matching this task's category), and "worked together" chip (repeat-customer signal).
     * Offered price (prominently displayed).
     * First line of their pitch message.
-    * Two buttons: "Accept" (green) and "Decline" (red outline).
-  * Tapping a bid card expands it or navigates to the Fixer's Public Profile.
+    * Buttons: **Accept** (primary), **Decline** (outline with structured reason picker), and **Chat with bidder** (opens a pre-acceptance chat with that Fixer — Requester-only, see User Flows §5.2).
+  * Tapping the avatar / name area opens the Fixer's Public Profile.
 * **Empty State (no bids yet):** "No bids yet. Sit tight — Fixers in your area will see your task!"
-* **Full State (15 bids reached):** A banner at the top of the bids section: "This task is no longer accepting new bids." Existing bids can still be managed.
-* **Actions:** "Cancel Task" option in a menu (top-right "..." icon).
+* **Full State (15 bids reached):** A banner: "This task is no longer accepting new bids." Existing bids can still be managed.
+* **Actions:** "Edit Task" (opens the wizard pre-filled) and "Cancel Task" in an overflow menu.
 
 ### 3.4 Task Details — Status: IN_PROGRESS
+Completion here follows the payment-first, two-sided handshake from User Flows §3.5.
+
 * **Header:** Task title, status badge ("In Progress" — blue).
 * **Assigned Fixer Card:** Avatar, name, rating, phone number (tap to call). "View Profile" link.
 * **Photo Carousel:** Task photos.
 * **Details Section:** Description, budget, exact address (visible to both parties now).
 * **Chat Button:** Prominent button or tab: "Chat with [Fixer Name]" with unread message badge.
+* **Payment & Completion CTA (stateful):**
+  * Before payment: **"Pay Fixer"** (deep-links to Bit / Paybox) OR **"Paid in Cash"**.
+  * After paying externally: **"Confirm Payment"** — sets `is_payment_confirmed = true`.
+  * After payment is confirmed: **"Mark as Completed"** — sets `requester_completed = true`. If the Fixer has already confirmed on their side, the task flips to `COMPLETED`; otherwise the task stays `IN_PROGRESS` with a "Waiting for the Fixer to confirm" note.
 * **Actions:**
-  * "Mark as Completed" button (primary, green) — shown when ready.
-  * "Cancel Task" in overflow menu (with warning).
+  * "Cancel Task" in overflow menu (blocked once payment is confirmed).
 
-### 3.5 Task Details — Status: COMPLETED
-* **Header:** Task title, status badge ("Completed" — gray/green check).
-* **Summary:** Final price, Fixer name, completion date.
-* **Payment Section:**
-  * If `is_payment_confirmed = false` and Fixer **has** a `payment_link`: "Pay Fixer" button (deep-links to Bit/Paybox) + "Confirm Payment" button below it.
-  * If `is_payment_confirmed = false` and Fixer **has no** `payment_link`: A message — "This Fixer hasn't set up a payment link. Contact them directly." + Fixer's phone number as a tappable link (if available).
+### 3.5 Task Details — Status: COMPLETED (and CANCELED)
+* **Header:** Task title, status badge ("Completed" — green check / "Canceled" — gray).
+* **Summary:** Final price, Fixer name, completion (or cancellation) date.
+* **Payment Section (COMPLETED only):**
+  * If `is_payment_confirmed = false` and Fixer **has** a `payment_link`: "Pay Fixer" (Bit / Paybox) + "Paid in Cash" alternative + "Confirm Payment".
+  * If `is_payment_confirmed = false` and Fixer **has no** `payment_link`: message — "This Fixer hasn't set up a payment link. Contact them directly." + Fixer's phone number as a tappable link (if available).
   * If `is_payment_confirmed = true`: "Payment Confirmed ✓" label.
-* **Review Section:**
-  * If not yet reviewed: "Leave a Review" prompt with star selector inline.
-  * If reviewed: Shows the submitted review (stars + comment, read-only).
-* **Chat:** "View Chat History" link (read-only archive).
+* **Review Section (COMPLETED only):**
+  * If not yet reviewed: "Leave a Review" prompt with star selector inline (14-day window).
+  * If reviewed: shows the submitted review (stars + comment, read-only).
+* **Reopen (CANCELED only):** "Reopen Task" action returns the task to `OPEN` after a confirmation dialog explaining that prior bids and chat will be cleared (see User Flows §5.9).
+* **Delete (COMPLETED / CANCELED):** "Delete Task" in overflow menu — permanently removes the task and all its bids, messages, and reviews.
+* **Chat:** "View Chat History" link — the archive is read-only with a lock-bar.
 
 ---
 
@@ -193,28 +216,21 @@ Before displaying the map, the app checks whether location permission has been g
 
 **On first load — Location Permission Check:**
 Before rendering the map or fetching tasks, the app checks location permission.
-- If **not yet asked**: Show a rationale modal — "FixIt needs your location to show you tasks nearby. You can change this anytime in Settings." — "Allow" triggers the native dialog.
-- If **denied**: Full-screen fallback shown — a city/neighborhood search bar ("Enter your city or area") lets the Fixer manually enter a location to use as the discovery center point. A banner reads: "Using manual location. Enable GPS in Settings for automatic detection."
-- If **granted**: Map loads with the Fixer's current GPS position centered.
+- If **not yet asked**: rationale modal — "FixIt needs your location to show you tasks nearby." — offers **Allow** and **Use Tel Aviv** (fallback that centers the map on Tel Aviv so the app is immediately useful).
+- If **denied**: the map still renders, but centered on the Tel Aviv fallback. A banner explains manual mode with a link to Settings.
+- If **granted**: map loads with the Fixer's GPS position centered.
 
-* **Full-screen Google Map** with custom markers for open tasks. Markers are color-coded or icon-coded by category.
-* **Tapping a marker** shows a Bottom Preview Card:
-  * Task title, category, budget (or "Quote Required"), general location name, distance from Fixer.
-  * "View Details" button.
-* **Filters Bar:** Horizontal scrollable chips above the map:
-  * Distance: 5km / 10km / 25km / 50km (single select).
-  * Category: Assembly / Mounting / Plumbing / Electricity / etc. (multi-select).
-  * Price: "₪0–100" / "₪100–500" / "₪500+" (single select or custom range).
-* **Toggle:** "Map | List" switch in the top-right.
+* **Full-screen Google Map** with color-coded category markers for open tasks.
+* **Work-area search:** a search bar (Google Places autocomplete) lets the Fixer look up jobs in a specific area (e.g., "Ramat Gan") instead of using GPS. The map re-centers and the discovery query re-runs against that location.
+* **Tapping a marker** shows a Bottom Preview Card: task title, category, urgency chip, budget (or "Quote Required"), general location name, distance from the current center point, and a "View Details" button.
+* **Stats bar:** small pills above the map — **Open Jobs**, **New** (jobs the Fixer hasn't bid on), **Already Bid**, **Range** (opens the filter panel).
+* **Filter panel:** distance is a **slider** (up to a configurable max); budget is a **min/max range slider**; urgency filter chips; category multi-select chips. There are no fixed distance/price bracket presets.
+* **Toggle:** "Map | List" switch.
 
 **List View:**
-* Vertical scrollable list of Task Cards. Each card shows:
-  * Task title, category icon, budget (or "Quote Required").
-  * General location name + distance (e.g., "Hadar, Haifa — 2.3 km").
-  * Time posted (e.g., "Posted 2 hours ago").
-  * Number of existing bids (e.g., "5 bids").
-* Same filter bar as Map View at the top.
-* **Empty State:** "No tasks found in your area. Try expanding your distance filter."
+* Vertical scrollable list of Task Cards. Each card shows: task title, category icon, urgency chip, budget (or "Quote Required"), general location name + distance, time posted, and current bid count.
+* Same filter panel as Map View.
+* **Empty State:** "No tasks found in your area. Try expanding your distance filter or searching a different work area."
 
 ### 4.2 Task Details — Fixer View
 * **Photo Carousel:** Horizontal swipeable gallery of task photos.
@@ -236,18 +252,17 @@ Before rendering the map or fetching tasks, the app checks location permission.
 * **Action:** "Send Offer" button (primary). "Cancel" to dismiss.
 * **Validation:** Price must be > 0. Pitch must not be empty.
 
-> **`Stretch Goal` — Pre-bid Clarification:** Allow a Fixer to submit a bid with price ₪0 (meaning "I need to assess on-site before quoting") or to send a structured "Clarification Request" message to the Requester before committing to a price. This would require a pre-bid chat or Q&A flow and is deferred to a future phase.
+> **Pre-bid Clarification** — superseded by shipped pre-acceptance chat. A Requester can open a chat with any Fixer who has already bid on the task and answer clarification questions before accepting (see User Flows §5.2). Fixers still have to submit a concrete price bid first.
 
 ### 4.4 My Bids (Bid Tracker)
-* **Tab Filter Bar:** Horizontal tabs to filter by status: All / Pending / Accepted / Rejected / Withdrawn.
-* **Bid Cards:** Each card shows:
-  * Task title, category icon, general location.
-  * Offered price.
-  * Status badge (color-coded: Pending=yellow, Accepted=green, Rejected=red, Withdrawn=gray).
-  * Timestamp: "Submitted 3 hours ago".
+* **Tab Filter Bar:** tabs to filter by status: **Active** (Pending + Accepted with task in `OPEN` / `IN_PROGRESS`), **Pending**, **Accepted**, **Completed**, **Rejected**, **Withdrawn**.
+* **Bid Cards:** each card shows: task title, category icon, general location, offered price, status badge (color-coded), and a compact set of actions per status:
+  * **Pending:** "Edit bid", "Withdraw".
+  * **Accepted / IN_PROGRESS:** "Chat with Requester", "Cancel job" (reverts task to `OPEN`), "Confirm completion" (once the Requester has confirmed payment).
+  * **Rejected / Withdrawn:** "Reactivate" (when the task is still `OPEN` — sends the bid back to `PENDING`).
+* **Bulk action:** "Delete All" in an overflow menu for the current filter (with confirmation).
 * **Tapping a card** navigates to the Task Details screen (Fixer view if OPEN, or IN_PROGRESS view if accepted).
-* **Swipe Action (Pending bids only):** Swipe left to reveal "Withdraw" button.
-* **Empty State:** "You haven't submitted any bids yet. Start exploring tasks!"
+* **Empty State:** per-filter empty message (e.g. "No withdrawn bids").
 
 ### 4.5 Fixer Profile Management
 * **Header:** Large avatar (tappable to change), full name, overall Fixer rating (e.g., "4.8 ★ (23 reviews)").
@@ -268,6 +283,12 @@ Before rendering the map or fetching tasks, the app checks location permission.
 * **Certifications Section:**
   * List of uploaded documents. Each item shows: category, title, upload date, and a review-status badge (Pending / Approved / Rejected).
   * "Add Certification" button to upload a new document with a category and title; it enters admin review as `Pending`.
+  * **Note:** category is currently restricted to `PLUMBING` and `ELECTRICITY`, and the category must be in the Fixer's specializations first.
+* **Identity Verification Section:**
+  * Status badge (None / Pending / Approved / Rejected).
+  * When status is None or Rejected: "Submit ID + selfie" CTA opens the upload flow (two Firebase Storage uploads → `POST /api/users/me/verification`).
+  * When status is Approved: a verified badge is displayed on the profile.
+* **Push Notifications Toggle:** on/off switch to enable / disable Expo push delivery for this device.
 * **Reviews Section:** "View My Reviews" link navigating to a list of received reviews.
 
 ---
@@ -287,33 +308,30 @@ Before rendering the map or fetching tasks, the app checks location permission.
 
 ### 5.2 Chat Interface
 * **Header:** Other user's avatar and name (tappable to view profile) + Task title (tappable to view task).
-* **Body:** Chat bubbles — sent messages right-aligned (colored), received messages left-aligned (gray). Each bubble shows message text and timestamp. Read receipts (✓ sent, ✓✓ read) are a *Planned* addition — not in Phase 1.
-* **Scroll:** Auto-scrolls to the latest message on open. Older messages loaded on scroll-up (paginated).
-* **Footer:** Text input field with placeholder "Type a message...", Send button (icon) on the right.
-* **Read-Only Mode (COMPLETED tasks):** Footer is replaced with a label: "This task is completed. Chat is read-only."
+* **Body:** Chat bubbles — sent messages right-aligned (colored), received messages left-aligned (gray). Each bubble shows message text, timestamp, and a **read-receipt tick** (✓ sent, ✓✓ read) driven by real-time `messages_read` events.
+* **Scroll:** Auto-scrolls to the latest message on open. Older messages loaded on scroll-up (paginated, 30 per page).
+* **Footer:** Text input field with placeholder "Type a message...", Send button on the right.
+* **Read-Only Modes:**
+  * **COMPLETED task:** lock-bar reads "This task is completed. Chat is read-only."
+  * **CANCELED task:** lock-bar reads "Task canceled. Chat is closed."
+  * **Fixer withdrew / task auto-locked in a mid-flow edge case:** lock-bar reads "The fixer withdrew from this task."
 
 ### 5.3 Notifications Center
-* **Header:** "Notifications" with "Mark All as Read" link in top-right.
-* **List of Notification Cards:** Each card shows:
-  * Icon representing the notification type (bid icon, chat icon, checkmark, etc.).
-  * Title (bold) and body text.
-  * Timestamp (e.g., "2 hours ago").
-  * Unread indicator: subtle background highlight for unread items.
-* **Tapping a notification:** Marks it as read and navigates to the relevant screen:
-  * `NEW_BID` → Task Details (bid management).
-  * `BID_ACCEPTED` / `BID_REJECTED` → My Bids.
-  * `NEW_MESSAGE` → Chat Interface.
-  * `TASK_COMPLETED` / `TASK_CANCELED` → Task Details.
+* **Header:** "Notifications" with **"Mark all as read"** and **"Delete all"** actions.
+* **Role filter:** the list is auto-filtered to the current mode (Requester vs. Fixer). Switching modes updates the filter.
+* **List of Notification Cards:** Each card shows: type icon, bold title, body, timestamp, and an unread highlight.
+* **Tapping a notification:** marks it as read and navigates to the relevant screen (Task Details, Chat, My Bids, Fixer Profile for cert/verification decisions, etc.).
+* **Per-item action:** long-press / overflow to delete a single notification (`DELETE /api/notifications/:id`).
 * **Empty State:** "You're all caught up! No new notifications."
 
 ### 5.4 Public Profile View
 * Shown when tapping another user's name or avatar anywhere in the app.
-* **Header:** Avatar, full name, "Email Verified" badge (if verified).
-* **Rating Display:** "★ 4.8 (23 reviews)" — shown only if the user has completed jobs as a Fixer. Hidden if they have no reviews yet.
+* **Header:** Avatar, full name, badges — **Email Verified** (if verified) and **Identity Verified** (if the Fixer's identity verification is `APPROVED`).
+* **Rating Display:** Bayesian-shrunk aggregate rating (e.g., "★ 4.8 (23 reviews)"). Hidden if the Fixer has no reviews yet.
 * **Bio Section:** User's bio text.
 * **Portfolio Section (Fixers only):** Scrollable image gallery of past work.
-* **Certifications Section (Fixers only):** *(Stretch Goal)* List of uploaded certificates with titles and upload dates. No verification status badge.
-* **Reviews Tab:** Chronological list of reviews from other users. Each review shows: reviewer name, star rating, comment, and date.
+* **Certifications Section (Fixers only):** Approved certifications rendered as trusted category badges (`Certified Plumber`, `Certified Electrician`). Pending / rejected certs are not shown publicly.
+* **Reviews Tab:** Chronological list of reviews from other users. Each review shows: reviewer name, star rating, comment, and date. The review's subject can **report** an inappropriate review from here (see Admin Dashboard §6.1).
 
 ### 5.5 Review Screen
 Shown to the **Requester only**, accessible from the completed Task Details screen. The prompt is visible for 14 days after task completion; after that it is hidden.
@@ -326,14 +344,60 @@ Shown to the **Requester only**, accessible from the completed Task Details scre
 * **Expired State:** If the 14-day window has passed and no review was submitted, the section shows "Review period has ended" with no action available.
 
 ### 5.6 Settings Screen
-* Accessible from the Profile tab (gear icon or "Settings" link).
+* Reached via the "Profile" bottom tab in Requester mode (`SettingsScreen`).
 * **Account Section:**
   * Email (read-only, displayed for reference).
   * Phone number (editable).
   * "Change Password" link (triggers Firebase password reset email).
 * **Preferences Section:**
-  * Language: EN / HE toggle (with RTL layout switch). *(Visible only when Hebrew support is implemented.)*
+  * Language: EN / HE toggle (with RTL layout switch).
   * Push Notifications: on/off toggle.
-* **Actions:**
-  * "Log Out" button (red text, triggers Firebase signOut).
-  * "Delete Account" link (shown only if the stretch-goal account deletion flow is implemented later).
+* **Session Section:**
+  * "Log Out" button (triggers Firebase signOut).
+  * **"Delete Account"** — permanent account deletion (cancels active tasks, anonymizes past reviews, deletes the Firebase Auth account server-side). Requires typed confirmation.
+
+### 5.7 Past Conversations
+Reached from the Conversation List's overflow menu. Shows read-only archived threads (COMPLETED / CANCELED tasks the user was a party to) grouped by task. Tapping opens the archived chat in read-only mode with the same lock-bar treatment as §5.2. Useful for the demo since real usage produces a lot of archived history.
+
+### 5.8 App Tutorial (First-Run Onboarding)
+A short slide-based tutorial shown once per Requester account on first entry into the Requester workspace. Introduces the map, task creation, and bidding. Dismissal is persisted in AsyncStorage under `requesterTutorialSeen_${uid}` — subsequent logins skip it.
+
+### 5.9 Become a Fixer Onboarding
+A stack screen accessed via the "Become a Fixer" CTA in the top nav (visible only to users who have never activated the Fixer role). Walks the user through the Fixer role expectations, prompts specializations, and on completion sets a `fixerOnboardingSeen_${uid}` flag in AsyncStorage. After completion the workspace switcher CTA flips to "Open Fixer Workspace".
+
+### 5.10 Accessibility Widget (Web)
+On the web target, an on-page floating widget (bottom-right) opens a panel with user-facing accessibility controls:
+- Font-size scale
+- High-contrast mode
+- Monochrome (grayscale) mode
+- Underline links
+- Reset all
+
+Aimed at WCAG 2.1 / Israeli standard 5568 compliance. Preferences persist in `localStorage` and re-apply on next page load. Not present on native (mobile devices already expose OS-level accessibility APIs).
+
+### 5.11 Idle Auto-Logout Warning (Web)
+A modal shown a short time before the web session times out from inactivity. Options: "I'm still here" (extends the session) or "Log out". If the user does nothing, they are signed out automatically and returned to the Welcome screen.
+
+---
+
+## 6. Admin Dashboard
+
+Reached by users with `is_admin = true`. Not a role like Requester / Fixer — it's an additional workspace surfaced via a dedicated navigator. Every route is gated by the `adminAuth` middleware.
+
+### 6.1 Reported Reviews
+* List of reviews that have been reported by their subject.
+* Each row: reviewer, reviewee, rating, comment, report reason, and reporter details.
+* Actions: **Hide review** (`is_hidden = true`) or **Dismiss report** (clears the flag).
+
+### 6.2 Pending Certifications
+* List of certifications awaiting admin decision.
+* Each row: Fixer name + avatar, category badge, title, upload date, and a "View document" link (proxied via `GET /api/admin/download-photo`).
+* Actions: **Approve** or **Reject** (with an optional rejection note). Approval turns on the certified-category badge on the Fixer's public profile.
+
+### 6.3 Pending Identity Verifications
+* List of Fixers awaiting identity verification.
+* Each row: Fixer name + avatar, submission date, "View ID" and "View Selfie" links (proxied through the admin download endpoint).
+* Actions: **Approve** (verified badge granted) or **Reject** (with optional reason).
+
+### 6.4 User Management
+* Simple list of users with search + role / verification status filters. Tap through to inspect an individual user record.

@@ -6,23 +6,21 @@ This project uses **Jest** throughout. There are two independent test suites:
 
 | Suite | Runner | Coverage target | Needs external services? |
 |-------|--------|----------------|--------------------------|
-| Backend | Jest + Supertest | ≥ 80% lines + branches | PostgreSQL (local) |
-| Frontend | jest-expo + RNTL | ≥ 80% lines + branches (hooks/utils/context only) | None |
+| Backend | Jest + Supertest | ≥ 80% lines + branches | PostgreSQL + PostGIS (local) |
+| Frontend | jest-expo + RNTL | ≥ 80% lines + branches (see `collectCoverageFrom`) | None |
 
 ### What is tested
 
-**Backend:** Unit tests for error classes, validation middleware, Zod schemas, and the notification service. Integration (functional) tests for every API route — these hit a real PostgreSQL+PostGIS database via Supertest and test the full request → middleware → DB → response cycle.
+**Backend:** unit tests for error classes, validation middleware, Zod schemas, the notification service, the profanity filter, and the completion checker. Integration tests for every API route (auth, users, tasks, bids, messages, reviews, notifications, certifications, admin) — these hit a real PostgreSQL+PostGIS database via Supertest and cover the full request → middleware → DB → response cycle.
 
-**Frontend:** Pure logic layer — custom hooks (`useTasks`, `useAuthBootstrap`, `useBids`, `useNotifications`, `useReviews`), utilities (`socket.ts`, `uploadImage.ts`), and the `NotificationContext`. Screen components are intentionally excluded from the 80% target: they require complex navigation/Firebase mocking for little incremental value.
+**Frontend:** custom hooks (`useTasks`, `useAuthBootstrap`, `useBids`, `useNotifications`, `useReviews`, `useUnreadMessages`, `useIdleTimer`, `useGoogleAuth`), utilities (`socket`, `uploadImage`, `authErrors`, `categoryMetadata`, `profanityFilter`, `socialAuth`), contexts (`NotificationContext`, `LanguageContext`), navigation helpers (`landingIntent`), i18n dictionary sanity (`translations`), and a handful of components/screens (`FilterBar`, `OnboardingNudge`, `AppTutorialScreen`, `AuthScreen`).
 
 ### What is deliberately excluded from coverage
 
-- Screen components (too much nav/Firebase mocking overhead)
-- `backend/src/index.ts` (just calls `app.listen()`)
-- `backend/src/config/**` (environment bootstrapping)
-- `backend/src/**/*.d.ts` (TypeScript declaration files)
-- `frontend/src/context/AccessibilityContext.tsx` (uses DOM APIs not available in the React Native Jest environment)
-- Theme constants (`frontend/src/theme.ts`)
+Coverage is scoped by `collectCoverageFrom` in each `jest.config.ts`. Files outside those globs may still have tests, but they don't count toward the 80% threshold.
+
+- **Backend excludes:** `src/index.ts` (just `app.listen`), `src/config/**` (env bootstrap), `src/socket/**` (integration-tested manually — no unit suite), `**/*.d.ts`.
+- **Frontend excludes:** most screens (they're covered indirectly via their hooks; the two that are tested — `AppTutorialScreen`, `AuthScreen` — are inside the collect glob), `src/context/AccessibilityContext.tsx` (DOM APIs unavailable in the RN Jest env), and theme constants.
 
 ---
 
@@ -41,14 +39,18 @@ npm run test:coverage --workspace frontend -- --watchAll=false
 npm run test --workspace frontend
 ```
 
-### Backend (requires PostgreSQL)
+### Backend (requires PostgreSQL + PostGIS)
 
-Make sure PostgreSQL is running (e.g., via Docker or a local install). The test database is **created automatically** on the first run.
+Make sure PostgreSQL with the PostGIS extension is running (`docker-compose up -d` from the repo root brings up the local instance). The test database is **created automatically** on the first run.
 
 A `.env.test` file at the repo root is already included with the correct `TEST_DATABASE_URL`. Just run:
 
 ```bash
+# Run all backend tests
 npm run test --workspace backend
+
+# With coverage report
+npm run test:coverage --workspace backend
 ```
 
 The `globalSetup.ts` script will:
@@ -67,38 +69,63 @@ backend/src/__tests__/
   globalTeardown.ts       ← Prisma disconnect
   loadEnv.ts              ← Loads .env.test before each test file
   setup.ts                ← Shared helpers: cleanDatabase(), createTestUser()
+  helpers/
+    authMock.ts           ← Reusable dynamic-UID auth mock factory
   utils/
     errors.test.ts
-  middleware/
-    errorHandler.test.ts
-    validate.test.ts
-  schemas.test.ts
-  services/
-    notificationService.test.ts
+    completionChecker.test.ts
+    profanityFilter.test.ts
   middleware/
     auth.test.ts          ← Tests authMiddleware directly (invalid token, user not in DB)
+    errorHandler.test.ts
+    validate.test.ts
+  services/
+    notificationService.test.ts
+  schemas.test.ts
   routes/
     auth.test.ts
     auth.firebase-error.test.ts  ← Firebase errorInfo.code branch
     users.test.ts
     tasks.test.ts
     bids.test.ts
+    messages.test.ts
+    reviews.test.ts
+    certifications.test.ts
     notifications.test.ts
+    admin.test.ts
 
 frontend/src/
   __mocks__/              ← Mock modules (firebase, api, socket.io-client, etc.)
     setup-globals.ts      ← Polyfills for expo winter runtime globals (structuredClone, etc.)
+  components/__tests__/
+    FilterBar.test.tsx
+    OnboardingNudge.test.tsx
+  context/__tests__/
+    NotificationContext.test.tsx
+    LanguageContext.test.tsx
   hooks/__tests__/
     useTasks.test.ts
     useAuthBootstrap.test.ts
-    useNotifications.test.ts
     useBids.test.ts
+    useNotifications.test.ts
     useReviews.test.ts
+    useUnreadMessages.test.ts
+    useIdleTimer.test.ts
+    useGoogleAuth.test.ts
+  i18n/__tests__/
+    translations.test.ts
+  navigation/__tests__/
+    landingIntent.test.ts
+  screens/__tests__/
+    AppTutorialScreen.test.tsx
+    AuthScreen.test.tsx
   utils/__tests__/
     socket.test.ts
     uploadImage.test.ts
-  context/__tests__/
-    NotificationContext.test.tsx
+    authErrors.test.ts
+    categoryMetadata.test.ts
+    profanityFilter.test.ts
+    socialAuth.test.ts
 ```
 
 ---
@@ -207,7 +234,7 @@ it('loads items', async () => {
 | `frontend/src/__mocks__/expo-notifications.ts` | Permission + token APIs | If new Expo Notifications methods are called |
 | `frontend/src/__mocks__/expo-constants.ts` | `expoConfig.extra.eas.projectId` | If projectId changes |
 | `frontend/src/__mocks__/setup-globals.ts` | Polyfills `__ExpoImportMetaRegistry` and `structuredClone` for the expo winter runtime | Only if new lazy globals cause "cannot be used outside a module" errors |
-| `backend/src/__tests__/__mocks__/expo-server-sdk.ts` | CJS stub for the pure-ESM `expo-server-sdk` package | If `Expo.sendPushNotificationsAsync` API changes |
+| `backend/src/__tests__/__mocks__/expo-server-sdk.ts` | CJS stub for the pure-ESM `expo-server-sdk` package. Wired via `moduleNameMapper` in `backend/jest.config.ts` so any `import { Expo } from 'expo-server-sdk'` in the notification service resolves to the stub during tests. | If `Expo.sendPushNotificationsAsync` API changes |
 
 ---
 

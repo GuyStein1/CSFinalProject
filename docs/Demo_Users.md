@@ -10,6 +10,17 @@ with tasks, bids, chats, notifications, and reviews so the app feels alive on fi
 These are throwaway accounts in a shared playground database — please don't rely on their data
 staying put. There are no real users yet.
 
+> **Local vs. playground:** the shared playground database on Railway is populated with the
+> accounts listed here. A **fresh local clone** running `npx prisma db seed` gets a completely
+> different account set from `backend/prisma/seed.ts` (`neta@example.com`, `stein@example.com`,
+> `zilber@example.com`, `shick@example.com`, `guy@example.com`, `avi@example.com`, and
+> `admin@example.com` for the admin). Both sets use the shared password `guyguyguy`. Both work
+> on the deployed web app if you sign in against production; only the seed set works against a
+> fresh local backend.
+
+*Numbers below verified against the production playground DB on **2026-07-01**. If the playground
+gets re-seeded the exact counts will drift — the identities and passwords stay the same.*
+
 Every account is a **single unified account** with both roles: any user can switch between
 Requester mode and Fixer mode from the top bar. The split below just reflects how each account
 is set up so you can jump straight to the relevant flows.

@@ -12,7 +12,7 @@ This document defines the full development plan across 6 phases, with tasks assi
 | 2 | Backend Core | All API endpoints, auth middleware, notification service, validation |
 | 3 | Frontend Core | All screens (mobile + web), navigation, API integration |
 | 4 | Real-Time Features | Socket.io chat, push notifications, review UI |
-| 5 | Planned Additions | Hebrew/i18n, task reopen, read receipts, account deletion |
+| 5 | Post-MVP Additions (Shipped) | Hebrew/i18n + RTL, task reopen, read receipts, account deletion, admin-reviewed certifications and identity verification, Google Sign-In, blocking email verification, pre-acceptance chat, and more |
 | 6 | Polish & Demo | Seed data, deployment, integration testing |
 
 ---
@@ -160,14 +160,13 @@ Translates the database design in `03_Database_Schema.md` into code. Prisma read
   ```
 - `backend/prisma/schema.prisma` — define all enums and models exactly as specified in `docs/03_Database_Schema.md`:
   - Generator: `prisma-client-js`
-  - Datasource: `postgresql` with `postgis` preview feature
-  - **Enums:** `Category`, `TaskStatus`, `BidStatus`, `NotificationType`
-  - **User model** with all fields; unique on `firebase_uid`, `email`, `phone_number`
-  - **Task model** with `coordinates Unsupported("geometry(Point, 4326)")`, `completed_at`, and `@@index([coordinates], type: Gist)`
-  - **Bid model** with `@@unique([task_id, fixer_id])`
-  - **Review model** with `@@unique([task_id, reviewer_id])`
-  - **Message, Notification, PortfolioItem** models
-  - Certifications can be added later in a follow-up migration if that stretch-goal profile scope is picked up
+  - Datasource: `postgresql` with `previewFeatures = ["postgresqlExtensions"]` and `extensions = [postgis]`
+  - **Enums:** `Category`, `TaskStatus`, `BidStatus`, `BidRejectionReason`, `ReportReason`, `NotificationType`, `CertificationStatus`, `VerificationStatus`, `TaskUrgency`
+  - **User model** with all fields (including `language`, `verification_status`, `verification_photo_url`, `verification_selfie_url`, `is_admin`, `push_token`); unique on `firebase_uid`, `email`, `phone_number`
+  - **Task model** with `coordinates Unsupported("geometry(Point, 4326)")`, `urgency`, `completed_at`, `fixer_completed_at`, `is_payment_confirmed`, `requester_completed`, `fixer_completed`, `completion_photos`, and `@@index([coordinates], type: Gist)`
+  - **Bid model** with `@@unique([task_id, fixer_id])`, `rejection_reason`, `rejection_note`, `auto_rejected_winning_price`, `auto_rejected_winning_rating`
+  - **Review model** with `@@unique([task_id, reviewer_id])`, plus `is_flagged` and `is_hidden` for moderation
+  - **ReviewReport, Message, Notification, PortfolioItem, Certification** models
 - Run migration:
   ```bash
   npx prisma migrate dev --name init
@@ -500,7 +499,7 @@ Implements user profile management endpoints and the push notification service. 
 - **Portfolio endpoints:**
   - `POST /api/users/me/portfolio`
   - `DELETE /api/users/me/portfolio/:id`
-- **Scope note:** Certifications and account deletion remain optional stretch work and should only be added if the core flow is stable.
+- **Scope note (historical):** certifications and account deletion were originally scoped as optional stretch work; both have since landed as part of Phase 5. See Phase 5 for the shipped endpoints (`POST /api/users/me/verification`, `GET`/`POST /api/users/me/certifications`, `DELETE /api/users/me`) and admin review flow.
 - `backend/src/services/notificationService.ts` — Core function: accepts `userId`, `title`, `body`, `type`, `related_entity_id`, `related_entity_type`; looks up `push_token` from DB; writes a `Notification` record; and sends the push via the chosen provider. For the initial mobile MVP, use Expo push tokens and the Expo server SDK. Return gracefully if `push_token` is null.
 - Wire notification triggers for: new bid submitted (`NEW_BID` → Requester), bid accepted (`BID_ACCEPTED` → Fixer), bid rejected (`BID_REJECTED` → Fixer), task canceled (`TASK_CANCELED` → assigned Fixer / all bidders).
 
@@ -740,43 +739,34 @@ Builds the review submission screen and wires it into the completed task flow, d
 
 ---
 
-## Phase 5 — Planned Additions
+## Phase 5 — Post-MVP Additions (Shipped)
 
-Goal: Hebrew language support, task reopen flow, and read receipts.
+Everything in this section landed after the MVP scope was set. It is documented here for historical accuracy and to keep the phase-assignment record complete — none of it is future work.
 
-### Stein — Phase 5
+### Stein — Phase 5 (Shipped)
 
-Adds the task reopen flow (letting a Requester re-post a canceled task) and small supporting API polish for canceled-task UX.
+- **Task Reopen (Shipped):** `PUT /api/tasks/:id/reopen` and the Requester-side "Reopen Task" UI on CANCELED tasks. The endpoint transactionally clears the prior round of bids and chat messages so the task reappears as a clean slate.
+- **API polish (Shipped):** `bid_count` on `GET /api/tasks/:id`, enriched task/bid responses (repeat-customer info, certified-category badges, `lat`/`lng`, `my_review`), and the `?mode=` query filter on conversations and notifications.
+- **Pre-acceptance chat (Shipped):** allow Requester→bidder chat before acceptance in the socket + REST auth model. See `04_API_Design.md §7`.
+- **Two-sided completion & payment (Shipped):** payment-first + `PUT /api/tasks/:id/confirm-completion` + `POST /api/tasks/:id/completion-photos` + "Paid in Cash" alternative.
 
-- **Task Reopen:**
-  - Backend: `PUT /api/tasks/:id/reopen` — valid only when status is `CANCELED`; reset to `OPEN`, clear `assigned_fixer_id`, task reappears on discovery feed
-  - Frontend: "Reopen Task" button on Task Details CANCELED screen (Requester view only)
-- **API polish:**
-  - Include `bid_count` field in `GET /api/tasks/:id` response so frontend can render correct bottom bar state without an extra request
+### Zilber — Phase 5 (Shipped)
 
-### Zilber — Phase 5
+- **Hebrew + RTL (Shipped):** full string extraction to `en.json` / `he.json` via `react-i18next`, `I18nManager.forceRTL` on Hebrew, and a language toggle in Settings + Welcome + Fixer Profile + top-nav globe icon.
+- **Prisma migration (Shipped):** `language String @default("en")` on `User`, migration `20260603111207_add_user_language`; `PUT /api/users/me` accepts `language`.
+- **Google Sign-In (Shipped):** `expo-auth-session` with dedicated Web / iOS / Android OAuth client IDs.
+- **Blocking Email Verification (Shipped):** new users are gated on the Email Verify screen until Firebase reports `emailVerified = true`; `PATCH /api/users/me/email-verified` syncs the flag with a 403 fallback if the token is still unverified.
+- **Web accessibility widget (Shipped):** font scaling, contrast, monochrome, reset — persists to `localStorage`.
+- **Web idle auto-logout (Shipped):** inactivity timeout with an "Are you still there?" warning.
 
-Adds Hebrew language support. This involves extracting every text string from every screen into translation files, then switching the app's layout direction to right-to-left when Hebrew is active (Hebrew is RTL, which affects flex layouts, text alignment, and icon placement).
+### Shick — Phase 5 (Shipped)
 
-- Install i18n library: `npm install i18next react-i18next`
-- **Prisma migration:** Add `language String @default("en")` to the `User` model in `schema.prisma` and run `npx prisma migrate dev --name add-user-language`. Update `PUT /api/users/me` to accept `language` as an editable field. See Database Schema §User and Product Overview §3.10.
-- Extract ALL string literals from every screen into translation files:
-  - `frontend/src/i18n/en.json`
-  - `frontend/src/i18n/he.json`
-- Configure i18n: default to English; switch to Hebrew when language is set
-- Apply RTL layout: `I18nManager.forceRTL(true)` when Hebrew active; test all screens for layout correctness (flex direction, text alignment, icon mirroring where needed)
-- Language toggle:
-  - Add to Settings screen (EN / HE radio)
-  - Add to Welcome screen (EN / HE switch at top-right) — visible once Hebrew is available
-
-### Shick — Phase 5
-
-Focuses on read receipts for chat (marking messages as seen and notifying the sender in real time). Account deletion remains a stretch goal and should only be picked up later if the core app is already stable.
-
-- **Read receipts:**
-  - When a user opens a chat, mark all unread messages from the other party as read (`Message.is_read = true`) via a batch DB update
-  - Emit a `messages_read` event over Socket.io so the sender's chat UI can update their sent message indicators
-  - Coordinate with Stein: define the `messages_read` event payload format before implementation
+- **Read receipts (Shipped):** `mark_read` client event + `messages_read` broadcast; batch DB update on chat open; ✓ / ✓✓ indicators in the chat UI.
+- **Account deletion (Shipped):** `DELETE /api/users/me` — cancels active tasks, anonymizes past reviews, and deletes the Firebase Auth account via the Admin SDK.
+- **Admin dashboard (Shipped):** `routes/admin.ts` — pending certifications, pending identity verifications, flagged reviews (hide / dismiss), user management, and a secure photo-proxy endpoint.
+- **Notifications polish (Shipped):** `DELETE /api/notifications/:id` and `DELETE /api/notifications`, `?mode=` filter on list + read-all, plus `BID_WITHDRAWN` / `CERTIFICATION_REVIEWED` / `VERIFICATION_REVIEWED` types.
+- **Profanity filter (Shipped):** applied to chat + task/bid text content.
+- **Bayesian rating aggregation (Shipped):** shrinkage estimator used for the Fixer's public aggregate rating.
 
 ---
 

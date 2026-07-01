@@ -4,14 +4,22 @@
 
 ### 1.1 Registration
 
+Two paths are supported: email/password and Google sign-in.
+
+**Email / password:**
 1. User downloads app / opens web platform.
 2. Taps "Create Account".
-4. Enters Full Name, Email, Password (with confirmation), and optionally a Phone Number.
-5. Client calls Firebase `createUserWithEmailAndPassword()`. On success, Firebase returns a signed-in user with an ID Token.
-6. Client immediately calls `POST /api/auth/sync` (with the Firebase ID Token) to create the local User record in PostgreSQL with the provided `full_name` and `phone_number`.
-7. Firebase sends a verification email via `sendEmailVerification()`. A banner on the dashboard prompts the user to verify. The app is fully usable before verification, but an "Email Verified" badge is only shown on their profile once confirmed.
-8. Fills out basic profile (Avatar, Bio) — can be skipped and completed later.
-9. Lands on the main dashboard in Requester mode by default.
+3. Enters Full Name, Email, Password (with confirmation), and optionally a Phone Number.
+4. Client calls Firebase `createUserWithEmailAndPassword()`. On success, Firebase returns a signed-in user with an ID Token.
+5. Client immediately calls `POST /api/auth/sync` (with the Firebase ID Token) to create the local User record in PostgreSQL with the provided `full_name` and `phone_number`.
+6. Firebase sends a verification email via `sendEmailVerification()`. The user is routed to a **blocking `EmailVerifyScreen`** and cannot enter the workspace until they verify — the screen offers "Resend email", "Change email", "Refresh status", and "Log out" (see also §5.9).
+7. After verification is detected (client calls `PATCH /api/users/me/email-verified` to sync the flag), the user lands on the main dashboard in Requester mode by default.
+
+**Google sign-in:**
+1. User taps "Continue with Google" on the Welcome screen.
+2. `expo-auth-session` opens the Google OAuth flow using the platform-appropriate client ID.
+3. On success, Firebase creates or matches the user record; the address is already verified by Google, so the blocking gate is skipped.
+4. Client calls `POST /api/auth/sync` to ensure a local `User` row exists, then lands on the dashboard.
 
 ### 1.2 Login
 
@@ -89,7 +97,7 @@ stateDiagram-v2
     OPEN --> CANCELED : Requester cancels before acceptance
     IN_PROGRESS --> COMPLETED : Both sides confirm (after payment)
     IN_PROGRESS --> CANCELED : Requester cancels after acceptance
-    CANCELED --> OPEN : Requester reopens (Planned)
+    CANCELED --> OPEN : Requester reopens
     COMPLETED --> [*]
     CANCELED --> [*]
 ```
@@ -99,11 +107,11 @@ stateDiagram-v2
 | From | To | Triggered By | Side Effects |
 |---|---|---|---|
 | — | OPEN | Requester creates task | Task visible on discovery feed |
-| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, chat channel activated, Fixer notified |
+| OPEN | IN_PROGRESS | Requester accepts a bid | Fixer assigned, exact address revealed to Fixer, all other PENDING bids auto-rejected, Fixer notified (chat between the two parties was already available pre-acceptance — see §5.2) |
 | OPEN | CANCELED | Requester cancels | All PENDING bids auto-rejected, task removed from feed |
 | IN_PROGRESS | COMPLETED | **Both** Requester and Fixer confirm completion (after the Requester confirms payment) | Status flips to COMPLETED only once both `requester_completed` and `fixer_completed` are set; `completed_at` recorded; review prompt shown to Requester (available for 14 days) |
 | IN_PROGRESS | CANCELED | Requester cancels | Fixer notified |
-| CANCELED | OPEN | Requester reopens task *(Planned)* | `assigned_fixer_id` cleared, task reappears on discovery feed; previously rejected bids stay rejected |
+| CANCELED | OPEN | Requester reopens task | `assigned_fixer_id` cleared, previous round of bids and chat messages **deleted** in a single transaction so the task reappears as a clean slate. Prior bidders can bid again; a new Fixer cannot read the old conversation. |
 
 ---
 
@@ -111,15 +119,15 @@ stateDiagram-v2
 
 ### 3.1 Task Creation
 
-1. Taps the "+" floating action button or "Create New Task" card.
+1. Taps the "Post a Task" hero button on the dashboard, or a category card in the services grid.
 2. **Step 1 — Details:** Enters Title and Description.
-3. **Step 2 — Media:** Uploads up to 5 photos from camera or gallery.
+3. **Step 2 — Media:** Uploads up to 5 photos from camera or gallery (cap enforced by the client).
 4. **Step 3 — Category:** Selects one category (Assembly, Mounting, Moving, Painting, Plumbing, Electricity, Outdoors, Cleaning, Other).
-5. **Step 4 — Budget:** Chooses one of:
-   * **Fixed Price** — enters a specific amount.
-   * **Quote Required** — leaves price blank, expects Fixers to name their price.
+5. **Step 4 — Budget & Urgency:**
+   * Budget: **Fixed Price** — enters a specific amount, or **Quote Required** — leaves price blank.
+   * Urgency: `FLEXIBLE` / `THIS_WEEK` / `TODAY`. Shown on the task card and pin so Fixers can prioritize.
 6. **Step 5 — Location:**
-   * Drops a pin on the map for the **general area** (shown publicly on the discovery feed).
+   * Enters an **address** (Google Places autocomplete). A map pin auto-places at that location; drag or tap to fine-tune. This is the public general location shown on the discovery feed.
    * Enters the **exact street address** privately (hidden until a bid is accepted).
 7. Reviews the summary and taps "Publish".
 8. Task status is set to `OPEN` and appears on the Fixer discovery feed.
@@ -142,13 +150,13 @@ stateDiagram-v2
    * Exact address is revealed to the assigned Fixer.
    * All other `PENDING` bids are auto-rejected.
    * Fixer receives a push notification: "Your bid was accepted!"
-   * Chat channel between Requester and Fixer becomes active.
+   * The chat thread (which the Requester may already have opened with this Fixer pre-acceptance) becomes the active, bidirectional channel between the two parties.
 
 ### 3.4 Coordinating via Chat
 
-1. After bid acceptance, the Requester can open the chat from the Task Details screen.
+1. The Requester can open a chat with any bidder from the bid card on the Task Details screen, even before accepting a bid. Once a bid is accepted, the chat with the assigned Fixer remains open and becomes the coordination channel for the job.
 2. Uses real-time messaging to coordinate timing, special instructions, or share additional photos.
-3. Chat is scoped to the specific task — one chat thread per task.
+3. Chat is scoped to the specific task — one chat thread per (task, fixer) pair.
 
 ### 3.5 Completion & Payment
 
@@ -193,24 +201,28 @@ Completion is **payment-first and dual-confirmed** — the task only reaches `CO
 
 ```mermaid
 flowchart TD
-    A[Dashboard] --> B[Tap Create New Task]
-    B --> C[Fill Details, Photos, Category, Budget, Location]
+    A[Dashboard] --> B[Tap Post a Task]
+    B --> C[Fill Details, Photos, Category, Budget & Urgency, Location]
     C --> D[Publish Task -- status OPEN]
     D --> E{Bids received?}
     E -- No --> F{Cancel?}
     F -- Yes --> G[Task CANCELED]
     F -- No --> E
-    E -- Yes --> H[Review Bids & Fixer Profiles]
+    E -- Yes --> H[Review Bids & Fixer Profiles -- optionally chat with any bidder]
     H --> I{Accept a bid?}
     I -- Reject --> H
-    I -- Accept --> J[Task IN_PROGRESS -- Chat opens, address revealed]
+    I -- Accept --> J[Task IN_PROGRESS -- address revealed to Fixer]
     J --> K{Cancel?}
     K -- Yes --> L[Task CANCELED -- Fixer notified]
     K -- No --> M[Fixer does the work]
-    M --> N[Mark as Completed -- Task COMPLETED]
-    N --> O[Pay via Bit or Paybox deep-link]
-    O --> P[Confirm Payment -- optional]
-    N --> Q[Leave Review for Fixer -- 14 day window]
+    M --> N[Pay via Bit / Paybox / Cash]
+    N --> O[Confirm Payment -- is_payment_confirmed = true]
+    O --> P[Requester Mark as Completed]
+    P --> Q{Fixer also confirmed?}
+    Q -- No --> R[Waiting for Fixer -- stays IN_PROGRESS]
+    R --> Q
+    Q -- Yes --> S[Task COMPLETED]
+    S --> T[Leave Review for Fixer -- 14 day window]
 ```
 
 ---
@@ -219,23 +231,25 @@ flowchart TD
 
 ### 4.1 Profile Setup (Optional but Recommended)
 
-1. Switches to Fixer mode via the top navigation toggle.
-2. Opens Profile → "Edit Profile".
+1. Switches to Fixer mode via the top navigation's workspace switcher CTA.
+2. Opens the Fixer Profile screen (bottom tab in Fixer mode).
 3. Adds a Bio describing their skills and experience.
 4. Selects Specializations — the categories they work in (e.g., Electricity, Plumbing).
 5. Uploads Portfolio photos of past work (gallery of images with optional captions).
-6. Certifications can be added later if that stretch-goal profile scope is implemented.
-7. Optionally adds their personal Bit/Paybox payment link. A soft warning is shown if missing: "You haven't added a payment link — Requesters may not be able to pay you easily."
+6. Uploads Certifications (currently `PLUMBING` and `ELECTRICITY` are supported; the category must be in the Fixer's specializations). Each upload is admin-reviewed; approved certs appear as trusted category badges on the public profile.
+7. Submits Identity Verification (ID photo + selfie) for admin review. An approved verification adds a verified badge.
+8. Optionally adds their personal Bit/Paybox payment link. A soft warning is shown if missing: "You haven't added a payment link — Requesters may not be able to pay you easily."
 
 ### 4.2 Task Discovery
 
 1. Opens the "Find Jobs" screen (default in Fixer mode).
 2. Toggles between **Map View** (pins on Google Maps) and **List View** (sorted cards).
-3. Applies filters via horizontal chips:
-   * **Distance:** within 5km / 10km / 25km / 50km.
-   * **Category:** one or more categories.
-   * **Price:** minimum and/or maximum budget range.
-4. Taps a task pin (map) or card (list) to view the Task Details preview.
+3. Applies filters:
+   * **Distance:** a range slider (up to a configurable maximum).
+   * **Budget:** min/max range slider.
+   * **Category:** one or more categories (chips).
+4. Can search a **specific work area** (Google Places autocomplete) instead of using the device GPS — the map re-centers on the searched location.
+5. Taps a task pin (map) or card (list) to view the Task Details preview.
 
 ### 4.3 Viewing Task Details
 
@@ -278,12 +292,21 @@ flowchart TD
 1. Receives payment externally via Bit/Paybox.
 2. After the Requester confirms payment and marks the task complete, the Fixer must **also confirm completion** on their Task Details screen (`PUT /api/tasks/:id/confirm-completion`). The task only becomes `COMPLETED` once both sides have confirmed. (The Requester is still the one who submits the review.)
 
-### 4.8 Withdrawing a Bid
+### 4.8 Withdrawing and Reactivating a Bid
 
 1. From "My Bids", the Fixer taps a `PENDING` bid → "Withdraw Bid".
 2. Confirms the action.
 3. Bid status → `WITHDRAWN`. The Requester is notified.
 4. A bid can only be withdrawn while it is still `PENDING` (not after acceptance).
+
+**Reactivating a withdrawn bid:**
+1. From "My Bids", the Fixer opens the Withdrawn tab and taps "Reactivate" on the bid card (or opens the task and reactivates from there).
+2. Valid only while the task is still `OPEN` and the bid is `WITHDRAWN`.
+3. Bid status → `PENDING`, and the Requester is notified that the bid is back in play.
+
+**Fixer backing out after acceptance:**
+1. If the Fixer needs to cancel an already-`ACCEPTED` bid, they use "Cancel job" on the bid card.
+2. This returns the task to `OPEN` (`assigned_fixer_id` cleared) so the Requester can accept a different bid. The Requester is notified.
 
 ### Fixer Flow Diagram
 
@@ -313,18 +336,19 @@ flowchart TD
 
 ### 5.1 Mode Switching
 
-1. The top navigation bar contains a toggle: **Requester** ↔ **Fixer**.
-2. Tapping the toggle switches the entire UI context:
-   * **Requester mode:** Dashboard shows "My Tasks", bottom tabs show Home / Create Task / Messages / Profile.
-   * **Fixer mode:** Dashboard shows Discovery Feed, bottom tabs show Find Jobs / My Bids / Messages / Profile.
+1. The top navigation bar exposes a workspace switcher CTA — "Open Fixer Workspace" from Requester mode, "Open Requester Workspace" from Fixer mode. Users who have never activated the Fixer role see "Become a Fixer" instead (which routes them through the Become-a-Fixer onboarding — see §5.9).
+2. Tapping the CTA switches the entire UI context:
+   * **Requester mode** bottom tabs: **Dashboard / My Tasks / Messages / Profile (Settings)**.
+   * **Fixer mode** bottom tabs: **Find Jobs / My Bids / Messages / Fixer Profile**.
 3. The switch is instant — no data is lost. Both modes share the same user account.
 4. Unread notification counts persist across modes (a Fixer notification badge is still visible in Requester mode).
 
 ### 5.2 Real-Time Chat
 
 **When is chat available?**
-* A chat channel for a task is only activated **after a bid is accepted** (task status: `IN_PROGRESS`).
-* Only the Requester and the assigned Fixer can participate — no other users.
+* A chat thread exists between the Requester and a Fixer for a given task as soon as the Fixer places a bid on it.
+* **Only the Requester can initiate the conversation** by opening the chat from the bid card on the Task Details screen. Fixers do not see a "Start chat" affordance until their bid is accepted, but once a thread exists (because the Requester initiated it), either side can send messages.
+* Once a bid is accepted (task → `IN_PROGRESS`), the chat with the assigned Fixer is the primary coordination channel; threads with other (now-rejected) bidders remain accessible as read-only history.
 
 **Chat flow:**
 1. Either party opens the task → taps "Chat".
@@ -337,10 +361,10 @@ flowchart TD
 **Chat availability by task status:**
 | Task Status | Chat Available? |
 |---|---|
-| OPEN | No |
-| IN_PROGRESS | Yes (active) |
-| COMPLETED | Yes (read-only archive) |
-| CANCELED | No (hidden) |
+| OPEN | Yes — Requester ↔ any Fixer who has a `PENDING` or `ACCEPTED` bid on the task. Only the Requester can initiate; either side can reply once the thread exists. |
+| IN_PROGRESS | Yes (active) — Requester ↔ assigned Fixer. |
+| COMPLETED | Yes (read-only archive). |
+| CANCELED | Yes (read-only archive with lock-bar). |
 
 ```mermaid
 sequenceDiagram
@@ -377,11 +401,14 @@ sequenceDiagram
 | Event | Recipient | Notification Type |
 |---|---|---|
 | New bid submitted on a task | Requester (task owner) | `NEW_BID` |
+| Bid withdrawn | Requester (task owner) | `BID_WITHDRAWN` |
 | Bid accepted | Fixer (bid owner) | `BID_ACCEPTED` |
 | Bid rejected | Fixer (bid owner) | `BID_REJECTED` |
 | New chat message (recipient offline) | Other party | `NEW_MESSAGE` |
-| Task marked as completed | Fixer | `TASK_COMPLETED` |
+| Payment confirmed | Fixer | `PAYMENT_CONFIRMED` |
+| Task marked as completed | Both parties | `TASK_COMPLETED` |
 | Task canceled | Fixer (if assigned) / all bidders (if OPEN) | `TASK_CANCELED` |
+| Certification / identity verification decision | Fixer | `CERTIFICATION_REVIEWED` / `VERIFICATION_REVIEWED` |
 
 **Notification flow:**
 1. Server-side event triggers a notification record in the DB + a push notification via Firebase Cloud Messaging.
@@ -400,9 +427,11 @@ sequenceDiagram
    * **Bio** — free-text description.
    * **Phone Number** — editable.
    * **Payment Link** — Bit/Paybox URL (primarily for Fixer mode).
-4. Fixer-specific sections (visible when in Fixer mode or always accessible):
+4. Fixer-specific sections (on the dedicated Fixer Profile screen):
    * **Portfolio** — add/remove photos of past work.
-   * **Certifications** — upload/remove professional credentials. *(Stretch Goal — not in Phase 1. See section 4.1.)*
+   * **Certifications** — upload/remove professional credentials (currently `PLUMBING` and `ELECTRICITY`, admin-reviewed).
+   * **Identity Verification** — submit ID photo + selfie for admin review; approved verification unlocks a verified badge.
+   * **Push Notifications toggle** — turn Expo push notifications on/off.
 5. Profile changes are saved via `PUT /api/users/me`.
 
 ### 5.6 Review System Rules
@@ -430,3 +459,33 @@ OPEN tasks do not auto-expire. A task remains on the discovery feed until the Re
    * The local User record is deleted from PostgreSQL.
    * The Firebase Auth account is deleted server-side via the Admin SDK.
 4. User is returned to the Welcome screen.
+
+### 5.9 Reopen Task
+
+1. From a `CANCELED` task's details, the Requester taps "Reopen".
+2. A confirmation dialog warns that the previous round of bids and chat messages will be deleted.
+3. On confirmation, `PUT /api/tasks/:id/reopen` runs one transaction that:
+   * Sets `status = OPEN` and clears `assigned_fixer_id`.
+   * Deletes prior bids and chat messages so the task reappears as a clean slate.
+4. The task returns to the discovery feed. Prior bidders can bid again; a new Fixer cannot read the old conversation.
+
+### 5.10 Onboarding Screens
+
+- **AppTutorial** — a first-run tutorial for new Requesters, shown once per account (dismiss flag persisted in AsyncStorage). Introduces the map, task creation, and bidding.
+- **Become a Fixer** — a dedicated onboarding stack accessed via the "Become a Fixer" CTA in the top nav. Explains the Fixer role, prompts specializations, and marks the user as Fixer-activated (flag persisted in AsyncStorage).
+- **Onboarding nudges** — non-blocking prompts encouraging users to complete their profile (avatar, bio, phone) so their bids and requests look trustworthy.
+
+### 5.11 Admin & Moderation Flows
+
+Admin users see an additional Admin Dashboard entry point that surfaces four queues:
+
+1. **Pending Identity Verifications** — review a Fixer's uploaded ID photo + selfie; approve (`action: 'approve'`) or reject (`action: 'reject'`, optional note). The Fixer is notified.
+2. **Pending Certifications** — same shape for `PLUMBING` / `ELECTRICITY` certifications.
+3. **Reported Reviews** — reviews reported by their subject. Hide (`is_hidden = true`) or dismiss the report to clear the flag.
+4. **User Management** — inspect and manage individual users.
+
+Only users with `is_admin = true` can reach this dashboard; every route is gated by the `adminAuth` middleware.
+
+### 5.12 Idle Auto-Logout (Web)
+
+Web sessions automatically sign out after a period of inactivity. Shortly before the timeout, an "Are you still there?" warning appears so the user can extend the session with a single click.
