@@ -49,7 +49,7 @@ The job created by a Requester.
 * `requester_id` (UUID, FK → User.id)
 * `title` (String)
 * `description` (Text)
-* `media_urls` (String[]) - Firebase Storage URLs. Max 5 enforced at the application layer.
+* `media_urls` (String[]) - Firebase Storage URLs. Max 5 enforced client-side by the task-creation wizard; the server-side Zod schema currently does not cap the array length.
 * `category` (Category)
 * `suggested_price` (Float, Nullable) - Null means "Quote Required"
 * `urgency` (TaskUrgency, Default FLEXIBLE)
@@ -93,7 +93,7 @@ The Requester rates the Fixer after task completion.
 * `reviewee_id` (UUID, FK → User.id) - Always the Fixer
 * `rating` (Integer, 1–5)
 * `comment` (Text, Nullable)
-* `is_flagged` (Boolean, Default false) - Set when reported; surfaces in the admin moderation queue
+* `is_flagged` (Boolean, Default false) - Set when the reviewed Fixer (`reviewee_id`) reports the review as inappropriate; surfaces in the admin moderation queue. Only the review's subject can report it — not other users.
 * `is_hidden` (Boolean, Default false) - Set by an admin to hide an abusive review
 * `created_at` (Timestamp)
 * Unique on `task_id + reviewer_id`
@@ -127,7 +127,7 @@ Alerts for bids, status updates, messages, and verification/certification outcom
 * `title` (String) / `body` (Text)
 * `type` (NotificationType)
 * `related_entity_id` (String) - ID of the linked entity, for deep-linking
-* `related_entity_type` (String) - `TASK`, `BID`, or `MESSAGE`
+* `related_entity_type` (String) - Free-form entity tag. Actual values written by the notification service are `Task` (task-level events), `user` (identity-verification decisions), and `certification` (certification review decisions). Used together with `related_entity_id` for deep-linking.
 * `user_role` (String, Nullable) - Which role context (requester/fixer) the notification targets
 * `is_read` (Boolean, Default false)
 * `created_at` (Timestamp)
