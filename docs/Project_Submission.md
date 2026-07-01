@@ -2,7 +2,7 @@
 
 **A location-based task marketplace that connects people who need small jobs done with skilled locals who get them done.**
 
-**Team:** Guy Stein · Guy Zilber · Guy Shick
+**Team:** Guy Stein · Guy Zilberstein · Guy Shick
 
 ---
 
