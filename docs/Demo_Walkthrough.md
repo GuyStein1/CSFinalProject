@@ -4,22 +4,56 @@ Step-by-step flow for presenting the FixIt app during the final project demo.
 
 ---
 
-## Pre-Demo Checklist
+## Where to run the demo
 
-- [ ] Backend is running (local or deployed)
-- [ ] Frontend is running (Expo Web or deployed on Vercel)
-- [ ] Database is seeded (`npx prisma db seed`)
-- [ ] Two browser tabs open (or one browser + phone)
+The fastest path is the deployed web app — **<https://fixit-one-mocha.vercel.app>** — signed in with any of the pre-populated demo accounts below (shared password: `guyguyguy`). The rest of this walkthrough assumes that setup.
+
+Running locally is optional — see [`../README.md#local-development`](../README.md#local-development) for the bring-up commands.
+
+### Pre-Demo Checklist
+
+- [ ] Signed in as a Requester demo account in one browser window
+- [ ] Signed in as a Fixer demo account in a second browser window (use incognito to avoid conflicts)
+- [ ] Both accounts already have tasks, bids, chats, and reviews (that's how the demo accounts ship)
+
+---
+
+## Demo Accounts
+
+Both of the following account sets work on the deployed web app. All accounts use the shared password `guyguyguy`. For the full list (with verification / certification variants), see [`Demo_Users.md`](Demo_Users.md).
+
+### Recommended — pre-populated, most content
+
+| Role | Name | Email |
+|---|---|---|
+| Requester | Michael Brown | `michael.brown@example.com` |
+| Requester | Emily Johnson | `emily.johnson@example.com` |
+| Fixer | David Cohen (verified, 2 approved certs, 4.9★) | `david.cohen@example.com` |
+| Fixer | Sophia Garcia (pending verification) | `sophia.garcia@example.com` |
+| Admin | FixIt Admin | `demo.admin@fixit.example` |
+
+### Alternative — seed set (also works)
+
+| Role | Name | Email |
+|---|---|---|
+| Requester | Neta Bivas | `neta@example.com` |
+| Requester | Guy Stein | `stein@example.com` |
+| Requester | Guy Zilberstein | `zilber@example.com` |
+| Fixer | Guy Shick | `shick@example.com` |
+| Fixer | Guy Toledo | `guy@example.com` |
+| Fixer | Avi Ron | `avi@example.com` |
+
+The seeded example open tasks live in **Tel Aviv** — search "Tel Aviv" in the Fixer discovery map to find them.
 
 ---
 
 ## Flow 1: Requester Journey
 
-### 1.1 Register as a Requester
-1. Open the app → Landing page loads with hero animation
-2. Click **"Get Started"** → Auth screen
-3. Register with email + password → Auto-sync to backend
-4. Redirected to **Requester Dashboard**
+### 1.1 Sign in as a Requester
+1. Open <https://fixit-one-mocha.vercel.app> → landing page loads with hero animation
+2. Click **"Sign In"** → auth screen
+3. Sign in with any Requester from the tables above (e.g. `michael.brown@example.com` / `guyguyguy`)
+4. Redirected to **Requester Dashboard** — already populated with open, in-progress, and completed tasks
 
 ### 1.2 Explore the Dashboard
 1. Show the **greeting** (time-of-day based)
@@ -104,7 +138,7 @@ Step-by-step flow for presenting the FixIt app during the final project demo.
 1. As the **Requester**, go to My Tasks → In Progress task
 2. Tap **"Mark Completed"** → confirmation dialog
 3. Confirm → task moves to Completed
-4. Chat messages are deleted (privacy)
+4. Chat becomes read-only — history is preserved with a lock-bar
 
 ### 4.2 Leave a Review
 1. In My Tasks → "To Review" pill filters completed tasks awaiting review
@@ -156,18 +190,5 @@ Step-by-step flow for presenting the FixIt app during the final project demo.
 | Auth | Firebase (client) + Admin SDK (server) |
 | Push notifications | Expo Push Service |
 | Cross-platform | Expo (iOS/Android/Web) |
-| Bilingual-ready | RTL/LTR support in theme |
+| Bilingual (EN + HE RTL) | `react-i18next` with runtime toggle |
 | Accessibility | CSS injection widget (web) |
-
----
-
-## Test Accounts (seeded)
-
-| Name | Email | Role | Password |
-|------|-------|------|----------|
-| Neta Bivas | neta@example.com | Requester | guyguyguy |
-| Guy Stein | stein@example.com | Requester | guyguyguy |
-| Guy Zilberstein | zilber@example.com | Requester | guyguyguy |
-| Guy Shick | shick@example.com | Fixer | guyguyguy |
-| Guy Toledo | guy@example.com | Fixer | guyguyguy |
-| Avi Ron | avi@example.com | Fixer | guyguyguy |
