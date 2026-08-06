@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -30,8 +31,18 @@ export default function FixerTabs() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const useDesktopNavigation = Platform.OS === 'web' && width >= 900;
   const { unreadCount } = useUnreadMessages('fixer');
+
+  const tabBarStyle = useMemo(
+    () => ({
+      ...styles.tabBar,
+      height: styles.tabBar.height + insets.bottom,
+      paddingBottom: styles.tabBar.paddingBottom + insets.bottom,
+    }),
+    [insets.bottom],
+  );
 
   return (
     <Tab.Navigator
@@ -40,7 +51,7 @@ export default function FixerTabs() {
         tabBarInactiveTintColor: brandColors.textMuted,
         headerShown: false,
         sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarStyle: useDesktopNavigation ? styles.hiddenTabBar : styles.tabBar,
+        tabBarStyle: useDesktopNavigation ? styles.hiddenTabBar : tabBarStyle,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
         tabBarBackground: useDesktopNavigation ? undefined : () => <TabBarBackground />,
